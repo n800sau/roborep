@@ -6,6 +6,7 @@ class UDPRequest:
 		self.buf = 1024
 		self.addr = (host, port)
 		self.sock = socket(AF_INET,SOCK_DGRAM)
+		self.sock.settimeout(1)
 
 	def __del__(self):
 		self.sock.close()
