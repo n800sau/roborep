@@ -4,7 +4,7 @@
 Module implementing MainWindow.
 """
 
-from PyQt4.QtGui import QMainWindow
+from PyQt4.QtGui import QMainWindow, QGraphicsScene, QGraphicsLineItem, QPen, QColor
 from PyQt4.QtCore import pyqtSignature, QTimer
 
 from Ui_mainwindow import Ui_MainWindow
@@ -25,6 +25,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.timer.timeout.connect(self.onTimer)
 		self.timer.start(1000)
 		self.chn = UDPRequest('192.168.1.19', 9876)
+		self.scene = QGraphicsScene(0, 0, 100, 100)
+		self.compassline = self.scene.addLine(0, 0, 100, 100, QPen(QColor('red')))
+		self.GV_Model.setScene(self.scene)
 	
 	@pyqtSignature("")
 	def onTimer(self):

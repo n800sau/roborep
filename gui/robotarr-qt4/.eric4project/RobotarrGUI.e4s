@@ -2,14 +2,14 @@
 <!DOCTYPE Session SYSTEM "Session-4.4.dtd">
 <!-- eric4 session file for project RobotarrGUI -->
 <!-- This file was generated automatically, do not edit. -->
-<!-- Saved: 2012-03-11, 19:56:25 -->
+<!-- Saved: 2012-03-11, 21:26:02 -->
 <Session version="4.4">
   <Filenames>
     <Filename cline="8" cindex="24" folds="" zoom="0">/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/start.py</Filename>
     <Filename cline="19" cindex="33" folds="" zoom="0">/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/lib/udprequest.py</Filename>
-    <Filename cline="37" cindex="15" folds="" zoom="0">/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/gui/mainwindow.py</Filename>
+    <Filename cline="28" cindex="54" folds="" zoom="0">/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/gui/mainwindow.py</Filename>
   </Filenames>
-  <ActiveWindow cline="37" cindex="15">/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/gui/mainwindow.py</ActiveWindow>
+  <ActiveWindow cline="28" cindex="54">/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/gui/mainwindow.py</ActiveWindow>
   <Breakpoints>
     <Breakpoint>
       <BpFilename>/home/n800s/work/Robotarr/gui/mainwindow.py</BpFilename>

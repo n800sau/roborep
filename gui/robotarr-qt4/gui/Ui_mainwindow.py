@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/gui/mainwindow.ui'
 #
-# Created: Sun Mar 11 19:54:13 2012
+# Created: Sun Mar 11 21:20:44 2012
 #      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -130,6 +130,11 @@ class Ui_MainWindow(object):
         self.frame_4.setFrameShape(QtGui.QFrame.StyledPanel)
         self.frame_4.setFrameShadow(QtGui.QFrame.Raised)
         self.frame_4.setObjectName(_fromUtf8("frame_4"))
+        self.horizontalLayout_3 = QtGui.QHBoxLayout(self.frame_4)
+        self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
+        self.GV_Model = QtGui.QGraphicsView(self.frame_4)
+        self.GV_Model.setObjectName(_fromUtf8("GV_Model"))
+        self.horizontalLayout_3.addWidget(self.GV_Model)
         self.verticalLayout_2.addWidget(self.frame_4)
         self.frame_2 = QtGui.QFrame(self.centralWidget)
         self.frame_2.setFrameShape(QtGui.QFrame.StyledPanel)
