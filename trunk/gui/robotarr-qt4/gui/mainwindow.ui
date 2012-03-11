@@ -207,6 +207,11 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QGraphicsView" name="GV_Model"/>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>
