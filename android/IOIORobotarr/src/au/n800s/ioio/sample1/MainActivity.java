@@ -1,0 +1,210 @@
+package au.n800s.ioio.sample1;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Date;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.os.Handler;
+import android.content.Context;
+import android.widget.TextView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ToggleButton;
+import android.view.View.OnClickListener;
+import android.view.View;
+import android.speech.tts.TextToSpeech;
+import android.hardware.SensorListener;
+import android.hardware.SensorManager;
+
+/**
+ * This is the main activity of the HelloIOIOPower example application.
+ * 
+ * It displays a toggle button on the screen, which enables control of the
+ * on-board LED, as well as a text message that shows whether the IOIO is
+ * connected.
+ * 
+ * Compared to the HelloIOIO example, this example does not use the
+ * AbstractIOIOActivity utility class, thus has finer control of thread creation
+ * and IOIO-connection process. For a simpler use cases, see the HelloIOIO
+ * example.
+ */
+public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
+	
+	CommandQueue queue;
+	/** The thread that interacts with the IOIO. */
+	private IOIOThread ioio_thread_;
+
+	private UDPThread udp_thread_;
+	
+	private RobotState rstate;
+
+	private Handler mHandler;
+	
+	private TextToSpeech mTts;
+
+	SensorManager sensorManager;
+
+	Date t_imhungry;
+	
+	/**
+	 * Called when the activity is first created. Here we normally initialize
+	 * our GUI.
+	 */
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.main);
+		queue = new CommandQueue();
+		rstate = new RobotState();
+		t_imhungry = new Date();
+		mTts = new TextToSpeech(this, this);
+		((Button)findViewById(R.id.button)).setOnClickListener(toggleLed);
+		mHandler = new Handler();
+		mHandler.postDelayed(mUpdateStateTask, 100);
+		((Button)findViewById(R.id.B_Say)).setOnClickListener(sayText);
+		sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+	}
+
+    @Override
+    public void onDestroy() {
+        // Don't forget to shutdown!
+        if (mTts != null) {
+            mTts.stop();
+            mTts.shutdown();
+        }
+
+        super.onDestroy();
+    }
+
+	private void setLabel(String msg, int labelId)
+	{
+		((TextView)findViewById(labelId)).setText(msg);
+		
+	}
+	
+	private Runnable mUpdateStateTask = new Runnable() {
+		   public void run() {
+		     
+				synchronized(rstate) {
+					setLabel(rstate.error, R.id.TV_Error);
+					String msg;
+					if(rstate.connection) {
+						msg = getString(R.string.ioio_connected);	
+						setLabel(rstate.version, R.id.TV_Version);
+						setLabel(String.valueOf(rstate.battery), R.id.TV_Battery);
+						DbMsg.i(t_imhungry.toString());
+						if (rstate.battery < 4000 && (t_imhungry.getTime() + 30000) < new Date().getTime()) {
+							t_imhungry = new Date();
+					    	mTts.speak("I'm hungry", TextToSpeech.QUEUE_ADD, null);							
+						}
+					} else {
+						msg = getString(R.string.wait_ioio);
+					}
+					((TextView)findViewById(R.id.title)).setText(msg);
+				}
+				mHandler.postDelayed(this, 100);
+		   }
+		};
+	
+		// Create an anonymous implementation of OnClickListener
+		private OnClickListener toggleLed = new OnClickListener() {
+		    public void onClick(View v) {
+				DbMsg.i(String.valueOf(((ToggleButton)findViewById(R.id.button)).isChecked()));
+				synchronized(rstate) {
+					rstate.led = ((ToggleButton)findViewById(R.id.button)).isChecked();
+				}
+		    }
+		};
+
+		private OnClickListener sayText = new OnClickListener() {
+		    public void onClick(View v) {
+		    	String text = ((EditText)findViewById(R.id.ET_Say)).getText().toString();
+		    	mTts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+		    }
+		};
+
+	    public void onInit(int status) {
+	        // status can be either TextToSpeech.SUCCESS or TextToSpeech.ERROR.
+	        if (status == TextToSpeech.SUCCESS) {
+	            // Set preferred language to US english.
+	            // Note that a language may not be available, and the result will indicate this.
+	            int result = mTts.setLanguage(Locale.US);
+	            // Try this someday for some interesting results.
+	            // int result mTts.setLanguage(Locale.FRANCE);
+	            if (result == TextToSpeech.LANG_MISSING_DATA ||
+	                result == TextToSpeech.LANG_NOT_SUPPORTED) {
+	               // Lanuage data is missing or the language is not supported.
+	                DbMsg.e("Language is not available.");
+	            } else {
+	                // Check the documentation for other possible result codes.
+	                // For example, the language may be available for the locale,
+	                // but not for the specified country and variant.
+
+	                // The TTS engine has been successfully initialized.
+	                // Allow the user to press the button for the app to speak again.
+	            	((Button)findViewById(R.id.B_Say)).setEnabled(true);
+	                // Greet the user.
+			    	mTts.speak("I am robotarr. My task is to search and destroy", TextToSpeech.QUEUE_ADD, null);
+	            }
+	        } else {
+	            // Initialization failed.
+	            DbMsg.e("Could not initialize TextToSpeech.");
+	        }
+	    }
+
+	    
+	    private void updateOrientation(float _roll, float _pitch, float _heading) {
+	          rstate.heading = _heading;
+	          rstate.pitch = _pitch;
+	          rstate.roll = _roll;
+        }
+
+
+	/**
+	 * Called when the application is resumed (also when first started). Here is
+	 * where we'll create our IOIO thread.
+	 */
+	@Override
+	protected void onResume() {
+		super.onResume();
+		ioio_thread_ = new IOIOThread(queue, rstate);
+		ioio_thread_.start();
+		udp_thread_ = new UDPThread(queue, rstate);
+		udp_thread_.start();
+		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_FASTEST);
+	}
+
+	/**
+	 * Called when the application is paused. We want to disconnect with the
+	 * IOIO at this point, as the user is no longer interacting with our
+	 * application.
+	 */
+	@Override
+	protected void onPause() {
+		super.onPause();
+		ioio_thread_.abort();
+		udp_thread_.abort();
+		try {
+			ioio_thread_.join();
+			udp_thread_.join();
+		} catch (InterruptedException e) {
+		}
+		sensorManager.unregisterListener(sensorListener);
+	}
+
+	private final SensorListener sensorListener = new SensorListener() {
+
+        public void onSensorChanged(int sensor, float[] values) {
+          updateOrientation(values[SensorManager.DATA_Z], 
+                            values[SensorManager.DATA_Y], 
+                            values[SensorManager.DATA_X]);
+        }
+
+        public void onAccuracyChanged(int sensor, int accuracy) {}
+
+    };
+}

@@ -22,12 +22,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		QMainWindow.__init__(self, parent)
 		self.setupUi(self)
 		self.timer = QTimer()
-#		self.timer.set
+		self.timer.timeout.connect(self.onTimer)
+		self.timer.start(1000)
 		self.chn = UDPRequest('192.168.1.19', 9876)
 	
 	@pyqtSignature("")
+	def onTimer(self):
+		try:
+			reply = self.chn.command('version')
+			self.L_Version.setText(reply)
+			reply = self.chn.command('battery')
+			self.L_Battery.setText(reply)
+			reply = self.chn.command('orientation')
+			pitch,roll,orientation = reply.split(':')
+			self.L_Pitch.setText(pitch)
+			self.L_Roll.setText(roll)
+			self.L_Orientation.setText(orientation)
+		except:
+			self.L_Error.setText('error')
+	
+	@pyqtSignature("")
 	def on_TB_Forward_clicked(self):
-		self.chn.command('forward')
+		self.chn.command('accelerate')
 	
 	@pyqtSignature("")
 	def on_TB_Left_clicked(self):
@@ -43,5 +59,5 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	
 	@pyqtSignature("")
 	def on_TB_Back_clicked(self):
-		self.chn.command('back')
+		self.chn.command('decelerate')
 	
