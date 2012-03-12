@@ -27,6 +27,10 @@ class W_Compass(QWidget):
 			painter.setPen(pen)
 			painter.drawEllipse(r);
 			painter.translate(self.rect().center());
+			for d in ('N', 'E', 'S', 'W'):
+				painter.drawLine(0, r.height()/2, 0, r.height()/2 - 10)
+				painter.drawText(0, r.height()/2, d)
+				painter.rotate(90.0)
 			painter.rotate(self.__orientation__);
 			pen = QPen(QColor('blue'))
 			pen.setWidth(2)
