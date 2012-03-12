@@ -24,8 +24,9 @@ public class UDPThread extends Thread {
 		super.run();
 		while (true) {
 			try {
-            	DbMsg.i("UDP socket opened", "UDP");
+            	DbMsg.i("UDP socket opening", "UDP");
 				DatagramSocket serverSocket = new DatagramSocket(9876);
+            	DbMsg.i("UDP socket opened", "UDP");
 				try {
 		            byte[] receiveData = new byte[1024];
 		            byte[] sendData = new byte[1024];
@@ -40,31 +41,36 @@ public class UDPThread extends Thread {
 		            	String sentence = new String( receivePacket.getData()).substring(0, receivePacket.getLength());
 						JSONObject jsonObject = new JSONObject(sentence);
 		            	DbMsg.i("Write command", "UDP");
-		            	String reply="";
-		            	Command cmd = new Command(sentence.toLowerCase());
-		            	if (cmd.name.equalsIgnoreCase("version")) {
-		            		reply = rstate.version;
+						JSONObject reply = new JSONObject();
+		            	Command cmd = new Command(jsonObject.getString("command"), jsonObject);
+		            	if (cmd.name.equalsIgnoreCase("state")) {
+		            		reply.put("state", rstate);
+		            	} else if (cmd.name.equalsIgnoreCase("version")) {
+		            		DbMsg.i("version request");
+		            		reply.put("version", rstate.version);
 		            	} else if (cmd.name.equalsIgnoreCase("battery")) {
-			            	reply = String.valueOf(rstate.battery);
+		            		reply.put("battery", rstate.battery);
 		            	} else if (cmd.name.equalsIgnoreCase("orientation")) {
-			            	reply = String.valueOf(rstate.pitch) + ":" + String.valueOf(rstate.roll) + ":" + String.valueOf(rstate.heading);
+		            		reply.put("pitch", rstate.pitch);
+		            		reply.put("roll", rstate.roll);
+		            		reply.put("heading", rstate.heading);
 		            	} else {
 		            		queue.addCommand(cmd);
-		            		DbMsg.i("RECEIVED:: " + sentence, "UDP");
+		            		DbMsg.i("RECEIVED:: " + jsonObject.toString(), "UDP");
 		            	}
 		            	InetAddress IPAddress = receivePacket.getAddress();
 		            	DbMsg.i("from " + IPAddress.toString(), "UDP");
 		            	int port = receivePacket.getPort();
 		            	DbMsg.i("port " + port, "UDP");
-						JSONObject object = new JSONObject();
-						object.put('reply', reply)
-		            	sendData = object.getBytes();
+		            	sendData = reply.toString().getBytes();
 		            	DatagramPacket sendPacket =	new DatagramPacket(sendData, sendData.length, IPAddress, port);
 		                serverSocket.send(sendPacket);
 		            }
 				
 				} finally {
+	            	DbMsg.i("UDP socket closing", "UDP");
 					serverSocket.close();
+	            	DbMsg.i("UDP socket closed", "UDP");
 				}
 			} catch (Exception e) {
 				DbMsg.e("Unexpected exception caught", e, "UDP");
