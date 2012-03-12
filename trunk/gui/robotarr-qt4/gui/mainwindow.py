@@ -23,22 +23,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.setupUi(self)
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.onTimer)
-		self.timer.start(1000)
+		self.timer.start(10)
 		self.chn = UDPRequest('192.168.1.19', 9876)
 	
 	@pyqtSignature("")
 	def onTimer(self):
 		try:
-			reply = self.chn.command('version')
-			self.L_Version.setText(reply)
-			reply = self.chn.command('battery')
-			self.L_Battery.setText(reply)
-			reply = self.chn.command('orientation')
-			pitch,roll,orientation = reply.split(':')
-			self.L_Pitch.setText(pitch)
-			self.L_Roll.setText(roll)
-			self.L_Orientation.setText(orientation)
-			self.W_Compass.setOrientation(orientation)
+			reply = self.chn.command('state')
+			self.L_Version.setText(reply['state']['version'])
+			self.L_Battery.setText(str(reply['state']['battery']))
+			self.L_Pitch.setText(str(reply['state']['pitch']))
+			self.L_Roll.setText(str(reply['state']['roll']))
+			self.L_Orientation.setText('%d' % reply['state']['heading'])
+			self.W_Compass.setOrientation(int(reply['state']['heading']))
 		except:
 			self.L_Error.setText('error')
 	
