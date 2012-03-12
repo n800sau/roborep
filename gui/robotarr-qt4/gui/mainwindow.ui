@@ -209,7 +209,14 @@
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
-        <widget class="QGraphicsView" name="GV_Model"/>
+        <widget class="W_Compass" name="W_Compass" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>50</width>
+           <height>50</height>
+          </size>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -442,6 +449,14 @@ Right</string>
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>W_Compass</class>
+   <extends>QWidget</extends>
+   <header>w_compass.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
