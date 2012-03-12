@@ -4,6 +4,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import org.json.JSONObject;
+
 public class UDPThread extends Thread {
 
 	private boolean abort_ = false;
@@ -36,6 +38,7 @@ public class UDPThread extends Thread {
 		            	DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 		            	serverSocket.receive(receivePacket);
 		            	String sentence = new String( receivePacket.getData()).substring(0, receivePacket.getLength());
+						JSONObject jsonObject = new JSONObject(sentence);
 		            	DbMsg.i("Write command", "UDP");
 		            	String reply="";
 		            	Command cmd = new Command(sentence.toLowerCase());
@@ -53,7 +56,9 @@ public class UDPThread extends Thread {
 		            	DbMsg.i("from " + IPAddress.toString(), "UDP");
 		            	int port = receivePacket.getPort();
 		            	DbMsg.i("port " + port, "UDP");
-		            	sendData = reply.getBytes();
+						JSONObject object = new JSONObject();
+						object.put('reply', reply)
+		            	sendData = object.getBytes();
 		            	DatagramPacket sendPacket =	new DatagramPacket(sendData, sendData.length, IPAddress, port);
 		                serverSocket.send(sendPacket);
 		            }

@@ -1,4 +1,5 @@
 from socket import *
+import json
 
 class UDPRequest:
 
@@ -16,6 +17,7 @@ class UDPRequest:
 			cmd += ':' + ','.join([str(arg) for arg in args]) 
 		if kwds:
 			cmd += ':' + ','.join(['%s=%s' % (n,v) for n,v in kwds.items()])
+		cmd = json.dumps({'cmd': cmd, 'args': args, 'kwds': kwds})
 		self.sock.sendto(cmd, self.addr)
 		reply,addr = self.sock.recvfrom(self.buf)
 		return reply
