@@ -30,12 +30,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	def onTimer(self):
 		try:
 			reply = self.chn.command('state')
-			self.L_Version.setText(reply['state']['version'])
-			self.L_Battery.setText(str(reply['state']['battery']))
-			self.L_Pitch.setText(str(reply['state']['pitch']))
-			self.L_Roll.setText(str(reply['state']['roll']))
-			self.L_Orientation.setText('%d' % reply['state']['heading'])
-			self.W_Compass.setOrientation(int(reply['state']['heading']))
+			self.L_Version.setText(reply['version'])
+			self.L_Battery.setText(str(reply['battery']))
+			self.L_Pitch.setText(str(reply['pitch']))
+			self.L_Roll.setText(str(reply['roll']))
+			self.L_Orientation.setText('%d' % reply['heading'])
+			self.L_Direction.setText('%d' % reply['current_heading'])
+			self.W_Compass.setOrientation(int(reply['heading']))
 		except:
 			self.L_Error.setText('error')
 	

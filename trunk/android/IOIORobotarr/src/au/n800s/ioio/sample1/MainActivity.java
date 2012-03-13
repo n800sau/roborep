@@ -1,10 +1,12 @@
 package au.n800s.ioio.sample1;
 
 import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Date;
+import org.json.JSONException;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -55,18 +57,23 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	 * our GUI.
 	 */
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	public void onCreate(Bundle savedInstanceState)
+	{
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
-		queue = new CommandQueue();
-		rstate = new RobotState();
-		t_imhungry = new Date();
-		mTts = new TextToSpeech(this, this);
-		((Button)findViewById(R.id.button)).setOnClickListener(toggleLed);
-		mHandler = new Handler();
-		mHandler.postDelayed(mUpdateStateTask, 100);
-		((Button)findViewById(R.id.B_Say)).setOnClickListener(sayText);
-		sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+		try {
+			setContentView(R.layout.main);
+			queue = new CommandQueue();
+			rstate = new RobotState();
+			t_imhungry = new Date();
+			mTts = new TextToSpeech(this, this);
+			((Button)findViewById(R.id.button)).setOnClickListener(toggleLed);
+			mHandler = new Handler();
+			mHandler.postDelayed(mUpdateStateTask, 100);
+			((Button)findViewById(R.id.B_Say)).setOnClickListener(sayText);
+			sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+		} catch(JSONException e) {
+			DbMsg.e("onCreate error", e);
+		}
 	}
 
     @Override
@@ -86,13 +93,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		
 	}
 	
-	private Runnable mUpdateStateTask = new Runnable() {
-		   public void run() {
-		     
-				synchronized(rstate) {
-					setLabel(rstate.getString("error"), R.id.TV_Error);
+	private Runnable mUpdateStateTask = new Runnable() 
+	{
+		   public void run()
+		   {
+		     try {
+					setLabel(rstate.x_getString("error"), R.id.TV_Error);
 					String msg;
-					if(rstate.getBoolean("connection")) {
+					if(rstate.x_getBoolean("connection")) {
 						msg = getString(R.string.ioio_connected);	
 						setLabel(rstate.getString("version"), R.id.TV_Version);
 						setLabel(String.valueOf(rstate.getInt("battery")), R.id.TV_Battery);
@@ -105,18 +113,24 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						msg = getString(R.string.wait_ioio);
 					}
 					((TextView)findViewById(R.id.title)).setText(msg);
-				}
 				mHandler.postDelayed(this, 100);
+		     } catch(JSONException e) {
+		    	DbMsg.e("mUpdateStateTask", e);		    	 
+		     }
 		   }
 		};
 	
 		// Create an anonymous implementation of OnClickListener
-		private OnClickListener toggleLed = new OnClickListener() {
-		    public void onClick(View v) {
+		private OnClickListener toggleLed = new OnClickListener()
+		{
+		    public void onClick(View v)
+		    {
+		    	try {
 				DbMsg.i(String.valueOf(((ToggleButton)findViewById(R.id.button)).isChecked()));
-				synchronized(rstate) {
-					rstate.put("led", ((ToggleButton)findViewById(R.id.button)).isChecked());
-				}
+				rstate.x_put("led", ((ToggleButton)findViewById(R.id.button)).isChecked());
+		    	} catch(JSONException e) {
+		    		DbMsg.e("toggleLed", e);
+		    	}
 		    }
 		};
 
@@ -157,10 +171,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	    }
 
 	    
-	    private void updateOrientation(float _roll, float _pitch, float _heading) {
-	          rstate.put("heading", _heading);
-	          rstate.put("pitch", _pitch);
-	          rstate.put("roll", _roll);
+	    private void updateOrientation(float _roll, float _pitch, float _heading) throws JSONException 
+	    {
+	          rstate.x_put("heading", _heading);
+	          rstate.x_put("pitch", _pitch);
+	          rstate.x_put("roll", _roll);
         }
 
 
@@ -198,10 +213,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private final SensorListener sensorListener = new SensorListener() {
 
-        public void onSensorChanged(int sensor, float[] values) {
-          updateOrientation(values[SensorManager.DATA_Z], 
+        public void onSensorChanged(int sensor, float[] values) 
+        {
+        	try {
+        		updateOrientation(values[SensorManager.DATA_Z], 
                             values[SensorManager.DATA_Y], 
                             values[SensorManager.DATA_X]);
+        	} catch(JSONException e) {
+        		DbMsg.e("Sensor error:", e);
+        	}
         }
 
         public void onAccuracyChanged(int sensor, int accuracy) {}

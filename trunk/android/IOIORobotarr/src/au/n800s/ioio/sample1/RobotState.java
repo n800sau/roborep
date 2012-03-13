@@ -1,11 +1,13 @@
 package au.n800s.ioio.sample1;
 
 import org.json.JSONObject;
+import org.json.JSONException;
 
-public class RobotState(JSONObject) {
+public class RobotState extends JSONObject {
 	
 
-	RobotState() {
+	RobotState() throws JSONException 
+	{
 		put("connection", false);
 		put("version", "");
 		put("leftMotorSpeed", 0);
@@ -19,36 +21,44 @@ public class RobotState(JSONObject) {
 		put("error", "");
 	}
 
-	synchronized public void x_put(String key, String value) {
+	synchronized public void x_put(String key, String value) throws JSONException 
+	{
 		put(key, value);
 	}
 
-	synchronized public void x_put(String key, boolean value) {
+	synchronized public void x_put(String key, boolean value) throws JSONException 
+	{
 		put(key, value);
 	}
 
-	synchronized public void x_put(String key, double value) {
+	synchronized public void x_put(String key, double value) throws JSONException 
+	{
 		put(key, value);
 	}
 
-	synchronized public void x_put(String key, int value) {
+	synchronized public void x_put(String key, int value) throws JSONException 
+	{
 		put(key, value);
 	}
 
-	synchronized public String x_getString(String key) {
+	synchronized public String x_getString(String key) throws JSONException 
+	{
 		return getString(key);
 	}
 	
-	synchronized public boolean x_getBoolean(String key) {
+	synchronized public boolean x_getBoolean(String key) throws JSONException 
+	{
 		return getBoolean(key);
 	}
 	
-	synchronized public int x_getInt(String key) {
+	synchronized public int x_getInt(String key) throws JSONException 
+	{
 		return getInt(key);
 	}
 	
-	synchronized public double x_getDouble(String key) {
+	synchronized public double x_getDouble(String key) throws JSONException
+	{
 		return getDouble(key);
 	}
 	
-}
+};

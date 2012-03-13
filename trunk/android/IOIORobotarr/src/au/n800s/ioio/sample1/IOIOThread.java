@@ -9,6 +9,7 @@ import ioio.lib.api.exception.ConnectionLostException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.json.JSONException;
 
 public class IOIOThread extends Thread {
 
@@ -54,36 +55,36 @@ public class IOIOThread extends Thread {
     	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
     }
 
-    protected void left_motor() throws IOException, InterruptedException
+    protected void left_motor() throws IOException, InterruptedException, JSONException
     {
-    	if (rstate.get("rightMotorSpeed") > 0) {
-    		requestData(new byte[]{(byte)0xC1, (byte)rstate.get("rightMotorSpeed")}, 0);
+    	if (rstate.x_getInt("rightMotorSpeed") > 0) {
+    		requestData(new byte[]{(byte)0xC1, (byte)rstate.x_getInt("rightMotorSpeed")}, 0);
     	} else {
-    		requestData(new byte[]{(byte)0xC2, (byte)-rstate.get("rightMotorSpeed")}, 0);
+    		requestData(new byte[]{(byte)0xC2, (byte)-rstate.x_getInt("rightMotorSpeed")}, 0);
     	}
     }
     
-    protected void right_motor() throws IOException, InterruptedException
+    protected void right_motor() throws IOException, InterruptedException, JSONException
     {
-    	if (rstate.getInt("leftMotorSpeed") > 0) {
-    		requestData(new byte[]{(byte)0xC5, (byte)rstate.getInt("leftMotorSpeed")}, 0);
+    	if (rstate.x_getInt("leftMotorSpeed") > 0) {
+    		requestData(new byte[]{(byte)0xC5, (byte)rstate.x_getInt("leftMotorSpeed")}, 0);
     	} else {
-    		requestData(new byte[]{(byte)0xC6, (byte)-rstate.getInt("leftMotorSpeed")}, 0);
+    		requestData(new byte[]{(byte)0xC6, (byte)-rstate.x_getInt("leftMotorSpeed")}, 0);
     	}
     }
     
-    protected void accelerate() throws IOException, InterruptedException
+    protected void accelerate() throws IOException, InterruptedException, JSONException
     {
-		speed = (rstate.x_getInt("leftMotorSpeed") + rstate.x_getInt("rightMotorSpeed")) / 2;
+		int speed = (rstate.x_getInt("leftMotorSpeed") + rstate.x_getInt("rightMotorSpeed")) / 2;
 		setSpeed(speed+1, speed+1);
     }
     
-    protected void decelerate() throws IOException, InterruptedException
+    protected void decelerate() throws IOException, InterruptedException, JSONException
     {
 		changeSpeed(-1, -1);
     }
 
-	protected void changeSpeed(int left, int right) throws IOException, InterruptedException 
+	protected void changeSpeed(int left, int right) throws IOException, InterruptedException, JSONException 
 	{
     	rstate.x_put("leftMotorSpeed", rstate.x_getInt("leftMotorSpeed") + left);
 		rstate.x_put("rightMotorSpeed", rstate.x_getInt("rightMotorSpeed") + right);
@@ -91,7 +92,7 @@ public class IOIOThread extends Thread {
     	right_motor();
 	}
 
-	protected void setSpeed(int left, int right) throws IOException, InterruptedException 
+	protected void setSpeed(int left, int right) throws IOException, InterruptedException, JSONException 
 	{
     	rstate.x_put("leftMotorSpeed", left);
 		rstate.x_put("rightMotorSpeed", right);
@@ -99,17 +100,17 @@ public class IOIOThread extends Thread {
     	right_motor();
 	}
 
-    protected void turn_left() throws IOException, InterruptedException
+    protected void turn_left() throws IOException, InterruptedException, JSONException
     {
 		changeSpeed(-1, 1);
     }
     
-    protected void turn_right() throws IOException, InterruptedException
+    protected void turn_right() throws IOException, InterruptedException, JSONException
     {
 		changeSpeed(1, -1);
     }
     
-    protected void stop_motor() throws IOException, InterruptedException
+    protected void stop_motor() throws IOException, InterruptedException, JSONException
     {
 		setSpeed(0, 0);
     }
@@ -133,9 +134,7 @@ public class IOIOThread extends Thread {
 				DbMsg.i( "waiting ioio");
 				ioio_.waitForConnect();
 				DbMsg.i( "connected ioio");
-				synchronized(rstate) {
-					rstate.put("connection", true);
-				}
+				rstate.x_put("connection", true);
 				uart = ioio_.openUart(3, 4, 115200, Uart.Parity.NONE, Uart.StopBits.ONE);
 		        in = uart.getInputStream();
 		        out = uart.getOutputStream();
@@ -144,13 +143,13 @@ public class IOIOThread extends Thread {
 				rstate.x_put("version", get_version());
 				if ( rstate.x_getDouble("current_heading") >= 0 ) {
 					DbMsg.i( "head to " + rstate.x_getDouble("current_heading"));
-					offset = (rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360
+					int offset = (int)((rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360);
 					if(offset < 0) {
 						//turn left
-						change_speed(-offset, offset);
+						changeSpeed(-offset, offset);
 					} else if (offset > 0) {
 						//turn right
-						change_speed(offset, -offset);
+						changeSpeed(offset, -offset);
 					}
 					
 				}
