@@ -1,17 +1,21 @@
 package au.n800s.ioio.sample1;
 
-public class RobotState {
+import org.json.JSONObject;
+
+public class RobotState(JSONObject) {
 	
-	public boolean connection = false;
-	public String version = "";
-	public int leftMotorSpeed = 0;
-	public int rightMotorSpeed = 0;
-	public String error = "";
-	public int battery = 0;
-	public boolean led = false;
-	
-	float pitch = 25;
-    float roll = 60;
-    float heading = 90;
+
+	RobotState() {
+		put("connection", false);
+		put("version", "");
+		put("leftMotorSpeed", 0);
+		put("rightMotorSpeed", 0);
+		put("battery", 0);
+		put("led", false);
+		put("pitch", 25.);
+		put("roll", 60.);
+		put("heading", 90.);
+		put("error", "");
+	}
 
 }

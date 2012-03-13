@@ -56,59 +56,59 @@ public class IOIOThread extends Thread {
 
     protected void left_motor() throws IOException, InterruptedException
     {
-    	if (rstate.leftMotorSpeed > 0) {
-    		requestData(new byte[]{(byte)0xC5, (byte)rstate.leftMotorSpeed}, 0);
+    	if (rstate.getInt("leftMotorSpeed") > 0) {
+    		requestData(new byte[]{(byte)0xC5, (byte)rstate.getInt("leftMotorSpeed")}, 0);
     	} else {
-    		requestData(new byte[]{(byte)0xC6, (byte)-rstate.leftMotorSpeed}, 0);
+    		requestData(new byte[]{(byte)0xC6, (byte)-rstate.getInt("leftMotorSpeed")}, 0);
     	}
     }
     
     protected void right_motor() throws IOException, InterruptedException
     {
-    	if (rstate.rightMotorSpeed > 0) {
-    		requestData(new byte[]{(byte)0xC1, (byte)rstate.rightMotorSpeed}, 0);
+    	if (rstate.get("rightMotorSpeed") > 0) {
+    		requestData(new byte[]{(byte)0xC1, (byte)rstate.get("rightMotorSpeed")}, 0);
     	} else {
-    		requestData(new byte[]{(byte)0xC2, (byte)-rstate.rightMotorSpeed}, 0);
+    		requestData(new byte[]{(byte)0xC2, (byte)-rstate.get("rightMotorSpeed")}, 0);
     	}
     }
     
     protected void accelerate() throws IOException, InterruptedException
     {
-    	rstate.leftMotorSpeed = rstate.rightMotorSpeed = (rstate.leftMotorSpeed + rstate.rightMotorSpeed) / 2;  
-    	rstate.leftMotorSpeed++;
-    	rstate.rightMotorSpeed++;
+		speed = (rstate.getInt("leftMotorSpeed") + rstate.getInt("rightMotorSpeed")) / 2;
+    	rstate.put("leftMotorSpeed", speed + 1)
+		rstate.put("rightMotorSpeed", speed + 1)
     	left_motor();
     	right_motor();
     }
     
     protected void decelerate() throws IOException, InterruptedException
     {
-    	rstate.leftMotorSpeed--;
-    	rstate.rightMotorSpeed--;
+    	rstate.put("leftMotorSpeed", rstate.getInt("leftMotorSpeed") - 1)
+		rstate.put("rightMotorSpeed", rstate.getInt("rightMotorSpeed") - 1)
     	left_motor();
     	right_motor();
     }
 
     protected void turn_left() throws IOException, InterruptedException
     {
-    	rstate.leftMotorSpeed++;
-    	rstate.rightMotorSpeed--;
+    	rstate.put("leftMotorSpeed", rstate.getInt("leftMotorSpeed") + 1)
+		rstate.put("rightMotorSpeed", rstate.getInt("rightMotorSpeed") - 1)
     	left_motor();
     	right_motor();
     }
     
     protected void turn_right() throws IOException, InterruptedException
     {
-    	rstate.leftMotorSpeed--;
-    	rstate.rightMotorSpeed++;
+    	rstate.put("leftMotorSpeed", rstate.getInt("leftMotorSpeed") - 1)
+		rstate.put("rightMotorSpeed", rstate.getInt("rightMotorSpeed") + 1)
     	left_motor();
     	right_motor();
     }
     
     protected void stop_motor() throws IOException, InterruptedException
     {
-    	rstate.leftMotorSpeed = 0;
-    	rstate.rightMotorSpeed = 0;
+    	rstate.put("leftMotorSpeed", 0)
+		rstate.put("rightMotorSpeed", 0)
     	left_motor();
     	right_motor();
     }
@@ -127,13 +127,13 @@ public class IOIOThread extends Thread {
 			}
 			try {
 				synchronized(rstate) {
-					rstate.connection = false;
+					rstate.put("connection", false);
 				}
 				DbMsg.i( "waiting ioio");
 				ioio_.waitForConnect();
 				DbMsg.i( "connected ioio");
 				synchronized(rstate) {
-					rstate.connection = true;
+					rstate.put("connection", true);
 				}
 				uart = ioio_.openUart(3, 4, 115200, Uart.Parity.NONE, Uart.StopBits.ONE);
 		        in = uart.getInputStream();
@@ -141,15 +141,15 @@ public class IOIOThread extends Thread {
 				DigitalOutput led = ioio_.openDigitalOutput(0, true);
 				//get version
 				synchronized(rstate) {
-					rstate.version = get_version();
+					rstate.put("version", get_version());
 				}
 				synchronized(rstate) {
-					DbMsg.i( "ioio version" + rstate.version);
+					DbMsg.i( "ioio version" + rstate.getString("version"));
 				}
 				while (true) {
 					try {
 						synchronized(rstate) {
-							rstate.battery = get_battery();
+							rstate.put("battery", get_battery());
 						}
 						Command command = queue.nextCommand();
 						if (command != null) {
@@ -173,17 +173,17 @@ public class IOIOThread extends Thread {
 						}
 						//DbMsg.i( "ioio led set");
 //						synchronized(rstate) {
-//							DbMsg.i( "led=" + String.valueOf(rstate.led));
+//							DbMsg.i( "led=" + rstate.getString("led");
 //						}
 						synchronized(rstate) {
-							led.write(!rstate.led);
+							led.write(!rstate.getBoolean("led"));
 						}
 						synchronized(rstate) {
-							rstate.error = "None";
+							rstate.put("error", "None");
 						}
 					} catch (Exception e) {
 						synchronized(rstate) {
-							rstate.error = e.getMessage();
+							rstate.put("error", e.getMessage());
 						}
 					}
 					sleep(100);
