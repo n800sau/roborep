@@ -90,14 +90,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		   public void run() {
 		     
 				synchronized(rstate) {
-					setLabel(rstate.error, R.id.TV_Error);
+					setLabel(rstate.getString("error"), R.id.TV_Error);
 					String msg;
-					if(rstate.connection) {
+					if(rstate.getBoolean("connection")) {
 						msg = getString(R.string.ioio_connected);	
-						setLabel(rstate.version, R.id.TV_Version);
-						setLabel(String.valueOf(rstate.battery), R.id.TV_Battery);
+						setLabel(rstate.getString("version"), R.id.TV_Version);
+						setLabel(String.valueOf(rstate.getInt("battery")), R.id.TV_Battery);
 						DbMsg.i(t_imhungry.toString());
-						if (rstate.battery < 4000 && (t_imhungry.getTime() + 30000) < new Date().getTime()) {
+						if (rstate.getInt("battery") < 4000 && (t_imhungry.getTime() + 30000) < new Date().getTime()) {
 							t_imhungry = new Date();
 					    	mTts.speak("I'm hungry", TextToSpeech.QUEUE_ADD, null);							
 						}
@@ -115,7 +115,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		    public void onClick(View v) {
 				DbMsg.i(String.valueOf(((ToggleButton)findViewById(R.id.button)).isChecked()));
 				synchronized(rstate) {
-					rstate.led = ((ToggleButton)findViewById(R.id.button)).isChecked();
+					rstate.put("led", ((ToggleButton)findViewById(R.id.button)).isChecked());
 				}
 		    }
 		};
@@ -158,9 +158,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	    
 	    private void updateOrientation(float _roll, float _pitch, float _heading) {
-	          rstate.heading = _heading;
-	          rstate.pitch = _pitch;
-	          rstate.roll = _roll;
+	          rstate.put("heading", _heading);
+	          rstate.put("pitch", _pitch);
+	          rstate.put("roll", _roll);
         }
 
 
