@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/gui/mainwindow.ui'
 #
-# Created: Mon Mar 12 22:21:35 2012
+# Created: Tue Mar 13 22:34:56 2012
 #      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(539, 489)
+        MainWindow.resize(539, 541)
         self.centralWidget = QtGui.QWidget(MainWindow)
         self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.centralWidget)
@@ -119,6 +119,13 @@ class Ui_MainWindow(object):
         self.L_Orientation.setText(_fromUtf8(""))
         self.L_Orientation.setObjectName(_fromUtf8("L_Orientation"))
         self.formLayout_2.setWidget(2, QtGui.QFormLayout.FieldRole, self.L_Orientation)
+        self.label_7 = QtGui.QLabel(self.frame_6)
+        self.label_7.setObjectName(_fromUtf8("label_7"))
+        self.formLayout_2.setWidget(3, QtGui.QFormLayout.LabelRole, self.label_7)
+        self.L_Direction = QtGui.QLabel(self.frame_6)
+        self.L_Direction.setText(_fromUtf8(""))
+        self.L_Direction.setObjectName(_fromUtf8("L_Direction"))
+        self.formLayout_2.setWidget(3, QtGui.QFormLayout.FieldRole, self.L_Direction)
         self.horizontalLayout_2.addWidget(self.frame_6)
         self.frame_7 = QtGui.QFrame(self.frame_3)
         self.frame_7.setFrameShape(QtGui.QFrame.StyledPanel)
@@ -245,6 +252,22 @@ class Ui_MainWindow(object):
         self.toolButton_9.setText(_fromUtf8(""))
         self.toolButton_9.setObjectName(_fromUtf8("toolButton_9"))
         self.gridLayout.addWidget(self.toolButton_9, 2, 2, 1, 1)
+        self.TB_Keep = QtGui.QToolButton(self.frame)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.TB_Keep.sizePolicy().hasHeightForWidth())
+        self.TB_Keep.setSizePolicy(sizePolicy)
+        self.TB_Keep.setObjectName(_fromUtf8("TB_Keep"))
+        self.gridLayout.addWidget(self.TB_Keep, 3, 0, 1, 1)
+        self.TB_NoKeep = QtGui.QToolButton(self.frame)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.TB_NoKeep.sizePolicy().hasHeightForWidth())
+        self.TB_NoKeep.setSizePolicy(sizePolicy)
+        self.TB_NoKeep.setObjectName(_fromUtf8("TB_NoKeep"))
+        self.gridLayout.addWidget(self.TB_NoKeep, 3, 2, 1, 1)
         self.horizontalLayout.addWidget(self.frame)
         self.verticalLayout_2.addWidget(self.frame_2)
         MainWindow.setCentralWidget(self.centralWidget)
@@ -261,6 +284,7 @@ class Ui_MainWindow(object):
         self.label_4.setText(QtGui.QApplication.translate("MainWindow", "Pitch:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_5.setText(QtGui.QApplication.translate("MainWindow", "Roll:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_6.setText(QtGui.QApplication.translate("MainWindow", "Orientation:", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_7.setText(QtGui.QApplication.translate("MainWindow", "Direction:", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Forward.setText(QtGui.QApplication.translate("MainWindow", "Forward", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Forward.setShortcut(QtGui.QApplication.translate("MainWindow", "Up", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Left.setText(QtGui.QApplication.translate("MainWindow", "Turn\n"
@@ -273,6 +297,8 @@ class Ui_MainWindow(object):
         self.TB_Right.setShortcut(QtGui.QApplication.translate("MainWindow", "Right", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Back.setText(QtGui.QApplication.translate("MainWindow", "Back", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Back.setShortcut(QtGui.QApplication.translate("MainWindow", "Down", None, QtGui.QApplication.UnicodeUTF8))
+        self.TB_Keep.setText(QtGui.QApplication.translate("MainWindow", "Keep", None, QtGui.QApplication.UnicodeUTF8))
+        self.TB_NoKeep.setText(QtGui.QApplication.translate("MainWindow", "No Keep", None, QtGui.QApplication.UnicodeUTF8))
 
 from w_compass import W_Compass
 
