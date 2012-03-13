@@ -56,15 +56,6 @@ public class IOIOThread extends Thread {
 
     protected void left_motor() throws IOException, InterruptedException
     {
-    	if (rstate.getInt("leftMotorSpeed") > 0) {
-    		requestData(new byte[]{(byte)0xC5, (byte)rstate.getInt("leftMotorSpeed")}, 0);
-    	} else {
-    		requestData(new byte[]{(byte)0xC6, (byte)-rstate.getInt("leftMotorSpeed")}, 0);
-    	}
-    }
-    
-    protected void right_motor() throws IOException, InterruptedException
-    {
     	if (rstate.get("rightMotorSpeed") > 0) {
     		requestData(new byte[]{(byte)0xC1, (byte)rstate.get("rightMotorSpeed")}, 0);
     	} else {
@@ -72,47 +63,57 @@ public class IOIOThread extends Thread {
     	}
     }
     
+    protected void right_motor() throws IOException, InterruptedException
+    {
+    	if (rstate.getInt("leftMotorSpeed") > 0) {
+    		requestData(new byte[]{(byte)0xC5, (byte)rstate.getInt("leftMotorSpeed")}, 0);
+    	} else {
+    		requestData(new byte[]{(byte)0xC6, (byte)-rstate.getInt("leftMotorSpeed")}, 0);
+    	}
+    }
+    
     protected void accelerate() throws IOException, InterruptedException
     {
-		speed = (rstate.getInt("leftMotorSpeed") + rstate.getInt("rightMotorSpeed")) / 2;
-    	rstate.put("leftMotorSpeed", speed + 1)
-		rstate.put("rightMotorSpeed", speed + 1)
-    	left_motor();
-    	right_motor();
+		speed = (rstate.x_getInt("leftMotorSpeed") + rstate.x_getInt("rightMotorSpeed")) / 2;
+		setSpeed(speed+1, speed+1);
     }
     
     protected void decelerate() throws IOException, InterruptedException
     {
-    	rstate.put("leftMotorSpeed", rstate.getInt("leftMotorSpeed") - 1)
-		rstate.put("rightMotorSpeed", rstate.getInt("rightMotorSpeed") - 1)
+		changeSpeed(-1, -1);
+    }
+
+	protected void changeSpeed(int left, int right) throws IOException, InterruptedException 
+	{
+    	rstate.x_put("leftMotorSpeed", rstate.x_getInt("leftMotorSpeed") + left);
+		rstate.x_put("rightMotorSpeed", rstate.x_getInt("rightMotorSpeed") + right);
     	left_motor();
     	right_motor();
-    }
+	}
+
+	protected void setSpeed(int left, int right) throws IOException, InterruptedException 
+	{
+    	rstate.x_put("leftMotorSpeed", left);
+		rstate.x_put("rightMotorSpeed", right);
+    	left_motor();
+    	right_motor();
+	}
 
     protected void turn_left() throws IOException, InterruptedException
     {
-    	rstate.put("leftMotorSpeed", rstate.getInt("leftMotorSpeed") + 1)
-		rstate.put("rightMotorSpeed", rstate.getInt("rightMotorSpeed") - 1)
-    	left_motor();
-    	right_motor();
+		changeSpeed(-1, 1);
     }
     
     protected void turn_right() throws IOException, InterruptedException
     {
-    	rstate.put("leftMotorSpeed", rstate.getInt("leftMotorSpeed") - 1)
-		rstate.put("rightMotorSpeed", rstate.getInt("rightMotorSpeed") + 1)
-    	left_motor();
-    	right_motor();
+		changeSpeed(1, -1);
     }
     
     protected void stop_motor() throws IOException, InterruptedException
     {
-    	rstate.put("leftMotorSpeed", 0)
-		rstate.put("rightMotorSpeed", 0)
-    	left_motor();
-    	right_motor();
+		setSpeed(0, 0);
     }
-    
+
 	/** Thread body. */
 	@Override
 	public void run() {
@@ -140,11 +141,18 @@ public class IOIOThread extends Thread {
 		        out = uart.getOutputStream();
 				DigitalOutput led = ioio_.openDigitalOutput(0, true);
 				//get version
-				synchronized(rstate) {
-					rstate.put("version", get_version());
-				}
-				synchronized(rstate) {
-					DbMsg.i( "ioio version" + rstate.getString("version"));
+				rstate.x_put("version", get_version());
+				if ( rstate.x_getDouble("current_heading") >= 0 ) {
+					DbMsg.i( "head to " + rstate.x_getDouble("current_heading"));
+					offset = (rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360
+					if(offset < 0) {
+						//turn left
+						change_speed(-offset, offset);
+					} else if (offset > 0) {
+						//turn right
+						change_speed(offset, -offset);
+					}
+					
 				}
 				while (true) {
 					try {
@@ -154,6 +162,16 @@ public class IOIOThread extends Thread {
 						Command command = queue.nextCommand();
 						if (command != null) {
 							DbMsg.i("Command:" + command.name + " len:" + command.name.length());
+							if (command.name.equalsIgnoreCase("keep_direction")) {
+								synchronized(rstate) {
+									rstate.put("current_heading", rstate.getDouble("heading"));
+								}
+							}
+							if (command.name.equalsIgnoreCase("stop_direction")) {
+								synchronized(rstate) {
+									rstate.put("current_heading", -1);
+								}
+							}
 							if (command.name.equalsIgnoreCase("accelerate")) {
 								accelerate();
 							}
@@ -186,7 +204,7 @@ public class IOIOThread extends Thread {
 							rstate.put("error", e.getMessage());
 						}
 					}
-					sleep(100);
+					sleep(10);
 				}
 			} catch (ConnectionLostException e) {
 			} catch (Exception e) {

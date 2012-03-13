@@ -58,4 +58,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	@pyqtSignature("")
 	def on_TB_Back_clicked(self):
 		self.chn.command('decelerate')
+
+	@pyqtSignature("")
+	def on_TB_Keep_clicked(self):
+		self.chn.command('keep_direction')
+
+	@pyqtSignature("")
+	def on_TB_NoKeep_clicked(self):
+		self.chn.command('stop_direction')
 	
