@@ -128,9 +128,7 @@ public class IOIOThread extends Thread {
 				ioio_ = IOIOFactory.create();
 			}
 			try {
-				synchronized(rstate) {
-					rstate.put("connection", false);
-				}
+				rstate.x_put("connection", false);
 				DbMsg.i( "waiting ioio");
 				ioio_.waitForConnect();
 				DbMsg.i( "connected ioio");
@@ -155,21 +153,18 @@ public class IOIOThread extends Thread {
 				}
 				while (true) {
 					try {
-						synchronized(rstate) {
-							rstate.put("battery", get_battery());
-						}
+						rstate.x_put("battery", get_battery());
 						Command command = queue.nextCommand();
 						if (command != null) {
 							DbMsg.i("Command:" + command.name + " len:" + command.name.length());
+							if (command.name.equalsIgnoreCase("set_direction")) {
+								rstate.x_put("current_heading", command.params.getDouble("direction"));
+							}
 							if (command.name.equalsIgnoreCase("keep_direction")) {
-								synchronized(rstate) {
-									rstate.put("current_heading", rstate.getDouble("heading"));
-								}
+								rstate.x_put("current_heading", rstate.getDouble("heading"));
 							}
 							if (command.name.equalsIgnoreCase("stop_direction")) {
-								synchronized(rstate) {
-									rstate.put("current_heading", -1);
-								}
+								rstate.x_put("current_heading", -1);
 							}
 							if (command.name.equalsIgnoreCase("accelerate")) {
 								accelerate();
@@ -192,16 +187,10 @@ public class IOIOThread extends Thread {
 //						synchronized(rstate) {
 //							DbMsg.i( "led=" + rstate.getString("led");
 //						}
-						synchronized(rstate) {
-							led.write(!rstate.getBoolean("led"));
-						}
-						synchronized(rstate) {
-							rstate.put("error", "None");
-						}
+						led.write(!rstate.x_getBoolean("led"));
+						rstate.x_put("error", "None");
 					} catch (Exception e) {
-						synchronized(rstate) {
-							rstate.put("error", e.getMessage());
-						}
+						rstate.x_put("error", e.getMessage());
 					}
 					sleep(10);
 				}

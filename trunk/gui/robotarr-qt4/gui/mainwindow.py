@@ -21,6 +21,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		"""
 		QMainWindow.__init__(self, parent)
 		self.setupUi(self)
+		self.W_Compass.direction_click.connect(self.onDirectionClick)
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.onTimer)
 		self.timer.start(10)
@@ -68,3 +69,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	def on_TB_NoKeep_clicked(self):
 		self.chn.command('stop_direction')
 	
+	@pyqtSignature("")
+	def onDirectionClick(self):
+		self.chn.command('set_direction', direction=self.W_Compass.direction())
+		
