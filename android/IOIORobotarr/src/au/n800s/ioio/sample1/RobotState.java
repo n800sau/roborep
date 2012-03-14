@@ -1,64 +1,96 @@
 package au.n800s.ioio.sample1;
 
+import java.util.Calendar;
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONException;
 
 public class RobotState extends JSONObject {
 	
+	private JSONArray history;
+	private JSONObject st;
 
-	RobotState() throws JSONException 
+	RobotState()
 	{
-		put("connection", false);
-		put("version", "");
-		put("leftMotorSpeed", 0);
-		put("rightMotorSpeed", 0);
-		put("battery", 0);
-		put("led", false);
-		put("pitch", 25.);
-		put("roll", 60.);
-		put("heading", 90.);
-		put("current_heading", -1);
-		put("error", "");
+		history = new JSONArray();
+		st = new JSONObject();
+		st.put("connection", false);
+		st.put("version", "");
+		st.put("leftMotorSpeed", 0);
+		st.put("rightMotorSpeed", 0);
+		st.put("battery", 0);
+		st.put("led", false);
+		st.put("pitch", 0.);
+		st.put("roll", 0.);
+		st.put("heading", 0.);
+		st.put("current_heading", -1);
+		st.put("error", "");
+		st.put("index", history.length());
+		st.put("timestamp", Calendar.getInstance().time)
+	}
+
+
+	synchronized protected void x_pushState()
+	{
+		st.put("timestamp", Calendar.getInstance().time)
+		history.put(st);
+		st = new JSONObject(st, st.keys());
+		st.put("index", history.length());
+	}
+
+	synchronized public JSONObject x_current_state()
+	{
+		return new JSONObject(st, st.keys());
+	}
+
+	synchronized public JSONArray x_history(int startIndex)
+	{
+		JSONArray rs = new JSONArray();
+		for(int i=startIndex; i<history.length(); i++) {
+			JSONObject hst = history.getJSONObject(i);
+			rs.put(new JSONObject(hst, hst.keys()));
+		}
+		return rs;
 	}
 
 	synchronized public void x_put(String key, String value) throws JSONException 
 	{
-		put(key, value);
+		st.put(key, value);
 	}
 
 	synchronized public void x_put(String key, boolean value) throws JSONException 
 	{
-		put(key, value);
+		st.put(key, value);
 	}
 
 	synchronized public void x_put(String key, double value) throws JSONException 
 	{
-		put(key, value);
+		st.put(key, value);
 	}
 
 	synchronized public void x_put(String key, int value) throws JSONException 
 	{
-		put(key, value);
+		st.put(key, value);
 	}
 
 	synchronized public String x_getString(String key) throws JSONException 
 	{
-		return getString(key);
+		return st.getString(key);
 	}
 	
 	synchronized public boolean x_getBoolean(String key) throws JSONException 
 	{
-		return getBoolean(key);
+		return st.getBoolean(key);
 	}
 	
 	synchronized public int x_getInt(String key) throws JSONException 
 	{
-		return getInt(key);
+		return st.getInt(key);
 	}
 	
 	synchronized public double x_getDouble(String key) throws JSONException
 	{
-		return getDouble(key);
+		return st.getDouble(key);
 	}
 	
 };

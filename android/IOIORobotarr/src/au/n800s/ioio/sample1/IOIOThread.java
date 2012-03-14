@@ -120,14 +120,17 @@ public class IOIOThread extends Thread {
 	public void run() {
 		super.run();
 		DbMsg.i( "run ioio");
+		//create it here to be able to disconnect later
+		ioio_ = IOIOFactory.create();
 		while (true) {
 			synchronized (this) {
 				if (abort_) {
 					break;
 				}
-				ioio_ = IOIOFactory.create();
 			}
 			try {
+				//create it here again to be able to recriate after exceptions
+				ioio_ = IOIOFactory.create();
 				rstate.x_put("connection", false);
 				DbMsg.i( "waiting ioio");
 				ioio_.waitForConnect();
@@ -139,21 +142,20 @@ public class IOIOThread extends Thread {
 				DigitalOutput led = ioio_.openDigitalOutput(0, true);
 				//get version
 				rstate.x_put("version", get_version());
-				if ( rstate.x_getDouble("current_heading") >= 0 ) {
-					DbMsg.i( "head to " + rstate.x_getDouble("current_heading"));
-					int offset = (int)((rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360);
-					if(offset < 0) {
-						//turn left
-						changeSpeed(-offset, offset);
-					} else if (offset > 0) {
-						//turn right
-						changeSpeed(offset, -offset);
-					}
-					
-				}
 				while (true) {
 					try {
 						rstate.x_put("battery", get_battery());
+						if ( rstate.x_getDouble("current_heading") >= 0 ) {
+							DbMsg.i( "head to " + rstate.x_getDouble("current_heading"));
+							int offset = (int)((rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360);
+							if(offset < 0) {
+								//turn left
+								changeSpeed(-offset * 2, offset * 2);
+							} else if (offset > 0) {
+								//turn right
+								changeSpeed(offset * 2, -offset * 2);
+							}
+						}
 						Command command = queue.nextCommand();
 						if (command != null) {
 							DbMsg.i("Command:" + command.name + " len:" + command.name.length());
@@ -198,12 +200,12 @@ public class IOIOThread extends Thread {
 			} catch (Exception e) {
 				DbMsg.e("Unexpected exception caught, ioio disconnected", e);
 				ioio_.disconnect();
-			} finally {
-				try {
-					ioio_.waitForDisconnect();
-				} catch (InterruptedException e) {
-				}
 			}
+		}
+		//disconnection
+		try {
+			ioio_.waitForDisconnect();
+		} catch (InterruptedException e) {
 		}
 	}
 
