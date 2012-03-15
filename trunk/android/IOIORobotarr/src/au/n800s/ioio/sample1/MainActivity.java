@@ -178,6 +178,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	          rstate.x_put("roll", _roll);
         }
 
+	    private void updateAcceleration(float _Gx, float _Gy, float _Gz) throws JSONException 
+	    {
+	          rstate.x_put("Gx", _Gx);
+	          rstate.x_put("Gy", _Gy);
+	          rstate.x_put("Gz", _Gz);
+        }
+
 
 	/**
 	 * Called when the application is resumed (also when first started). Here is
@@ -191,6 +198,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		udp_thread_ = new UDPThread(queue, rstate);
 		udp_thread_.start();
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_FASTEST);
+		sensorManager.registerListener(sensorListener, SensorManager.TYPE_ACCELEROMETER, SensorManager.SENSOR_DELAY_FASTEST);
 	}
 
 	/**
@@ -216,9 +224,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         public void onSensorChanged(int sensor, float[] values) 
         {
         	try {
-        		updateOrientation(values[SensorManager.DATA_Z], 
-                            values[SensorManager.DATA_Y], 
-                            values[SensorManager.DATA_X]);
+				switch(sensor) {
+					case SensorManager.SENSOR_ORIENTATION:
+		        		updateOrientation(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
+						break;
+					case TYPE_ACCELEROMETER:
+		        		updateAcceleration(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
+						break;
+						
+				}
         	} catch(JSONException e) {
         		DbMsg.e("Sensor error:", e);
         	}
