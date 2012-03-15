@@ -60,20 +60,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.main);
+		queue = new CommandQueue();
 		try {
-			setContentView(R.layout.main);
-			queue = new CommandQueue();
 			rstate = new RobotState();
-			t_imhungry = new Date();
-			mTts = new TextToSpeech(this, this);
-			((Button)findViewById(R.id.button)).setOnClickListener(toggleLed);
-			mHandler = new Handler();
-			mHandler.postDelayed(mUpdateStateTask, 100);
-			((Button)findViewById(R.id.B_Say)).setOnClickListener(sayText);
-			sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 		} catch(JSONException e) {
-			DbMsg.e("onCreate error", e);
+			DbMsg.e("onCreate", e);
 		}
+		t_imhungry = new Date();
+		mTts = new TextToSpeech(this, this);
+		((Button)findViewById(R.id.button)).setOnClickListener(toggleLed);
+		mHandler = new Handler();
+		mHandler.postDelayed(mUpdateStateTask, 100);
+		((Button)findViewById(R.id.B_Say)).setOnClickListener(sayText);
+		sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 	}
 
     @Override
@@ -162,7 +162,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	                // Allow the user to press the button for the app to speak again.
 	            	((Button)findViewById(R.id.B_Say)).setEnabled(true);
 	                // Greet the user.
-			    	mTts.speak("I am robotarr. My task is to search and destroy", TextToSpeech.QUEUE_ADD, null);
+//	            	mTts.setPitch(30);
+			    	mTts.speak("My name is robotarr.", TextToSpeech.QUEUE_ADD, null);
 	            }
 	        } else {
 	            // Initialization failed.
@@ -198,7 +199,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		udp_thread_ = new UDPThread(queue, rstate);
 		udp_thread_.start();
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_FASTEST);
-		sensorManager.registerListener(sensorListener, SensorManager.TYPE_ACCELEROMETER, SensorManager.SENSOR_DELAY_FASTEST);
+		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ACCELEROMETER, SensorManager.SENSOR_DELAY_FASTEST);
 	}
 
 	/**
@@ -228,7 +229,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 					case SensorManager.SENSOR_ORIENTATION:
 		        		updateOrientation(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
 						break;
-					case TYPE_ACCELEROMETER:
+					case SensorManager.SENSOR_ACCELEROMETER:
 		        		updateAcceleration(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
 						break;
 						
