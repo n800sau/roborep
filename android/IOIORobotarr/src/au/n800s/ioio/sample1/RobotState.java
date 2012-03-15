@@ -23,6 +23,9 @@ public class RobotState extends JSONObject {
 		st.put("pitch", 0.);
 		st.put("roll", 0.);
 		st.put("heading", 0.);
+		st.put("Gx", 0);
+		st.put("Gy", 0);
+		st.put("Gz", 0);
 		st.put("current_heading", -1);
 		st.put("error", "");
 		st.put("index", history.length());
