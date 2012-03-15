@@ -28,7 +28,6 @@ class W_Compass(QWidget):
 	def paintEvent(self, event):
 		if not self.__orientation__ is None:
 			painter = QPainter(self)
-			painter.save();
 			painter.setRenderHint(QPainter.Antialiasing)
 			r = self.rect().adjusted(10, 10, -10, -10)
 			minside = min(r.width(), r.height())
@@ -63,7 +62,7 @@ class W_Compass(QWidget):
 		dx = pos.x() - center.x()
 		dy = center.y() - pos.y()
 		v = math.sqrt(dx * dx + dy * dy)
-		dx/v = math.sin(alpha)
-		alpha = math.asin(dx/v)
+#		dx/v = math.sin(alpha)
+		alpha = math.degrees(math.asin(dx/v))
 		self.setDirection(alpha)
 		self.direction_click.emit()

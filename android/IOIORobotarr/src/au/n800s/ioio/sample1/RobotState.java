@@ -4,17 +4,18 @@ import java.util.Calendar;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
+import java.util.ArrayList;
 
 public class RobotState extends JSONObject {
 	
-	private JSONArray history;
+	private ArrayList<JSONObject> history;
 	private JSONObject st;
 	int history_offset;
 
-	RobotState()
+	RobotState() throws JSONException
 	{
 		history_offset = 0;
-		history = new JSONArray();
+		history = new ArrayList<JSONObject>();
 		st = new JSONObject();
 		st.put("connection", false);
 		st.put("version", "");
@@ -30,38 +31,38 @@ public class RobotState extends JSONObject {
 		st.put("Gz", 0);
 		st.put("current_heading", -1);
 		st.put("error", "");
-		st.put("index", history.length());
-		st.put("timestamp", Calendar.getInstance().time)
+		st.put("index", history.size());
+		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
 	}
 
 
-	synchronized protected void x_pushState()
+	synchronized protected void x_pushState() throws JSONException
 	{
-		st.put("timestamp", Calendar.getInstance().time)
-		while(history.length() > 10000) {
+		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
+		while(history.size() > 10000) {
 			history.remove(0);
 			history_offset++;
 		}
-		history.put(st);
-		st = new JSONObject(st, st.keys());
-		st.put("index", history.length());
+		history.add(st);
+		st = new JSONObject(st.toString());
+		st.put("index", history.size());
 	}
 
-	synchronized public JSONObject x_current_state()
+	synchronized public JSONObject x_current_state() throws JSONException
 	{
-		return new JSONObject(st, st.keys());
+		return new JSONObject(st.toString());
 	}
 
-	synchronized public JSONArray x_history(int startIndex)
+	synchronized public JSONArray x_history(int startIndex) throws JSONException
 	{
 		JSONArray rs = new JSONArray();
-		int index = (startIndex - history_offset;
+		int index = startIndex - history_offset;
 		if(index < 0) {
 			index = 0;
 		}
-		for(int i=index; i<history.length(); i++) {
-			JSONObject hst = history.getJSONObject(i);
-			rs.put(new JSONObject(hst, hst.keys()));
+		for(int i=index; i<history.size(); i++) {
+			JSONObject hst = history.get(i);
+			rs.put(new JSONObject(hst.toString()));
 		}
 		return rs;
 	}

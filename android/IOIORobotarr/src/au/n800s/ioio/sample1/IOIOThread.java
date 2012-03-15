@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import org.json.JSONException;
 
+import android.os.Handler;
+
 public class IOIOThread extends Thread {
 
 	private IOIO ioio_;
@@ -232,6 +234,8 @@ public class IOIOThread extends Thread {
 		   {
 				try {
 					rstate.x_pushState();
+				} catch(JSONException e) {
+					DbMsg.e("mPushState",e);
 				} finally {
 					mHandler.postDelayed(this, 100);
 				}

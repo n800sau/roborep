@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/mnt/sda1/home/n800s/work/sourceforge/robotarr-code/gui/robotarr-qt4/gui/mainwindow.ui'
 #
-# Created: Tue Mar 13 22:34:56 2012
+# Created: Thu Mar 15 22:00:08 2012
 #      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(539, 541)
+        MainWindow.resize(539, 555)
         self.centralWidget = QtGui.QWidget(MainWindow)
         self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.centralWidget)
@@ -131,6 +131,44 @@ class Ui_MainWindow(object):
         self.frame_7.setFrameShape(QtGui.QFrame.StyledPanel)
         self.frame_7.setFrameShadow(QtGui.QFrame.Raised)
         self.frame_7.setObjectName(_fromUtf8("frame_7"))
+        self.formLayout_3 = QtGui.QFormLayout(self.frame_7)
+        self.formLayout_3.setObjectName(_fromUtf8("formLayout_3"))
+        self.label_8 = QtGui.QLabel(self.frame_7)
+        self.label_8.setObjectName(_fromUtf8("label_8"))
+        self.formLayout_3.setWidget(0, QtGui.QFormLayout.LabelRole, self.label_8)
+        self.label_9 = QtGui.QLabel(self.frame_7)
+        self.label_9.setObjectName(_fromUtf8("label_9"))
+        self.formLayout_3.setWidget(1, QtGui.QFormLayout.LabelRole, self.label_9)
+        self.label_10 = QtGui.QLabel(self.frame_7)
+        self.label_10.setObjectName(_fromUtf8("label_10"))
+        self.formLayout_3.setWidget(2, QtGui.QFormLayout.LabelRole, self.label_10)
+        self.label_11 = QtGui.QLabel(self.frame_7)
+        self.label_11.setObjectName(_fromUtf8("label_11"))
+        self.formLayout_3.setWidget(3, QtGui.QFormLayout.LabelRole, self.label_11)
+        self.label_12 = QtGui.QLabel(self.frame_7)
+        self.label_12.setObjectName(_fromUtf8("label_12"))
+        self.formLayout_3.setWidget(4, QtGui.QFormLayout.LabelRole, self.label_12)
+        self.L_SpeedLeft = QtGui.QLabel(self.frame_7)
+        self.L_SpeedLeft.setMinimumSize(QtCore.QSize(50, 0))
+        self.L_SpeedLeft.setText(_fromUtf8(""))
+        self.L_SpeedLeft.setObjectName(_fromUtf8("L_SpeedLeft"))
+        self.formLayout_3.setWidget(0, QtGui.QFormLayout.FieldRole, self.L_SpeedLeft)
+        self.L_SpeedRight = QtGui.QLabel(self.frame_7)
+        self.L_SpeedRight.setText(_fromUtf8(""))
+        self.L_SpeedRight.setObjectName(_fromUtf8("L_SpeedRight"))
+        self.formLayout_3.setWidget(1, QtGui.QFormLayout.FieldRole, self.L_SpeedRight)
+        self.L_Gx = QtGui.QLabel(self.frame_7)
+        self.L_Gx.setText(_fromUtf8(""))
+        self.L_Gx.setObjectName(_fromUtf8("L_Gx"))
+        self.formLayout_3.setWidget(2, QtGui.QFormLayout.FieldRole, self.L_Gx)
+        self.L_Gy = QtGui.QLabel(self.frame_7)
+        self.L_Gy.setText(_fromUtf8(""))
+        self.L_Gy.setObjectName(_fromUtf8("L_Gy"))
+        self.formLayout_3.setWidget(3, QtGui.QFormLayout.FieldRole, self.L_Gy)
+        self.L_Gz = QtGui.QLabel(self.frame_7)
+        self.L_Gz.setText(_fromUtf8(""))
+        self.L_Gz.setObjectName(_fromUtf8("L_Gz"))
+        self.formLayout_3.setWidget(4, QtGui.QFormLayout.FieldRole, self.L_Gz)
         self.horizontalLayout_2.addWidget(self.frame_7)
         self.verticalLayout_2.addWidget(self.frame_3)
         self.frame_4 = QtGui.QFrame(self.centralWidget)
@@ -285,6 +323,11 @@ class Ui_MainWindow(object):
         self.label_5.setText(QtGui.QApplication.translate("MainWindow", "Roll:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_6.setText(QtGui.QApplication.translate("MainWindow", "Orientation:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_7.setText(QtGui.QApplication.translate("MainWindow", "Direction:", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_8.setText(QtGui.QApplication.translate("MainWindow", "Speed Left:", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_9.setText(QtGui.QApplication.translate("MainWindow", "Speed Right:", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_10.setText(QtGui.QApplication.translate("MainWindow", "Gx:", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_11.setText(QtGui.QApplication.translate("MainWindow", "Gy", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_12.setText(QtGui.QApplication.translate("MainWindow", "Gz", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Forward.setText(QtGui.QApplication.translate("MainWindow", "Forward", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Forward.setShortcut(QtGui.QApplication.translate("MainWindow", "Up", None, QtGui.QApplication.UnicodeUTF8))
         self.TB_Left.setText(QtGui.QApplication.translate("MainWindow", "Turn\n"
