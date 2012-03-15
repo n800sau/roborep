@@ -45,6 +45,8 @@ public class UDPThread extends Thread {
 		            	Command cmd = new Command(jsonObject.getString("command"), jsonObject);
 		            	if (cmd.name.equalsIgnoreCase("state")) {
 		            		reply = rstate.state();
+		            	} else if (cmd.name.equalsIgnoreCase("history")) {
+							reply = rstate.x_history(cmd.params["start_index"])
 						} else {
 		            		queue.addCommand(cmd);
 		            		DbMsg.i("RECEIVED:: " + jsonObject.toString(), "UDP");

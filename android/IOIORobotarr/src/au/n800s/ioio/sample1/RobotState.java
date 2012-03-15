@@ -9,9 +9,11 @@ public class RobotState extends JSONObject {
 	
 	private JSONArray history;
 	private JSONObject st;
+	int history_offset;
 
 	RobotState()
 	{
+		history_offset = 0;
 		history = new JSONArray();
 		st = new JSONObject();
 		st.put("connection", false);
@@ -36,8 +38,9 @@ public class RobotState extends JSONObject {
 	synchronized protected void x_pushState()
 	{
 		st.put("timestamp", Calendar.getInstance().time)
-		if(history.length() > 10000) {
+		while(history.length() > 10000) {
 			history.remove(0);
+			history_offset++;
 		}
 		history.put(st);
 		st = new JSONObject(st, st.keys());
@@ -52,7 +55,11 @@ public class RobotState extends JSONObject {
 	synchronized public JSONArray x_history(int startIndex)
 	{
 		JSONArray rs = new JSONArray();
-		for(int i=startIndex; i<history.length(); i++) {
+		int index = (startIndex - history_offset;
+		if(index < 0) {
+			index = 0;
+		}
+		for(int i=index; i<history.length(); i++) {
 			JSONObject hst = history.getJSONObject(i);
 			rs.put(new JSONObject(hst, hst.keys()));
 		}

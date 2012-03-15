@@ -21,6 +21,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		"""
 		QMainWindow.__init__(self, parent)
 		self.setupUi(self)
+		self.history = []
 		self.W_Compass.direction_click.connect(self.onDirectionClick)
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.onTimer)
@@ -44,6 +45,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.L_Gx.setText(str(reply['Gx']))
 			self.L_Gy.setText(str(reply['Gy']))
 			self.L_Gz.setText(str(reply['Gz']))
+			start_index = 0
+			if self.history:
+				start_index = self.history[-1].index
+			reply = self.chn.command('history', start_index=start_index+1)
+			print reply
 		except:
 			self.L_Error.setText('error')
 	
