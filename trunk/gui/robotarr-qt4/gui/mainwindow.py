@@ -38,6 +38,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.L_Orientation.setText('%d' % reply['heading'])
 			self.L_Direction.setText('%d' % reply['current_heading'])
 			self.W_Compass.setOrientation(int(reply['heading']))
+			self.W_Compass.setDirection(int(reply['current_heading']))
+			self.L_SpeedLeft.setText(str(reply['leftMotorSpeed']))
+			self.L_SpeedRight.setText(str(reply['rightMotorSpeed']))
+			self.L_Gx.setText(str(reply['Gx']))
+			self.L_Gy.setText(str(reply['Gy']))
+			self.L_Gz.setText(str(reply['Gz']))
 		except:
 			self.L_Error.setText('error')
 	
