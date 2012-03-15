@@ -118,7 +118,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		    	DbMsg.e("mUpdateStateTask", e);		    	 
 		     }
 		   }
-		};
+	};
 	
 		// Create an anonymous implementation of OnClickListener
 		private OnClickListener toggleLed = new OnClickListener()

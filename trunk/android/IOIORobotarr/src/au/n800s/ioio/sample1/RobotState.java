@@ -33,6 +33,9 @@ public class RobotState extends JSONObject {
 	synchronized protected void x_pushState()
 	{
 		st.put("timestamp", Calendar.getInstance().time)
+		if(history.length() > 10000) {
+			history.remove(0);
+		}
 		history.put(st);
 		st = new JSONObject(st, st.keys());
 		st.put("index", history.length());

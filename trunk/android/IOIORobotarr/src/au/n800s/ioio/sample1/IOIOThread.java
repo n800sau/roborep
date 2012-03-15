@@ -20,11 +20,13 @@ public class IOIOThread extends Thread {
     private OutputStream out;
 	private CommandQueue queue;
 	private RobotState rstate;
+	private Handler mHandler;
 
     IOIOThread(CommandQueue queue, RobotState rstate) {
     	super();
     	this.queue = queue;
     	this.rstate = rstate;
+		mHandler = new Handler();
     }
     
     protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
@@ -120,6 +122,7 @@ public class IOIOThread extends Thread {
 	public void run() {
 		super.run();
 		DbMsg.i( "run ioio");
+		mHandler.postDelayed(mPushState, 100);
 		//create it here to be able to disconnect later
 		ioio_ = IOIOFactory.create();
 		while (true) {
@@ -223,5 +226,17 @@ public class IOIOThread extends Thread {
 		}
 	}
 
+	private Runnable mPushState = new Runnable() 
+	{
+		   public void run()
+		   {
+				try {
+					rstate.x_pushState();
+				} finally {
+					mHandler.postDelayed(this, 100);
+				}
+		   }
+	};
+	
 
 }
