@@ -48,6 +48,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.L_Lx.setText(str(reply['Lx']))
 			self.L_Ly.setText(str(reply['Ly']))
 			self.L_Lz.setText(str(reply['Lz']))
+			for i in range(5):
+				getattr(self, 'L_RawSensor%s' % i).setText(str(reply['raw_sensor%s' % i]))
 			start_index = self.history[-1].index if self.history else 0
 			reply = self.chn.command('history', start_index=start_index+1)
 			print reply
