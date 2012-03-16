@@ -45,9 +45,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.L_Gx.setText(str(reply['Gx']))
 			self.L_Gy.setText(str(reply['Gy']))
 			self.L_Gz.setText(str(reply['Gz']))
-			start_index = 0
-			if self.history:
-				start_index = self.history[-1].index
+			self.L_Lx.setText(str(reply['Lx']))
+			self.L_Ly.setText(str(reply['Ly']))
+			self.L_Lz.setText(str(reply['Lz']))
+			start_index = self.history[-1].index if self.history else 0
 			reply = self.chn.command('history', start_index=start_index+1)
 			print reply
 		except:
