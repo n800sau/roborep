@@ -186,6 +186,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	          rstate.x_put("Gz", _Gz);
         }
 
+	    private void updateLinearAcceleration(float _Lx, float _Ly, float _Lz) throws JSONException 
+	    {
+	          rstate.x_put("Lx", _Lx);
+	          rstate.x_put("Ly", _Ly);
+	          rstate.x_put("Lz", _Lz);
+        }
+
 
 	/**
 	 * Called when the application is resumed (also when first started). Here is
@@ -200,6 +207,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		udp_thread_.start();
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_FASTEST);
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ACCELEROMETER, SensorManager.SENSOR_DELAY_FASTEST);
+		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_LINEAR_ACCELERATION, SensorManager.SENSOR_DELAY_FASTEST);
 	}
 
 	/**
@@ -232,7 +240,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 					case SensorManager.SENSOR_ACCELEROMETER:
 		        		updateAcceleration(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
 						break;
-						
+					case SensorManager.LINEAR_ACCELERATION:
+		        		updateLinearAcceleration(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
+						break;
 				}
         	} catch(JSONException e) {
         		DbMsg.e("Sensor error:", e);
