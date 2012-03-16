@@ -53,7 +53,12 @@ public class IOIOThread extends Thread {
     	return new String(requestData(new byte[]{(byte)0x81}, 6));
     }
     
-    protected short get_battery() throws IOException, InterruptedException
+    protected short[] get_raw_sensors() throws IOException, InterruptedException
+    {
+    	return (short[])requestData(new byte[]{(byte)0x86}, 10);
+    }
+
+    protected short get_raw_battery() throws IOException, InterruptedException
     {
     	byte data[] = requestData(new byte[]{(byte)0xB1}, 2);
     	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
@@ -150,6 +155,10 @@ public class IOIOThread extends Thread {
 				while (true) {
 					try {
 						rstate.x_put("battery", get_battery());
+						short[] data = get_raw_sensors();
+						for(int i=0; i<5; i++) {
+							rstate.x_put("raw_sensor" + i, data[i]);
+						}
 						if ( rstate.x_getDouble("current_heading") >= 0 ) {
 							DbMsg.i( "head to " + rstate.x_getDouble("current_heading"));
 							int offset = (int)((rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360);

@@ -33,6 +33,11 @@ public class RobotState extends JSONObject {
 		st.put("Ly", 0);
 		st.put("Lz", 0);
 		st.put("current_heading", -1);
+		st.put("raw_sensor0", 0);
+		st.put("raw_sensor1", 0);
+		st.put("raw_sensor2", 0);
+		st.put("raw_sensor3", 0);
+		st.put("raw_sensor4", 0);
 		st.put("error", "");
 		st.put("index", history.size());
 		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
