@@ -69,9 +69,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		}
 		t_imhungry = new Date();
 		mTts = new TextToSpeech(this, this);
-		((Button)findViewById(R.id.button)).setOnClickListener(toggleLed);
 		mHandler = new Handler();
-		mHandler.postDelayed(mUpdateStateTask, 100);
+		((Button)findViewById(R.id.button)).setOnClickListener(toggleLed);
 		((Button)findViewById(R.id.B_Say)).setOnClickListener(sayText);
 		sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 	}
@@ -102,10 +101,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 					String msg;
 					if(rstate.x_getBoolean("connection")) {
 						msg = getString(R.string.ioio_connected);	
-						setLabel(rstate.getString("version"), R.id.TV_Version);
-						setLabel(String.valueOf(rstate.getInt("battery")), R.id.TV_Battery);
+						setLabel(rstate.x_getString("version"), R.id.TV_Version);
+						setLabel(String.valueOf(rstate.x_getInt("battery")), R.id.TV_Battery);
 						DbMsg.i(t_imhungry.toString());
-						if (rstate.getInt("battery") < 4000 && (t_imhungry.getTime() + 30000) < new Date().getTime()) {
+						if (rstate.x_getInt("battery") < 4000 && (t_imhungry.getTime() + 30000) < new Date().getTime()) {
 							t_imhungry = new Date();
 					    	mTts.speak("I'm hungry", TextToSpeech.QUEUE_ADD, null);							
 						}
@@ -113,9 +112,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						msg = getString(R.string.wait_ioio);
 					}
 					((TextView)findViewById(R.id.title)).setText(msg);
-				mHandler.postDelayed(this, 100);
 		     } catch(JSONException e) {
 		    	DbMsg.e("mUpdateStateTask", e);		    	 
+		     } finally {
+				mHandler.postDelayed(this, 1000);
 		     }
 		   }
 	};
@@ -186,7 +186,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	          rstate.x_put("Gz", _Gz);
         }
 
-	    private void updateLinearAcceleration(float _Lx, float _Ly, float _Lz) throws JSONException 
+	    private void updateMagneticField(float _Lx, float _Ly, float _Lz) throws JSONException 
 	    {
 	          rstate.x_put("Lx", _Lx);
 	          rstate.x_put("Ly", _Ly);
@@ -205,9 +205,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		ioio_thread_.start();
 		udp_thread_ = new UDPThread(queue, rstate);
 		udp_thread_.start();
+		mHandler.postDelayed(mUpdateStateTask, 1000);
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_FASTEST);
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ACCELEROMETER, SensorManager.SENSOR_DELAY_FASTEST);
-		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_LINEAR_ACCELERATION, SensorManager.SENSOR_DELAY_FASTEST);
+		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_MAGNETIC_FIELD, SensorManager.SENSOR_DELAY_FASTEST);
 	}
 
 	/**
@@ -218,6 +219,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	protected void onPause() {
 		super.onPause();
+		mHandler.removeCallbacks(mUpdateStateTask);
 		ioio_thread_.abort();
 		udp_thread_.abort();
 		try {
@@ -240,8 +242,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 					case SensorManager.SENSOR_ACCELEROMETER:
 		        		updateAcceleration(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
 						break;
-					case SensorManager.LINEAR_ACCELERATION:
-		        		updateLinearAcceleration(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
+					case SensorManager.SENSOR_MAGNETIC_FIELD:
+		        		updateMagneticField(values[SensorManager.DATA_Z], values[SensorManager.DATA_Y], values[SensorManager.DATA_X]);
 						break;
 				}
         	} catch(JSONException e) {

@@ -41,6 +41,7 @@ public class RobotState extends JSONObject {
 		st.put("error", "");
 		st.put("index", history.size());
 		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
+		DbMsg.i(x_getString("version"));
 	}
 
 
@@ -68,8 +69,8 @@ public class RobotState extends JSONObject {
 		if(index < 0) {
 			index = 0;
 		}
-		for(int i=index; i<history.size(); i++) {
-			JSONObject hst = history.get(i);
+		for(int i=0; i<Math.min(10, history.size()-index); i++) {
+			JSONObject hst = history.get(i + index);
 			rs.put(new JSONObject(hst.toString()));
 		}
 		return rs;
@@ -95,6 +96,11 @@ public class RobotState extends JSONObject {
 		st.put(key, value);
 	}
 
+	synchronized public void x_put(String key, JSONArray value) throws JSONException 
+	{
+		st.put(key, value);
+	}
+
 	synchronized public String x_getString(String key) throws JSONException 
 	{
 		return st.getString(key);
@@ -113,6 +119,11 @@ public class RobotState extends JSONObject {
 	synchronized public double x_getDouble(String key) throws JSONException
 	{
 		return st.getDouble(key);
+	}
+	
+	synchronized public JSONArray x_JSONArray(String key) throws JSONException
+	{
+		return st.getJSONArray(key);
 	}
 	
 };

@@ -25,7 +25,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.W_Compass.direction_click.connect(self.onDirectionClick)
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.onTimer)
-		self.timer.start(10)
+		self.timer.start(1000)
 		self.chn = UDPRequest('192.168.1.19', 9876)
 	
 	@pyqtSignature("")
@@ -52,7 +52,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 				getattr(self, 'L_RawSensor%s' % i).setText(str(reply['raw_sensor%s' % i]))
 			start_index = self.history[-1].index if self.history else 0
 			reply = self.chn.command('history', start_index=start_index+1)
-			print reply
+#			print reply
 		except:
 			self.L_Error.setText('error')
 	

@@ -23,6 +23,11 @@ public class UDPThread extends Thread {
 	public void run() {
 		super.run();
 		while (true) {
+			synchronized (this) {
+				if (abort_) {
+					break;
+				}
+			}
 			try {
             	DbMsg.i("UDP socket opening", "UDP");
 				DatagramSocket serverSocket = new DatagramSocket(9876);
@@ -40,13 +45,13 @@ public class UDPThread extends Thread {
 		            	serverSocket.receive(receivePacket);
 		            	String sentence = new String( receivePacket.getData()).substring(0, receivePacket.getLength());
 						JSONObject jsonObject = new JSONObject(sentence);
-		            	DbMsg.i("Write command", "UDP");
 						JSONObject reply = new JSONObject();
 		            	Command cmd = new Command(jsonObject.getString("command"), jsonObject);
+		            	DbMsg.i("Got command " + cmd.name, "UDP");
 		            	if (cmd.name.equalsIgnoreCase("state")) {
 		            		reply = rstate.x_current_state();
 		            	} else if (cmd.name.equalsIgnoreCase("history")) {
-							reply.putJSONArray("history", rstate.x_history(cmd.params.getInt("start_index")));
+							reply.put("history", rstate.x_history(cmd.params.getInt("start_index")));
 						} else {
 		            		queue.addCommand(cmd);
 		            		DbMsg.i("RECEIVED:: " + jsonObject.toString(), "UDP");
@@ -58,8 +63,10 @@ public class UDPThread extends Thread {
 		            	sendData = reply.toString().getBytes();
 		            	DatagramPacket sendPacket =	new DatagramPacket(sendData, sendData.length, IPAddress, port);
 		                serverSocket.send(sendPacket);
+		                sleep(5);
 		            }
-				
+				} catch(Exception e) {
+					DbMsg.e("UDP socket error", e);
 				} finally {
 	            	DbMsg.i("UDP socket closing", "UDP");
 					serverSocket.close();

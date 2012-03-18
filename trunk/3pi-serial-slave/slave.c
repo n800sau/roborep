@@ -272,6 +272,22 @@ void m2_backward()
 	set_m2_speed(byte == 127 ? -255 : -byte*2);
 }
 
+// Drives m1 and m2
+void m1m2_move()
+{
+	char m1s = read_next_byte();
+	
+	if(check_data_byte(m1s))
+		return;
+
+	char m2s = read_next_byte();
+
+	if(check_data_byte(m2s))
+		return;
+
+	set_motors(m1s*2, m2s*2);
+}
+
 // A buffer to store the music that will play in the background.
 char music_buffer[100];
 
@@ -417,15 +433,17 @@ int main()
 	{
 		// wait for a command
 		char command = read_next_byte();
+		if(is_command(command)) {
 
-		// The list of commands is below: add your own simply by
-		// choosing a command byte and introducing another case
-		// statement.
-		switch(command)
-		{
-		case (char)0x00:
-			// slient error - probable master resetting
-			break;
+			char len = read_next_byte();
+			// The list of commands is below: add your own simply by
+			// choosing a command byte and introducing another case
+			// statement.
+			switch(command)
+			{
+			case (char)0x00:
+				// slient error - probable master resetting
+				break;
 
 		case (char)0x81:
 			send_signature();
@@ -485,6 +503,9 @@ int main()
 			break;
 		case (char)0xC6:
 			m2_backward();
+			break;
+		case (char)0xC7:
+			m1m2_move();
 			break;
 
 		default:
