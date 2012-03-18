@@ -50,15 +50,20 @@ public class IOIOThread extends Thread {
     
     protected String get_version() throws IOException, InterruptedException
     {
-    	return new String(requestData(new byte[]{(byte)0x81}, 6));
+    	return new String(requestData(new byte[]{(byte)0x81}, 6), 0, 6);
     }
     
     protected short[] get_raw_sensors() throws IOException, InterruptedException
     {
-    	return (short[])requestData(new byte[]{(byte)0x86}, 10);
+    	short[] rs = new short[5];
+    	byte[] data = requestData(new byte[]{(byte)0x86}, 10);
+    	for(int i=0; i<5; i++) {
+    		rs[i] = (short)( ((((short)data[i*2+1])&0xFF)<<8) | (data[i*2]&0xFF) );
+    	}
+    	return rs;
     }
 
-    protected short get_raw_battery() throws IOException, InterruptedException
+    protected short get_battery() throws IOException, InterruptedException
     {
     	byte data[] = requestData(new byte[]{(byte)0xB1}, 2);
     	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
@@ -66,31 +71,35 @@ public class IOIOThread extends Thread {
 
     protected void left_motor() throws IOException, InterruptedException, JSONException
     {
-    	if (rstate.x_getInt("rightMotorSpeed") > 0) {
-    		requestData(new byte[]{(byte)0xC1, (byte)rstate.x_getInt("rightMotorSpeed")}, 0);
+    	int speed = rstate.x_getInt("leftMotorSpeed");
+    	DbMsg.i("left motor:" + speed);
+    	if (speed > 0) {
+    		requestData(new byte[]{(byte)0xC1, (byte)speed}, 0);
     	} else {
-    		requestData(new byte[]{(byte)0xC2, (byte)-rstate.x_getInt("rightMotorSpeed")}, 0);
+    		requestData(new byte[]{(byte)0xC2, (byte)-speed}, 0);
     	}
     }
     
     protected void right_motor() throws IOException, InterruptedException, JSONException
     {
-    	if (rstate.x_getInt("leftMotorSpeed") > 0) {
-    		requestData(new byte[]{(byte)0xC5, (byte)rstate.x_getInt("leftMotorSpeed")}, 0);
+    	int speed = rstate.x_getInt("rightMotorSpeed");
+    	DbMsg.i("right motor:" + speed);
+    	if (speed > 0) {
+    		requestData(new byte[]{(byte)0xC5, (byte)speed}, 0);
     	} else {
-    		requestData(new byte[]{(byte)0xC6, (byte)-rstate.x_getInt("leftMotorSpeed")}, 0);
+    		requestData(new byte[]{(byte)0xC6, (byte)-speed}, 0);
     	}
     }
     
     protected void accelerate() throws IOException, InterruptedException, JSONException
     {
 		int speed = (rstate.x_getInt("leftMotorSpeed") + rstate.x_getInt("rightMotorSpeed")) / 2;
-		setSpeed(speed+1, speed+1);
+		setSpeed(speed+10, speed+10);
     }
     
     protected void decelerate() throws IOException, InterruptedException, JSONException
     {
-		changeSpeed(-1, -1);
+		changeSpeed(-10, -10);
     }
 
 	protected void changeSpeed(int left, int right) throws IOException, InterruptedException, JSONException 
@@ -111,12 +120,12 @@ public class IOIOThread extends Thread {
 
     protected void turn_left() throws IOException, InterruptedException, JSONException
     {
-		changeSpeed(-1, 1);
+		changeSpeed(-10, 10);
     }
     
     protected void turn_right() throws IOException, InterruptedException, JSONException
     {
-		changeSpeed(1, -1);
+		changeSpeed(10, -10);
     }
     
     protected void stop_motor() throws IOException, InterruptedException, JSONException
@@ -129,7 +138,7 @@ public class IOIOThread extends Thread {
 	public void run() {
 		super.run();
 		DbMsg.i( "run ioio");
-		mHandler.postDelayed(mPushState, 100);
+		mHandler.postDelayed(mPushState, 1000);
 		//create it here to be able to disconnect later
 		ioio_ = IOIOFactory.create();
 		while (true) {
@@ -164,10 +173,10 @@ public class IOIOThread extends Thread {
 							int offset = (int)((rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360);
 							if(offset < 0) {
 								//turn left
-								changeSpeed(-offset * 2, offset * 2);
+								changeSpeed(-5, 5);
 							} else if (offset > 0) {
 								//turn right
-								changeSpeed(offset * 2, -offset * 2);
+								changeSpeed(5, -5);
 							}
 						}
 						Command command = queue.nextCommand();
@@ -246,7 +255,7 @@ public class IOIOThread extends Thread {
 				} catch(JSONException e) {
 					DbMsg.e("mPushState",e);
 				} finally {
-					mHandler.postDelayed(this, 100);
+					mHandler.postDelayed(this, 1000);
 				}
 		   }
 	};
