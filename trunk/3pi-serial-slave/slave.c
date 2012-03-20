@@ -1,5 +1,7 @@
 #include <pololu/3pi.h>
 
+#include "utils.h"
+
 /*
  * 3pi-serial-slave - An example serial slave program for the Pololu
  * 3pi Robot.  See the following pages for more information:
@@ -85,6 +87,47 @@ char buffer[100];
 // A pointer to where we are reading from.
 unsigned char read_index = 0;
 
+// Returns true if and only if the byte is a command byte (>= 0x80).
+char is_command(char byte)
+{
+	if (byte < 0)
+		return 1;
+	return 0;
+}
+
+// Returns true if and only if the byte is a data byte (< 0x80).
+char is_data(char byte)
+{
+	if (byte < 0)
+		return 0;
+	return 1;
+}
+
+// Backs up by one byte in the ring buffer.
+void previous_byte()
+{
+	read_index --;
+	if(read_index == 255)
+		read_index = 99;
+}
+
+// If it's not a data byte, beeps, backs up one, and returns true.
+char check_data_byte(char byte)
+{
+	if(is_data(byte))
+		return 0;
+
+	play("o3c");
+
+	clear();
+	print("Bad data");
+	lcd_goto_xy(0,1);
+	print_hex_byte(byte);
+
+	previous_byte();
+	return 1;
+}
+
 // Waits for the next byte and returns it.  Runs play_check to keep
 // the music playing and serial_check to keep receiving bytes.
 // Calls pid_check() to keep following the line.
@@ -106,47 +149,6 @@ char read_next_byte()
 	if(read_index >= 100)
 		read_index = 0;
 	return ret;
-}
-
-// Backs up by one byte in the ring buffer.
-void previous_byte()
-{
-	read_index --;
-	if(read_index == 255)
-		read_index = 99;
-}
-
-// Returns true if and only if the byte is a command byte (>= 0x80).
-char is_command(char byte)
-{
-	if (byte < 0)
-		return 1;
-	return 0;
-}
-
-// Returns true if and only if the byte is a data byte (< 0x80).
-char is_data(char byte)
-{
-	if (byte < 0)
-		return 0;
-	return 1;
-}
-
-// If it's not a data byte, beeps, backs up one, and returns true.
-char check_data_byte(char byte)
-{
-	if(is_data(byte))
-		return 0;
-
-	play("o3c");
-
-	clear();
-	print("Bad data");
-	lcd_goto_xy(0,1);
-	print_hex_byte(byte);
-
-	previous_byte();
-	return 1;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -275,17 +277,31 @@ void m2_backward()
 // Drives m1 and m2
 void m1m2_move()
 {
-	char m1s = read_next_byte();
-	
-	if(check_data_byte(m1s))
+	//direction
+	char m10 = read_next_byte();
+	if(check_data_byte(m10))
 		return;
 
-	char m2s = read_next_byte();
-
-	if(check_data_byte(m2s))
+	//speed
+	char m11 = read_next_byte();
+	if(check_data_byte(m11))
 		return;
 
-	set_motors(m1s*2, m2s*2);
+	short m1 = bytes2short(m10, m11);
+
+	//direction
+	char m20 = read_next_byte();
+	if(check_data_byte(m20))
+		return;
+
+	//speed
+	char m21 = read_next_byte();
+	if(check_data_byte(m21))
+		return;
+
+	short m2 = bytes2short(m20, m21);
+
+	set_motors(m1, m2);
 }
 
 // A buffer to store the music that will play in the background.
@@ -433,89 +449,85 @@ int main()
 	{
 		// wait for a command
 		char command = read_next_byte();
-		if(is_command(command)) {
-
-			char len = read_next_byte();
+		if(is_command(command)) 
+		{
 			// The list of commands is below: add your own simply by
 			// choosing a command byte and introducing another case
 			// statement.
 			switch(command)
 			{
-			case (char)0x00:
-				// slient error - probable master resetting
-				break;
-
-		case (char)0x81:
-			send_signature();
-			break;
-		case (char)0x86:
-			send_raw_sensor_values();
-			break;
-		case (char)0x87:
-			send_calibrated_sensor_values(1);
-			break;
-		case (char)0xB0:
-			send_trimpot();
-			break;
-		case (char)0xB1:
-			send_battery_millivolts();
-			break;
-		case (char)0xB3:
-			do_play();
-			break;
-		case (char)0xB4:
-			calibrate_line_sensors(IR_EMITTERS_ON);
-			send_calibrated_sensor_values(1);
-			break;
-		case (char)0xB5:
-			line_sensors_reset_calibration();
-			break;
-		case (char)0xB6:
-			send_line_position();
-			break;
-		case (char)0xB7:
-			do_clear();
-			break;
-		case (char)0xB8:
-			do_print();
-			break;
-		case (char)0xB9:
-			do_lcd_goto_xy();
-			break;
-		case (char)0xBA:
-			auto_calibrate();
-			break;
-		case (char)0xBB:
-			set_pid();
-			break;
-		case (char)0xBC:
-			stop_pid();
-			break;
-
-		case (char)0xC1:
-			m1_forward();
-			break;
-		case (char)0xC2:
-			m1_backward();
-			break;
-		case (char)0xC5:
-			m2_forward();
-			break;
-		case (char)0xC6:
-			m2_backward();
-			break;
-		case (char)0xC7:
-			m1m2_move();
-			break;
-
-		default:
-			clear();
-			print("Bad cmd");
-			lcd_goto_xy(0,1);
-			print_hex_byte(command);
-
-			play("o7l16crc");
-			continue; // bad command
+				case (char)0x00:
+					// slient error - probable master resetting
+					break;
+				case (char)0x81:
+				  send_signature();
+				  break;
+				case (char)0x86:
+					send_raw_sensor_values();
+					break;
+				case (char)0x87:
+					send_calibrated_sensor_values(1);
+					break;
+				case (char)0xB0:
+					send_trimpot();
+					break;
+				case (char)0xB1:
+					send_battery_millivolts();
+					break;
+				case (char)0xB3:
+					do_play();
+					break;
+				case (char)0xB4:
+					calibrate_line_sensors(IR_EMITTERS_ON);
+					send_calibrated_sensor_values(1);
+					break;
+				case (char)0xB5:
+					line_sensors_reset_calibration();
+					break;
+				case (char)0xB6:
+					send_line_position();
+					break;
+				case (char)0xB7:
+					do_clear();
+					break;
+				case (char)0xB8:
+					do_print();
+					break;
+				case (char)0xB9:
+					do_lcd_goto_xy();
+					break;
+				case (char)0xBA:
+					auto_calibrate();
+					break;
+				case (char)0xBB:
+					set_pid();
+					break;
+				case (char)0xBC:
+					stop_pid();
+					break;
+				case (char)0xC1:
+					m1_forward();
+					break;
+				case (char)0xC2:
+					m1_backward();
+					break;
+				case (char)0xC5:
+					m2_forward();
+					break;
+				case (char)0xC6:
+					m2_backward();
+					break;
+				case (char)0xC7:
+					m1m2_move();
+					break;
+				default:
+					clear();
+					print("Bad cmd");
+					lcd_goto_xy(0,1);
+					print_hex_byte(command);
+					play("o7l16crc");
+					continue; // bad command
+			}
 		}
 	}
 }

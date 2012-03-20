@@ -1,5 +1,5 @@
 //#include <stdio.h>
-#include <math.h>
+//#include <math.h>
 
 #define MAXVAL 0x1FFF
 #define MINVAL -0x1FFF
@@ -15,7 +15,7 @@ short bytes2short(char lb, char hb)
 
 void short2bytes(short val, char *bytes)
 {
-	short ainv = abs(val);
+	short ainv = (val<0) ? -val : val;
 	bytes[0]= ainv & 0x7F;
 	bytes[1] = (ainv >> 7) & 0x3F;
 	if(val < 0) {
