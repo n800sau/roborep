@@ -69,26 +69,15 @@ public class IOIOThread extends Thread {
     	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
     }
 
-    protected void left_motor() throws IOException, InterruptedException, JSONException
+    protected void update_motors() throws IOException, InterruptedException, JSONException
     {
-    	int speed = rstate.x_getInt("leftMotorSpeed");
-    	DbMsg.i("left motor:" + speed);
-    	if (speed > 0) {
-    		requestData(new byte[]{(byte)0xC1, (byte)speed}, 0);
-    	} else {
-    		requestData(new byte[]{(byte)0xC2, (byte)-speed}, 0);
-    	}
-    }
-    
-    protected void right_motor() throws IOException, InterruptedException, JSONException
-    {
-    	int speed = rstate.x_getInt("rightMotorSpeed");
-    	DbMsg.i("right motor:" + speed);
-    	if (speed > 0) {
-    		requestData(new byte[]{(byte)0xC5, (byte)speed}, 0);
-    	} else {
-    		requestData(new byte[]{(byte)0xC6, (byte)-speed}, 0);
-    	}
+    	short leftspeed = rstate.x_getInt("leftMotorSpeed");
+    	DbMsg.i("left motor:" + leftspeed);
+		byte[] left = Utils.short2bytes(leftspeed);
+    	int rightspeed = rstate.x_getInt("rightMotorSpeed");
+    	DbMsg.i("right motor:" + rightspeed);
+		byte[] right = Utils.short2bytes(rightspeed);
+   		requestData(new byte[]{(byte)0xC7, left[0], left[1], right[0], right[1]}, 0);
     }
     
     protected void accelerate() throws IOException, InterruptedException, JSONException
@@ -104,18 +93,26 @@ public class IOIOThread extends Thread {
 
 	protected void changeSpeed(int left, int right) throws IOException, InterruptedException, JSONException 
 	{
-    	rstate.x_put("leftMotorSpeed", rstate.x_getInt("leftMotorSpeed") + left);
-		rstate.x_put("rightMotorSpeed", rstate.x_getInt("rightMotorSpeed") + right);
-    	left_motor();
-    	right_motor();
+		setSpeed(rstate.x_getInt("leftMotorSpeed") + left, rstate.x_getInt("rightMotorSpeed") + right);
 	}
 
 	protected void setSpeed(int left, int right) throws IOException, InterruptedException, JSONException 
 	{
+		if(left > Utils.MAXVAL) {
+			left = Utils.MAXVAL;
+		}
+		if(left < Utils.MINVAL) {
+			left = Utils.MINVAL;
+		}
+		if(right > Utils.MAXVAL) {
+			right = Utils.MAXVAL;
+		}
+		if(right < Utils.MINVAL) {
+			right = Utils.MINVAL;
+		}
     	rstate.x_put("leftMotorSpeed", left);
 		rstate.x_put("rightMotorSpeed", right);
-    	left_motor();
-    	right_motor();
+		update_motors();
 	}
 
     protected void turn_left() throws IOException, InterruptedException, JSONException
