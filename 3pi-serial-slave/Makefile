@@ -14,7 +14,7 @@ PORT=usb
 AVRDUDE=avrdude
 
 TARGET=slave
-OBJECT_FILES=slave.o
+OBJECT_FILES=slave.o utils.o
 
 
 
@@ -27,6 +27,8 @@ clean:
 	$(OBJ2HEX) -R .eeprom -O ihex $< $@
 
 slave.o: slave.c
+
+utils.o: utils.c
 
 %.obj: $(OBJECT_FILES)
 	$(CC) $(CFLAGS) $(OBJECT_FILES) $(LDFLAGS) -o $@
