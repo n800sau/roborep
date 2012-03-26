@@ -23,11 +23,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 		self.setupUi(self)
 		self.history = []
 		self.W_Compass.direction_click.connect(self.onDirectionClick)
+		for i in range(1, 6):
+			w = getattr(self, 'W_Pwm%d' % i)
+			w.value_change.connect(lambda value, wid=i: self.pwmSet(wid, value))
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.onTimer)
 		self.timer.start(1000)
 		self.chn = UDPRequest('192.168.1.19', 9876)
 	
+	@pyqtSignature("int")
+	def pwmSet(self, pwmid, pulse):
+		self.chn.command('set_pwm_pulse', pwmid=pwmid, pulse=pulse)
+
 	@pyqtSignature("")
 	def onTimer(self):
 		try:
