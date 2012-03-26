@@ -5,6 +5,7 @@ import ioio.lib.api.IOIO;
 import ioio.lib.api.IOIOFactory;
 import ioio.lib.api.Uart;
 import ioio.lib.api.exception.ConnectionLostException;
+import ioio.lib.api.PwmOutput;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,12 +24,16 @@ public class IOIOThread extends Thread {
 	private CommandQueue queue;
 	private RobotState rstate;
 	private Handler mHandler;
+	private PwmOutput[] pwms  = new PwmOutput[RobotState.PWM_COUNT];
 
     IOIOThread(CommandQueue queue, RobotState rstate) {
     	super();
     	this.queue = queue;
     	this.rstate = rstate;
 		mHandler = new Handler();
+		for(int i=0; i< 5; i++) {
+			pwms[i] = ioio_.openPwmOutput(12 + i, 100);
+		}
     }
     
     protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
@@ -53,11 +58,11 @@ public class IOIOThread extends Thread {
     	return new String(requestData(new byte[]{(byte)0x81}, 6), 0, 6);
     }
     
-    protected short[] get_raw_sensors() throws IOException, InterruptedException
+    protected short[] get_ir_raw() throws IOException, InterruptedException
     {
-    	short[] rs = new short[5];
+    	short[] rs = new short[RobotState.IR_COUNT];
     	byte[] data = requestData(new byte[]{(byte)0x86}, 10);
-    	for(int i=0; i<5; i++) {
+    	for(int i=0; i<RobotState.IR_COUNT; i++) {
     		rs[i] = (short)( ((((short)data[i*2+1])&0xFF)<<8) | (data[i*2]&0xFF) );
     	}
     	return rs;
@@ -161,9 +166,12 @@ public class IOIOThread extends Thread {
 				while (true) {
 					try {
 						rstate.x_put("battery", get_battery());
-						short[] data = get_raw_sensors();
-						for(int i=0; i<5; i++) {
-							rstate.x_put("raw_sensor" + i, data[i]);
+						short[] data = get_ir_raw();
+						for(int i=0; i<RobotState.IR_COUNT; i++) {
+							rstate.x_put("ir_raw" + i, data[i]);
+						}
+						for(int i=0; i<RobotState.PWM_COUNT; i++) {
+							pwm[i].setPulseWidth(rstate.x_getInt("pwm" + i + "_pulse"));
 						}
 						if ( rstate.x_getDouble("current_heading") >= 0 ) {
 							DbMsg.i( "head to " + rstate.x_getDouble("current_heading"));
@@ -181,28 +189,24 @@ public class IOIOThread extends Thread {
 							DbMsg.i("Command:" + command.name + " len:" + command.name.length());
 							if (command.name.equalsIgnoreCase("set_direction")) {
 								rstate.x_put("current_heading", command.params.getDouble("direction"));
-							}
-							if (command.name.equalsIgnoreCase("keep_direction")) {
+							} else if (command.name.equalsIgnoreCase("keep_direction")) {
 								rstate.x_put("current_heading", rstate.getDouble("heading"));
-							}
-							if (command.name.equalsIgnoreCase("stop_direction")) {
+							} else if (command.name.equalsIgnoreCase("stop_direction")) {
 								rstate.x_put("current_heading", -1);
-							}
-							if (command.name.equalsIgnoreCase("accelerate")) {
+							} else if (command.name.equalsIgnoreCase("accelerate")) {
 								accelerate();
-							}
-							if (command.name.equalsIgnoreCase("decelerate")) {
+							} else if (command.name.equalsIgnoreCase("decelerate")) {
 								decelerate();
-							}
-							if (command.name.equalsIgnoreCase("left")) {
+							} else if (command.name.equalsIgnoreCase("left")) {
 								turn_left();
-							}
-							if (command.name.equalsIgnoreCase("right")) {
+							} else if (command.name.equalsIgnoreCase("right")) {
 								turn_right();
-							}
-							if (command.name.equalsIgnoreCase("stop")) {
+							} else if (command.name.equalsIgnoreCase("stop")) {
 								DbMsg.i("stop");
 								stop_motor();
+							} else if (command.name.equalsIgnoreCase("set_pwm_pulse")) {
+								DbMsg.i("set pwm " + command.params.get("pwmid") + " to  pulse " + command.params.get("pulse"));
+								rstate.x_put("pwm" + command.params.get("pwmid") + "_pulse", command.params.get("pulse"));
 							}
 						}
 						//DbMsg.i( "ioio led set");
