@@ -425,19 +425,68 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QFrame" name="frame_9">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>197</width>
-           <height>20</height>
-          </size>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
          </property>
-        </spacer>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="W_PwmControl" name="W_Pwm1" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="W_PwmControl" name="W_Pwm2" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="W_PwmControl" name="W_Pwm3" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="W_PwmControl" name="W_Pwm4" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="W_PwmControl" name="W_Pwm5" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
         <widget class="QFrame" name="frame">
@@ -682,6 +731,12 @@ Right</string>
    <class>W_Compass</class>
    <extends>QWidget</extends>
    <header>w_compass.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>W_PwmControl</class>
+   <extends>QWidget</extends>
+   <header>w_pwmcontrol.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

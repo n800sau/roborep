@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>W_PwmControl</class>
+ <widget class="QWidget" name="W_PwmControl">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>78</width>
+    <height>306</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Pwm Control</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="L_Label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QSlider" name="VS_Pulse">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimum">
+      <number>-500</number>
+     </property>
+     <property name="maximum">
+      <number>500</number>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="tickPosition">
+      <enum>QSlider::TicksAbove</enum>
+     </property>
+     <property name="tickInterval">
+      <number>100</number>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

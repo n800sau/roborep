@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Project SYSTEM "Project-4.6.dtd">
 <!-- eric4 project file for project RobotarrGUI -->
-<!-- Saved: 2012-03-12, 22:50:07 -->
+<!-- Saved: 2012-03-27, 09:38:52 -->
 <!-- Copyright (C) 2012 Grigory Dorokhov,  -->
 <Project version="4.6">
   <Language></Language>
@@ -16,14 +16,19 @@
     <Source>__init__.py</Source>
     <Source>gui/mainwindow.py</Source>
     <Source>lib/udprequest.py</Source>
-    <Source>gui/Ui_mainwindow.py</Source>
     <Source>gui/__init__.py</Source>
     <Source>lib/__init__.py</Source>
     <Source>lib/qt4_utils.py</Source>
     <Source>gui/w_compass.py</Source>
+    <Source>gui/Ui_w_pwmcontrol.py</Source>
+    <Source>gui/w_pwmcontrol.py</Source>
+    <Source>gui/Ui_w_c_map3d.py</Source>
+    <Source>gui/Ui_mainwindow.py</Source>
   </Sources>
   <Forms>
     <Form>gui/mainwindow.ui</Form>
+    <Form>gui/w_pwmcontrol.ui</Form>
+    <Form>gui/w_c_map3d.ui</Form>
   </Forms>
   <Translations>
   </Translations>
