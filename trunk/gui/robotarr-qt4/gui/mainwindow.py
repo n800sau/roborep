@@ -33,7 +33,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 	
 	@pyqtSignature("int")
 	def pwmSet(self, pwmid, pulse):
-		self.chn.command('set_pwm_pulse', pwmid=pwmid, pulse=pulse)
+		self.chn.command('set_pwm_pulse', pwmid=pwmid-1, pulse=pulse)
 
 	@pyqtSignature("")
 	def onTimer(self):
@@ -56,7 +56,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 			self.L_Ly.setText(str(reply['Ly']))
 			self.L_Lz.setText(str(reply['Lz']))
 			for i in range(5):
-				getattr(self, 'L_RawSensor%s' % i).setText(str(reply['raw_sensor%s' % i]))
+				getattr(self, 'L_RawSensor%s' % i).setText(str(reply['ir_raw%s' % i]))
 			start_index = self.history[-1].index if self.history else 0
 			reply = self.chn.command('history', start_index=start_index+1)
 #			print reply

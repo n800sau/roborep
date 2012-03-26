@@ -6,8 +6,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import java.util.ArrayList;
 
-public class RobotState extends JSONObject {
+
+
+//distance in meters
+public class RobotState {
 	
+	static int PWM_COUNT = 5;
+	static int IR_COUNT = 5;
+
 	private ArrayList<JSONObject> history;
 	private JSONObject st;
 	int history_offset;
@@ -33,11 +39,16 @@ public class RobotState extends JSONObject {
 		st.put("Ly", 0);
 		st.put("Lz", 0);
 		st.put("current_heading", -1);
-		st.put("raw_sensor0", 0);
-		st.put("raw_sensor1", 0);
-		st.put("raw_sensor2", 0);
-		st.put("raw_sensor3", 0);
-		st.put("raw_sensor4", 0);
+		st.put("ir_raw0", 0);
+		st.put("ir_raw1", 0);
+		st.put("ir_raw2", 0);
+		st.put("ir_raw3", 0);
+		st.put("ir_raw4", 0);
+		st.put("pwm0_pulse", 1500);
+		st.put("pwm1_pulse", 1500);
+		st.put("pwm2_pulse", 1500);
+		st.put("pwm3_pulse", 1500);
+		st.put("pwm4_pulse", 1500);
 		st.put("error", "");
 		st.put("index", history.size());
 		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
