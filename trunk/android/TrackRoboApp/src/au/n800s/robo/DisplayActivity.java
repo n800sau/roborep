@@ -3,7 +3,7 @@ package au.n800s.ioio.sample1;
 import android.app.Activity;
 import android.content.Intent;
 
-public class DisplayActivity extends Activity {
+public class DisplayActivity extends Activity implements View.OnClickListener {
 
 /** Messenger for communicating with service. */
 Messenger mService = null;
@@ -19,6 +19,7 @@ TextView mCallbackText;
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		mCallbackText = ((TextView)findViewById(R.id.callbackText));
+		findViewById(R.id.action).setOnClickListener(this);
 		doBindService();
 	}
 
@@ -29,6 +30,20 @@ TextView mCallbackText;
     }
 
 
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.action: {
+	            Message msg = Message.obtain(null, MessageId.MSG_ACTION);
+	            msg.replyTo = mMessenger;
+				mService.send(msg);
+                break;
+            }
+
+            case R.id.sound: {
+                break;
+            }
+        }
+    }
 
 
 /**
@@ -38,8 +53,11 @@ class IncomingHandler extends Handler {
     @Override
     public void handleMessage(Message msg) {
         switch (msg.what) {
-            case MessengerService.MSG_SET_VALUE:
+            case MessageId.MSG_SET_VALUE:
                 mCallbackText.setText("Received from service: " + msg.arg1);
+                break;
+            case MessageId.MSG_ACTION:
+                mCallbackText.setText("Action fulfilled");
                 break;
             default:
                 super.handleMessage(msg);
@@ -56,8 +74,7 @@ final Messenger mMessenger = new Messenger(new IncomingHandler());
  * Class for interacting with the main interface of the service.
  */
 private ServiceConnection mConnection = new ServiceConnection() {
-    public void onServiceConnected(ComponentName className,
-            IBinder service) {
+    public void onServiceConnected(ComponentName className, IBinder service) {
         // This is called when the connection with the service has been
         // established, giving us the service object we can use to
         // interact with the service.  We are communicating with our
@@ -69,14 +86,13 @@ private ServiceConnection mConnection = new ServiceConnection() {
         // We want to monitor the service for as long as we are
         // connected to it.
         try {
-            Message msg = Message.obtain(null,
-                    MessengerService.MSG_REGISTER_CLIENT);
+            Message msg = Message.obtain(null, MessageId.MSG_REGISTER_CLIENT);
             msg.replyTo = mMessenger;
             mService.send(msg);
 
             // Give it some value as an example.
             msg = Message.obtain(null,
-                    MessengerService.MSG_SET_VALUE, this.hashCode(), 0);
+                    MessageId.MSG_SET_VALUE, this.hashCode(), 0);
             mService.send(msg);
         } catch (RemoteException e) {
             // In this case the service has crashed before we could even
@@ -106,8 +122,7 @@ void doBindService() {
     // Establish a connection with the service.  We use an explicit
     // class name because there is no reason to be able to let other
     // applications replace our component.
-    bindService(new Intent(Binding.this, 
-            MessengerService.class), mConnection, Context.BIND_AUTO_CREATE);
+    bindService(new Intent("au.n800s.ioio.rserv.IOIORemoteService"), mConnection, Context.BIND_AUTO_CREATE);
     mIsBound = true;
     mCallbackText.setText("Binding.");
 }
@@ -119,7 +134,7 @@ void doUnbindService() {
         if (mService != null) {
             try {
                 Message msg = Message.obtain(null,
-                        MessengerService.MSG_UNREGISTER_CLIENT);
+                        MessageId.MSG_UNREGISTER_CLIENT);
                 msg.replyTo = mMessenger;
                 mService.send(msg);
             } catch (RemoteException e) {
