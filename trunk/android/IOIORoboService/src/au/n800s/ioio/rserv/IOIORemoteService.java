@@ -15,8 +15,13 @@ import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOService;
+import ioio.api.PwmOutput;
 
 public class IOIORemoteService extends IOIOService {
+	
+	/* num of servs */
+	final int SERVO_PINS[] = {3, 4, 5, 6, 7, 10, 11, 12, 13};
+
 	 /** For showing and hiding our notification. */
     NotificationManager mNM;
 
@@ -74,12 +79,17 @@ public class IOIORemoteService extends IOIOService {
 	@Override
 	protected IOIOLooper createIOIOLooper() {
 		return new BaseIOIOLooper() {
-			private DigitalOutput led_;
+
+			final DigitalOutput led_;
+			final PwmOutput[] servo = new PwmOutput[SERVO_PINS.count()];
 
 			@Override
 			protected void setup() throws ConnectionLostException,
 					InterruptedException {
 				led_ = ioio_.openDigitalOutput(IOIO.LED_PIN);
+				for(int i=0; i<SERVO_PINS; i++) {
+					servo[i] = ioio.openPwmOutput(SERVO_PINS[i], 100);
+				}
 			}
 
 			@Override

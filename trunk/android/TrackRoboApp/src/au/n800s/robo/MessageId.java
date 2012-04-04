@@ -24,4 +24,7 @@ public class MessageId {
 	/* Robo Action message */
 	static final int MSG_ACTION = 4;
 
+	/* Set SerVal argv1 - servnum (0-9), argv2 - serval*/
+	static final int MSG_SERVAL = 5;
+
 }
