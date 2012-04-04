@@ -5,6 +5,10 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.IBinder;
+
+import android.os.Messenger;
+import android.os.Message;
+
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.exception.ConnectionLostException;
@@ -19,46 +23,28 @@ public class IOIORemoteService extends IOIOService {
 	 /** Keeps track of all current registered clients. */
 	ArrayList<Messenger> mClients = new ArrayList<Messenger>();
 
-    /**
-     * Command to the service to register a client, receiving callbacks
-     * from the service.  The Message's replyTo field must be a Messenger of
-     * the client where callbacks should be sent.
-     */
-    static final int MSG_REGISTER_CLIENT = 1;
-
-    /**
-     * Command to the service to unregister a client, ot stop receiving callbacks
-     * from the service.  The Message's replyTo field must be a Messenger of
-     * the client as previously given with MSG_REGISTER_CLIENT.
-     */
-    static final int MSG_UNREGISTER_CLIENT = 2;
-
-    /**
-     * Command to service to set a new value.  This can be sent to the
-     * service to supply a new value, and will be sent by the service to
-     * any registered clients with the new value.
-     */
-    static final int MSG_SET_VALUE = 3;
+	 /** Keeps track of all current registered clients. */
+	ArrayList<Message> mActions = new ArrayList<Messenge>();
 
     /**
      * Handler of incoming messages from clients.
      */
     class IncomingHandler extends Handler {
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_REGISTER_CLIENT:
+                case MessageId.MSG_REGISTER_CLIENT:
                     mClients.add(msg.replyTo);
                     break;
-                case MSG_UNREGISTER_CLIENT:
+                case MessageId.MSG_UNREGISTER_CLIENT:
                     mClients.remove(msg.replyTo);
                     break;
-                case MSG_SET_VALUE:
+                case MessageId.MSG_SET_VALUE:
                     mValue = msg.arg1;
                     for (int i=mClients.size()-1; i>=0; i--) {
                         try {
-                            mClients.get(i).send(Message.obtain(null,
-                                    MSG_SET_VALUE, mValue, 0));
+                            mClients.get(i).send(Message.obtain(null, MessageId.MSG_SET_VALUE, mValue, 0));
                         } catch (RemoteException e) {
                             // The client is dead.  Remove it from the list;
                             // we are going through the list from back to front
@@ -67,10 +53,16 @@ public class IOIORemoteService extends IOIOService {
                         }
                     }
                     break;
+                case MessageId.MSG_ACTION:
+                    synchronized(mActions) {
+						mActions.add(msg);
+					}
+					break;
                 default:
                     super.handleMessage(msg);
             }
         }
+
     }
 
     /**
@@ -91,8 +83,18 @@ public class IOIORemoteService extends IOIOService {
 			}
 
 			@Override
-			public void loop() throws ConnectionLostException,
-					InterruptedException {
+			public void loop() throws ConnectionLostException, InterruptedException {
+				Message msg = null;
+				synchronized(mActions) {
+					if(!mActions.isEmpty()) {
+						msg = mActions.get(0);
+						mActions.remove(0);
+					}
+				}
+				if( msg != null ) {
+			        Toast.makeText(this, "Incoming " + msg.what, Toast.LENGTH_SHORT).show();
+					msg.replyTo.send(Message.obtain(null, MessageId.MSG_ACTION, 0, 0));
+				}
 				led_.write(false);
 				Thread.sleep(500);
 				led_.write(true);
@@ -121,20 +123,14 @@ public class IOIORemoteService extends IOIOService {
 	@Override
 	public void onStart(Intent intent, int startId) {
 		super.onStart(intent, startId);
-		if (intent != null && intent.getAction() != null
-				&& intent.getAction().equals("stop")) {
+		if (intent != null && intent.getAction() != null && intent.getAction().equals("stop")) {
 			// User clicked the notification. Need to stop the service.
 			mNM.cancel(0);
 			stopSelf();
 		} else {
 			// Service starting. Create a notification.
-			Notification notification = new Notification(
-					R.drawable.ic_launcher, "IOIO service running",
-					System.currentTimeMillis());
-			notification
-					.setLatestEventInfo(this, "IOIO Service", "Click to stop",
-							PendingIntent.getService(this, 0, new Intent(
-									"stop", null, this, this.getClass()), 0));
+			Notification notification = new Notification(R.drawable.ic_launcher, "IOIO service running", System.currentTimeMillis());
+			notification.setLatestEventInfo(this, "IOIO Service", "Click to stop", PendingIntent.getService(this, 0, new Intent("stop", null, this, this.getClass()), 0));
 			notification.flags |= Notification.FLAG_ONGOING_EVENT;
 			mNM.notify(0, notification);
 		}
