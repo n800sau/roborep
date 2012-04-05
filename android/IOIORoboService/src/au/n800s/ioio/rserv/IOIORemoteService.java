@@ -1,5 +1,10 @@
 package au.n800s.ioio.rserv;
 
+import java.util.HashMap;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -12,6 +17,8 @@ import android.os.Message;
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.exception.ConnectionLostException;
+import ioio.lib.api.Uart;
+import ioio.lib.api.PwmOutput;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOService;
@@ -19,17 +26,14 @@ import ioio.api.PwmOutput;
 
 public class IOIORemoteService extends IOIOService {
 	
-	/* num of servs */
-	final int SERVO_PINS[] = {3, 4, 5, 6, 7, 10, 11, 12, 13};
+	private static final int SAMPLING_DELAY = 100;
+	private static final int LED_BLINK_SPEED = 250;
 
 	 /** For showing and hiding our notification. */
     NotificationManager mNM;
 
 	 /** Keeps track of all current registered clients. */
 	ArrayList<Messenger> mClients = new ArrayList<Messenger>();
-
-	 /** Keeps track of all current registered clients. */
-	ArrayList<Message> mActions = new ArrayList<Messenge>();
 
     /**
      * Handler of incoming messages from clients.
@@ -58,13 +62,13 @@ public class IOIORemoteService extends IOIOService {
                         }
                     }
                     break;
-                case MessageId.MSG_ACTION:
-                    synchronized(mActions) {
+                default:
+					if(msg.what > 0) {
 						mActions.add(msg);
+					} else {
+	                    super.handleMessage(msg);
 					}
 					break;
-                default:
-                    super.handleMessage(msg);
             }
         }
 
@@ -80,38 +84,131 @@ public class IOIORemoteService extends IOIOService {
 	protected IOIOLooper createIOIOLooper() {
 		return new BaseIOIOLooper() {
 
-			final DigitalOutput led_;
-			final PwmOutput[] servo = new PwmOutput[SERVO_PINS.count()];
+			Thread ledThread;
+			/* servos */
+			final HashMap<int,PwmOutput> servos_;
 
 			@Override
-			protected void setup() throws ConnectionLostException,
-					InterruptedException {
-				led_ = ioio_.openDigitalOutput(IOIO.LED_PIN);
-				for(int i=0; i<SERVO_PINS; i++) {
-					servo[i] = ioio.openPwmOutput(SERVO_PINS[i], 100);
+			protected void setup() throws ConnectionLostException, InterruptedException {
+				Log.i(LOG_TAG, "Connected.");
+				ledThread = new LEDThread(ioio);
+				ledThread.start();
+				Log.i(LOG_TAG, "Thread started");
+
+				final int pins[] = {PinId.PWM_UHEAD, PinId.PWM_PHONE_TURN, PinId.PWM_PHONE_TILT, PinId.PWM_ARM_LOWER_TURN, PinId.PWM_ARM_LOWER_TILT, PinId.PWM_HAND_TURN, PinId.PWM_HAND_TILT, PinId.PWM_ARM_HAND_GRIP};
+				for(int i: pins) {
+					servos_[i] = ioio.openPwmOutput(i, 100);
 				}
 			}
 
 			@Override
 			public void loop() throws ConnectionLostException, InterruptedException {
 				Message msg = null;
-				synchronized(mActions) {
-					if(!mActions.isEmpty()) {
-						msg = mActions.get(0);
-						mActions.remove(0);
-					}
+				if(!mActions.isEmpty()) {
+					msg = mActions.get(0);
+					mActions.remove(0);
 				}
 				if( msg != null ) {
 			        Toast.makeText(this, "Incoming " + msg.what, Toast.LENGTH_SHORT).show();
-					msg.replyTo.send(Message.obtain(null, MessageId.MSG_ACTION, 0, 0));
+					switch(msg.what) {
+						case MessageId.MSG_SERVO:
+							servos_[msg.argv1].setDutyCycle(msg.argv2/1000.);
+							break;
+						case MessageId.MSG_SCAN_FORWARD:
+							if(headScannerThread.
+							Thread headScannerThread = new HeadScannerThread(ioio);
+							headScannerThread.start()
+							break;
+					}
+					msg.replyTo.send(Message.obtain(null, msg.what, 0, 0));
 				}
-				led_.write(false);
-				Thread.sleep(500);
-				led_.write(true);
-				Thread.sleep(500);
+				Thread.sleep(SAMPLING_DELAY);
 			}
 		};
 	}
+
+	class HeadScannerThread extends Thread {
+		private IOIO ioio;
+		final PwmOutput pwmOutput;
+		final Uart uart;
+	    private InputStream in;
+	    private OutputStream out;
+
+		public LEDThread(IOIO ioio) {
+			this.ioio = ioio;
+			pwmOutput = ioio.openPwmOutput(PinId.PWM_UHEAD, 100);
+			pwmOutput.setDutyCycle(0.5);
+			uart = ioio.openUart(PidId.UART_USONIC_RX, PidId.UART_USONIC_TX, 9600, Uart.Parity.NONE, Uart.StopBits.ONE);
+	        in = uart.getInputStream();
+	        out = uart.getOutputStream();
+		}
+
+	    protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
+	    {
+		    byte receivedData[] = new byte[100];
+		    if(answersize > 100) {
+		    	answersize = 100;
+		    }
+			//DbMsg.i( "Sending command");
+	    	out.write(cmd);
+	    	sleep(10);
+	    	receivedData[0] = 0;
+			//DbMsg.i( "Reading reply...");
+	    	in.read(receivedData,0 ,answersize);
+			//DbMsg.i( "Reply received");
+	    	receivedData[answersize] = 0;
+	    	return receivedData; 
+	    }
+    
+		private get_distance() {
+	    	return new String(requestData(new byte[]{(byte)0x81}, 6), 0, 6);
+		}
+
+		@Override
+		public void run() {
+			try {
+				//turn to one side
+				for(int i = 0; i = 500; i ++) {
+					pwmOutput.setDutyCycle(0.5 + i/1000.);
+				}
+				//turn to other side
+				for(int i = 0; i = 1000; i ++) {
+					pwmOutput.setDutyCycle(1 - i/1000.);
+				}
+				//return to the middle position
+				for(int i = 0; i = 500; i ++) {
+					pwmOutput.setDutyCycle(i/1000.);
+				}
+			} catch (Exception e) {
+				Log.i(LOG_TAG, "LED thread is stopped");
+			}
+		};
+	}
+
+	class LEDThread extends Thread {
+		private DigitalOutput led;
+		private IOIO ioio;
+
+		public LEDThread(IOIO ioio) {
+			this.ioio = ioio;
+		}
+
+		@Override
+		public void run() {
+			try {
+				boolean ledState = true;
+				led = ioio.openDigitalOutput(IOIO.LED_PIN, ledState);
+				while (true) {
+					ledState = !ledState;
+					led.write(ledState);
+					Thread.sleep(LED_BLINK_SPEED);
+				}
+			} catch (Exception e) {
+				Log.i(LOG_TAG, "LED thread is stopped");
+			}
+		};
+	}
+
 
 	@Override
 	public void onCreate() {
