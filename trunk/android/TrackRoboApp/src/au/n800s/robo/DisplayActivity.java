@@ -33,13 +33,16 @@ TextView mCallbackText;
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.action: {
-	            Message msg = Message.obtain(null, MessageId.MSG_ACTION);
+	            Message msg = Message.obtain(null, MessageId.MSG_SERVO, PinId.PWM_UHEAD, 1000);
 	            msg.replyTo = mMessenger;
 				mService.send(msg);
                 break;
             }
 
             case R.id.sound: {
+	            Message msg = Message.obtain(null, MessageId.MSG_HEAD_USONIC_DATA);
+	            msg.replyTo = mMessenger;
+				mService.send(msg);
                 break;
             }
         }

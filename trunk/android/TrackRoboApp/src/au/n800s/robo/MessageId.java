@@ -21,10 +21,10 @@ public class MessageId {
      */
     static final int MSG_SET_VALUE = 3;
 
-	/* Robo Action message */
-	static final int MSG_ACTION = 4;
+	/* Robo Servo message */
+	static final int MSG_SERVO = 4;
 
-	/* Set SerVal argv1 - servnum (0-9), argv2 - serval*/
-	static final int MSG_SERVAL = 5;
+	/* Robo Sound message */
+	static final int MSG_SCAN_FORWARD = 5;
 
 }
