@@ -1,3 +1,4 @@
+package au.n800s.ioio.robo;
 
 public class MessageId {
     /**
