@@ -1,4 +1,4 @@
-package au.n800s.ioio.sample1;
+package au.n800s.ioio.robo;
 
 import android.app.Activity;
 import android.content.Intent;
