@@ -12,13 +12,13 @@
 	<Button android:id="@+id/action"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:text="@string/Action"
+		android:text="Action"
 		android:layout_marginBottom="5dip"/>
 
 	<Button android:id="@+id/sound"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:text="@string/Sound"
+		android:text="Sound"
 		android:layout_marginBottom="5dip"/>
 
 </LinearLayout>
