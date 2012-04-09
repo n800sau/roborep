@@ -11,7 +11,7 @@
 		<service android:name="IOIORemoteService" android:process=":remote">
 			<intent-filter>
 				<action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
-				<action android:name="IOIORemoteService" />
+				<action android:name="au.n800s.ioio.rserv.IOIORoboRemoteService" />
 			</intent-filter>
 			<meta-data android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" android:resource="@xml/accessory_filter" />
 		</service>
