@@ -51,9 +51,11 @@ public class IOIORemoteService extends IOIOService {
             switch (msg.what) {
                 case MessageId.MSG_REGISTER_CLIENT:
                     mClients.add(msg.replyTo);
+                    DbMsg.i("client added");
                     break;
                 case MessageId.MSG_UNREGISTER_CLIENT:
                     mClients.remove(msg.replyTo);
+                    DbMsg.i("client removed");
                     break;
                 case MessageId.MSG_SET_VALUE:
                     int mValue = msg.arg1;
@@ -69,8 +71,12 @@ public class IOIORemoteService extends IOIOService {
                     }
                     break;
                 default:
+                	DbMsg.i("what="+msg.what);
 					if(msg.what > 0) {
-						mActions.add(msg);
+						Message newmsg = new Message();
+						newmsg.copyFrom(msg);
+						mActions.add(newmsg);
+						DbMsg.i("added "+mActions.get(0));
 					} else {
 	                    super.handleMessage(msg);
 					}
@@ -90,6 +96,7 @@ public class IOIORemoteService extends IOIOService {
 		return new BaseIOIOLooper() {
 
 			Thread ledThread;
+			Thread headScannerThread;
 			/* servos */
 			final HashMap<Integer,PwmOutput> servos_ = new HashMap<Integer,PwmOutput>();
 
@@ -101,12 +108,11 @@ public class IOIORemoteService extends IOIOService {
 				ledThread = new LEDThread(ioio_);
 				ledThread.start();
 				DbMsg.i("Thread started");
-//				for(int i: pins) {
-//					DbMsg.i("Pin Pwm init=" + i);
-//					servos_.put(i, ioio_.openPwmOutput(i, 100));
-//				}
-				Thread headScannerThread = new HeadScannerThread(ioio_);
-				headScannerThread.start();
+				for(int i: pins) {
+					DbMsg.i("Pin Pwm init=" + i);
+					servos_.put(i, ioio_.openPwmOutput(i, 100));
+				}
+				headScannerThread = new HeadScannerThread(ioio_, servos_.get(PinId.PWM_UHEAD));
 			}
 
 			@Override
@@ -114,24 +120,27 @@ public class IOIORemoteService extends IOIOService {
 				Message msg = null;
 				if(!mActions.isEmpty()) {
 					msg = mActions.get(0);
-					mActions.remove(0);
+					DbMsg.i("msg found what="+msg);
 				}
 				if( msg != null ) {
-			        Toast.makeText(IOIORemoteService.this, "Incoming " + msg.what, Toast.LENGTH_SHORT).show();
+					DbMsg.i("msg found");
 					switch(msg.what) {
 						case MessageId.MSG_SERVO:
-							servos_.get(msg.arg1).setDutyCycle(msg.arg2/1000f);
+							DbMsg.i("servo requested"+msg.arg1+","+msg.arg2);
+							servos_.get(msg.arg1).setPulseWidth(msg.arg1);
 							break;
 						case MessageId.MSG_SCAN_FORWARD:
-							Thread headScannerThread = new HeadScannerThread(ioio_);
+							DbMsg.i("scan forward requested");
 							headScannerThread.start();
 							break;
 					}
+					DbMsg.i("after");
 					try {
 						msg.replyTo.send(Message.obtain(null, msg.what, 0, 0));
 					} catch(RemoteException e) {
 						DbMsg.e("Reply error:", e);						
 					}
+					mActions.remove(0);
 				}
 				Thread.sleep(SAMPLING_DELAY);
 			}
@@ -145,10 +154,10 @@ public class IOIORemoteService extends IOIOService {
 	    private InputStream in;
 	    private OutputStream out;
 
-		public HeadScannerThread(IOIO ioio) throws ConnectionLostException  {
+		public HeadScannerThread(IOIO ioio, PwmOutput servo) throws ConnectionLostException  {
 			this.ioio = ioio;
-			pwmOutput = this.ioio.openPwmOutput(PinId.PWM_UHEAD, 100);
-			pwmOutput.setDutyCycle(0.5f);
+			pwmOutput = servo;
+			pwmOutput.setPulseWidth(1500);
 			DbMsg.i("centered");
 //			uart = ioio.openUart(PinId.UART_USONIC_RX, PinId.UART_USONIC_TX, 9600, Uart.Parity.NONE, Uart.StopBits.ONE);
 //	        in = uart.getInputStream();
@@ -179,9 +188,7 @@ public class IOIORemoteService extends IOIOService {
 		@Override
 		public void run() {
 			try {
-				while(true) {
 					DbMsg.i("head start");
-					pwmOutput.setPulseWidth(1500);
 					//turn to one side
 					for(int i = 1500; i < 2500; i += 10) {
 						pwmOutput.setPulseWidth(i);
@@ -204,11 +211,9 @@ public class IOIORemoteService extends IOIOService {
 					}
 					Thread.sleep(1000);
 					DbMsg.i("head end");
-				}
 			} catch (Exception e) {
 				DbMsg.e("Head Scanner stopped", e);
 			}
-			DbMsg.e("Head Scanner stopped Ok");
 		};
 	}
 
@@ -272,6 +277,7 @@ public class IOIORemoteService extends IOIOService {
 
 	@Override
 	public IBinder onBind(Intent arg0) {
+		DbMsg.i("IBind");
 		return mMessenger.getBinder();
 	}
 

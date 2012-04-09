@@ -27,5 +27,8 @@ public class MessageId {
 
 	/* Robo Sound message */
 	static final int MSG_SCAN_FORWARD = 5;
+	
+	/* Robo Head Usonic Data */
+	static final int MSG_HEAD_USONIC_DATA = 6;
 
 }

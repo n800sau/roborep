@@ -1,7 +1,19 @@
 package au.n800s.ioio.robo;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class DisplayActivity extends Activity implements View.OnClickListener {
 
@@ -20,6 +32,7 @@ TextView mCallbackText;
 		setContentView(R.layout.main);
 		mCallbackText = ((TextView)findViewById(R.id.callbackText));
 		findViewById(R.id.action).setOnClickListener(this);
+		findViewById(R.id.sound).setOnClickListener(this);
 		doBindService();
 	}
 
@@ -31,21 +44,27 @@ TextView mCallbackText;
 
 
     public void onClick(View view) {
+    	try {
         switch (view.getId()) {
             case R.id.action: {
-	            Message msg = Message.obtain(null, MessageId.MSG_SERVO, PinId.PWM_UHEAD, 1000);
+        		DbMsg.i("action");
+	            Message msg = Message.obtain(null, MessageId.MSG_SERVO, PinId.PWM_PHONE_TURN, 1500);
 	            msg.replyTo = mMessenger;
 				mService.send(msg);
                 break;
             }
 
             case R.id.sound: {
-	            Message msg = Message.obtain(null, MessageId.MSG_HEAD_USONIC_DATA);
+	            Message msg = Message.obtain(null, MessageId.MSG_SCAN_FORWARD);
 	            msg.replyTo = mMessenger;
 				mService.send(msg);
                 break;
             }
         }
+    	} catch (RemoteException e) {
+    		DbMsg.e("onClick", e);
+    		
+    	}
     }
 
 
@@ -59,7 +78,7 @@ class IncomingHandler extends Handler {
             case MessageId.MSG_SET_VALUE:
                 mCallbackText.setText("Received from service: " + msg.arg1);
                 break;
-            case MessageId.MSG_ACTION:
+            case MessageId.MSG_SERVO:
                 mCallbackText.setText("Action fulfilled");
                 break;
             default:
@@ -105,8 +124,7 @@ private ServiceConnection mConnection = new ServiceConnection() {
         }
 
         // As part of the sample, tell the user what happened.
-        Toast.makeText(Binding.this, R.string.remote_service_connected,
-                Toast.LENGTH_SHORT).show();
+        Toast.makeText(DisplayActivity.this, R.string.remote_service_connected, Toast.LENGTH_SHORT).show();
     }
 
     public void onServiceDisconnected(ComponentName className) {
@@ -116,7 +134,7 @@ private ServiceConnection mConnection = new ServiceConnection() {
         mCallbackText.setText("Disconnected.");
 
         // As part of the sample, tell the user what happened.
-        Toast.makeText(Binding.this, R.string.remote_service_disconnected,
+        Toast.makeText(DisplayActivity.this, R.string.remote_service_disconnected,
                 Toast.LENGTH_SHORT).show();
     }
 };
@@ -125,9 +143,9 @@ void doBindService() {
     // Establish a connection with the service.  We use an explicit
     // class name because there is no reason to be able to let other
     // applications replace our component.
-    bindService(new Intent("au.n800s.ioio.rserv.IOIORemoteService"), mConnection, Context.BIND_AUTO_CREATE);
+    bindService(new Intent("au.n800s.ioio.rserv.IOIORoboRemoteService"), mConnection, Context.BIND_AUTO_CREATE);
     mIsBound = true;
-    mCallbackText.setText("Binding.");
+    mCallbackText.setText("Binding...");
 }
 
 void doUnbindService() {
