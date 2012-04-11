@@ -3,8 +3,10 @@ package au.n800s.track.rc;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.os.Messenger;
 
 import android.widget.Toast;
 
@@ -36,13 +38,9 @@ public class TrackRemoteControlService extends Service {
         mNM.cancel(R.string.remote_service_started);
 
     	try {
-			if (serverThread.serversocket!=null) {
-				serverThread.closeConnections();
-			} else {
-				Log.e("out", "serversocket null");
-			}
+			serverThread.closeConnections();
 		} catch (Exception ex) {
-			Log.e("ex", ""+ex);
+			DbMsg.e("ex", ex);
 		}
 
         // Tell the user we stopped.

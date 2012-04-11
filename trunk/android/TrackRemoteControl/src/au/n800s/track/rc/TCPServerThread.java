@@ -1,24 +1,30 @@
 package au.n800s.track.rc;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
 import android.content.Context;
+import au.n800s.track.common.DbMsg;
 
 public class TCPServerThread implements Runnable {
 
 	private Context context;
 	
-	final static Handler mHandler = new Handler();
-
+	SSLServerSocket sslserversocket;
 	boolean isRunning=false;
 	
 	ArrayList<SSLSocket> mClients = new ArrayList<SSLSocket>();
 
-	ServerThread(Context context) {
-		System.setProperty("javax.net.ssl.keyStore",keystore_path);
-		System.setProperty("javax.net.ssl.keyStorePassword",passwd);
+	TCPServerThread(Context context) {
+//		System.setProperty("javax.net.ssl.keyStore",keystore_path);
+//		System.setProperty("javax.net.ssl.keyStorePassword",passwd);
 		this.context=context;
 		isRunning=true;
 	}
@@ -30,13 +36,13 @@ public class TCPServerThread implements Runnable {
             int port 	= 1111;
             
 			SSLServerSocketFactory sslserversocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-            SSLServerSocket sslserversocket = (SSLServerSocket) sslserversocketfactory.createServerSocket(port);
+            sslserversocket = (SSLServerSocket) sslserversocketfactory.createServerSocket(port);
             sslserversocket.setReuseAddress(true);
             
             while (isRunning) 
 			{
 					SSLSocket clientsocket = (SSLSocket) sslserversocket.accept();
-			        (new ClientRequestThread(this.context, clientsocket)).start();
+			        new Thread(new ClientRequestThread(this.context, clientsocket)).start();
 		    }
         } catch (Exception ex) {
         	DbMsg.e("doInBackground Exception", ex);
