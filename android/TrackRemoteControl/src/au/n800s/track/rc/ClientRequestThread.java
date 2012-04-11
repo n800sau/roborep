@@ -1,45 +1,52 @@
 package au.n800s.track.rc;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+
 import javax.net.ssl.SSLSocket;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Messenger;
 import android.os.Message;
 import android.os.RemoteException;
-import android.widget.Toast;
-
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import au.n800s.track.common.DbMsg;
+import au.n800s.track.common.MessageId;
 
 public class ClientRequestThread implements Runnable {
 	
+	private Context context;
 	/** Messenger for communicating with service. */
 	Messenger mService = null;
 	/** Flag indicating whether we have called bind on the service. */
 	boolean mIsBound;
 
-	private Socket socket;
+	private SSLSocket socket;
 	private BufferedReader input;
 	private OutputStream output;
 	
 	boolean isRunning=false;
 
-	ClientRequestThread(Context context, SSLSocket socket) {
+	ClientRequestThread(Context context, SSLSocket socket) throws UnsupportedEncodingException, IOException {
 		this.context=context;
 		this.socket = socket;
-        input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-        output = socket.getOutputStream();
+		input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+		output = socket.getOutputStream();
 		isRunning=true;
 	}
 
-	public JSONObject getObjectFromInput() {
-		JSONObject rs;
+	public JSONObject getObjectFromInput() throws IOException, JSONException {
+		JSONObject rs = null;
         String s = input.readLine();
 		if( s != "") {
 			rs = new JSONObject(s);
@@ -49,7 +56,7 @@ public class ClientRequestThread implements Runnable {
 
 	public void sendObjectToOutput(JSONObject reply) {
 		try {
-	    	output.write(reply.toString());
+	    	output.write(reply.toString().getBytes());
 	    } catch (Exception ex) {
 	    	DbMsg.e("ex send", ex);
 	    }
@@ -78,6 +85,10 @@ public class ClientRequestThread implements Runnable {
 					sendObjectToOutput(cmd);
 				}
 			}
+		} catch(JSONException ex) {
+			DbMsg.e("ClientRequestThread", ex);
+		} catch (IOException ex) {
+			DbMsg.e("ClientRequestThread", ex);
 		} finally {
 			doUnbindService();
 		}
@@ -137,7 +148,7 @@ private ServiceConnection mConnection = new ServiceConnection() {
             // so there is no need to do anything here.
         }
 
-		DbMsg.i(R.string.remote_service_connected);
+		DbMsg.i(context.getString(R.string.remote_service_connected));
     }
 
     public void onServiceDisconnected(ComponentName className) {
@@ -145,7 +156,7 @@ private ServiceConnection mConnection = new ServiceConnection() {
         // unexpectedly disconnected -- that is, its process crashed.
         mService = null;
 
-		DbMsg.i(R.string.remote_service_disconnected);
+		DbMsg.i(context.getString(R.string.remote_service_disconnected));
     }
 };
 
@@ -153,9 +164,9 @@ void doBindService() {
     // Establish a connection with the service.  We use an explicit
     // class name because there is no reason to be able to let other
     // applications replace our component.
-    bindService(new Intent("au.n800s.ioio.rserv.IOIORoboRemoteService"), mConnection, Context.BIND_AUTO_CREATE);
+    context.bindService(new Intent("au.n800s.ioio.rserv.IOIORoboRemoteService"), mConnection, Context.BIND_AUTO_CREATE);
     mIsBound = true;
-    mCallbackText.setText("Binding...");
+    DbMsg.i("Binding...");
 }
 
 void doUnbindService() {
@@ -175,7 +186,7 @@ void doUnbindService() {
         }
 
         // Detach our existing connection.
-        unbindService(mConnection);
+        context.unbindService(mConnection);
         mIsBound = false;
     }
 }

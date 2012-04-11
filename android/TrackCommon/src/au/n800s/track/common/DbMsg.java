@@ -10,27 +10,27 @@ public class DbMsg {
 		TAG = tag;
 	}
 
-	static void i(String msg)
+	static public void i(String msg)
 	{
 		Log.i(TAG, msg);
 	}
 	
-	static void i(String msg, String subgroup)
+	static public void i(String msg, String subgroup)
 	{
 		Log.i(TAG + "/" + subgroup, msg);
 	}
 	
-	static void e(String msg)
+	static public void e(String msg)
 	{
 		Log.e(TAG, msg);
 	}
 	
-	static void e(String msg, Exception e)
+	static public void e(String msg, Exception e)
 	{
 		Log.e(TAG, msg, e);
 	}
 	
-	static void e(String msg, Exception e, String subgroup)
+	static public void e(String msg, Exception e, String subgroup)
 	{
 		Log.e(TAG + "/" + subgroup, msg, e);
 	}
