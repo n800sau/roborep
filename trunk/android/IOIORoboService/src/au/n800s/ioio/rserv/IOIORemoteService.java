@@ -246,6 +246,8 @@ public class IOIORemoteService extends IOIOService {
 	public void onCreate() {
 		super.onCreate();
 		 mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        // Tell the user we started.
+        Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
 	}
 
 	@Override

@@ -1,10 +1,4 @@
-package au.n800s.ioio.rserv;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+package au.n800s.track.rc;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -12,82 +6,44 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.IBinder;
 
-import android.os.Handler;
-import android.os.Messenger;
-import android.os.Message;
-import android.os.RemoteException;
 import android.widget.Toast;
+
+import au.n800s.track.common.DbMsg;
 
 public class TrackRemoteControlService extends Service {
 	
 	 /** For showing and hiding our notification. */
     NotificationManager mNM;
 
-	 /** Keeps track of all current registered clients. */
-	ArrayList<Messenger> mClients = new ArrayList<Messenger>();
-
-	ArrayList<Message> mActions = new ArrayList<Message>();
-
-	/**
-     * Handler of incoming messages from clients.
-     */
-    class IncomingHandler extends Handler {
-
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MessageId.MSG_REGISTER_CLIENT:
-                    mClients.add(msg.replyTo);
-                    DbMsg.i("client added");
-                    break;
-                case MessageId.MSG_UNREGISTER_CLIENT:
-                    mClients.remove(msg.replyTo);
-                    DbMsg.i("client removed");
-                    break;
-                case MessageId.MSG_SET_VALUE:
-                    int mValue = msg.arg1;
-                    for (int i=mClients.size()-1; i>=0; i--) {
-                        try {
-                            mClients.get(i).send(Message.obtain(null, MessageId.MSG_SET_VALUE, mValue, 0));
-                        } catch (RemoteException e) {
-                            // The client is dead.  Remove it from the list;
-                            // we are going through the list from back to front
-                            // so this is safe to do inside the loop.
-                            mClients.remove(i);
-                        }
-                    }
-                    break;
-                default:
-                	DbMsg.i("what="+msg.what);
-					if(msg.what > 0) {
-						Message newmsg = new Message();
-						newmsg.copyFrom(msg);
-						mActions.add(newmsg);
-						DbMsg.i("added "+mActions.get(0));
-					} else {
-	                    super.handleMessage(msg);
-					}
-					break;
-            }
-        }
-
-    }
-
-    /**
-     * Target we publish for clients to send messages to IncomingHandler.
-     */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
+	/** Messenger for communicating with service. */
+	Messenger mService = null;
+	
+	private TCPServerThread serverThread;
 
 	@Override
 	public void onCreate() {
+		DbMsg.setTag("RoboRC");
 		super.onCreate();
-		 mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+		new Thread(serverThread = new TCPServerThread(this)).start();
+        // Tell the user we started.
+        Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
 	public void onDestroy() {
         // Cancel the persistent notification.
         mNM.cancel(R.string.remote_service_started);
+
+    	try {
+			if (serverThread.serversocket!=null) {
+				serverThread.closeConnections();
+			} else {
+				Log.e("out", "serversocket null");
+			}
+		} catch (Exception ex) {
+			Log.e("ex", ""+ex);
+		}
 
         // Tell the user we stopped.
         Toast.makeText(this, R.string.remote_service_stopped, Toast.LENGTH_SHORT).show();
@@ -104,8 +60,8 @@ public class TrackRemoteControlService extends Service {
 			stopSelf();
 		} else {
 			// Service starting. Create a notification.
-			Notification notification = new Notification(R.drawable.ic_launcher, "IOIO service running", System.currentTimeMillis());
-			notification.setLatestEventInfo(this, "IOIO Robotarr Service", "Click to stop", PendingIntent.getService(this, 0, new Intent("stop", null, this, this.getClass()), 0));
+			Notification notification = new Notification(R.drawable.ic_launcher, "Robotarr RC service running", System.currentTimeMillis());
+			notification.setLatestEventInfo(this, "Robotarr RC Service", "Click to stop", PendingIntent.getService(this, 0, new Intent("stop", null, this, this.getClass()), 0));
 			notification.flags |= Notification.FLAG_ONGOING_EVENT;
 			mNM.notify(0, notification);
 		}
@@ -113,8 +69,8 @@ public class TrackRemoteControlService extends Service {
 
 	@Override
 	public IBinder onBind(Intent arg0) {
-		DbMsg.i("IBind");
-		return mMessenger.getBinder();
+		return null;
 	}
+
 
 }
