@@ -14,25 +14,25 @@ public class DbMsg {
 	{
 		Log.i(TAG, msg);
 	}
-	
+
 	static public void i(String msg, String subgroup)
 	{
 		Log.i(TAG + "/" + subgroup, msg);
 	}
-	
+
 	static public void e(String msg)
 	{
 		Log.e(TAG, msg);
 	}
-	
+
 	static public void e(String msg, Exception e)
 	{
 		Log.e(TAG, msg, e);
 	}
-	
+
 	static public void e(String msg, Exception e, String subgroup)
 	{
 		Log.e(TAG + "/" + subgroup, msg, e);
 	}
-	
+
 }

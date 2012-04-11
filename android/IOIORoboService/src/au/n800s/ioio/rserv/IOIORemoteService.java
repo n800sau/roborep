@@ -17,6 +17,9 @@ import android.os.Messenger;
 import android.os.Message;
 import android.os.RemoteException;
 import android.widget.Toast;
+import au.n800s.track.common.DbMsg;
+import au.n800s.track.common.MessageId;
+import au.n800s.track.common.PinId;
 
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
@@ -29,67 +32,67 @@ import ioio.lib.util.android.IOIOService;
 import ioio.lib.api.PwmOutput;
 
 public class IOIORemoteService extends IOIOService {
-	
+
 	private static final int SAMPLING_DELAY = 100;
 	private static final int LED_BLINK_SPEED = 250;
 
-	 /** For showing and hiding our notification. */
-    NotificationManager mNM;
+	/** For showing and hiding our notification. */
+	NotificationManager mNM;
 
-	 /** Keeps track of all current registered clients. */
+	/** Keeps track of all current registered clients. */
 	ArrayList<Messenger> mClients = new ArrayList<Messenger>();
 
 	ArrayList<Message> mActions = new ArrayList<Message>();
 
 	/**
-     * Handler of incoming messages from clients.
-     */
-    class IncomingHandler extends Handler {
+	 * Handler of incoming messages from clients.
+	 */
+	class IncomingHandler extends Handler {
 
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MessageId.MSG_REGISTER_CLIENT:
-                    mClients.add(msg.replyTo);
-                    DbMsg.i("client added");
-                    break;
-                case MessageId.MSG_UNREGISTER_CLIENT:
-                    mClients.remove(msg.replyTo);
-                    DbMsg.i("client removed");
-                    break;
-                case MessageId.MSG_SET_VALUE:
-                    int mValue = msg.arg1;
-                    for (int i=mClients.size()-1; i>=0; i--) {
-                        try {
-                            mClients.get(i).send(Message.obtain(null, MessageId.MSG_SET_VALUE, mValue, 0));
-                        } catch (RemoteException e) {
-                            // The client is dead.  Remove it from the list;
-                            // we are going through the list from back to front
-                            // so this is safe to do inside the loop.
-                            mClients.remove(i);
-                        }
-                    }
-                    break;
-                default:
-                	DbMsg.i("what="+msg.what);
-					if(msg.what > 0) {
-						Message newmsg = new Message();
-						newmsg.copyFrom(msg);
-						mActions.add(newmsg);
-						DbMsg.i("added "+mActions.get(0));
-					} else {
-	                    super.handleMessage(msg);
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case MessageId.MSG_REGISTER_CLIENT:
+				mClients.add(msg.replyTo);
+				DbMsg.i("client added");
+				break;
+			case MessageId.MSG_UNREGISTER_CLIENT:
+				mClients.remove(msg.replyTo);
+				DbMsg.i("client removed");
+				break;
+			case MessageId.MSG_SET_VALUE:
+				int mValue = msg.arg1;
+				for (int i=mClients.size()-1; i>=0; i--) {
+					try {
+						mClients.get(i).send(Message.obtain(null, MessageId.MSG_SET_VALUE, mValue, 0));
+					} catch (RemoteException e) {
+						// The client is dead.  Remove it from the list;
+						// we are going through the list from back to front
+						// so this is safe to do inside the loop.
+						mClients.remove(i);
 					}
-					break;
-            }
-        }
+				}
+				break;
+			default:
+				DbMsg.i("what="+msg.what);
+				if(msg.what > 0) {
+					Message newmsg = new Message();
+					newmsg.copyFrom(msg);
+					mActions.add(newmsg);
+					DbMsg.i("added "+mActions.get(0));
+				} else {
+					super.handleMessage(msg);
+				}
+				break;
+			}
+		}
 
-    }
+	}
 
-    /**
-     * Target we publish for clients to send messages to IncomingHandler.
-     */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
+	/**
+	 * Target we publish for clients to send messages to IncomingHandler.
+	 */
+	final Messenger mMessenger = new Messenger(new IncomingHandler());
 
 	@Override
 	protected IOIOLooper createIOIOLooper() {
@@ -125,14 +128,14 @@ public class IOIORemoteService extends IOIOService {
 				if( msg != null ) {
 					DbMsg.i("msg found");
 					switch(msg.what) {
-						case MessageId.MSG_SERVO:
-							DbMsg.i("servo requested"+msg.arg1+","+msg.arg2);
-							servos_.get(msg.arg1).setPulseWidth(msg.arg1);
-							break;
-						case MessageId.MSG_SCAN_FORWARD:
-							DbMsg.i("scan forward requested");
-							headScannerThread.start();
-							break;
+					case MessageId.MSG_SERVO:
+						DbMsg.i("servo requested"+msg.arg1+","+msg.arg2);
+						servos_.get(msg.arg1).setPulseWidth(msg.arg1);
+						break;
+					case MessageId.MSG_SCAN_FORWARD:
+						DbMsg.i("scan forward requested");
+						headScannerThread.start();
+						break;
 					}
 					DbMsg.i("after");
 					try {
@@ -151,66 +154,66 @@ public class IOIORemoteService extends IOIOService {
 		private IOIO ioio;
 		private PwmOutput pwmOutput;
 		private Uart uart;
-	    private InputStream in;
-	    private OutputStream out;
+		private InputStream in;
+		private OutputStream out;
 
 		public HeadScannerThread(IOIO ioio, PwmOutput servo) throws ConnectionLostException  {
 			this.ioio = ioio;
 			pwmOutput = servo;
 			pwmOutput.setPulseWidth(1500);
 			DbMsg.i("centered");
-//			uart = ioio.openUart(PinId.UART_USONIC_RX, PinId.UART_USONIC_TX, 9600, Uart.Parity.NONE, Uart.StopBits.ONE);
-//	        in = uart.getInputStream();
-//	        out = uart.getOutputStream();
+			//			uart = ioio.openUart(PinId.UART_USONIC_RX, PinId.UART_USONIC_TX, 9600, Uart.Parity.NONE, Uart.StopBits.ONE);
+			//	        in = uart.getInputStream();
+			//	        out = uart.getOutputStream();
 		}
 
-	    protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
-	    {
-		    byte receivedData[] = new byte[100];
-		    if(answersize > 100) {
-		    	answersize = 100;
-		    }
+		protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
+		{
+			byte receivedData[] = new byte[100];
+			if(answersize > 100) {
+				answersize = 100;
+			}
 			//DbMsg.i( "Sending command");
-	    	out.write(cmd);
-	    	sleep(10);
-	    	receivedData[0] = 0;
+			out.write(cmd);
+			sleep(10);
+			receivedData[0] = 0;
 			//DbMsg.i( "Reading reply...");
-	    	in.read(receivedData,0 ,answersize);
+			in.read(receivedData,0 ,answersize);
 			//DbMsg.i( "Reply received");
-	    	receivedData[answersize] = 0;
-	    	return receivedData; 
-	    }
-    
+			receivedData[answersize] = 0;
+			return receivedData; 
+		}
+
 		private String get_distance() throws IOException, InterruptedException {
-	    	return new String(requestData(new byte[]{(byte)0x81}, 6), 0, 6);
+			return new String(requestData(new byte[]{(byte)0x81}, 6), 0, 6);
 		}
 
 		@Override
 		public void run() {
 			try {
-					DbMsg.i("head start");
-					//turn to one side
-					for(int i = 1500; i < 2500; i += 10) {
-						pwmOutput.setPulseWidth(i);
-						DbMsg.i("i="+i);
-						Thread.sleep(100);
-					}
-					Thread.sleep(1000);
-					//turn to other side
-					for(int i = 2500; i > 500; i -= 10) {
-						pwmOutput.setPulseWidth(i);
-						DbMsg.i("i="+i);
-						Thread.sleep(100);
-					}
-					Thread.sleep(1000);
-					//return to the middle position
-					for(int i = 500; i < 1500; i += 10) {
-						pwmOutput.setPulseWidth(i);
-						DbMsg.i("i="+i);
-						Thread.sleep(100);
-					}
-					Thread.sleep(1000);
-					DbMsg.i("head end");
+				DbMsg.i("head start");
+				//turn to one side
+				for(int i = 1500; i < 2500; i += 10) {
+					pwmOutput.setPulseWidth(i);
+					DbMsg.i("i="+i);
+					Thread.sleep(100);
+				}
+				Thread.sleep(1000);
+				//turn to other side
+				for(int i = 2500; i > 500; i -= 10) {
+					pwmOutput.setPulseWidth(i);
+					DbMsg.i("i="+i);
+					Thread.sleep(100);
+				}
+				Thread.sleep(1000);
+				//return to the middle position
+				for(int i = 500; i < 1500; i += 10) {
+					pwmOutput.setPulseWidth(i);
+					DbMsg.i("i="+i);
+					Thread.sleep(100);
+				}
+				Thread.sleep(1000);
+				DbMsg.i("head end");
 			} catch (Exception e) {
 				DbMsg.e("Head Scanner stopped", e);
 			}
@@ -238,25 +241,25 @@ public class IOIORemoteService extends IOIOService {
 			} catch (Exception e) {
 				DbMsg.e("LED thread is stopped", e);
 			}
-			}
+		}
 	}
 
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		 mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        // Tell the user we started.
-        Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
+		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+		// Tell the user we started.
+		Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
 	public void onDestroy() {
-        // Cancel the persistent notification.
-        mNM.cancel(R.string.remote_service_started);
+		// Cancel the persistent notification.
+		mNM.cancel(R.string.remote_service_started);
 
-        // Tell the user we stopped.
-        Toast.makeText(this, R.string.remote_service_stopped, Toast.LENGTH_SHORT).show();
+		// Tell the user we stopped.
+		Toast.makeText(this, R.string.remote_service_stopped, Toast.LENGTH_SHORT).show();
 
 		super.onDestroy();
 	}

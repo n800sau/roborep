@@ -13,13 +13,13 @@ import android.widget.Toast;
 import au.n800s.track.common.DbMsg;
 
 public class TrackRemoteControlService extends Service {
-	
-	 /** For showing and hiding our notification. */
-    NotificationManager mNM;
+
+	/** For showing and hiding our notification. */
+	NotificationManager mNM;
 
 	/** Messenger for communicating with service. */
 	Messenger mService = null;
-	
+
 	private TCPServerThread serverThread;
 
 	@Override
@@ -28,23 +28,23 @@ public class TrackRemoteControlService extends Service {
 		super.onCreate();
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		new Thread(serverThread = new TCPServerThread(this)).start();
-        // Tell the user we started.
-        Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
+		// Tell the user we started.
+		Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
 	public void onDestroy() {
-        // Cancel the persistent notification.
-        mNM.cancel(R.string.remote_service_started);
+		// Cancel the persistent notification.
+		mNM.cancel(R.string.remote_service_started);
 
-    	try {
+		try {
 			serverThread.closeConnections();
 		} catch (Exception ex) {
 			DbMsg.e("ex", ex);
 		}
 
-        // Tell the user we stopped.
-        Toast.makeText(this, R.string.remote_service_stopped, Toast.LENGTH_SHORT).show();
+		// Tell the user we stopped.
+		Toast.makeText(this, R.string.remote_service_stopped, Toast.LENGTH_SHORT).show();
 
 		super.onDestroy();
 	}
