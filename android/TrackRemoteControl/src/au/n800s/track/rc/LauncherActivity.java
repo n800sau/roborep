@@ -8,7 +8,7 @@ public class LauncherActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		startService(new Intent(this, IOIORemoteService.class));
+		startService(new Intent(this, TrackRemoteControlService.class));
 		finish();
 	}
 }

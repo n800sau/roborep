@@ -1,11 +1,15 @@
-package au.n800s.ioio.rserv;
+package au.n800s.track.common;
 
 import android.util.Log;
 
 public class DbMsg {
 
-	static String TAG = "RoboRC";
-	
+	static private String TAG = "Robo";
+
+	static public void setTag(final String tag) {
+		TAG = tag;
+	}
+
 	static void i(String msg)
 	{
 		Log.i(TAG, msg);
