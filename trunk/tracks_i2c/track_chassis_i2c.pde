@@ -11,10 +11,10 @@
 #define CMD_LED 'd'
 
 //1024 = 10v
-#define BATTERY_DIV (1024 / 10) 
+#define BATTERY_DIV (1024 / 10.)
 
 //1024 = 30v
-#define CHARGER_DIV (1024 / 30) 
+#define CHARGER_DIV (1024 / 30.)
 
 #define LEFT_PIN 10
 #define RIGHT_PIN 12
@@ -34,11 +34,29 @@ void setup()
 
 void loop()
 {
-	Wire.beginTransmission(4); // transmit to device #4
-	Wire.write("x is ");        // sends five bytes
-	Wire.write(x);              // sends one byte  
-	Wire.endTransmission();    // stop transmitting
+	float val = get_battery();
+	if(val < 6) {
+		Wire.beginTransmission(4); // transmit to device #4
+		Wire.write('w');
+		Wire.write("Battery is low");
+		Wire.endTransmission();    // stop transmitting
+	} else if (val < 5) {
+		Wire.beginTransmission(4); // transmit to device #4
+		Wire.write('e');
+		Wire.write("Battery is flat");
+		Wire.endTransmission();    // stop transmitting
+	}
 	delay(500);
+}
+
+float get_battery()
+{
+	return analogRead(BATTERY_PIN) / BATTERY_DIV;
+}
+
+float get_charger()
+{
+	return analogRead(CHARGER_PIN) / CHARGER_DIV;
 }
 
 //input val - string with optional '-' in the beginning
@@ -99,19 +117,19 @@ void requestData()
 {
 	switch(cmd) {
 		case CMD_GETBATTERY:
-			int val = analogRead(BATTERY_PIN);
+			float val = get_battery();
 			Serial.print("battery:");
 			Serial.println(val);
-			char buf[3 * sizeof (int) + 1];
-			itoa(val / BATTERY_DIV, buf, 10);
+			char buf[50];
+			sprintf(buf, "%f", val);
 			Wire.write(buf);
 			break;
 		case CMD_CHARGER:
-			int val = analogRead(CHARGER_PIN);
+			float val = get_charger();
 			Serial.print("charger:");
 			Serial.println(val);
-			char buf[3 * sizeof (int) + 1];
-			itoa(val / CHARGER_DIV, buf, 10);
+			char buf[50];
+			sprintf(buf, "%f", val);
 			Wire.write(buf);
 			break;
 	}
