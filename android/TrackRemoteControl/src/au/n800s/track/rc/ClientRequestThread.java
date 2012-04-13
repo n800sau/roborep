@@ -81,8 +81,17 @@ public class ClientRequestThread implements Runnable {
 			while(true) {
 				JSONObject cmd = getObjectFromInput();
 				if( cmd != null ) {
-					cmd.put("reply", true);
-					sendObjectToOutput(cmd);
+					DbMsg.i("received" + cmd);
+					switch(cmd.getString("command")) {
+						//{"command": "base_led", "on", "1"}
+						//{"command": "base_led", "on", "0"}
+						case "base_led":
+							Message.obtain(null, MessageId.MSG_BASE_LED, cmd.getBoolean("on"));
+						default:
+							cmd.put("reply", true);
+							sendObjectToOutput(cmd);
+							break;
+					}
 				}
 			}
 		} catch(JSONException ex) {
@@ -175,8 +184,7 @@ public class ClientRequestThread implements Runnable {
 			// it, then now is the time to unregister.
 			if (mService != null) {
 				try {
-					Message msg = Message.obtain(null,
-							MessageId.MSG_UNREGISTER_CLIENT);
+					Message msg = Message.obtain(null, MessageId.MSG_UNREGISTER_CLIENT);
 					msg.replyTo = mMessenger;
 					mService.send(msg);
 				} catch (RemoteException e) {
