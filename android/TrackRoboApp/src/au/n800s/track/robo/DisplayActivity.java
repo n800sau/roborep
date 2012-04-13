@@ -1,4 +1,4 @@
-package au.n800s.ioio.robo;
+package au.n800s.track.robo;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -63,6 +63,12 @@ public class DisplayActivity extends Activity implements View.OnClickListener {
 				mService.send(msg);
 				break;
 			}
+			case R.id.battery_v: {
+				Message msg = Message.obtain(null, MessageId.MSG_BATTERY);
+				msg.replyTo = mMessenger;
+				mService.send(msg);
+				break;
+			}
 			}
 		} catch (RemoteException e) {
 			DbMsg.e("onClick", e);
@@ -83,6 +89,10 @@ public class DisplayActivity extends Activity implements View.OnClickListener {
 				break;
 			case MessageId.MSG_SERVO:
 				mCallbackText.setText("Action fulfilled");
+				break;
+			case MessageId.MSG_BATTERY:
+				mCallbackText.setText("Battery voltage received");
+				((TextView)findViewById(R.id.battery_v)).setText((String)msg.obj);
 				break;
 			default:
 				super.handleMessage(msg);

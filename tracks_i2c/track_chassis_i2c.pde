@@ -72,7 +72,9 @@ int readVal()
 	}
 	while(Wire.available())
 	{
-		rs = Wire.read() - '0' + rs * 10;
+		b = Wire.read();
+		if(b == ';') break;
+		rs = b - '0' + rs * 10;
 	}
 	rs *= signm;
 	Serial.print("value:");
