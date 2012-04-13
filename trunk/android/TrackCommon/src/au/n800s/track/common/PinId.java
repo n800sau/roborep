@@ -29,4 +29,7 @@ public class PinId {
 	//uart to picaxe and usonic
 	static public final int UART_USONIC_RX = 27;
 	static public final int UART_USONIC_TX = 28;
+
+	//i2c to base pro interface index ioio.lib.impl.Constants - 47,48 pins
+	static public final int BASE_I2C_INDEX = 1;
 }
