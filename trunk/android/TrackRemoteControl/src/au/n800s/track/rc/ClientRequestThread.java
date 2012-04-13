@@ -77,6 +77,7 @@ public class ClientRequestThread implements Runnable {
 
 	public void run() {
 		doBindService();
+		Message msg = null;
 		try {
 			while(true) {
 				JSONObject cmd = getObjectFromInput();
@@ -86,11 +87,22 @@ public class ClientRequestThread implements Runnable {
 						//{"command": "base_led", "on", "1"}
 						//{"command": "base_led", "on", "0"}
 						case "base_led":
-							Message.obtain(null, MessageId.MSG_BASE_LED, cmd.getBoolean("on"));
+							msg = Message.obtain(null, MessageId.MSG_BASE_LED, cmd.getBoolean("on"));
+							break;
+						case "battery":
+							msg = Message.obtain(null, MessageId.MSG_BATTERY);
+							break;
+						case "stop":
+							msg = Message.obtain(null, MessageId.MSG_FULL_STOP);
+							break;
 						default:
 							cmd.put("reply", true);
 							sendObjectToOutput(cmd);
 							break;
+					}
+					if(msg != null) {
+						msg.replyTo = mMessenger;
+						mService.send(msg);
 					}
 				}
 			}
@@ -115,6 +127,13 @@ public class ClientRequestThread implements Runnable {
 				break;
 			case MessageId.MSG_SERVO:
 				DbMsg.i("Action fulfilled");
+				break;
+			case MessageId.MSG_BATTERY:
+				DbMsg.i("Received " + (String)msg.obj);
+				JSONObject reply = new JSONObject();
+				reply.put("id", "battery");
+				reply.put("voltage", Float((String)msg.obj));
+				sendObjectToOutput(cmd);
 				break;
 			default:
 				super.handleMessage(msg);
