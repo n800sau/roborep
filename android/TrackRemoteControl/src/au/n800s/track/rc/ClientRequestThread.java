@@ -27,7 +27,7 @@ public class ClientRequestThread implements Runnable {
 
 	private Context context;
 	/** Messenger for communicating with service. */
-	Messenger mService = null;
+	private Messenger mService = null;
 	/** Flag indicating whether we have called bind on the service. */
 	boolean mIsBound;
 
@@ -74,6 +74,35 @@ public class ClientRequestThread implements Runnable {
 		isRunning=false;
 	}
 
+	void doBindService() {
+		// Establish a connection with the service.  We use an explicit
+		// class name because there is no reason to be able to let other
+		// applications replace our component.
+		context.bindService(new Intent("au.n800s.ioio.rserv.IOIORoboRemoteService"), mConnection, Context.BIND_AUTO_CREATE);
+		mIsBound = true;
+		DbMsg.i("Binding...");
+	}
+
+	void doUnbindService() {
+		if (mIsBound) {
+			// If we have received the service, and hence registered with
+			// it, then now is the time to unregister.
+			if (mService != null) {
+				try {
+					Message msg = Message.obtain(null, MessageId.MSG_UNREGISTER_CLIENT);
+					msg.replyTo = mMessenger;
+					mService.send(msg);
+				} catch (RemoteException e) {
+					// There is nothing special we need to do if the service
+					// has crashed.
+				}
+			}
+
+			// Detach our existing connection.
+			context.unbindService(mConnection);
+			mIsBound = false;
+		}
+	}
 
 	public void run() {
 		doBindService();
@@ -83,22 +112,18 @@ public class ClientRequestThread implements Runnable {
 				JSONObject cmd = getObjectFromInput();
 				if( cmd != null ) {
 					DbMsg.i("received" + cmd);
-					switch(cmd.getString("command")) {
+					String scmd = cmd.getString("command"); 
+					if( scmd == "base_led" ) {
 						//{"command": "base_led", "on", "1"}
 						//{"command": "base_led", "on", "0"}
-						case "base_led":
-							msg = Message.obtain(null, MessageId.MSG_BASE_LED, cmd.getBoolean("on"));
-							break;
-						case "battery":
-							msg = Message.obtain(null, MessageId.MSG_BATTERY);
-							break;
-						case "stop":
-							msg = Message.obtain(null, MessageId.MSG_FULL_STOP);
-							break;
-						default:
-							cmd.put("reply", true);
-							sendObjectToOutput(cmd);
-							break;
+						msg = Message.obtain(null, MessageId.MSG_BASE_LED, cmd.getBoolean("on"));
+					} else if( scmd ==  "battery" ) {
+						msg = Message.obtain(null, MessageId.MSG_BATTERY);
+					} else if( scmd ==  "stop" ) {
+						msg = Message.obtain(null, MessageId.MSG_FULL_STOP);
+					} else {
+						cmd.put("reply", true);
+						sendObjectToOutput(cmd);
 					}
 					if(msg != null) {
 						msg.replyTo = mMessenger;
@@ -109,6 +134,8 @@ public class ClientRequestThread implements Runnable {
 		} catch(JSONException ex) {
 			DbMsg.e("ClientRequestThread", ex);
 		} catch (IOException ex) {
+			DbMsg.e("ClientRequestThread", ex);
+		} catch (RemoteException ex) {
 			DbMsg.e("ClientRequestThread", ex);
 		} finally {
 			doUnbindService();
@@ -131,9 +158,13 @@ public class ClientRequestThread implements Runnable {
 			case MessageId.MSG_BATTERY:
 				DbMsg.i("Received " + (String)msg.obj);
 				JSONObject reply = new JSONObject();
-				reply.put("id", "battery");
-				reply.put("voltage", Float((String)msg.obj));
-				sendObjectToOutput(cmd);
+				try {
+					reply.put("id", "battery");
+					reply.put("voltage", new Float((String)msg.obj));
+				} catch (JSONException e) {
+					DbMsg.e("Incoming handler", e);
+				}
+				sendObjectToOutput(reply);
 				break;
 			default:
 				super.handleMessage(msg);
@@ -188,34 +219,5 @@ public class ClientRequestThread implements Runnable {
 		}
 	};
 
-	void doBindService() {
-		// Establish a connection with the service.  We use an explicit
-		// class name because there is no reason to be able to let other
-		// applications replace our component.
-		context.bindService(new Intent("au.n800s.ioio.rserv.IOIORoboRemoteService"), mConnection, Context.BIND_AUTO_CREATE);
-		mIsBound = true;
-		DbMsg.i("Binding...");
-	}
-
-	void doUnbindService() {
-		if (mIsBound) {
-			// If we have received the service, and hence registered with
-			// it, then now is the time to unregister.
-			if (mService != null) {
-				try {
-					Message msg = Message.obtain(null, MessageId.MSG_UNREGISTER_CLIENT);
-					msg.replyTo = mMessenger;
-					mService.send(msg);
-				} catch (RemoteException e) {
-					// There is nothing special we need to do if the service
-					// has crashed.
-				}
-			}
-
-			// Detach our existing connection.
-			context.unbindService(mConnection);
-			mIsBound = false;
-		}
-	}
 
 }
