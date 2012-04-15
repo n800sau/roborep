@@ -1,4 +1,5 @@
 #include <pololu/3pi.h>
+#include "ModbusSlave.h"
 
 #include "utils.h"
 
@@ -434,6 +435,7 @@ void stop_pid()
 
 int main()
 {
+
 	pololu_3pi_init(2000);  
 	play_mode(PLAY_CHECK);
 
