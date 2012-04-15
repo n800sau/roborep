@@ -1,23 +1,25 @@
-public class Utile {
+package au.n800s.ioio.sample1;
 
-	public int MAXVAL =  0x1FFF;
-	public int MINVAL = -0x1FFF;
+public class Utils {
 
-	static public byte bytes2short(byte lb, byte hb)
+	public static int MAXVAL =  0x1FFF;
+	public static int MINVAL = -0x1FFF;
+
+	static public short bytes2short(byte lb, byte hb)
 	{
-		short rs = (((short)hb & 0x3F)<<7) + lb;
-		if(hb & 0x40) {
+		int rs = (((short)hb & 0x3F)<<7) + lb;
+		if((((short)hb) & 0x40) != 0) {
 			rs = -rs;
 		}
-		return rs;
+		return (short) rs;
 	}
 
 	static public byte[] short2bytes(short val)
 	{
 		byte[] bytes = new byte[2];
-		short ainv = (val<0) ? -val : val;
-		bytes[0]= ainv & 0x7F;
-		bytes[1] = (ainv >> 7) & 0x3F;
+		int ainv = (val<0) ? -val : val;
+		bytes[0]= (byte) (ainv & 0x7F);
+		bytes[1] = (byte) ((ainv >> 7) & 0x3F);
 		if(val < 0) {
 			bytes[1] |= 0x40;
 		}

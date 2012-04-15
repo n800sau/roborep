@@ -1,6 +1,6 @@
 package au.n800s.track.common;
 
-public class BasePro {
+public class BaseProCommands {
 
 	//address of base pro
 	static public final int I2C_Addr=19;

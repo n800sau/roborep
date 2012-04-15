@@ -26,7 +26,7 @@ public class IOIOThread extends Thread {
 	private Handler mHandler;
 	private PwmOutput[] pwms  = new PwmOutput[RobotState.PWM_COUNT];
 
-    IOIOThread(CommandQueue queue, RobotState rstate) {
+    IOIOThread(CommandQueue queue, RobotState rstate) throws ConnectionLostException {
     	super();
     	this.queue = queue;
     	this.rstate = rstate;
@@ -76,10 +76,10 @@ public class IOIOThread extends Thread {
 
     protected void update_motors() throws IOException, InterruptedException, JSONException
     {
-    	short leftspeed = rstate.x_getInt("leftMotorSpeed");
+    	short leftspeed = (short)rstate.x_getInt("leftMotorSpeed");
     	DbMsg.i("left motor:" + leftspeed);
 		byte[] left = Utils.short2bytes(leftspeed);
-    	int rightspeed = rstate.x_getInt("rightMotorSpeed");
+    	short rightspeed = (short)rstate.x_getInt("rightMotorSpeed");
     	DbMsg.i("right motor:" + rightspeed);
 		byte[] right = Utils.short2bytes(rightspeed);
    		requestData(new byte[]{(byte)0xC7, left[0], left[1], right[0], right[1]}, 0);
@@ -170,9 +170,9 @@ public class IOIOThread extends Thread {
 						for(int i=0; i<RobotState.IR_COUNT; i++) {
 							rstate.x_put("ir_raw" + i, data[i]);
 						}
-						for(int i=0; i<RobotState.PWM_COUNT; i++) {
-							pwm[i].setPulseWidth(rstate.x_getInt("pwm" + i + "_pulse"));
-						}
+//						for(int i=0; i<RobotState.PWM_COUNT; i++) {
+//							pwm[i].setPulseWidth(rstate.x_getInt("pwm" + i + "_pulse"));
+//						}
 						if ( rstate.x_getDouble("current_heading") >= 0 ) {
 							DbMsg.i( "head to " + rstate.x_getDouble("current_heading"));
 							int offset = (int)((rstate.x_getDouble("current_heading") - rstate.x_getDouble("heading")) % 360);

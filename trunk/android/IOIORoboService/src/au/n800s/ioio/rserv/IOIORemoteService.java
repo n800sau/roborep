@@ -20,10 +20,11 @@ import android.widget.Toast;
 import au.n800s.track.common.DbMsg;
 import au.n800s.track.common.MessageId;
 import au.n800s.track.common.PinId;
-import au.n800s.track.common.BaseProCommand;
+import au.n800s.track.common.BaseProCommands;
 
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
+import ioio.lib.api.TwiMaster;
 import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.api.Uart;
 import ioio.lib.api.PwmOutput;
@@ -117,13 +118,16 @@ public class IOIORemoteService extends IOIOService {
 					servos_.put(i, ioio_.openPwmOutput(i, 100));
 				}
 				headScannerThread = new HeadScannerThread(ioio_, servos_.get(PinId.PWM_UHEAD));
-				i2cBaseMaster = ioio.openTwiMaster(PinId.BASE_I2C_INDEX, TwiMaster.Rate.RATE_100KHz, false);
+				i2cBaseMaster = ioio_.openTwiMaster(PinId.BASE_I2C_INDEX, TwiMaster.Rate.RATE_100KHz, false);
 			}
 
 			@Override
 			public void loop() throws ConnectionLostException, InterruptedException {
 				Message msg = null;
 				Message reply = null;
+				byte[] request;
+				byte[] response;
+				String speed;
 				if(!mActions.isEmpty()) {
 					msg = mActions.get(0);
 					DbMsg.i("msg found what="+msg);
@@ -141,52 +145,52 @@ public class IOIORemoteService extends IOIOService {
 						break;
 					case MessageId.MSG_MOVE_STRAIGHT:
 						DbMsg.i("move straight requested");
-						String speedleft = Integer.toString(msg.argv1);
-						String speedright = Integer.toString(msg.argv2);
-						byte[] request = (BaseProCommand.CMD_BOTH + speedleft + ';' + speedright).getBytes();
-						byte[] response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommand.I2C_Addr, false, request, request.length, response, response.length);
+						String speedleft = Integer.toString(msg.arg1);
+						String speedright = Integer.toString(msg.arg2);
+						request = (BaseProCommands.CMD_BOTH + speedleft + ';' + speedright).getBytes();
+						response = new byte[0];
+						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 						break;
 					case MessageId.MSG_TURN_RIGHT:
 						DbMsg.i("turn right requested");
-						String speed = Integer.toString(msg.argv1);
-						byte[] request = (BaseProCommand.CMD_RIGHT + speed).getBytes();
-						byte[] response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommand.I2C_Addr, false, request, request.length, response, response.length);
+						speed = Integer.toString(msg.arg1);
+						request = (BaseProCommands.CMD_RIGHT + speed).getBytes();
+						response = new byte[0];
+						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 						break;
 					case MessageId.MSG_TURN_LEFT:
 						DbMsg.i("turn left requested");
-						String speed = Integer.toString(msg.argv1);
-						byte[] request = (BaseProCommand.CMD_LEFT + speed).getBytes();
-						byte[] response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommand.I2C_Addr, false, request, request.length, response, response.length);
+						speed = Integer.toString(msg.arg1);
+						request = (BaseProCommands.CMD_LEFT + speed).getBytes();
+						response = new byte[0];
+						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 						break;
 					case MessageId.MSG_BATTERY:
 						DbMsg.i("battery voltage requested");
-						byte[] request = ("" + BaseProCommand.CMD_BATTERY).getBytes();
-						byte[] response = new byte[50];
-						i2cBaseMaster.writeRead(BaseProCommand.I2C_Addr, false, request, request.length, response, response.length);
-						reply = Message.obtain(null, msg.what, Float(String(response)));
+						request = ("" + BaseProCommands.CMD_BATTERY).getBytes();
+						response = new byte[50];
+						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+						reply = Message.obtain(null, msg.what, new Float(new String(response)));
 						break;
 					case MessageId.MSG_CHARGER:
 						DbMsg.i("charger voltage requested");
-						byte[] request = ("" + BaseProCommand.CMD_CHARGER).getBytes();
-						byte[] response = new byte[50];
-						i2cBaseMaster.writeRead(BaseProCommand.I2C_Addr, false, request, request.length, response, response.length);
-						reply = Message.obtain(null, msg.what, Float(String(response)));
+						request = ("" + BaseProCommands.CMD_CHARGER).getBytes();
+						response = new byte[50];
+						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+						reply = Message.obtain(null, msg.what, new Float(new String(response)));
 						break;
 					case MessageId.MSG_BASE_LED:
 						DbMsg.i("base led command requested");
-						String on = Boolean.toString(msg.argv1);
-						byte[] request = (BaseProCommand.CMD_LED + on).getBytes();
-						byte[] response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommand.I2C_Addr, false, request, request.length, response, response.length);
+						String on = Boolean.toString(msg.arg1 != 0);
+						request = (BaseProCommands.CMD_LED + on).getBytes();
+						response = new byte[0];
+						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 						break;
 					case MessageId.MSG_FULL_STOP:
 						DbMsg.i("full stop requested");
-						byte[] request = ("" + BaseProCommand.CMD_STOP).getBytes();
-						byte[] response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommand.I2C_Addr, false, request, request.length, response, response.length);
+						request = ("" + BaseProCommands.CMD_STOP).getBytes();
+						response = new byte[0];
+						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 						break;
 					}
 					DbMsg.i("after");
