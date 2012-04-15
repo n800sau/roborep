@@ -190,7 +190,7 @@ public class IOIOThread extends Thread {
 							if (command.name.equalsIgnoreCase("set_direction")) {
 								rstate.x_put("current_heading", command.params.getDouble("direction"));
 							} else if (command.name.equalsIgnoreCase("keep_direction")) {
-								rstate.x_put("current_heading", rstate.getDouble("heading"));
+								rstate.x_put("current_heading", rstate.x_getDouble("heading"));
 							} else if (command.name.equalsIgnoreCase("stop_direction")) {
 								rstate.x_put("current_heading", -1);
 							} else if (command.name.equalsIgnoreCase("accelerate")) {
@@ -205,8 +205,8 @@ public class IOIOThread extends Thread {
 								DbMsg.i("stop");
 								stop_motor();
 							} else if (command.name.equalsIgnoreCase("set_pwm_pulse")) {
-								DbMsg.i("set pwm " + command.params.get("pwmid") + " to  pulse " + command.params.get("pulse"));
-								rstate.x_put("pwm" + command.params.get("pwmid") + "_pulse", command.params.get("pulse"));
+								DbMsg.i("set pwm " + command.params.get("pwmid") + " to  pulse " + command.params.getInt("pulse"));
+								rstate.x_put("pwm" + command.params.get("pwmid") + "_pulse", command.params.getInt("pulse"));
 							}
 						}
 						//DbMsg.i( "ioio led set");

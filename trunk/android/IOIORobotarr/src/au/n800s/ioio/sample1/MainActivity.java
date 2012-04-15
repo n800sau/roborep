@@ -1,5 +1,7 @@
 package au.n800s.ioio.sample1;
 
+import ioio.lib.api.exception.ConnectionLostException;
+
 import java.io.InputStream;
 
 import java.io.OutputStream;
@@ -201,7 +203,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	protected void onResume() {
 		super.onResume();
-		ioio_thread_ = new IOIOThread(queue, rstate);
+		try {
+			ioio_thread_ = new IOIOThread(queue, rstate);
 		ioio_thread_.start();
 		udp_thread_ = new UDPThread(queue, rstate);
 		udp_thread_.start();
@@ -209,6 +212,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_FASTEST);
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_ACCELEROMETER, SensorManager.SENSOR_DELAY_FASTEST);
 		sensorManager.registerListener(sensorListener, SensorManager.SENSOR_MAGNETIC_FIELD, SensorManager.SENSOR_DELAY_FASTEST);
+		} catch (ConnectionLostException ex) {
+			DbMsg.e("onResume", ex);
+		}
 	}
 
 	/**
