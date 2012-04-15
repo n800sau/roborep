@@ -1,6 +1,4 @@
 #include <pololu/3pi.h>
-#include "ModbusSlave.h"
-
 #include "utils.h"
 
 /*
