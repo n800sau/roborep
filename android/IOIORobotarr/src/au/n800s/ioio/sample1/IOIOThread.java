@@ -16,27 +16,52 @@ import android.os.Handler;
 
 public class IOIOThread extends Thread {
 
+	public final static UART_3PI_RX = 10
+	public final static UART_3PI_TX = 11
+
+	public final static UART_PICAXE_RX = 17
+	public final static UART_PICAXE_TX = 18
+
 	private IOIO ioio_;
 	private boolean abort_ = false;
+
 	private Uart uart;
     private InputStream in;
     private OutputStream out;
+
+	private Uart uartx;
+    private InputStream inx;
+    private OutputStream outx;
+
 	private CommandQueue queue;
 	private RobotState rstate;
 	private Handler mHandler;
-	private PwmOutput[] pwms  = new PwmOutput[RobotState.PWM_COUNT];
 
     IOIOThread(CommandQueue queue, RobotState rstate) throws ConnectionLostException {
     	super();
     	this.queue = queue;
     	this.rstate = rstate;
 		mHandler = new Handler();
-		for(int i=0; i< 5; i++) {
-			pwms[i] = ioio_.openPwmOutput(12 + i, 100);
-		}
     }
     
     protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
+    {
+	    byte receivedData[] = new byte[100];
+	    if(answersize > 100) {
+	    	answersize = 100;
+	    }
+		//DbMsg.i( "Sending command");
+    	out.write(cmd);
+    	sleep(10);
+    	receivedData[0] = 0;
+		//DbMsg.i( "Reading reply...");
+    	in.read(receivedData,0 ,answersize);
+		//DbMsg.i( "Reply received");
+    	receivedData[answersize] = 0;
+    	return receivedData; 
+    }
+    
+    protected String requestDataX(final String cmd) throws IOException,InterruptedException 
     {
 	    byte receivedData[] = new byte[100];
 	    if(answersize > 100) {
@@ -71,6 +96,12 @@ public class IOIOThread extends Thread {
     protected short get_battery() throws IOException, InterruptedException
     {
     	byte data[] = requestData(new byte[]{(byte)0xB1}, 2);
+    	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
+    }
+
+    protected short get_head_distance() throws IOException, InterruptedException
+    {
+		outx.
     	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
     }
 
@@ -157,15 +188,19 @@ public class IOIOThread extends Thread {
 				ioio_.waitForConnect();
 				DbMsg.i( "connected ioio");
 				rstate.x_put("connection", true);
-				uart = ioio_.openUart(3, 4, 115200, Uart.Parity.NONE, Uart.StopBits.ONE);
+				uart = ioio_.openUart(UART_3PI_RX, UART_3PI_TX, 115200, Uart.Parity.NONE, Uart.StopBits.ONE);
 		        in = uart.getInputStream();
 		        out = uart.getOutputStream();
+				uartx = ioio_.openUart(UART_PICAXE_RX, UART_PICAXE_TX, 4800, Uart.Parity.NONE, Uart.StopBits.ONE);
+		        inx = uartx.getInputStream();
+		        outx = uartx.getOutputStream();
 				DigitalOutput led = ioio_.openDigitalOutput(0, true);
 				//get version
 				rstate.x_put("version", get_version());
 				while (true) {
 					try {
 						rstate.x_put("battery", get_battery());
+						rstate.x_put("head_distance", get_head_distance());
 						short[] data = get_ir_raw();
 						for(int i=0; i<RobotState.IR_COUNT; i++) {
 							rstate.x_put("ir_raw" + i, data[i]);
