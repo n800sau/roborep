@@ -44,11 +44,7 @@ public class RobotState {
 		st.put("ir_raw2", 0);
 		st.put("ir_raw3", 0);
 		st.put("ir_raw4", 0);
-		st.put("pwm0_pulse", 1500);
-		st.put("pwm1_pulse", 1500);
-		st.put("pwm2_pulse", 1500);
-		st.put("pwm3_pulse", 1500);
-		st.put("pwm4_pulse", 1500);
+		st.put("head_distance", -1);
 		st.put("error", "");
 		st.put("index", history.size());
 		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
