@@ -11,23 +11,28 @@ symbol SERVO_PIN = pinC.2
 
 'setfreq m32
 start1:
-		pwmout PWM_PIN, 150, 500
+		pwmout PWM_PIN, 150, 0
+        pause 10
         irout C.2, 1, 1
         pause 100
 		
-		pwmout PWM_PIN, 150, 400
+		pwmout PWM_PIN, 150, 100
+        pause 10
         irout C.2, 1, 2
         pause 100
 
-		pwmout PWM_PIN, 150, 300
+		pwmout PWM_PIN, 150, 200
+        pause 10
         irout C.2, 1, 3
         pause 100
 
-		pwmout PWM_PIN, 150, 200
+		pwmout PWM_PIN, 150, 300
+        pause 10
         irout C.2, 1, 4
         pause 100
 
-		pwmout PWM_PIN, 150, 100
+		pwmout PWM_PIN, 150, 400
+        pause 10
         irout C.2, 1, 5
         pause 100
 goto start1
