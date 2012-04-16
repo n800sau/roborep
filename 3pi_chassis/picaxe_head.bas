@@ -4,13 +4,14 @@ symbol cmd = b4
 symbol beacon = b5
 symbol wait_ir_cmd = b6
 symbol ir_cmd = b7
+symbol max_lvl = b8
 symbol USONIC_TRIG = c.1
 symbol USONIC_ECHO = c.3
 symbol BEACON_IR = c.4
 
 start1:
 	disconnect
-	'fixed baud rate 4800 (38400 on 32Mh), 8 data, no parity, 1 stop
+	'fixed baud rate 4800 (?38400 on 32Mh?), 8 data, no parity, 1 stop
 	serrxd [1000, start1], ("cmd:"), cmd
 	select case cmd
 		case "d"
@@ -33,28 +34,31 @@ start2:
 
 start3:
 	'get maximum ir command from beacon
-	beacon = ir_cmd
+	max_lvl = 0
 	wait_ir_cmd = 1
 	gosub get_beacon
-	if wait_ir_cmd = '!' then start3
+	if wait_ir_cmd = "!" then start3
 	wait_ir_cmd = 2
 	gosub get_beacon
-	if wait_ir_cmd = '!' then start3
+	if wait_ir_cmd = "!" then start3
 	wait_ir_cmd = 3
 	gosub get_beacon
-	if wait_ir_cmd = '!' then start3
+	if wait_ir_cmd = "!" then start3
 	wait_ir_cmd = 4
 	gosub get_beacon
-	if wait_ir_cmd = '!' then start3
+	if wait_ir_cmd = "!" then start3
 	wait_ir_cmd = 5
 	gosub get_beacon
 	goto start3
 
 get_beacon:
-	irin [1000, not_found], BEACON_IR, ir_cmd
-	if ir_cmd = wait_ir_cmd then
-		wait_ir_cmd = '!'
+	irin [150, not_found], BEACON_IR, ir_cmd
+	if ir_cmd <> wait_ir_cmd then 
+		max_lvl = ir_cmd
+		return
 not_found:
+	beacon = max_lvl
+	wait_ir_cmd = "!"
 	return
 
 
