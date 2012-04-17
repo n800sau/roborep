@@ -30,8 +30,7 @@ public class IOIOThread extends Thread {
     private OutputStream out;
 
 	private Uart uartx;
-    private InputStream inx;
-    private OutputStream outx;
+	Thread readerx;
 
 	private CommandQueue queue;
 	private RobotState rstate;
@@ -96,12 +95,6 @@ public class IOIOThread extends Thread {
     protected short get_battery() throws IOException, InterruptedException
     {
     	byte data[] = requestData(new byte[]{(byte)0xB1}, 2);
-    	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
-    }
-
-    protected short get_head_distance() throws IOException, InterruptedException
-    {
-		outx.
     	return (short)( ((((short)data[1])&0xFF)<<8) | (data[0]&0xFF) );
     }
 
@@ -192,15 +185,14 @@ public class IOIOThread extends Thread {
 		        in = uart.getInputStream();
 		        out = uart.getOutputStream();
 				uartx = ioio_.openUart(UART_PICAXE_RX, UART_PICAXE_TX, 4800, Uart.Parity.NONE, Uart.StopBits.ONE);
-		        inx = uartx.getInputStream();
-		        outx = uartx.getOutputStream();
+				readerx = new ReaderThread(uartx.getInputStream());
+		reader.start();
 				DigitalOutput led = ioio_.openDigitalOutput(0, true);
 				//get version
 				rstate.x_put("version", get_version());
 				while (true) {
 					try {
 						rstate.x_put("battery", get_battery());
-						rstate.x_put("head_distance", get_head_distance());
 						short[] data = get_ir_raw();
 						for(int i=0; i<RobotState.IR_COUNT; i++) {
 							rstate.x_put("ir_raw" + i, data[i]);
@@ -295,6 +287,40 @@ public class IOIOThread extends Thread {
 				}
 		   }
 	};
-	
+
+	class PicaxeReaderThread extends Thread {
+		private InputStream in_;
+		private boolean abort_ = false;
+
+		public ReaderThread(InputStream in) {
+			in_ = in;
+		}
+
+		@Override
+		public void run() {
+			super.run();
+			try {
+				BufferedReader r = new BufferedReader(new InputStreamReader(in_));
+				String[] line;
+				while (true) {
+					synchronized (this) {
+						if (abort_) {
+							break;
+						}
+					}
+					line = r.readLine().split(":");
+					if(line[0] == "distance") {
+						rstate.x_setInt("head_distance", Integer.parseInt(line[1]));
+					} else if (line[0] == "beacon") {
+						rstate.x_setInt("beacon_pwr", Integer.parseInt(line[1]));
+					}
+			} catch (IOException ex) {
+				DbMsg.e("picaxe reading", ex);
+			}
+		}
+		synchronized public void abort() {
+			abort_ = true;
+		}
+	}
 
 }
