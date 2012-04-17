@@ -7,8 +7,10 @@ import ioio.lib.api.Uart;
 import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.api.PwmOutput;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import org.json.JSONException;
 
@@ -16,11 +18,11 @@ import android.os.Handler;
 
 public class IOIOThread extends Thread {
 
-	public final static UART_3PI_RX = 10
-	public final static UART_3PI_TX = 11
+	public final static int UART_3PI_RX = 10;
+	public final static int UART_3PI_TX = 11;
 
-	public final static UART_PICAXE_RX = 6
-	public final static UART_PICAXE_TX = 7
+	public final static int UART_PICAXE_RX = 6;
+	public final static int UART_PICAXE_TX = 7;
 
 	private IOIO ioio_;
 	private boolean abort_ = false;
@@ -185,8 +187,8 @@ public class IOIOThread extends Thread {
 		        in = uart.getInputStream();
 		        out = uart.getOutputStream();
 				uartx = ioio_.openUart(UART_PICAXE_RX, UART_PICAXE_TX, 4800, Uart.Parity.NONE, Uart.StopBits.ONE);
-				readerx = new ReaderThread(uartx.getInputStream());
-		reader.start();
+				readerx = new PicaxeReaderThread(uartx.getInputStream());
+				readerx.start();
 				DigitalOutput led = ioio_.openDigitalOutput(0, true);
 				//get version
 				rstate.x_put("version", get_version());
@@ -292,7 +294,7 @@ public class IOIOThread extends Thread {
 		private InputStream in_;
 		private boolean abort_ = false;
 
-		public ReaderThread(InputStream in) {
+		public PicaxeReaderThread(InputStream in) {
 			in_ = in;
 		}
 
@@ -310,11 +312,12 @@ public class IOIOThread extends Thread {
 					}
 					line = r.readLine().split(":");
 					if(line[0] == "distance") {
-						rstate.x_setInt("head_distance", Integer.parseInt(line[1]));
+						rstate.x_put("head_distance", Integer.parseInt(line[1]));
 					} else if (line[0] == "beacon") {
-						rstate.x_setInt("beacon_pwr", Integer.parseInt(line[1]));
+						rstate.x_put("beacon_pwr", Integer.parseInt(line[1]));
 					}
-			} catch (IOException ex) {
+				}
+			} catch (Exception ex) {
 				DbMsg.e("picaxe reading", ex);
 			}
 		}

@@ -7,13 +7,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
-import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.os.Build;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import au.n800s.track.common.DbMsg;
 
 public abstract class CameraViewBase extends SurfaceView implements SurfaceHolder.Callback, Runnable {
 
@@ -42,10 +42,7 @@ public abstract class CameraViewBase extends SurfaceView implements SurfaceHolde
     }
 
     public void setPreview() throws IOException {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-            mCamera.setPreviewTexture( new SurfaceTexture(10) );
-        else
-        	mCamera.setPreviewDisplay(null);
+       	mCamera.setPreviewDisplay(null);
 	}
 
     public void surfaceChanged(SurfaceHolder _holder, int format, int width, int height) {

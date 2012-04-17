@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Window;
+import au.n800s.track.common.DbMsg;
 
 public class CameraActivity extends Activity {
 
