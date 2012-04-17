@@ -45,6 +45,7 @@ public class RobotState {
 		st.put("ir_raw3", 0);
 		st.put("ir_raw4", 0);
 		st.put("head_distance", -1);
+		st.put("beacon_pwr", 0);
 		st.put("error", "");
 		st.put("index", history.size());
 		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
