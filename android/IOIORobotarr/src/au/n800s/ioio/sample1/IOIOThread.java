@@ -19,8 +19,8 @@ public class IOIOThread extends Thread {
 	public final static UART_3PI_RX = 10
 	public final static UART_3PI_TX = 11
 
-	public final static UART_PICAXE_RX = 17
-	public final static UART_PICAXE_TX = 18
+	public final static UART_PICAXE_RX = 6
+	public final static UART_PICAXE_TX = 7
 
 	private IOIO ioio_;
 	private boolean abort_ = false;
