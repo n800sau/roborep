@@ -6,46 +6,50 @@
 'The PWM duty cycle = (duty) x resonator speed
 
 symbol ir_cmd = b6
-symbol PWM_PIN = pinC.1
-symbol SERVO_PIN = pinC.2
+symbol PWM_PIN = c.2
+symbol SERVO_PIN = c.1
+symbol IROUT_PIN = c.4
+symbol IRIN_PIN = c.3
+symbol DAC_PIN = c.0
+symbol timeout=500
 
 main:
 	setfreq m8
 mainloop:
 	pwmout PWM_PIN, 150, 0
     pause 5
-    irout C.2, 1, 1
-    pause 5
+    irout IROUT_PIN, 1, 1
+    pause timeout
 
 	pwmout PWM_PIN, 150, 100
     pause 5
-    irout C.2, 1, 2
-    pause 5
+    irout IROUT_PIN, 1, 2
+    pause timeout
 
 	pwmout PWM_PIN, 150, 200
     pause 5
-    irout C.2, 1, 3
-    pause 5
-
-	pwmout PWM_PIN, 150, 300
-    pause 5
-    irout C.2, 1, 4
-    pause 5
+    irout IROUT_PIN, 1, 3
+    pause timeout
 
 	pwmout PWM_PIN, 150, 400
     pause 5
-    irout C.2, 1, 5
-    pause 5
+    irout IROUT_PIN, 1, 4
+    pause timeout
 
-	irin [100, mainloop], c.4, ir_cmd
+	pwmout PWM_PIN, 150, 600
+    pause 5
+    irout IROUT_PIN, 1, 5
+    pause timeout
+    
+	irin [100, mainloop], IRIN_PIN, ir_cmd
 	if ir_cmd = 1 then lockon
 	if ir_cmd = 2 then lockoff
 	goto mainloop
 
 lockon:
-	servo SERVO_PIN, 200
+	servo SERVO_PIN, 500
 	goto mainloop
 
 lockoff:
-	servo SERVO_PIN, 80
+	servo SERVO_PIN, 200
 	goto mainloop
