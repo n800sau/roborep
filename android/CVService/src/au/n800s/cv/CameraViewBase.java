@@ -87,7 +87,7 @@ public abstract class CameraViewBase extends SurfaceView implements SurfaceHolde
 			try {
 				setPreview();
 			} catch (IOException e) {
-				Log.e(TAG, "mCamera.setPreviewDisplay/setPreviewTexture fails: " + e);
+				DbMsg.e("mCamera.setPreviewDisplay/setPreviewTexture fails: ", e);
 			}
 
             /* Notify that the preview is about to be started and deliver preview size */
@@ -104,9 +104,9 @@ public abstract class CameraViewBase extends SurfaceView implements SurfaceHolde
 
         mCamera.setPreviewCallbackWithBuffer(new PreviewCallback() {
             public void onPreviewFrame(byte[] data, Camera camera) {
-                synchronized (SampleViewBase.this) {
+                synchronized (CameraViewBase.this) {
                     System.arraycopy(data, 0, mFrame, 0, data.length);
-                    SampleViewBase.this.notify(); 
+                    CameraViewBase.this.notify(); 
                 }
                 camera.addCallbackBuffer(mBuffer);
             }
