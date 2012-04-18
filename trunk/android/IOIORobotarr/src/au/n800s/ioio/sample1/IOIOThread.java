@@ -62,17 +62,6 @@ public class IOIOThread extends Thread {
     	return receivedData; 
     }
     
-    protected String requestDataX(final String cmd) throws IOException,InterruptedException 
-    {
-	    byte receivedData[] = new byte[100];
-    	receivedData[0] = 0;
-		//DbMsg.i( "Reading reply...");
-    	in.read(receivedData,0 ,answersize);
-		//DbMsg.i( "Reply received");
-    	receivedData[answersize] = 0;
-    	return receivedData; 
-    }
-    
     protected String get_version() throws IOException, InterruptedException
     {
     	return new String(requestData(new byte[]{(byte)0x81}, 6), 0, 6);
