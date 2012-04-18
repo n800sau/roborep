@@ -6,6 +6,9 @@
 'The PWM duty cycle = (duty) x resonator speed
 
 symbol ir_cmd = b6
+symbol i = b0
+symbol pwd = w1
+
 symbol PWM_PIN = c.2
 symbol SERVO_PIN = c.1
 symbol IROUT_PIN = c.4
@@ -14,42 +17,25 @@ symbol DAC_PIN = c.0
 symbol timeout=500
 
 main:
-	setfreq m8
+	setfreq m4
 mainloop:
-	pwmout PWM_PIN, 150, 0
-    pause 5
-    irout IROUT_PIN, 1, 1
-    pause timeout
-
-	pwmout PWM_PIN, 150, 100
-    pause 5
-    irout IROUT_PIN, 1, 2
-    pause timeout
-
-	pwmout PWM_PIN, 150, 200
-    pause 5
-    irout IROUT_PIN, 1, 3
-    pause timeout
-
-	pwmout PWM_PIN, 150, 400
-    pause 5
-    irout IROUT_PIN, 1, 4
-    pause timeout
-
-	pwmout PWM_PIN, 150, 600
-    pause 5
-    irout IROUT_PIN, 1, 5
-    pause timeout
-    
-	irin [100, mainloop], IRIN_PIN, ir_cmd
-	if ir_cmd = 1 then lockon
-	if ir_cmd = 2 then lockoff
-	goto mainloop
-
-lockon:
-	servo SERVO_PIN, 500
-	goto mainloop
-
-lockoff:
-	servo SERVO_PIN, 200
+	'the bigger i and bigger pwm voltage the lower led power
+	for i = 0 to 10
+		let pwr = i * 60
+		pwmout PWM_PIN, 150, pwr
+		ir_cmd = 0
+		'timeout for the capacitor
+		irin [timeout], IRIN_PIN, ir_cmd
+		if ir_cmd = 1 then
+			servo SERVO_PIN, 500
+		endif
+		if ir_cmd = 2 then
+			servo SERVO_PIN, 200
+		endif
+		'repeate ir command a few times
+		irout IROUT_PIN, 1, i
+		irout IROUT_PIN, 1, i
+		irout IROUT_PIN, 1, i
+		irout IROUT_PIN, 1, i
+    next i
 	goto mainloop
