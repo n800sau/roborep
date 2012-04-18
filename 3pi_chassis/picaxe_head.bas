@@ -11,24 +11,32 @@ symbol BEACON_IR = c.4
 'just sending distance and beackon visibility once in a while
 
 main:
-	setfreq m8
+	setint %00010000,%00010000
+	setfreq m4
 mainloop:
 	'get distance
 	low USONIC_TRIG
 	pulsout USONIC_TRIG, 1          ' Send a pulse to start the ranging
 	pulsin USONIC_ECHO, 1, raw_distance ' Recieve timed pulse from SRF05/04
+	debug
 	distance = raw_distance * 10                ' Calculate distance
 	distance = distance/58
-	sertxd ("distance:", #distance, 13, 10)
-	debug
+	if distance > 0 then
+		sertxd ("distance:", #distance, 13, 10)
+	endif
+	pause 10
+	goto mainloop
+
+interrupt:
 	'get ir command from beacon
 	irin [20, not_found], BEACON_IR, ir_cmd
-	if ir_cmd >= 1 and ir_cmd <= 5 then send_beacon
+	goto send_beacon
 not_found:
 	ir_cmd = 0
 send_beacon:
 	sertxd ("beacon:", #ir_cmd, 13, 10)
-	goto mainloop
+	setint %00010000,%00010000 	; re-activate interrupt
+	return
 
 
 
