@@ -65,12 +65,6 @@ public class IOIOThread extends Thread {
     protected String requestDataX(final String cmd) throws IOException,InterruptedException 
     {
 	    byte receivedData[] = new byte[100];
-	    if(answersize > 100) {
-	    	answersize = 100;
-	    }
-		//DbMsg.i( "Sending command");
-    	out.write(cmd);
-    	sleep(10);
     	receivedData[0] = 0;
 		//DbMsg.i( "Reading reply...");
     	in.read(receivedData,0 ,answersize);
