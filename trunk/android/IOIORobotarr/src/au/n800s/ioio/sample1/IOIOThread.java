@@ -295,9 +295,13 @@ public class IOIOThread extends Thread {
 					}
 					line = r.readLine().split(":");
 					if(line[0] == "distance") {
-						rstate.x_put("head_distance", Integer.parseInt(line[1]));
+						Integer distance = Integer.parseInt(line[1]);
+						rstate.x_put("head_distance", distance);
+						rstate.addDistance(distance);
 					} else if (line[0] == "beacon") {
-						rstate.x_put("beacon_pwr", Integer.parseInt(line[1]));
+						Integer pwr = Integer.parseInt(line[1]);
+						rstate.x_put("beacon_pwr", pwr);
+						rstate.addBeaconPwd(pwr);
 					}
 				}
 			} catch (Exception ex) {

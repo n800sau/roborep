@@ -5,8 +5,8 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import java.util.ArrayList;
-
-
+import java.util.Map;
+import java.util.Pair;
 
 //distance in meters
 public class RobotState {
@@ -17,9 +17,12 @@ public class RobotState {
 	private ArrayList<JSONObject> history;
 	private JSONObject st;
 	int history_offset;
+	private Map<Pair<Integer,Integer>, WorldPoint> map = new Map<Pair<Integer,Integer>, WorldPoint>();
+	private Map<Integer, Integer> charger_direction = new Map<Integer, Integer>();
 
 	RobotState() throws JSONException
 	{
+		//angles in degrees
 		history_offset = 0;
 		history = new ArrayList<JSONObject>();
 		st = new JSONObject();
@@ -44,8 +47,11 @@ public class RobotState {
 		st.put("ir_raw2", 0);
 		st.put("ir_raw3", 0);
 		st.put("ir_raw4", 0);
+		st.put("head_angle", 0);
 		st.put("head_distance", -1);
 		st.put("beacon_pwr", 0);
+		st.put("x", 0);
+		st.put("y", 0);
 		st.put("error", "");
 		st.put("index", history.size());
 		st.put("timestamp", Calendar.getInstance().getTime().getMinutes());
@@ -133,5 +139,44 @@ public class RobotState {
 	{
 		return st.getJSONArray(key);
 	}
-	
+
+	protected Pair<int,int> calc_location(double angle, double distance)
+	{
+		int x = st.getInt("x"), y = st.getInt("y"), dx, dy;
+		angle = st.getInt("current_heading") + angle;
+		dx = (int)(Math.sin(Math.toRadians(angle)) * distance);
+		dy = (int)(Math.cos(Math.toRadians(angle)) * distance);
+		return Pair(x + dx, y + dy);
+	}
+
+	protected WorldPoint loc_obj(Pair<int,int> loc)
+	{
+		return (map.containsKey(loc)) ? map.get(loc) : new WorldPoint()
+	}
+
+	synchronized public addPwd(int val)
+	{
+		charger_direction.set(st.getInt("current_heading"), val);
+	}
+
+	synchronized public addDistance(int val)
+	{
+		Pair<int, int> loc = calc_location(st.getInt("head_angle"), distance);
+		WorldPoint pnt = loc_obj(loc);
+		pnt.obstacle += 1;
+		map.put(loc, pnt);
+	}
+
+	synchronized public JSONArray mapArray()
+	{
+		JSONArray rs = new JSONArray();
+		WorldPoint pnt;
+		for( Iterator<Pair<Integer,Integer>> keyIter = map.keySet().iterator(); keyIter.hasNext()) {
+			jo = new JSONObject();
+			pnt = map.get(keyIter.next());
+			rs.put(i, pnt.asJSON(););
+		}
+		return rs;
+	}
+
 };
