@@ -18,7 +18,9 @@ public class RobotState {
 	private JSONObject st;
 	int history_offset;
 	private Map<Pair<Integer,Integer>, WorldPoint> map = new Map<Pair<Integer,Integer>, WorldPoint>();
-	private Map<Integer, Integer> charger_direction = new Map<Integer, Integer>();
+	//location, heading -> pwr (2d vector - location and length)
+	//vector -> (x,y, angle) indexed by pwr
+	private Map<<Integer, Integer, Integer>, Integer> charger_direction = new Map<Integer, Integer>();
 
 	RobotState() throws JSONException
 	{
@@ -159,6 +161,16 @@ public class RobotState {
 		charger_direction.set(st.getInt("current_heading"), val);
 	}
 
+	synchronized public maxPwrDirection()
+	{
+		int maxPwr = 0;
+		for(int i=0; i< charger_direction.size(); i++) {
+			//current location
+			//
+			if(maxPwr < charger_direction.get(
+		}
+	}
+
 	synchronized public addDistance(int val)
 	{
 		Pair<int, int> loc = calc_location(st.getInt("head_angle"), distance);
@@ -178,5 +190,8 @@ public class RobotState {
 		}
 		return rs;
 	}
+
+	//thread calculating current location and speeds
+	//spawn calculations??
 
 };
