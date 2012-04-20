@@ -21,13 +21,13 @@ public class BrainService extends Service {
 	Messenger mService = null;
 
 	private LifeSupportThread serverThread;
+	BaseModel model;
 
 	@Override
 	public void onCreate() {
 		DbMsg.setTag("RoboBrain");
 		super.onCreate();
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-		new Thread(serverThread = new LifeSupportThread(this)).start();
 		// Tell the user we started.
 		Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
 	}
@@ -57,6 +57,14 @@ public class BrainService extends Service {
 			mNM.cancel(0);
 			stopSelf();
 		} else {
+			Bundle extras = getIntent().getExtras();
+			modelname = extras.getString("model");
+			if(modelname == "3pi") {
+				model = new Model3PI();
+			} else {
+				model = new ModelTrack();
+			}
+			new Thread(lifeThread = new LifeSupportThread(this, model)).start();
 			// Service starting. Create a notification.
 			Notification notification = new Notification(R.drawable.ic_launcher, "Robotarr Brain service running", System.currentTimeMillis());
 			notification.setLatestEventInfo(this, "Robotarr Brain Service", "Click to stop", PendingIntent.getService(this, 0, new Intent("stop", null, this, this.getClass()), 0));
