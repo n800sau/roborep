@@ -298,6 +298,10 @@ public class IOIOThread extends Thread {
 						Integer distance = Integer.parseInt(line[1]);
 						rstate.x_put("head_distance", distance);
 						rstate.addDistance(distance);
+						if(distance < 2 && rstate.x_getInt("leftMotorSpeed") > 0 && rstate.x_getInt("leftMotorSpeed") > 0) {
+							//full stop
+							stop_motor();
+						}
 					} else if (line[0] == "beacon") {
 						Integer pwr = Integer.parseInt(line[1]);
 						rstate.x_put("beacon_pwr", pwr);

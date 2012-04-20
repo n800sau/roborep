@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_service_started">Robotarr Brain Service Started</string>
+    <string name="remote_service_stopped">Robotarr Brain Service Stopped</string>
+    <string name="app_name">Robotarr Brain Service</string>
+</resources>
