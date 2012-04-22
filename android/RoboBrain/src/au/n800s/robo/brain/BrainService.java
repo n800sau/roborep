@@ -21,6 +21,7 @@ public class BrainService extends Service {
 	Messenger mService = null;
 
 	private LifeSupportThread serverThread;
+
 	BaseModel model;
 
 	@Override

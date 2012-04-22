@@ -11,7 +11,7 @@ class ModelTrack extends BaseModel
 
 	public String modelService()
 	{
-		return "au.n800s.robo.model.track";
+		return "au.n800s.robo.model.track.IOIORoboRemoteService";
 	}
 
 };
