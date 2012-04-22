@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="au.n800s.ioio.rserv" android:versionCode="1"
+	package="au.n800s.robo.model.track" android:versionCode="1"
 	android:versionName="1.0">
 	<uses-sdk android:minSdkVersion="10" />
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.BLUETOOTH" />
 
 	<application android:icon="@drawable/ic_launcher" android:label="@string/app_name">
 		<uses-library android:name="com.android.future.usb.accessory" android:required="false" />
 		<service android:name="IOIORemoteService" android:process=":remote">
 			<intent-filter>
 				<action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
-				<action android:name="au.n800s.ioio.rserv.IOIORoboRemoteService" />
+				<action android:name="au.n800s.robo.model.track.IOIORoboRemoteService" />
 			</intent-filter>
 			<meta-data android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" android:resource="@xml/accessory_filter" />
 		</service>

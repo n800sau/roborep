@@ -11,7 +11,7 @@ class Model3PI extends BaseModel
 
 	public String modelService()
 	{
-		return "au.n800s.robo.model.3pi";
+		return "au.n800s.robo.model.3pi.IOIORoboRemoteService";
 	}
 
 };
