@@ -332,8 +332,8 @@ public class IOIORemoteService extends IOIOService {
 			stopSelf();
 		} else {
 			// Service starting. Create a notification.
-			Notification notification = new Notification(R.drawable.ic_launcher, "IOIO service running", System.currentTimeMillis());
-			notification.setLatestEventInfo(this, "IOIO Robotarr Service", "Click to stop", PendingIntent.getService(this, 0, new Intent("stop", null, this, this.getClass()), 0));
+			Notification notification = new Notification(R.drawable.ic_launcher, "Track service running", System.currentTimeMillis());
+			notification.setLatestEventInfo(this, "Track Robotarr Service", "Click to stop", PendingIntent.getService(this, 0, new Intent("stop", null, this, this.getClass()), 0));
 			notification.flags |= Notification.FLAG_ONGOING_EVENT;
 			mNM.notify(0, notification);
 		}
