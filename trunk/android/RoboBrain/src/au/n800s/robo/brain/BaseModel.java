@@ -23,6 +23,9 @@ class BaseModel
 	//returns approximate time to death
 	public int estimateEnergy()
 	{
+		msg = Message.obtain(null, MessageId.MSG_BATTERY);
+		msg.replyTo = mMessenger;
+		mService.send(msg);
 		return 0;
 	}
 
