@@ -6,6 +6,10 @@ import IRoboCallback;
 interface IRobo {
   String getName();
   String getVersion();
-  int registerCallback(in int id, in IRoboCallback cb);
-  int unregisterCallback(in int id);
+  Float getBattery();
+
+//      AppId = ctx.getPackageName();
+
+//  int registerCallback(in String appId, in IRoboCallback cb);
+//  int unregisterCallback(in String appId);
 }

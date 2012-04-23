@@ -13,12 +13,13 @@ import android.content.Intent;
 import android.os.IBinder;
 
 import android.os.Handler;
-import android.os.Messenger;
-import android.os.Message;
 import android.os.RemoteException;
 import android.widget.Toast;
+
 import au.n800s.track.common.DbMsg;
-import au.n800s.track.common.MessageId;
+import au.n800s.track.common.IRobo;
+import au.n800s.track.common.IRoboCallback;
+
 import au.n800s.track.common.PinId;
 import au.n800s.track.common.BaseProCommands;
 
@@ -41,63 +42,31 @@ public class IOIORemoteService extends IOIOService {
 	/** For showing and hiding our notification. */
 	NotificationManager mNM;
 
-	/** Keeps track of all current registered clients. */
-	ArrayList<Messenger> mClients = new ArrayList<Messenger>();
+	private final IRobo.Stub mBinder = new IRobo.Stub() {
 
-	ArrayList<Message> mActions = new ArrayList<Message>();
-
-	/**
-	 * Handler of incoming messages from clients.
-	 */
-	class IncomingHandler extends Handler {
-
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case MessageId.MSG_REGISTER_CLIENT:
-				mClients.add(msg.replyTo);
-				DbMsg.i("client added");
-				break;
-			case MessageId.MSG_UNREGISTER_CLIENT:
-				mClients.remove(msg.replyTo);
-				DbMsg.i("client removed");
-				break;
-			case MessageId.MSG_SET_VALUE:
-				int mValue = msg.arg1;
-				for (int i=mClients.size()-1; i>=0; i--) {
-					try {
-						mClients.get(i).send(Message.obtain(null, MessageId.MSG_SET_VALUE, mValue, 0));
-					} catch (RemoteException e) {
-						// The client is dead.  Remove it from the list;
-						// we are going through the list from back to front
-						// so this is safe to do inside the loop.
-						mClients.remove(i);
-					}
-				}
-				break;
-			default:
-				DbMsg.i("what="+msg.what);
-				if(msg.what > 0) {
-					mActions.add(Message.obtain(msg));
-					DbMsg.i("added "+mActions.get(0));
-				} else {
-					super.handleMessage(msg);
-				}
-				break;
-			}
+		public String getName()
+		{
+			return "Track";
 		}
 
-	}
+		public String getVersion()
+		{
+			return "0.0";
+		}
 
-	/**
-	 * Target we publish for clients to send messages to IncomingHandler.
-	 */
-	final Messenger mMessenger = new Messenger(new IncomingHandler());
+		public Float getBattery()
+		{
+			DbMsg.i("battery voltage requested");
+			request = ("" + BaseProCommands.CMD_BATTERY).getBytes();
+			response = new byte[50];
+			i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+			return new Float(new String(response));
+		}
 
-	@Override
-	protected IOIOLooper createIOIOLooper() {
-		return new BaseIOIOLooper() {
+	};
 
+
+	private BaseIOIOLooper mLooper = new BaseIOIOLooper() {
 			Thread ledThread;
 			Thread headScannerThread;
 			/* servos */
@@ -207,6 +176,11 @@ public class IOIORemoteService extends IOIOService {
 				Thread.sleep(SAMPLING_DELAY);
 			}
 		};
+
+
+	@Override
+	protected IOIOLooper createIOIOLooper() {
+		return mLooper;
 	}
 
 	class HeadScannerThread extends Thread {
@@ -279,30 +253,6 @@ public class IOIORemoteService extends IOIOService {
 		};
 	}
 
-	class LEDThread extends Thread {
-		private DigitalOutput led;
-		private IOIO ioio;
-
-		public LEDThread(IOIO ioio) {
-			this.ioio = ioio;
-		}
-
-		@Override
-		public void run() {
-			try {
-				boolean ledState = true;
-				led = ioio.openDigitalOutput(IOIO.LED_PIN, ledState);
-				while (true) {
-					ledState = !ledState;
-					led.write(ledState);
-					Thread.sleep(LED_BLINK_SPEED);
-				}
-			} catch (Exception e) {
-				DbMsg.e("LED thread is stopped", e);
-			}
-		}
-	}
-
 
 	@Override
 	public void onCreate() {
@@ -342,7 +292,7 @@ public class IOIORemoteService extends IOIOService {
 	@Override
 	public IBinder onBind(Intent arg0) {
 		DbMsg.i("IBind");
-		return mMessenger.getBinder();
+		return mBinder;
 	}
 
 }
