@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_service_started">Robotarr 3pi Service Started</string>
+    <string name="remote_service_stopped">Robotarr 3pi Service Stopped</string>
+    <string name="app_name">Robotarr 3pi Service</string>
+</resources>

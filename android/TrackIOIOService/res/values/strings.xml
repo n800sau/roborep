@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="remote_service_started">Robotarr Service Started</string>
-    <string name="remote_service_stopped">Robotarr Service Stopped</string>
-    <string name="app_name">Robotarr Service</string>
+    <string name="remote_service_started">Robotarr Track Service Started</string>
+    <string name="remote_service_stopped">Robotarr Track Service Stopped</string>
+    <string name="app_name">Robotarr Track Service</string>
 </resources>
