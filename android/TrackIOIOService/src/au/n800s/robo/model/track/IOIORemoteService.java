@@ -56,11 +56,7 @@ public class IOIORemoteService extends IOIOService {
 
 		public Float getBattery()
 		{
-			DbMsg.i("battery voltage requested");
-			request = ("" + BaseProCommands.CMD_BATTERY).getBytes();
-			response = new byte[50];
-			i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-			return new Float(new String(response));
+			return mLooper.getBattery()
 		}
 
 	};
@@ -69,6 +65,7 @@ public class IOIORemoteService extends IOIOService {
 	private BaseIOIOLooper mLooper = new BaseIOIOLooper() {
 			Thread ledThread;
 			Thread headScannerThread;
+
 			/* servos */
 			final HashMap<Integer,PwmOutput> servos_ = new HashMap<Integer,PwmOutput>();
 
@@ -87,92 +84,71 @@ public class IOIORemoteService extends IOIOService {
 					servos_.put(i, ioio_.openPwmOutput(i, 100));
 				}
 				headScannerThread = new HeadScannerThread(ioio_, servos_.get(PinId.PWM_UHEAD));
+				headScannerThread.start();
 				i2cBaseMaster = ioio_.openTwiMaster(PinId.BASE_I2C_INDEX, TwiMaster.Rate.RATE_100KHz, false);
+			}
+
+			synchronized public void moveStraight(Integer leftSpeed, Integer rightSpeed)
+			{
+				request = (BaseProCommands.CMD_BOTH + leftSpeed + ';' + rightSpeed).getBytes();
+				response = new byte[0];
+				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+			}
+
+			synchronized public void fullStop()
+			{
+				request = (BaseProCommands.CMD_STOP).getBytes();
+				response = new byte[0];
+				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+			}
+
+			synchronized public void turnLeft(Integer leftSpeed)
+			{
+				request = (BaseProCommands.CMD_LEFT + leftSpeed).getBytes();
+				response = new byte[0];
+				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+			}
+
+			synchronized public void turnRight(Integer rightSpeed)
+			{
+				request = (BaseProCommands.CMD_RIGHT + rightSpeed).getBytes();
+				response = new byte[0];
+				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+			}
+
+			synchronized public void setServo(int servoId, int angle)
+			{
+				servos_.get(servoId).setDuty(angle);
+			}
+
+			synchronized public Float getBattery()
+			{
+				DbMsg.i("battery voltage requested");
+				request = ("" + BaseProCommands.CMD_BATTERY).getBytes();
+				response = new byte[50];
+				mLooper.i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+				return new Float(new String(response));
+			}
+
+			synchronized public Float getCharger()
+			{
+				DbMsg.i("battery voltage requested");
+				request = ("" + BaseProCommands.CMD_CHARGER).getBytes();
+				response = new byte[50];
+				mLooper.i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+				return new Float(new String(response));
+			}
+
+			synchronized public void setServo(Boolean on)
+			{
+				String on = Boolean.toString(on);
+				request = (BaseProCommands.CMD_LED + on).getBytes();
+				response = new byte[0];
+				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 			}
 
 			@Override
 			public void loop() throws ConnectionLostException, InterruptedException {
-				Message msg = null;
-				Message reply = null;
-				byte[] request;
-				byte[] response;
-				String speed;
-				if(!mActions.isEmpty()) {
-					msg = mActions.get(0);
-					DbMsg.i("msg found what="+msg);
-				}
-				if( msg != null ) {
-					DbMsg.i("msg found");
-					switch(msg.what) {
-					case MessageId.MSG_SERVO:
-						DbMsg.i("servo requested"+msg.arg1+","+msg.arg2);
-						servos_.get(msg.arg1).setPulseWidth(msg.arg1);
-						break;
-					case MessageId.MSG_SCAN_FORWARD:
-						DbMsg.i("scan forward requested");
-						headScannerThread.start();
-						break;
-					case MessageId.MSG_MOVE_STRAIGHT:
-						DbMsg.i("move straight requested");
-						String speedleft = Integer.toString(msg.arg1);
-						String speedright = Integer.toString(msg.arg2);
-						request = (BaseProCommands.CMD_BOTH + speedleft + ';' + speedright).getBytes();
-						response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-						break;
-					case MessageId.MSG_TURN_RIGHT:
-						DbMsg.i("turn right requested");
-						speed = Integer.toString(msg.arg1);
-						request = (BaseProCommands.CMD_RIGHT + speed).getBytes();
-						response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-						break;
-					case MessageId.MSG_TURN_LEFT:
-						DbMsg.i("turn left requested");
-						speed = Integer.toString(msg.arg1);
-						request = (BaseProCommands.CMD_LEFT + speed).getBytes();
-						response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-						break;
-					case MessageId.MSG_BATTERY:
-						DbMsg.i("battery voltage requested");
-						request = ("" + BaseProCommands.CMD_BATTERY).getBytes();
-						response = new byte[50];
-						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-						reply = Message.obtain(null, msg.what, new Float(new String(response)));
-						break;
-					case MessageId.MSG_CHARGER:
-						DbMsg.i("charger voltage requested");
-						request = ("" + BaseProCommands.CMD_CHARGER).getBytes();
-						response = new byte[50];
-						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-						reply = Message.obtain(null, msg.what, new Float(new String(response)));
-						break;
-					case MessageId.MSG_BASE_LED:
-						DbMsg.i("base led command requested");
-						String on = Boolean.toString(msg.arg1 != 0);
-						request = (BaseProCommands.CMD_LED + on).getBytes();
-						response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-						break;
-					case MessageId.MSG_FULL_STOP:
-						DbMsg.i("full stop requested");
-						request = ("" + BaseProCommands.CMD_STOP).getBytes();
-						response = new byte[0];
-						i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-						break;
-					}
-					DbMsg.i("after");
-					if(reply == null) {
-						reply = Message.obtain(null, msg.what, 0, 0);
-					}
-					try {
-						msg.replyTo.send(reply);
-					} catch(RemoteException e) {
-						DbMsg.e("Reply error:", e);
-					}
-					mActions.remove(0);
-				}
 				Thread.sleep(SAMPLING_DELAY);
 			}
 		};
@@ -182,77 +158,6 @@ public class IOIORemoteService extends IOIOService {
 	protected IOIOLooper createIOIOLooper() {
 		return mLooper;
 	}
-
-	class HeadScannerThread extends Thread {
-		private IOIO ioio;
-		private PwmOutput pwmOutput;
-		private Uart uart;
-		private InputStream in;
-		private OutputStream out;
-
-		public HeadScannerThread(IOIO ioio, PwmOutput servo) throws ConnectionLostException  {
-			this.ioio = ioio;
-			pwmOutput = servo;
-			pwmOutput.setPulseWidth(1500);
-			DbMsg.i("centered");
-			//			uart = ioio.openUart(PinId.UART_USONIC_RX, PinId.UART_USONIC_TX, 9600, Uart.Parity.NONE, Uart.StopBits.ONE);
-			//	        in = uart.getInputStream();
-			//	        out = uart.getOutputStream();
-		}
-
-		protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
-		{
-			byte receivedData[] = new byte[100];
-			if(answersize > 100) {
-				answersize = 100;
-			}
-			//DbMsg.i( "Sending command");
-			out.write(cmd);
-			sleep(10);
-			receivedData[0] = 0;
-			//DbMsg.i( "Reading reply...");
-			in.read(receivedData,0 ,answersize);
-			//DbMsg.i( "Reply received");
-			receivedData[answersize] = 0;
-			return receivedData; 
-		}
-
-		private String get_distance() throws IOException, InterruptedException {
-			return new String(requestData(new byte[]{(byte)0x81}, 6), 0, 6);
-		}
-
-		@Override
-		public void run() {
-			try {
-				DbMsg.i("head start");
-				//turn to one side
-				for(int i = 1500; i < 2500; i += 10) {
-					pwmOutput.setPulseWidth(i);
-					DbMsg.i("i="+i);
-					Thread.sleep(100);
-				}
-				Thread.sleep(1000);
-				//turn to other side
-				for(int i = 2500; i > 500; i -= 10) {
-					pwmOutput.setPulseWidth(i);
-					DbMsg.i("i="+i);
-					Thread.sleep(100);
-				}
-				Thread.sleep(1000);
-				//return to the middle position
-				for(int i = 500; i < 1500; i += 10) {
-					pwmOutput.setPulseWidth(i);
-					DbMsg.i("i="+i);
-					Thread.sleep(100);
-				}
-				Thread.sleep(1000);
-				DbMsg.i("head end");
-			} catch (Exception e) {
-				DbMsg.e("Head Scanner stopped", e);
-			}
-		};
-	}
-
 
 	@Override
 	public void onCreate() {
