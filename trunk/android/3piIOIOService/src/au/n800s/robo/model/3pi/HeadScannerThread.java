@@ -2,19 +2,15 @@ package au.n800s.robo.model.3pi;
 
 class HeadScannerThread extends Thread {
 	private IOIO ioio;
-	private PwmOutput pwmOutput;
 	private Uart uart;
 	private InputStream in;
 	private OutputStream out;
 
 	public HeadScannerThread(IOIO ioio, PwmOutput servo) throws ConnectionLostException  {
 		this.ioio = ioio;
-		pwmOutput = servo;
-		pwmOutput.setPulseWidth(1500);
-		DbMsg.i("centered");
-		//			uart = ioio.openUart(PinId.UART_USONIC_RX, PinId.UART_USONIC_TX, 9600, Uart.Parity.NONE, Uart.StopBits.ONE);
-		//	        in = uart.getInputStream();
-		//	        out = uart.getOutputStream();
+		uart = ioio.openUart(PinId.UART_USONIC_RX, PinId.UART_USONIC_TX, 9600, Uart.Parity.NONE, Uart.StopBits.ONE);
+		in = uart.getInputStream();
+		out = uart.getOutputStream();
 	}
 
 	protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
@@ -41,27 +37,7 @@ class HeadScannerThread extends Thread {
 	@Override
 	public void run() {
 		try {
-			DbMsg.i("head start");
-			//turn to one side
-			for(int i = 1500; i < 2500; i += 10) {
-				pwmOutput.setPulseWidth(i);
-				DbMsg.i("i="+i);
-				Thread.sleep(100);
-			}
-			Thread.sleep(1000);
-			//turn to other side
-			for(int i = 2500; i > 500; i -= 10) {
-				pwmOutput.setPulseWidth(i);
-				DbMsg.i("i="+i);
-				Thread.sleep(100);
-			}
-			Thread.sleep(1000);
-			//return to the middle position
-			for(int i = 500; i < 1500; i += 10) {
-				pwmOutput.setPulseWidth(i);
-				DbMsg.i("i="+i);
-				Thread.sleep(100);
-			}
+			Float(get_distance());
 			Thread.sleep(1000);
 			DbMsg.i("head end");
 		} catch (Exception e) {

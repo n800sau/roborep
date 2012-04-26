@@ -20,7 +20,6 @@ import au.n800s.track.common.DbMsg;
 import au.n800s.track.common.IRobo;
 import au.n800s.track.common.IRoboCallback;
 
-import au.n800s.track.common.PinId;
 import au.n800s.track.common.BaseProCommands;
 
 import ioio.lib.api.DigitalOutput;
