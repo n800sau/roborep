@@ -33,7 +33,7 @@ import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOService;
 import ioio.lib.api.PwmOutput;
 
-public class IOIORemoteService extends IOIOService {
+public class IOIORemoteService extends IOIOService implements SensorListener, LocationListener {
 
 	private static final int SAMPLING_DELAY = 100;
 	private static final int LED_BLINK_SPEED = 250;
@@ -70,21 +70,21 @@ public class IOIORemoteService extends IOIOService {
 
 
 	private BaseIOIOLooper mLooper = new BaseIOIOLooper() {
+
+			//permanent threads
 			Thread ledThread;
 			Thread headScannerThread;
 
-			@Override
-			protected void setup() throws ConnectionLostException, InterruptedException {
-				DbMsg.i("Connected.");
-				uart = ioio_.openUart(UART_3PI_RX, UART_3PI_TX, 115200, Uart.Parity.NONE, Uart.StopBits.ONE);
-		        in = uart.getInputStream();
-		        out = uart.getOutputStream();
-				ledThread = new LEDThread(ioio_);
-				ledThread.start();
-				DbMsg.i("Thread started");
-				headScannerThread = new HeadScannerThread(ioio_);
-				headScannerThread.start();
-			}
+
+			//dynamic thread
+			Thread currentActionThread;
+
+			//list of currently executing action classes
+			//each class has a timer from java.lang.System System.nanoTime() but NOT System.currentTimeMillis()
+			void step() 
+			Boolean is_finished()//returns true if finished
+
+			MotorControl motors; //motor control class with sensor calibration??? getSensorList (int type) , getRotationMatrix, getOrientation
 
     protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
     {
@@ -203,8 +203,51 @@ public class IOIORemoteService extends IOIOService {
 				return new Float(new String(response));
 			}
 
+    public void onSensorChanged(int sensor, float[] values) {
+        mOrientation = values[0];
+    }
+
 			@Override
-			public void loop() throws ConnectionLostException, InterruptedException {
+			protected void setup() throws ConnectionLostException, InterruptedException {
+				DbMsg.i("Connected.");
+				uart = ioio_.openUart(UART_3PI_RX, UART_3PI_TX, 115200, Uart.Parity.NONE, Uart.StopBits.ONE);
+		        in = uart.getInputStream();
+		        out = uart.getOutputStream();
+				ledThread = new LEDThread(ioio_);
+				ledThread.start();
+				DbMsg.i("Thread started");
+				headScannerThread = new HeadScannerThread(ioio_);
+				headScannerThread.start();
+
+				//estimate the speed of motors
+				markCurrentLocation();
+				set_speed(100, 100);
+				Thread.sleep(10);
+				getLocationDifference();
+				//estimate the speed of rotation?
+				
+			}
+
+			@Override
+			public void loop() throws ConnectionLostException, InterruptedException
+			{
+				//move straight ahead
+				//if there is a wall turn left and right scanning distance and reading direction
+				//the distance bigger is the new direction
+				//turn to this direction
+				//loop
+				int distance = headScannerThread.current_distance();
+				if(distance < 10) {
+					stop_motor();
+					if(currentActionThread != null) {
+						currentActionThread.abort();
+					}
+					currentActionThread = new SearchDirectionThread();
+					currentActionThread.start();
+				} else {
+					//move straight ahead
+					set_speed(100, 100);
+				}
 				Thread.sleep(SAMPLING_DELAY);
 			}
 		};
@@ -221,10 +264,18 @@ public class IOIORemoteService extends IOIOService {
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		// Tell the user we started.
 		Toast.makeText(this, R.string.remote_service_started, Toast.LENGTH_SHORT).show();
+          mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        mSensorManager.registerListener(mRadar, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_GAME);
+        // Register for location updates
+//        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MILLIS, 1, mRadar);
+//        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, LOCATION_UPDATE_INTERVAL_MILLIS, 1, mRadar);
 	}
 
 	@Override
 	public void onDestroy() {
+        mSensorManager.unregisterListener(mRadar);
+        mLocationManager.removeUpdates(mRadar);
 		// Cancel the persistent notification.
 		mNM.cancel(R.string.remote_service_started);
 
