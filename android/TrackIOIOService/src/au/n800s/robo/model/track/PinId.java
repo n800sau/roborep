@@ -1,4 +1,4 @@
-package au.n800s.robo.common;
+package au.n800s.robo.model.track;
 
 public class PinId {
 

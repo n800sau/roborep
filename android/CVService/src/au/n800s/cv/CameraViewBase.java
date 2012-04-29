@@ -9,11 +9,9 @@ import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
-import android.os.Build;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import au.n800s.track.common.DbMsg;
+import au.n800s.robo.common.DbMsg;
 
 public abstract class CameraViewBase extends SurfaceView implements SurfaceHolder.Callback, Runnable {
 

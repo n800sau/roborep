@@ -1,12 +1,12 @@
 package au.n800s.robo.common;
 
-import IRoboCallback;
+//import IRoboCallback;
 
 // Declare the interface.
 interface IRobo {
   String getName();
   String getVersion();
-  Float getBattery();
+  double getBattery();
 
 //      AppId = ctx.getPackageName();
 
