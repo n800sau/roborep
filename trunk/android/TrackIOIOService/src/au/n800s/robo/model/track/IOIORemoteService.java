@@ -15,12 +15,9 @@ import android.os.IBinder;
 import android.os.Handler;
 import android.os.RemoteException;
 import android.widget.Toast;
-
-import au.n800s.track.common.DbMsg;
-import au.n800s.track.common.IRobo;
-import au.n800s.track.common.IRoboCallback;
-
-import au.n800s.track.common.BaseProCommands;
+import au.n800s.robo.common.BaseProCommands;
+import au.n800s.robo.common.DbMsg;
+import au.n800s.robo.common.IRobo;
 
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
@@ -53,9 +50,9 @@ public class IOIORemoteService extends IOIOService {
 			return "0.0";
 		}
 
-		public Float getBattery()
+		public double getBattery()
 		{
-			return mLooper.getBattery()
+			return mLooper.getBattery();
 		}
 
 	};
@@ -65,7 +62,7 @@ public class IOIORemoteService extends IOIOService {
 			Thread ledThread;
 			Thread headScannerThread;
 
-			/* servos */
+			/* servo */
 			final HashMap<Integer,PwmOutput> servos_ = new HashMap<Integer,PwmOutput>();
 
 			final int pins[] = {PinId.PWM_UHEAD, PinId.PWM_PHONE_TURN, PinId.PWM_PHONE_TILT, PinId.PWM_ARM_LOWER_TURN, PinId.PWM_ARM_LOWER_TILT, PinId.PWM_ARM_HAND_TURN, PinId.PWM_ARM_HAND_TILT, PinId.PWM_ARM_HAND_GRIP};
@@ -87,31 +84,31 @@ public class IOIORemoteService extends IOIOService {
 				i2cBaseMaster = ioio_.openTwiMaster(PinId.BASE_I2C_INDEX, TwiMaster.Rate.RATE_100KHz, false);
 			}
 
-			synchronized public void moveStraight(Integer leftSpeed, Integer rightSpeed)
+			synchronized public void moveStraight(Integer leftSpeed, Integer rightSpeed) throws ConnectionLostException, InterruptedException
 			{
-				request = (BaseProCommands.CMD_BOTH + leftSpeed + ';' + rightSpeed).getBytes();
-				response = new byte[0];
+				byte[] request = (getString(BaseProCommands.CMD_BOTH) + leftSpeed + ';' + rightSpeed).getBytes();
+				byte[] response = new byte[0];
 				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 			}
 
-			synchronized public void fullStop()
+			synchronized public void fullStop() throws ConnectionLostException, InterruptedException
 			{
-				request = (BaseProCommands.CMD_STOP).getBytes();
-				response = new byte[0];
+				byte[] request = getString(BaseProCommands.CMD_STOP).getBytes();
+				byte[] response = new byte[0];
 				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 			}
 
-			synchronized public void turnLeft(Integer leftSpeed)
+			synchronized public void turnLeft(Integer leftSpeed) throws ConnectionLostException, InterruptedException
 			{
-				request = (BaseProCommands.CMD_LEFT + leftSpeed).getBytes();
-				response = new byte[0];
+				byte[] request = (getString(BaseProCommands.CMD_LEFT) + leftSpeed).getBytes();
+				byte[] response = new byte[0];
 				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 			}
 
-			synchronized public void turnRight(Integer rightSpeed)
+			synchronized public void turnRight(Integer rightSpeed) throws ConnectionLostException, InterruptedException
 			{
-				request = (BaseProCommands.CMD_RIGHT + rightSpeed).getBytes();
-				response = new byte[0];
+				byte[] request = (getString(BaseProCommands.CMD_RIGHT) + rightSpeed).getBytes();
+				byte[] response = new byte[0];
 				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
 			}
 

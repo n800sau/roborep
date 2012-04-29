@@ -1,5 +1,16 @@
 package au.n800s.robo.model.track;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import au.n800s.robo.common.DbMsg;
+
+import ioio.lib.api.IOIO;
+import ioio.lib.api.PwmOutput;
+import ioio.lib.api.Uart;
+import ioio.lib.api.exception.ConnectionLostException;
+
 class HeadScannerThread extends Thread {
 	private IOIO ioio;
 	private PwmOutput pwmOutput;

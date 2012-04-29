@@ -2,9 +2,8 @@ package au.n800s.cv;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Window;
-import au.n800s.track.common.DbMsg;
+import au.n800s.robo.common.DbMsg;
 
 public class CameraActivity extends Activity {
 
