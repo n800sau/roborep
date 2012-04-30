@@ -49,26 +49,6 @@ public class IOIORemoteService extends IOIOService implements SensorListener, Lo
 		WALKING_AROUND
 	};
 
-	private final IRobo.Stub mBinder = new IRobo.Stub() {
-
-		public String getName()
-		{
-			return "3pi";
-		}
-
-		public String getVersion()
-		{
-			return "0.0";
-		}
-
-		public Float getBattery()
-		{
-			return mLooper.getBattery()
-		}
-
-	};
-
-
 	private BaseIOIOLooper mLooper = new BaseIOIOLooper() {
 
 			//permanent threads
@@ -85,6 +65,21 @@ public class IOIORemoteService extends IOIOService implements SensorListener, Lo
 			Boolean is_finished()//returns true if finished
 
 			MotorControl motors; //motor control class with sensor calibration??? getSensorList (int type) , getRotationMatrix, getOrientation
+
+			public final IRobo.Stub mBinder = new IRobo.Stub() {
+
+				public String getName()
+				{
+					return "3pi";
+				}
+
+				public String getVersion()
+				{
+					return "0.0";
+				}
+
+
+
 
     protected byte[] requestData(byte cmd[], int answersize) throws IOException,InterruptedException 
     {
@@ -207,6 +202,8 @@ public class IOIORemoteService extends IOIOService implements SensorListener, Lo
         mOrientation = values[0];
     }
 
+			};
+
 			@Override
 			protected void setup() throws ConnectionLostException, InterruptedException {
 				DbMsg.i("Connected.");
@@ -304,7 +301,7 @@ public class IOIORemoteService extends IOIOService implements SensorListener, Lo
 	@Override
 	public IBinder onBind(Intent arg0) {
 		DbMsg.i("IBind");
-		return mBinder;
+		return mLooper.mBinder;
 	}
 
 }

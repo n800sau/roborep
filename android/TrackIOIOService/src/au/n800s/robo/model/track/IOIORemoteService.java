@@ -32,31 +32,10 @@ import ioio.lib.api.PwmOutput;
 
 public class IOIORemoteService extends IOIOService {
 
-	private static final int SAMPLING_DELAY = 100;
-	private static final int LED_BLINK_SPEED = 250;
+	private static final int SAMPLING_DELAY = 1000;
 
 	/** For showing and hiding our notification. */
 	NotificationManager mNM;
-
-	private final IRobo.Stub mBinder = new IRobo.Stub() {
-
-		public String getName()
-		{
-			return "Track";
-		}
-
-		public String getVersion()
-		{
-			return "0.0";
-		}
-
-		public double getBattery()
-		{
-			return mLooper.getBattery();
-		}
-
-	};
-
 
 	private BaseIOIOLooper mLooper = new BaseIOIOLooper() {
 			Thread ledThread;
@@ -68,6 +47,79 @@ public class IOIORemoteService extends IOIOService {
 			final int pins[] = {PinId.PWM_UHEAD, PinId.PWM_PHONE_TURN, PinId.PWM_PHONE_TILT, PinId.PWM_ARM_LOWER_TURN, PinId.PWM_ARM_LOWER_TILT, PinId.PWM_ARM_HAND_TURN, PinId.PWM_ARM_HAND_TILT, PinId.PWM_ARM_HAND_GRIP};
 
 			private TwiMaster i2cBaseMaster;
+
+			public final IRobo.Stub mBinder = new IRobo.Stub() {
+
+				synchronized public void moveStraight(Integer leftSpeed, Integer rightSpeed) throws ConnectionLostException, InterruptedException
+				{
+					byte[] request = (getString(BaseProCommands.CMD_BOTH) + leftSpeed + ';' + rightSpeed).getBytes();
+					byte[] response = new byte[0];
+					i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+				}
+
+				synchronized public void fullStop() throws ConnectionLostException, InterruptedException
+				{
+					byte[] request = getString(BaseProCommands.CMD_STOP).getBytes();
+					byte[] response = new byte[0];
+					i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+				}
+
+				synchronized public void turnLeft(Integer leftSpeed) throws ConnectionLostException, InterruptedException
+				{
+					byte[] request = (getString(BaseProCommands.CMD_LEFT) + leftSpeed).getBytes();
+					byte[] response = new byte[0];
+					i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+				}
+
+				synchronized public void turnRight(Integer rightSpeed) throws ConnectionLostException, InterruptedException
+				{
+					byte[] request = (getString(BaseProCommands.CMD_RIGHT) + rightSpeed).getBytes();
+					byte[] response = new byte[0];
+					i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+				}
+
+				synchronized public void setServo(int servoId, int angle)
+				{
+					servos_.get(servoId).setDuty(angle);
+				}
+
+				synchronized public Float getCharger()
+				{
+					DbMsg.i("battery voltage requested");
+					request = ("" + BaseProCommands.CMD_CHARGER).getBytes();
+					response = new byte[50];
+					mLooper.i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+					return new Float(new String(response));
+				}
+
+				synchronized public void setServo(Boolean on)
+				{
+					String on = Boolean.toString(on);
+					request = (BaseProCommands.CMD_LED + on).getBytes();
+					response = new byte[0];
+					i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+				}
+
+				public String getName()
+				{
+					return "Track";
+				}
+
+				public String getVersion()
+				{
+					return "0.0";
+				}
+
+				synchronized public double getBattery()
+				{
+					DbMsg.i("battery voltage requested");
+					request = ("" + BaseProCommands.CMD_BATTERY).getBytes();
+					response = new byte[50];
+					mLooper.i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
+					return new Float(new String(response)).doubleValue();
+				}
+
+			};
 
 			@Override
 			protected void setup() throws ConnectionLostException, InterruptedException {
@@ -84,67 +136,9 @@ public class IOIORemoteService extends IOIOService {
 				i2cBaseMaster = ioio_.openTwiMaster(PinId.BASE_I2C_INDEX, TwiMaster.Rate.RATE_100KHz, false);
 			}
 
-			synchronized public void moveStraight(Integer leftSpeed, Integer rightSpeed) throws ConnectionLostException, InterruptedException
-			{
-				byte[] request = (getString(BaseProCommands.CMD_BOTH) + leftSpeed + ';' + rightSpeed).getBytes();
-				byte[] response = new byte[0];
-				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-			}
-
-			synchronized public void fullStop() throws ConnectionLostException, InterruptedException
-			{
-				byte[] request = getString(BaseProCommands.CMD_STOP).getBytes();
-				byte[] response = new byte[0];
-				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-			}
-
-			synchronized public void turnLeft(Integer leftSpeed) throws ConnectionLostException, InterruptedException
-			{
-				byte[] request = (getString(BaseProCommands.CMD_LEFT) + leftSpeed).getBytes();
-				byte[] response = new byte[0];
-				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-			}
-
-			synchronized public void turnRight(Integer rightSpeed) throws ConnectionLostException, InterruptedException
-			{
-				byte[] request = (getString(BaseProCommands.CMD_RIGHT) + rightSpeed).getBytes();
-				byte[] response = new byte[0];
-				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-			}
-
-			synchronized public void setServo(int servoId, int angle)
-			{
-				servos_.get(servoId).setDuty(angle);
-			}
-
-			synchronized public Float getBattery()
-			{
-				DbMsg.i("battery voltage requested");
-				request = ("" + BaseProCommands.CMD_BATTERY).getBytes();
-				response = new byte[50];
-				mLooper.i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-				return new Float(new String(response));
-			}
-
-			synchronized public Float getCharger()
-			{
-				DbMsg.i("battery voltage requested");
-				request = ("" + BaseProCommands.CMD_CHARGER).getBytes();
-				response = new byte[50];
-				mLooper.i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-				return new Float(new String(response));
-			}
-
-			synchronized public void setServo(Boolean on)
-			{
-				String on = Boolean.toString(on);
-				request = (BaseProCommands.CMD_LED + on).getBytes();
-				response = new byte[0];
-				i2cBaseMaster.writeRead(BaseProCommands.I2C_Addr, false, request, request.length, response, response.length);
-			}
-
 			@Override
 			public void loop() throws ConnectionLostException, InterruptedException {
+				double battery = mBinder.getBattery();
 				Thread.sleep(SAMPLING_DELAY);
 			}
 		};
@@ -193,7 +187,7 @@ public class IOIORemoteService extends IOIOService {
 	@Override
 	public IBinder onBind(Intent arg0) {
 		DbMsg.i("IBind");
-		return mBinder;
+		return mLooper.mBinder;
 	}
 
 }
