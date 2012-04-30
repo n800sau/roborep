@@ -5,7 +5,8 @@ import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 
 class LEDThread extends Thread {
-	private static final long LED_BLINK_SPEED = 500;
+
+	private static final long LED_BLINK_SPEED = 250;
 	private DigitalOutput led;
 	private IOIO ioio;
 
