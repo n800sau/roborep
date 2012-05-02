@@ -2,21 +2,23 @@
 
 #define __PINS_H
 
-#define LEFT_PIN 9 //9
-#define RIGHT_PIN 11 //11
+#define LEFT_PWM_PIN 6 //6
+#define LEFT_DIR_PIN 7 //7
+#define RIGHT_PWM_PIN 5 //5
+#define RIGHT_DIR_PIN 4 //4
 
 #define HEAD_PWM_PIN 3 //3
-#define BASE_TURN_PWM_PIN 5 //5
-#define BASE_TILT_PWM_PIN 6 //6
+#define BASE_TURN_PWM_PIN 9 //5
+#define BASE_TILT_PWM_PIN 10 //6
 
-#define LED_PIN LED_BUILTIN //13
+#define LED_PIN 13 //13
 
 #define BATTERY_PIN A0 //14
 #define CHARGER_PIN A1 //15
 #define CURRENT_SENSOR_PIN A2 //16
 
-#define BATTERY_LED_PIN 11 //12
-#define CURRENT_LED_PIN 12 //10
+#define BATTERY_LED_PIN 12 //12
+#define CURRENT_LED_PIN 14 //14
 //temperature sensor
 
 //I2C - A4,A5 (18,19)
