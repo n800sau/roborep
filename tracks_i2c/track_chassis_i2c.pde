@@ -12,24 +12,25 @@
 #define CMD_CURRENT 'e'
 #define CMD_LED 'd'
 
-//1024 = 10v
-#define BATTERY_DIV (1024 / 10.)
-
-//1024 = 30v
-#define CHARGER_DIV (1024 / 30.)
-
-//1024 = (5V/0.18 = 27.78A) (0.18v = 1A) i.e. 1/(1024/27.7777777778=36.864 per 1A) = 27mA per 1
-#define CURRENT_DIV (1024 / 27.7777778)
-
 char cmd = NULL;
 
 int battery_led_state = 0
+
+Servo head_servo, baseturn_servo, basetilt_servo;
+
 
 void setup()
 {
 	pinMode(LEFT_PIN, OUTPUT);
 	pinMode(RIGHT_PIN, OUTPUT);
 	pinMode(BATTERY_LED_PIN, OUTPUT);
+	head_servo.attach(HEAD_PWM_PIN);
+	head_servo.write(90)
+	basetilt_servo.attach(BASETILT_PWM_PIN);
+	basetilt_servo.write(90)
+	baseturn_servo.attach(BASETURN_PWM_PIN);
+	baseturn_servo.write(90)
+	//setup arm in the initial position
 	Wire.begin(I2C_Addr); // join i2c bus
 	Wire.onReceive(receiveEvent);
 	Wire.onRequest(requestData);
@@ -59,17 +60,17 @@ void loop()
 
 float get_battery()
 {
-	return analogRead(BATTERY_PIN) / BATTERY_DIV;
+	return map(analogRead(BATTERY_PIN), 0, 1023, 0, 10.); //divider 1/2
 }
 
 float get_charger()
 {
-	return analogRead(CHARGER_PIN) / CHARGER_DIV;
+	return map(analogRead(CHARGER_PIN), 0, 1023, 0, 30.); //divider 1/6
 }
 
 float get_current()
 {
-	return analogRead(CURRENT_PIN) / CURRENT_DIV;
+	return map(analogRead(CURRENT_PIN), 0, 1023, 0, 5/0.18);
 }
 
 //input val - string with optional '-' in the beginning

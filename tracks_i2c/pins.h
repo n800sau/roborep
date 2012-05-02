@@ -5,6 +5,10 @@
 #define LEFT_PIN 9 //9
 #define RIGHT_PIN 11 //11
 
+#define HEAD_PWM_PIN 3 //3
+#define BASE_TURN_PWM_PIN 5 //5
+#define BASE_TILT_PWM_PIN 6 //6
+
 #define LED_PIN LED_BUILTIN //13
 
 #define BATTERY_PIN A0 //14
@@ -42,7 +46,7 @@
 
 * External Interrupts: 2 and 3. These pins can be configured to trigger an interrupt on a low value, a rising or falling edge, or a change in value. See the attachInterrupt() function for details.
 
-* PWM: 3, 5, 6, *9*, *10*, and 11. Provide 8-bit PWM output with the analogWrite() function.
+* PWM: *3*, *5*, 6, *9*, *10*, and 11. Provide 8-bit PWM output with the analogWrite() function.
 
 * SPI: 10 (SS), 11 (MOSI), *12* (MISO), 13 (SCK). These pins support SPI communication, which, although provided by the underlying hardware, is not currently included in the Arduino language.
 
@@ -81,10 +85,10 @@ static const uint8_t A5 = 19;
 0 - rx
 1 - tx
 2
-3 - servo1
+3 - head servo
 4
-5 - servo2
-6 - servo3
+5 - base turn servo
+6 - base tilt servo
 7
 8
 9 - left motor pin
