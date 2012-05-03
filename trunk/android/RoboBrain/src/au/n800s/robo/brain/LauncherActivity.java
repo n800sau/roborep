@@ -18,7 +18,8 @@ public class LauncherActivity extends Activity {
 		conf.load(reader);
 		reader.close();
 		Intent intent = new Intent(this, BrainService.class);
-		intent.putExtra("model", conf.getProperty("model", "3pi"));
+		intent.putExtra("model", conf.getProperty("model", "track"));
+//		intent.putExtra("model", conf.getProperty("model", "3pi"));
 		startService(intent);
 		finish();
 	}

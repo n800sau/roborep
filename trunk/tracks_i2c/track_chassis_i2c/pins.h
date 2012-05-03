@@ -18,7 +18,7 @@
 #define CURRENT_SENSOR_PIN A2 //16
 
 #define BATTERY_LED_PIN 12 //12
-#define CURRENT_LED_PIN 14 //14
+#define CURRENT_LED_PIN 8 //8
 //temperature sensor
 
 //I2C - A4,A5 (18,19)
@@ -84,27 +84,29 @@ static const uint8_t A4 = 18;
 static const uint8_t A5 = 19;
 
 
-0 - rx
-1 - tx
-2
-3 - head servo
-4
-5 - base turn servo
-6 - base tilt servo
-7
-8
-9 - left motor pin
+0 rx - rx
+1 tx - tx
+2 int - 
+3 int,pwm - head servo
+4 - right dir
+5 pwm - right
+6 pwm - left
+7 - left dir
+8 - current_led_pin
+9 pwm - base turn
 
-10 - current led
-11 - right motor pin
+10 pwm - base tilt
+11 pwm - 
 12 - battery led
 13 - buildin led
-14 - battery input
-15 - charger input
-16 - el. current input
-17 
-18 - SDA
-19 - SCL
+
+14 a0 - battery input
+15 a1 - charger input
+16 a2 - el. current input
+
+17 a3 - 
+18 a4 - SDA
+19 a5 - SCL
 
 
 */
