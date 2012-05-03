@@ -85,8 +85,10 @@ void setup()
 
 void loop()
 {
-        test();
+//	test();
 	float val = get_battery();
+	Serial.print("battery:");
+	Serial.println(val);
 	if (val < 6) {
 		battery_led_state = !battery_led_state;
 		Wire.beginTransmission(4);	// transmit to device #4
@@ -154,26 +156,27 @@ void receiveEvent(int howMany)
 	Serial.println(cmd);
 	switch (cmd) {
 		//run left motor
-	case CMD_LEFT:
-		motorLeft(readVal());
-		break;
+		case CMD_LEFT:
+			motorLeft(readVal());
+			break;
 		//run right motor
-	case CMD_RIGHT:
-		motorRight(readVal());
-		break;
+		case CMD_RIGHT:
+			motorRight(readVal());
+			break;
 		//run two motors
-	case CMD_BOTH:
-		motorLeft(readVal());
-		motorRight(readVal());
-		break;
+		case CMD_BOTH:
+			motorLeft(readVal());
+			motorRight(readVal());
+			break;
 		//stop two motors
-	case CMD_STOP:
-		motorLeft(0);
-		motorRight(0);
-		break;
-	case CMD_LED:
-		analogWrite(LED_PIN, readVal());
-		break;
+		case CMD_STOP:
+			motorLeft(0);
+			motorRight(0);
+			break;
+		//make buildin led light
+		case CMD_LED:
+			analogWrite(LED_PIN, readVal());
+			break;
 	}
 }
 
