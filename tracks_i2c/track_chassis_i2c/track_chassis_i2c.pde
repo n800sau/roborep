@@ -17,6 +17,7 @@
 char cmd = NULL;
 
 int battery_led_state = 0;
+bool led_state = 0;
 
 Servo head_servo, baseturn_servo, basetilt_servo;
 
@@ -54,16 +55,26 @@ void test()
 {
   motorLeft(200, 0);
   motorRight(200, 0);
+  float val = get_current();
+  Serial.print(", curr:");
+  Serial.println(val);
   delay(1000);
   motorLeft(200, 1);
   motorRight(200,1);
+  val = get_current();
+  Serial.print(", curr:");
+  Serial.println(val);
   delay(1000);
   motorLeft(0);
   motorRight(0);
+  val = get_current();
+  Serial.print(", curr:");
+  Serial.println(val);
 }
 
 void setup()
 {
+        Serial.begin(9600);
 	pinMode(LEFT_PWM_PIN, OUTPUT);
 	pinMode(LEFT_DIR_PIN, OUTPUT);
 	pinMode(RIGHT_PWM_PIN, OUTPUT);
@@ -87,7 +98,10 @@ void loop()
 {
 //	test();
 	float val = get_battery();
-	Serial.print("battery:");
+	Serial.print("b:");
+	Serial.print(val);
+	val = get_charger();
+	Serial.print(", c:");
 	Serial.println(val);
 	if (val < 6) {
 		battery_led_state = !battery_led_state;
@@ -105,22 +119,24 @@ void loop()
 		battery_led_state = 0;
 	}
 	digitalWrite(BATTERY_LED_PIN, battery_led_state);
+	digitalWrite(LED_PIN, led_state);
+        led_state = !led_state;
 	delay(500);
 }
 
 float get_battery()
 {
-	return map(analogRead(BATTERY_PIN), 0, 1023, 0, 10.);	//divider 1/2
+	return analogRead(BATTERY_PIN) / 1024. * 24.9;	//divider 21.6/82.4=0.262 1.84/8.94=0.205  5/0.205 = 24.39 5/0.262=
 }
 
 float get_charger()
 {
-	return map(analogRead(CHARGER_PIN), 0, 1023, 0, 30.);	//divider 1/6
+	return analogRead(CHARGER_PIN) / 1024. * 41.5;	//divider 12/82.4
 }
 
 float get_current()
 {
-	return map(analogRead(CURRENT_SENSOR_PIN), 0, 1023, 0, 5 / 0.18);
+	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5/0.185;
 }
 
 //input val - string with optional '-' in the beginning
