@@ -109,6 +109,9 @@ static const uint8_t A5 = 19;
 19 a5 - SCL
 
 
+|            |
+|00000       |
+|            |
+GND,BATTERY,CURRENT,CHARGER,GND 
 */
-
 #endif //__PINS_H
