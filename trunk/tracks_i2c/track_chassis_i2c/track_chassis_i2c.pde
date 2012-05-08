@@ -1,8 +1,10 @@
-#include <Servo.h>
 #include <Wire.h>
 #include "pins.h"
 
-//chassis address - 19
+#include "Mag3110_v10.pde"
+#include "servo_x.pde"
+
+#define CHASSIS_ADDR 0x13 //19
 
 #define I2C_Addr 19
 #define CMD_LEFT 'l'
@@ -19,7 +21,7 @@ char cmd = NULL;
 int battery_led_state = 0;
 bool led_state = 0;
 
-Servo head_servo, baseturn_servo, basetilt_servo;
+ServoX head_servo, baseturn_servo, basetilt_servo;
 
 //right
 void motorRight(int pwm, boolean reverse = false)
@@ -72,6 +74,11 @@ void test()
   Serial.println(val);
 }
 
+void baseturn_servo_set(int angle)
+{
+	baseturn_servo.write(angle);
+}
+
 void setup()
 {
         Serial.begin(9600);
@@ -83,20 +90,22 @@ void setup()
 	pinMode(CURRENT_LED_PIN, OUTPUT);
 	pinMode(LED_PIN, OUTPUT);
 	head_servo.attach(HEAD_PWM_PIN);
-	head_servo.write(90);
+	head_servo.setAngle(90, 5);
 	basetilt_servo.attach(BASE_TILT_PWM_PIN);
-	basetilt_servo.write(90);
+	basetilt_servo.setAngle(90, 5);
 	baseturn_servo.attach(BASE_TURN_PWM_PIN);
-	baseturn_servo.write(90);
+	baseturn_servo.setAngle(90, 5);
 	//setup arm in the initial position
 	Wire.begin(I2C_Addr);	// join i2c bus
 	Wire.onReceive(receiveEvent);
 	Wire.onRequest(requestData);
+//	mag_config();
 }
 
 void loop()
 {
 //	test();
+//	mag_print_values();
 	float val = get_battery();
 	Serial.print("b:");
 	Serial.print(val);
@@ -121,6 +130,9 @@ void loop()
 	digitalWrite(BATTERY_LED_PIN, battery_led_state);
 	digitalWrite(LED_PIN, led_state);
         led_state = !led_state;
+	baseturn_servo.update();
+	basetilt_servo.update();
+	head_servo.update();
 	delay(500);
 }
 

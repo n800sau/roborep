@@ -8,8 +8,8 @@
 #define RIGHT_DIR_PIN 4 //4
 
 #define HEAD_PWM_PIN 3 //3
-#define BASE_TURN_PWM_PIN 9 //5
-#define BASE_TILT_PWM_PIN 10 //6
+#define BASE_TURN_PWM_PIN 9 //9
+#define BASE_TILT_PWM_PIN 10 //10
 
 #define LED_PIN 13 //13
 
@@ -88,11 +88,11 @@ static const uint8_t A5 = 19;
 1 tx - tx
 2 int - 
 3 int,pwm - head servo
-4 - right dir
+4 right dir
 5 pwm - right
 6 pwm - left
-7 - left dir
-8 - current_led_pin
+7 left dir
+8 current_led_pin
 9 pwm - base turn
 
 10 pwm - base tilt
