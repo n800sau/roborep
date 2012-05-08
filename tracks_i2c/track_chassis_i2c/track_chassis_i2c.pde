@@ -1,8 +1,9 @@
 #include <Wire.h>
 #include "pins.h"
+#include <Servo.h>
 
-#include "Mag3110_v10.pde"
-#include "servo_x.pde"
+//#include "Mag3110_v10.pde"
+#include "servo_x.h"
 
 #define CHASSIS_ADDR 0x13 //19
 
@@ -100,6 +101,7 @@ void setup()
 	Wire.onReceive(receiveEvent);
 	Wire.onRequest(requestData);
 //	mag_config();
+        Serial.println("over");
 }
 
 void loop()
@@ -107,11 +109,11 @@ void loop()
 //	test();
 //	mag_print_values();
 	float val = get_battery();
-	Serial.print("b:");
-	Serial.print(val);
+//	Serial.print("b:");
+//	Serial.print(val);
 	val = get_charger();
-	Serial.print(", c:");
-	Serial.println(val);
+//	Serial.print(", c:");
+//	Serial.println(val);
 	if (val < 6) {
 		battery_led_state = !battery_led_state;
 		Wire.beginTransmission(4);	// transmit to device #4
@@ -132,6 +134,7 @@ void loop()
         led_state = !led_state;
 	baseturn_servo.update();
 	basetilt_servo.update();
+//        Serial.println(basetilt_servo.read());
 	head_servo.update();
 	delay(500);
 }

@@ -19,6 +19,17 @@
 
 #define BATTERY_LED_PIN 12 //12
 #define CURRENT_LED_PIN 8 //8
+
+/*
+-1        1 2 3
+-2        4 5 6
+-3
+-4
+-5
+-6
+*/
+
+
 //temperature sensor
 
 //I2C - A4,A5 (18,19)
