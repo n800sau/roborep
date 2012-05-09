@@ -11,6 +11,7 @@ class ServoX: public Servo
 		float __speed; //angle per sec
 
 		float __last_time;
+		bool __finished;
 	public:
 		ServoX();
 		void setAngle(int angle, int speed);
