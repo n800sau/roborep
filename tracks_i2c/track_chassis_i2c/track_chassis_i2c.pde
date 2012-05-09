@@ -96,9 +96,9 @@ void setup()
 	head_servo.attach(HEAD_PWM_PIN);
 	head_servo.setAngle(90, 5);
 	basetilt_servo.attach(BASE_TILT_PWM_PIN);
-	basetilt_servo.setAngle(90, 1);
+	basetilt_servo.setAngle(90, 30);
 	baseturn_servo.attach(BASE_TURN_PWM_PIN);
-	baseturn_servo.setAngle(90, 5);
+	baseturn_servo.setAngle(90, 10);
 	//setup arm in the initial position
 	Wire.begin(I2C_Addr);
 	//join i2c bus
@@ -138,29 +138,33 @@ void loop()
 	//Serial.print(", c:");
 	//Serial.println(val);
 	digitalWrite(BATTERY_LED_PIN, battery_led_state);
-	static int	led_timer_state;
+	static unsigned long	led_timer_state;
 	if (cycleCheck(&led_timer_state, 500)) {
 		digitalWrite(LED_PIN, led_state);
 		led_state = !led_state;
 	}
 	if (baseturn_servo.update()) {
-		if (baseturn_servo.read() == 90)
+		if (baseturn_servo.read() == 90) {
 			baseturn_servo.setAngle(0);
-		else if (baseturn_servo.read() == 0)
+		} else if (baseturn_servo.read() == 0) {
 			baseturn_servo.setAngle(180);
-		else
+		} else {
 			baseturn_servo.setAngle(90);
-	}
+                }
+  	}
 	if (basetilt_servo.update()) {
-		if (basetilt_servo.read() == 90)
+		if (basetilt_servo.read() == 90) {
 			basetilt_servo.setAngle(0);
-		else if (basetilt_servo.read() == 0)
+		} else if (basetilt_servo.read() == 0) {
 			basetilt_servo.setAngle(180);
-		else
+		} else {
 			basetilt_servo.setAngle(90);
+}
 	}
-	//Serial.println(basetilt_servo.read());
+//	Serial.println(baseturn_servo.read());
+//	Serial.println(basetilt_servo.read());
 	head_servo.update();
+//        delay(100);
 }
 
 float get_battery()

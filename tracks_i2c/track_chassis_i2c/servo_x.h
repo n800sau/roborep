@@ -7,15 +7,16 @@
 class ServoX: public Servo
 {
 	private:
-		float __angle;
-		float __speed; //angle per sec
+		int __angle;
+		int __speed; //angle per sec
 
-		float __last_time;
+		unsigned long __last_time;
 		bool __finished;
 	public:
 		ServoX();
-		void setAngle(int angle, int speed);
-		void update();
+		void setAngle(int angle, int speed=0);
+		bool update();
+                bool isFinished();
 };
 
 #endif //__SERVOX_H
