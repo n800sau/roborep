@@ -105,7 +105,15 @@ void setup()
 	Wire.onReceive(receiveEvent);
 	Wire.onRequest(requestData);
 	//mag_config();
-	Serial.println("over");
+}
+
+void serialEvent()
+{
+	while(Serial.available()) {
+		int serialData = Serial.read();
+		Serial.println(serialData);
+		Serial.flush();
+	}
 }
 
 void loop()
