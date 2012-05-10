@@ -107,19 +107,15 @@ void setup()
 	//mag_config();
 }
 
-void serialEvent()
+void loop()
 {
+	//test();
+	//mag_print_values();
 	while(Serial.available()) {
 		int serialData = Serial.read();
 		Serial.println(serialData);
 		Serial.flush();
 	}
-}
-
-void loop()
-{
-	//test();
-	//mag_print_values();
 	float val = get_battery();
 	//Serial.print("b:");
 	//Serial.print(val);
