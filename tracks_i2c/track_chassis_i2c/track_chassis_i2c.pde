@@ -1,4 +1,4 @@
-#include <Wire.h>
+//#include <Wire.h>
 #include "pins.h"
 #include <Servo.h>
 
@@ -17,8 +17,29 @@
 #define CMD_CHARGER 'c'
 #define CMD_CURRENT 'e'
 #define CMD_LED 'd'
+#define CMD_OTHER ':'
 
-char cmd = NULL;
+//movement queue
+//function: stop movement and decide
+
+enum SCOMMANDS {
+	CMD_SHOWCANDLE,
+	CMD_SHOWGE,
+	CMD_SETBASETURNANGLE,
+};
+
+//long string commands
+typedef struct {
+	const char *cmdstr;
+	int cmd;
+	int n_parms;
+} LONG_CMD;
+
+const LONG_CMD scommands[] = {
+	{"candle", CMD_SHOWCANDLE, 0},
+	{"ge", CMD_SHOWGE, 0},
+	{"setBaseTurnAngle", CMD_SETBASETURNANGLE, 2}
+};
 
 int battery_led_state = 0;
 
@@ -78,13 +99,13 @@ void test()
 	Serial.println(val);
 }
 
-int getIntVal(String &cmdline)
+int getIntVal(const String &strval)
 {
 	int rs=0;
 	int signm = 1;
 	int i=0;
-	while(i<cmdline.length() && cmdline.charAt(i) != ';' && cmdline.charAt(i) != 0) {
-		char b = cmdline.charAt(i++);
+	while(i<strval.length() && strval.charAt(i) != ';' && strval.charAt(i) != 0) {
+		char b = strval.charAt(i++);
 		if(byte == ';') {
 			break;
 		}
@@ -95,7 +116,6 @@ int getIntVal(String &cmdline)
 		}
 	}
 	rs *= signm;
-	cmdline = cmdline.substring(i);
 	Serial.print("value:");
 	Serial.println(rs);
 	return rs;
@@ -103,24 +123,24 @@ int getIntVal(String &cmdline)
 
 void executeCommand(String c_args[], int n)
 {
+	String rs("Command unknown");
 	char cmd = c_args[0].charAt(0);
 	int nparm = 1;
-	cmdline = cmdline.substring(1);
 	Serial.print("command:");
 	Serial.println(cmd);
 	switch (cmd) {
 		//run left motor
 		case CMD_LEFT:
-			motorLeft(getIntVal(&cmdline));
+			motorLeft(getIntVal(c_args[1]));
 			break;
 			//run right motor
 		case CMD_RIGHT:
-			motorRight(getIntVal(&cmdline));
+			motorRight(getIntVal(c_args[1]));
 			break;
 			//run two motors
 		case CMD_BOTH:
-			motorLeft(getIntVal(&cmdline));
-			motorRight(getIntVal(&cmdline));
+			motorLeft(getIntVal(c_args[1]));
+			motorRight(getIntVal(c_args[2]));
 			break;
 			//stop two motors
 		case CMD_STOP:
@@ -129,9 +149,32 @@ void executeCommand(String c_args[], int n)
 			break;
 			//make buildin led light
 		case CMD_LED:
-			analogWrite(LED_PIN, getIntVal(&cmdline));
+			analogWrite(LED_PIN, getIntVal(c_args[1]));
+			break;
+		case CMD_OTHER:
+			for(int ci=0; ci< sizeof(scommands)/sizeof(scommands[0]); ci++) {
+				if(c_args[0].equals(scommands[ci].cmdstr)) {
+					int icmd = scommands[ci].cmd;
+					switch(icmd) {
+						case CMD_SHOWCANDLE:
+							basetilt_servo.setAngle(90, 20);
+							rs = "Ok";
+							break;
+						case CMD_SHOWGE:
+							basetilt_servo.setAngle(30, 20);
+							break;
+						case CMD_SETBASETURNANGLE:
+							baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
+							break;
+						default:
+//							beep();
+							break;
+					}
+				}
+			}
 			break;
 	}
+	sendResponse(rs);
 }
 
 void setup()
@@ -151,10 +194,10 @@ void setup()
 	baseturn_servo.attach(BASE_TURN_PWM_PIN);
 	baseturn_servo.setAngle(90, 10);
 	//setup arm in the initial position
-	Wire.begin(I2C_Addr);
+//	Wire.begin(I2C_Addr);
 	//join i2c bus
-	Wire.onReceive(receiveEvent);
-	Wire.onRequest(requestData);
+//	Wire.onReceive(receiveEvent);
+//	Wire.onRequest(requestData);
 	//mag_config();
 }
 
@@ -176,6 +219,9 @@ int processCmdline(String &cmdline, String c_args[], int n)
 		if(val.length() > 0) {
 			c_args[i++] = val;
 		}
+	}
+	for(int j = i;j < n; j++) {
+		c_args[j] = "";
 	}
 	return i
 }
@@ -212,20 +258,10 @@ void loop()
 	//Serial.print(val);
 	if (val < 6) {
 		battery_led_state = !battery_led_state;
-		Wire.beginTransmission(4);
-		//transmit to device #4
-		Wire.send('w');
-		Wire.send("Battery is low");
-		Wire.endTransmission();
-		//stop transmitting
+		Serial.println("Battery is low");
 	} else if (val < 5) {
 		battery_led_state = 1;
-		Wire.beginTransmission(4);
-		//transmit to device #4
-		Wire.send('e');
-		Wire.send("Battery is flat");
-		Wire.endTransmission();
-		//stop transmitting
+		Serial.println("Battery is flat");
 	} else {
 		battery_led_state = 0;
 	}
@@ -279,88 +315,3 @@ float get_current()
 	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
 }
 
-//input val - string with optional '-' in the beginning
-int readVal()
-{
-	int rs = 0;
-	int signm = 1;
-	char b = Wire.receive();
-	if (b == '-') {
-		signm = -1;
-	} else {
-		rs = b - '0';
-	}
-	while (Wire.available()) {
-		b = Wire.receive();
-		if (b == ';')
-			break;
-		rs = b - '0' + rs * 10;
-	}
-	rs *= signm;
-	Serial.print("value:");
-	Serial.println(rs);
-	return rs;
-}
-
-//function that executes whenever data is received from master
-// this function is registered as an event, see setup()
-void receiveEvent(int howMany)
-{
-	int av = Wire.available();
-	cmd = Wire.receive();
-	Serial.print("command:");
-	Serial.println(cmd);
-	switch (cmd) {
-		//run left motor
-		case CMD_LEFT:
-			motorLeft(readVal());
-			break;
-			//run right motor
-		case CMD_RIGHT:
-			motorRight(readVal());
-			break;
-			//run two motors
-		case CMD_BOTH:
-			motorLeft(readVal());
-			motorRight(readVal());
-			break;
-			//stop two motors
-		case CMD_STOP:
-			motorLeft(0);
-			motorRight(0);
-			break;
-			//make buildin led light
-		case CMD_LED:
-			analogWrite(LED_PIN, readVal());
-			break;
-	}
-}
-
-void requestData()
-{
-	float val;
-	char buf[50];
-	switch (cmd) {
-		case CMD_BATTERY:
-			val = get_battery();
-			Serial.print("battery:");
-			Serial.println(val);
-			sprintf(buf, "%f", val);
-			Wire.send(buf);
-			break;
-		case CMD_CHARGER:
-			val = get_charger();
-			Serial.print("charger:");
-			Serial.println(val);
-			sprintf(buf, "%f", val);
-			Wire.send(buf);
-			break;
-		case CMD_CURRENT:
-			float		val = get_current();
-			Serial.print("current:");
-			Serial.println(val);
-			sprintf(buf, "%f", val);
-			Wire.send(buf);
-			break;
-	}
-}
