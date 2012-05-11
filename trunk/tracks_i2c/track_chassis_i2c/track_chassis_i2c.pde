@@ -61,7 +61,7 @@ void test()
 {
 	motorLeft(200, 0);
 	motorRight(200, 0);
-	float		val = get_current();
+	float val = get_current();
 	Serial.print(", curr:");
 	Serial.println(val);
 	delay(1000);
@@ -78,9 +78,60 @@ void test()
 	Serial.println(val);
 }
 
-void baseturn_servo_set(int angle)
+int getIntVal(String &cmdline)
 {
-	baseturn_servo.write(angle);
+	int rs=0;
+	int signm = 1;
+	int i=0;
+	while(i<cmdline.length() && cmdline.charAt(i) != ';' && cmdline.charAt(i) != 0) {
+		char b = cmdline.charAt(i++);
+		if(byte == ';') {
+			break;
+		}
+		if(i == 0 && b == '-') {
+			signm = -1;
+		} else {
+			rs = b - '0' + rs * 10;
+		}
+	}
+	rs *= signm;
+	cmdline = cmdline.substring(i);
+	Serial.print("value:");
+	Serial.println(rs);
+	return rs;
+}
+
+void executeCommand(String c_args[], int n)
+{
+	char cmd = c_args[0].charAt(0);
+	int nparm = 1;
+	cmdline = cmdline.substring(1);
+	Serial.print("command:");
+	Serial.println(cmd);
+	switch (cmd) {
+		//run left motor
+		case CMD_LEFT:
+			motorLeft(getIntVal(&cmdline));
+			break;
+			//run right motor
+		case CMD_RIGHT:
+			motorRight(getIntVal(&cmdline));
+			break;
+			//run two motors
+		case CMD_BOTH:
+			motorLeft(getIntVal(&cmdline));
+			motorRight(getIntVal(&cmdline));
+			break;
+			//stop two motors
+		case CMD_STOP:
+			motorLeft(0);
+			motorRight(0);
+			break;
+			//make buildin led light
+		case CMD_LED:
+			analogWrite(LED_PIN, getIntVal(&cmdline));
+			break;
+	}
 }
 
 void setup()
@@ -107,14 +158,54 @@ void setup()
 	//mag_config();
 }
 
+#define MAX_CMDVALS 10
+
+int processCmdline(String &cmdline, String c_args[], int n)
+{
+	String val;
+	int lastpos=0, pos=0, i=0;
+	while(pos >= 0 && i < n) {
+		pos = cmdline.indexOf(';', lastpos);
+		if(pos < 0) {
+			//the last value
+			val = String(cmdline.substring(lastpos));
+		} else {
+			val = String(cmdline.substring(lastpos, pos));
+			lastpos = pos + 1;
+		}
+		if(val.length() > 0) {
+			c_args[i++] = val;
+		}
+	}
+	return i
+}
+
 void loop()
 {
+	String c_args[MAX_CMDVALS];
 	//test();
 	//mag_print_values();
+	char cmdbuf[20];
+	int n = 0;
 	while(Serial.available()) {
-		int serialData = Serial.read();
-		Serial.println(serialData);
-		Serial.flush();
+		int byte = Serial.read();
+		if(byte == '\n') {
+			byte = 0;
+		}
+		if(n < sizeof(cmdbuf)) {
+			cmdbuf[n++] = byte;
+		} else {
+			cmdbuf[0] = 0;
+			//beep();
+		}
+//		Serial.println(serialData);
+//		Serial.flush();
+	}
+	if(n > 0 && cmdbuf[0]) {
+		int nc = processCmdline(cmdbuf, c_args, MAX_CMDVALS);
+		if(nc > 0) {
+			executeCommand(c_args, nc);
+		}
 	}
 	float val = get_battery();
 	//Serial.print("b:");
