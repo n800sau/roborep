@@ -10,6 +10,7 @@
 #define HEAD_PWM_PIN 3 //3
 #define BASE_TURN_PWM_PIN 9 //9
 #define BASE_TILT_PWM_PIN 10 //10
+#define MIDDLE_TILT_PWM_PIN 11 //11
 
 #define LED_PIN 13 //13
 
@@ -107,7 +108,7 @@ static const uint8_t A5 = 19;
 9 pwm - base turn
 
 10 pwm - base tilt
-11 pwm - 
+11 pwm - middle tilt
 12 - battery led
 13 - buildin led
 
