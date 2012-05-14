@@ -7,6 +7,7 @@
 
 #define I2C_Addr 0x14 //20
 #define CMD_OTHER ':'
+#define I2C_OK_REQUEST '?'
 
 #define MAX_CMDARGS 10
 
@@ -31,6 +32,8 @@ const LONG_CMD scommands[] = {
 
 ServoX palmturn_servo, palmtilt_servo, claw_servo;
 
+bool led_state = false;
+
 struct {
 	char cmd;
 } I2C_request = {NULL};
@@ -43,7 +46,7 @@ int getIntVal(const String &strval)
 	int i=0;
 	while(i<strval.length() && strval.charAt(i) != ';' && strval.charAt(i) != 0) {
 		char b = strval.charAt(i++);
-		if(byte == ';') {
+		if(b == ';') {
 			break;
 		}
 		if(i == 0 && b == '-') {
@@ -75,14 +78,14 @@ void executeCommand(String c_args[], int n)
 					int icmd = scommands[ci].cmd;
 					switch(icmd) {
 						case CMD_SHOWCANDLE:
-							basetilt_servo.setAngle(90, 20);
+							palmtilt_servo.setAngle(90, 20);
 							rs = "Ok";
 							break;
 						case CMD_SHOWGE:
-							basetilt_servo.setAngle(30, 20);
+							palmtilt_servo.setAngle(30, 20);
 							break;
 						case CMD_SETBASETURNANGLE:
-							baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
+							palmturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
 							break;
 						default:
 //							beep();
@@ -92,7 +95,7 @@ void executeCommand(String c_args[], int n)
 			}
 			break;
 	}
-	sendResponse(rs);
+	Serial.println(rs);
 }
 
 void setup()
@@ -112,7 +115,7 @@ void setup()
 	Wire.onRequest(I2C_requestData);
 }
 
-int processCmdline(String &cmdline, String c_args[], int n)
+int processCmdline(const String &cmdline, String c_args[], int n)
 {
 	String val;
 	int lastpos=0, pos=0, i=0;
@@ -132,11 +135,12 @@ int processCmdline(String &cmdline, String c_args[], int n)
 	for(int j = i;j < n; j++) {
 		c_args[j] = "";
 	}
-	return i
+	return i;
 }
 
 void serialRead()
 {
+	String c_args[MAX_CMDARGS];
 	char cmdbuf[20];
 	int n = 0;
 	while(Serial.available()) {
@@ -154,7 +158,7 @@ void serialRead()
 //		Serial.flush();
 	}
 	if(n > 0 && cmdbuf[0]) {
-		int nc = processCmdline(cmdbuf, c_args, MAX_CMDARGS);
+		int nc = processCmdline(String(cmdbuf), c_args, MAX_CMDARGS);
 		if(nc > 0) {
 			executeCommand(c_args, nc);
 		}
@@ -163,10 +167,10 @@ void serialRead()
 
 void loop()
 {
-	String c_args[MAX_CMDARGS];
 	//test();
 	//mag_print_values();
 	serialRead();
+	static unsigned long led_timer_state;
 	if (cycleCheck(&led_timer_state, 500)) {
 		digitalWrite(LED_PIN, led_state);
 		led_state = !led_state;
@@ -202,10 +206,11 @@ void loop()
 
 void I2C_receiveEvent(int howMany)
 {
+	String c_args[MAX_CMDARGS];
 	char cmdbuf[20];
 	int n = 0;
 	while(Wire.available()) {
-		int byte = Wire.read();
+		int byte = Wire.receive();
 		if(byte == '\n') {
 			byte = 0;
 		}
@@ -227,7 +232,7 @@ void I2C_receiveEvent(int howMany)
 void I2C_requestData()
 {
 	if(I2C_request.cmd) {
-		Wire.write("ok");
+		Wire.send("ok");
 		I2C_request.cmd = NULL;
 	}
 }
