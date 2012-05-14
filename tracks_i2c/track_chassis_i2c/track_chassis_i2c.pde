@@ -179,7 +179,7 @@ void executeCommand(String c_args[], int n)
 			}
 			break;
 	}
-	sendResponse(rs);
+	Serial.println(rs);
 }
 
 void setup()
@@ -370,20 +370,20 @@ void I2C_requestData()
 {
 	switch(I2C_request.cmd) {
 		case CMD_GETBATTERY:
-			int val = analogRead(BATTERY_PIN);
+			int val = get_battery();
 			Serial.print("battery:");
 			Serial.println(val);
 			char buf[3 * sizeof (int) + 1];
-			itoa(val / BATTERY_DIV, buf, 10);
-			Wire.write(buf);
+			itoa(val, buf, 10);
+			Wire.send(buf);
 			break;
 		case CMD_CHARGER:
-			int val = analogRead(CHARGER_PIN);
+			int val = get_charger();
 			Serial.print("charger:");
 			Serial.println(val);
 			char buf[3 * sizeof (int) + 1];
-			itoa(val / CHARGER_DIV, buf, 10);
-			Wire.write(buf);
+			itoa(val, buf, 10);
+			Wire.send(buf);
 			break;
 	}
 }
