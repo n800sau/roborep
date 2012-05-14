@@ -1,0 +1,233 @@
+#include <Wire.h>
+#include "pins.h"
+#include <Servo.h>
+
+#include "servo_x.h"
+#include "cycle_check.h"
+
+#define I2C_Addr 0x14 //20
+#define CMD_OTHER ':'
+
+#define MAX_CMDARGS 10
+
+enum SCOMMANDS {
+	CMD_SHOWCANDLE,
+	CMD_SHOWGE,
+	CMD_SETBASETURNANGLE,
+};
+
+//long string commands
+typedef struct {
+	const char *cmdstr;
+	int cmd;
+	int n_parms;
+} LONG_CMD;
+
+const LONG_CMD scommands[] = {
+	{"candle", CMD_SHOWCANDLE, 0},
+	{"ge", CMD_SHOWGE, 0},
+	{"setBaseTurnAngle", CMD_SETBASETURNANGLE, 2}
+};
+
+ServoX palmturn_servo, palmtilt_servo, claw_servo;
+
+struct {
+	char cmd;
+} I2C_request = {NULL};
+
+
+int getIntVal(const String &strval)
+{
+	int rs=0;
+	int signm = 1;
+	int i=0;
+	while(i<strval.length() && strval.charAt(i) != ';' && strval.charAt(i) != 0) {
+		char b = strval.charAt(i++);
+		if(byte == ';') {
+			break;
+		}
+		if(i == 0 && b == '-') {
+			signm = -1;
+		} else {
+			rs = b - '0' + rs * 10;
+		}
+	}
+	rs *= signm;
+	Serial.print("value:");
+	Serial.println(rs);
+	return rs;
+}
+
+void executeCommand(String c_args[], int n)
+{
+	String rs("Command unknown");
+	char cmd = c_args[0].charAt(0);
+	int nparm = 1;
+	Serial.print("command:");
+	Serial.println(cmd);
+	switch (cmd) {
+		case I2C_OK_REQUEST:
+			I2C_request.cmd = cmd;
+			break;
+		case CMD_OTHER:
+			for(int ci=0; ci< sizeof(scommands)/sizeof(scommands[0]); ci++) {
+				if(c_args[0].equals(scommands[ci].cmdstr)) {
+					int icmd = scommands[ci].cmd;
+					switch(icmd) {
+						case CMD_SHOWCANDLE:
+							basetilt_servo.setAngle(90, 20);
+							rs = "Ok";
+							break;
+						case CMD_SHOWGE:
+							basetilt_servo.setAngle(30, 20);
+							break;
+						case CMD_SETBASETURNANGLE:
+							baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
+							break;
+						default:
+//							beep();
+							break;
+					}
+				}
+			}
+			break;
+	}
+	sendResponse(rs);
+}
+
+void setup()
+{
+	Serial.begin(9600);
+	pinMode(LED_PIN, OUTPUT);
+	palmtilt_servo.attach(PALM_TILT_PWM_PIN);
+	palmtilt_servo.setAngle(90, 30);
+	palmturn_servo.attach(PALM_TURN_PWM_PIN);
+	palmturn_servo.setAngle(90, 10);
+	claw_servo.attach(CLAW_PWM_PIN);
+	claw_servo.setAngle(90, 10);
+	//setup arm in the initial position
+	Wire.begin(I2C_Addr);
+	//join i2c bus
+	Wire.onReceive(I2C_receiveEvent);
+	Wire.onRequest(I2C_requestData);
+}
+
+int processCmdline(String &cmdline, String c_args[], int n)
+{
+	String val;
+	int lastpos=0, pos=0, i=0;
+	while(pos >= 0 && i < n) {
+		pos = cmdline.indexOf(';', lastpos);
+		if(pos < 0) {
+			//the last value
+			val = String(cmdline.substring(lastpos));
+		} else {
+			val = String(cmdline.substring(lastpos, pos));
+			lastpos = pos + 1;
+		}
+		if(val.length() > 0) {
+			c_args[i++] = val;
+		}
+	}
+	for(int j = i;j < n; j++) {
+		c_args[j] = "";
+	}
+	return i
+}
+
+void serialRead()
+{
+	char cmdbuf[20];
+	int n = 0;
+	while(Serial.available()) {
+		int byte = Serial.read();
+		if(byte == '\n') {
+			byte = 0;
+		}
+		if(n < sizeof(cmdbuf)) {
+			cmdbuf[n++] = byte;
+		} else {
+			cmdbuf[0] = 0;
+			//beep();
+		}
+//		Serial.println(serialData);
+//		Serial.flush();
+	}
+	if(n > 0 && cmdbuf[0]) {
+		int nc = processCmdline(cmdbuf, c_args, MAX_CMDARGS);
+		if(nc > 0) {
+			executeCommand(c_args, nc);
+		}
+	}
+}
+
+void loop()
+{
+	String c_args[MAX_CMDARGS];
+	//test();
+	//mag_print_values();
+	serialRead();
+	if (cycleCheck(&led_timer_state, 500)) {
+		digitalWrite(LED_PIN, led_state);
+		led_state = !led_state;
+	}
+	if (palmturn_servo.update()) {
+		if (palmturn_servo.read() == 90) {
+			palmturn_servo.setAngle(0);
+		} else if (palmturn_servo.read() == 0) {
+			palmturn_servo.setAngle(180);
+		} else {
+			palmturn_servo.setAngle(90);
+		}
+  	}
+	if (palmtilt_servo.update()) {
+		if (palmtilt_servo.read() == 90) {
+			palmtilt_servo.setAngle(0);
+		} else if (palmtilt_servo.read() == 0) {
+			palmtilt_servo.setAngle(180);
+		} else {
+			palmtilt_servo.setAngle(90);
+		}
+	}
+	if (claw_servo.update()) {
+		if (claw_servo.read() == 90) {
+			claw_servo.setAngle(0);
+		} else if (claw_servo.read() == 0) {
+			claw_servo.setAngle(180);
+		} else {
+			claw_servo.setAngle(90);
+		}
+	}
+}
+
+void I2C_receiveEvent(int howMany)
+{
+	char cmdbuf[20];
+	int n = 0;
+	while(Wire.available()) {
+		int byte = Wire.read();
+		if(byte == '\n') {
+			byte = 0;
+		}
+		if(n < sizeof(cmdbuf)) {
+			cmdbuf[n++] = byte;
+		} else {
+			cmdbuf[0] = 0;
+			//beep();
+		}
+	}
+	if(n > 0 && cmdbuf[0]) {
+		int nc = processCmdline(cmdbuf, c_args, MAX_CMDARGS);
+		if(nc > 0) {
+			executeCommand(c_args, nc);
+		}
+	}
+}
+
+void I2C_requestData()
+{
+	if(I2C_request.cmd) {
+		Wire.write("ok");
+		I2C_request.cmd = NULL;
+	}
+}

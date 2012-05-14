@@ -1,4 +1,4 @@
-//#include <Wire.h>
+#include <Wire.h>
 #include "pins.h"
 #include <Servo.h>
 
@@ -6,9 +6,8 @@
 #include "servo_x.h"
 #include "cycle_check.h"
 
-#define CHASSIS_ADDR 0x13 //19
+#define I2C_Addr 0x13 //19
 
-#define I2C_Addr 19
 #define CMD_LEFT 'l'
 #define CMD_RIGHT 'r'
 #define CMD_BOTH 'b'
@@ -45,7 +44,11 @@ int battery_led_state = 0;
 
 bool led_state = 0;
 
-ServoX head_servo, baseturn_servo, basetilt_servo;
+struct {
+	char cmd;
+} I2C_request = {NULL};
+
+ServoX head_servo, baseturn_servo, basetilt_servo, middletilt_servo;
 
 //right
 void motorRight(int pwm, boolean reverse = false)
@@ -157,11 +160,13 @@ void executeCommand(String c_args[], int n)
 					int icmd = scommands[ci].cmd;
 					switch(icmd) {
 						case CMD_SHOWCANDLE:
-							basetilt_servo.setAngle(90, 20);
+							basetilt_servo.setAngle(90, 5);
+							middletilt_servo.setAngle(90, 5);
 							rs = "Ok";
 							break;
 						case CMD_SHOWGE:
-							basetilt_servo.setAngle(30, 20);
+							basetilt_servo.setAngle(30, 10);
+							middletilt_servo.setAngle(0, 5);
 							break;
 						case CMD_SETBASETURNANGLE:
 							baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
@@ -180,6 +185,7 @@ void executeCommand(String c_args[], int n)
 void setup()
 {
 	Serial.begin(9600);
+	//pins
 	pinMode(LEFT_PWM_PIN, OUTPUT);
 	pinMode(LEFT_DIR_PIN, OUTPUT);
 	pinMode(RIGHT_PWM_PIN, OUTPUT);
@@ -187,21 +193,24 @@ void setup()
 	pinMode(BATTERY_LED_PIN, OUTPUT);
 	pinMode(CURRENT_LED_PIN, OUTPUT);
 	pinMode(LED_PIN, OUTPUT);
+	//servos
 	head_servo.attach(HEAD_PWM_PIN);
 	head_servo.setAngle(90, 5);
 	basetilt_servo.attach(BASE_TILT_PWM_PIN);
 	basetilt_servo.setAngle(90, 30);
 	baseturn_servo.attach(BASE_TURN_PWM_PIN);
 	baseturn_servo.setAngle(90, 10);
-	//setup arm in the initial position
-//	Wire.begin(I2C_Addr);
-	//join i2c bus
-//	Wire.onReceive(receiveEvent);
-//	Wire.onRequest(requestData);
+	middletilt_servo.attach(MIDDLE_TILT_PWM_PIN);
+	middletilt_servo.setAngle(90, 10);
+	//i2c
+	Wire.begin(I2C_Addr);
+	//join i2c bus 
+	Wire.onReceive(I2C_receiveEvent);
+	Wire.onRequest(I2C_requestData);
 	//mag_config();
 }
 
-#define MAX_CMDVALS 10
+#define MAX_CMDARGS 10
 
 int processCmdline(String &cmdline, String c_args[], int n)
 {
@@ -228,7 +237,7 @@ int processCmdline(String &cmdline, String c_args[], int n)
 
 void loop()
 {
-	String c_args[MAX_CMDVALS];
+	String c_args[MAX_CMDARGS];
 	//test();
 	//mag_print_values();
 	char cmdbuf[20];
@@ -248,7 +257,7 @@ void loop()
 //		Serial.flush();
 	}
 	if(n > 0 && cmdbuf[0]) {
-		int nc = processCmdline(cmdbuf, c_args, MAX_CMDVALS);
+		int nc = processCmdline(cmdbuf, c_args, MAX_CMDARGS);
 		if(nc > 0) {
 			executeCommand(c_args, nc);
 		}
@@ -281,7 +290,7 @@ void loop()
 			baseturn_servo.setAngle(180);
 		} else {
 			baseturn_servo.setAngle(90);
-                }
+		}
   	}
 	if (basetilt_servo.update()) {
 		if (basetilt_servo.read() == 90) {
@@ -290,7 +299,16 @@ void loop()
 			basetilt_servo.setAngle(180);
 		} else {
 			basetilt_servo.setAngle(90);
-}
+		}
+	}
+	if (middletilt_servo.update()) {
+		if (middletilt_servo.read() == 90) {
+			middletilt_servo.setAngle(0);
+		} else if (middletilt_servo.read() == 0) {
+			middletilt_servo.setAngle(180);
+		} else {
+			middletilt_servo.setAngle(90);
+		}
 	}
 //	Serial.println(baseturn_servo.read());
 //	Serial.println(basetilt_servo.read());
@@ -315,3 +333,57 @@ float get_current()
 	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
 }
 
+// function that executes whenever data is received from master
+// this function is registered as an event, see setup()
+void I2C_receiveEvent(int howMany)
+{
+	int av = Wire.available();
+	cmd = Wire.read();
+	Serial.print("command:");
+	Serial.println(cmd);
+	switch(cmd) {
+		//run left motor
+		case CMD_LEFT:
+			analogWrite(LEFT_PIN, readVal());
+			break;
+		//run right motor
+		case CMD_RIGHT:
+			analogWrite(RIGHT_PIN,readVal());
+			break;
+		//run two motors
+		case CMD_BOTH:
+			analogWrite(LEFT_PIN, readVal());
+			analogWrite(RIGHT_PIN, readVal());
+			break;
+		//stop two motors
+		case CMD_STOP:
+			analogWrite(LEFT_PIN, 0);
+			analogWrite(RIGHT_PIN, 0);
+			break;
+		case CMD_LED:
+			analogWrite(LED_PIN, readVal());
+			break;
+	}
+}
+
+void I2C_requestData()
+{
+	switch(I2C_request.cmd) {
+		case CMD_GETBATTERY:
+			int val = analogRead(BATTERY_PIN);
+			Serial.print("battery:");
+			Serial.println(val);
+			char buf[3 * sizeof (int) + 1];
+			itoa(val / BATTERY_DIV, buf, 10);
+			Wire.write(buf);
+			break;
+		case CMD_CHARGER:
+			int val = analogRead(CHARGER_PIN);
+			Serial.print("charger:");
+			Serial.println(val);
+			char buf[3 * sizeof (int) + 1];
+			itoa(val / CHARGER_DIV, buf, 10);
+			Wire.write(buf);
+			break;
+	}
+}
