@@ -1,11 +1,13 @@
 #include <Wire.h>
-#include "pins.h"
-#include <Servo.h>
 
+#include "pins.h"
 #include "servo_x.h"
 #include "cycle_check.h"
+#include "serial_cmd.h"
 
 #define I2C_Addr 0x14 //20
+#define I2C_LowModule_Addr 0x13 //19
+
 #define CMD_OTHER ':'
 #define I2C_OK_REQUEST '?'
 
@@ -38,28 +40,6 @@ struct {
 	char cmd;
 } I2C_request = {NULL};
 
-
-int getIntVal(const String &strval)
-{
-	int rs=0;
-	int signm = 1;
-	int i=0;
-	while(i<strval.length() && strval.charAt(i) != ';' && strval.charAt(i) != 0) {
-		char b = strval.charAt(i++);
-		if(b == ';') {
-			break;
-		}
-		if(i == 0 && b == '-') {
-			signm = -1;
-		} else {
-			rs = b - '0' + rs * 10;
-		}
-	}
-	rs *= signm;
-	Serial.print("value:");
-	Serial.println(rs);
-	return rs;
-}
 
 void executeCommand(String c_args[], int n)
 {
@@ -113,29 +93,6 @@ void setup()
 	//join i2c bus
 	Wire.onReceive(I2C_receiveEvent);
 	Wire.onRequest(I2C_requestData);
-}
-
-int processCmdline(const String &cmdline, String c_args[], int n)
-{
-	String val;
-	int lastpos=0, pos=0, i=0;
-	while(pos >= 0 && i < n) {
-		pos = cmdline.indexOf(';', lastpos);
-		if(pos < 0) {
-			//the last value
-			val = String(cmdline.substring(lastpos));
-		} else {
-			val = String(cmdline.substring(lastpos, pos));
-			lastpos = pos + 1;
-		}
-		if(val.length() > 0) {
-			c_args[i++] = val;
-		}
-	}
-	for(int j = i;j < n; j++) {
-		c_args[j] = "";
-	}
-	return i;
 }
 
 void serialRead()
@@ -232,7 +189,9 @@ void I2C_receiveEvent(int howMany)
 void I2C_requestData()
 {
 	if(I2C_request.cmd) {
+		Wire.beginTransmission(I2C_LowModule_Addr); // transmit to Low Module
 		Wire.send("ok");
+		Wire.endTransmission();       // stop transmitting
 		I2C_request.cmd = NULL;
 	}
 }
