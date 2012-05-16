@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <QTRSensors.h>
 
 #include "pins.h"
 #include "servo_x.h"
@@ -14,7 +15,8 @@
 
 #define MAX_CMDARGS 10
 
-ServoX palmturn_servo, palmtilt_servo, claw_servo;
+#define QTRNUM 1
+QTRSensorsAnalog trsensors({QTR1_PIN}, QTRNUM);
 
 bool led_state = false;
 
@@ -75,10 +77,17 @@ void loop()
 	if(nc > 0) {
 		executeCommand(c_args, nc);
 	}
-	static unsigned long led_timer_state;
+	static unsigned long led_timer_state = millis();
 	if (cycleCheck(&led_timer_state, 500)) {
 		digitalWrite(LED_PIN, led_state);
 		led_state = !led_state;
+	}
+	static unsigned long sensors_timer_state = millis();
+	if (cycleCheck(&sensors_timer_state, 2000)) {
+		unsigned int sensor_values[QTRNUM];
+		trsensors.read(sensor_values);
+		Serial.print("QTR=");
+		Serial.println(sensor_values[0]);
 	}
 	if (movementsUpdate()) {
 		Serial.print(last_move);
