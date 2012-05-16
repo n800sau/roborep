@@ -34,7 +34,6 @@ const LONG_CMD scommands[] = {
 	{"current", CMD_CURRENT, 0},
 	{"led", CMD_LED, 1},
 	{"move", CMD_MOVEMENT, 1},
-	{"ge", CMD_SHOWGE, 0},
 	{"setBaseTurn", CMD_SETBASETURN, 2},
 	{"setBaseTilt", CMD_SETBASETILT, 2},
 	{"setMiddleTilt", CMD_SETMIDDLETILT, 2}

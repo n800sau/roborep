@@ -107,6 +107,9 @@ void errorBeep()
 void setup()
 {
 	serialSetup(I2C_Addr);
+	//join i2c bus 
+	Wire.onReceive(I2C_receiveEvent);
+	Wire.onRequest(I2C_requestData);
 	chassisSetup();
 	movementsSetup();
 	head_servo.attach(HEAD_PWM_PIN);
@@ -177,4 +180,29 @@ float get_charger()
 float get_current()
 {
 	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
+}
+
+struct {
+	char cmd;
+} I2C_request = {NULL};
+
+// function that executes whenever data is received from master
+// this function is registered as an event, see setup()
+void I2C_receiveEvent(int howMany)
+{
+	String c_args[MAX_CMDARGS];
+	int nc = readI2C(c_args, MAX_CMDARGS);
+	if(nc > 0) {
+		executeCommand(c_args, nc);
+	}
+}
+
+void I2C_requestData()
+{
+	if(I2C_request.cmd) {
+		Wire.beginTransmission(I2C_TopModule_Addr); // transmit to Top Module
+		Wire.send("ok");
+		Wire.endTransmission();       // stop transmitting
+		I2C_request.cmd = NULL;
+	}
 }
