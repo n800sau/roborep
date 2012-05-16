@@ -5,9 +5,9 @@
 void chassisSetup();
 
 //right
-void motorRight(int pwm, boolean reverse = false);
+void motorRight(int pwm, boolean reverse=false);
 
 //left
-void motorLeft(int pwm, boolean reverse = false);
+void motorLeft(int pwm, boolean reverse=false);
 
 #endif //__CHASSIS_CMD__
