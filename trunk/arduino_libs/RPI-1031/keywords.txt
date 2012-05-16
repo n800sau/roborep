@@ -1,0 +1,10 @@
+#######################################
+# Syntax Coloring Map RPI-1031
+#######################################
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+rpiSetup	KEYWORD2
+getTiltPosition	KEYWORD2
