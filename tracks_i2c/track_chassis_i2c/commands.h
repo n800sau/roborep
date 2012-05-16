@@ -12,6 +12,7 @@ enum SCOMMANDS {
 	CMD_CURRENT,
 	CMD_LED,
 	CMD_MOVEMENT,
+	CMD_MOVEMENT_STOP,
 	CMD_SETBASETURN,
 	CMD_SETBASETILT,
 	CMD_SETMIDDLETILT,
@@ -34,6 +35,7 @@ const LONG_CMD scommands[] = {
 	{"current", CMD_CURRENT, 0},
 	{"led", CMD_LED, 1},
 	{"move", CMD_MOVEMENT, 1},
+	{"move_stop", CMD_MOVEMENT_STOP, 1},
 	{"setBaseTurn", CMD_SETBASETURN, 2},
 	{"setBaseTilt", CMD_SETBASETILT, 2},
 	{"setMiddleTilt", CMD_SETMIDDLETILT, 2}
