@@ -8,6 +8,8 @@
 
 #define LED_PIN 13 //13
 
+#define QTR1_PIN A0 //14
+
 /*
 0 rx - rx
 1 tx - tx
@@ -25,7 +27,7 @@
 12 -
 13 -
 
-14 a0 -
+14 a0 - qtr
 15 a1 -
 16 a2 -
 
