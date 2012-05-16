@@ -25,5 +25,7 @@ void movementsSetup();
 bool movementsUpdate();
 
 void set_movement(const char *mname);
+void movement_stop();
+void get_angles(byte &angles[3]);
 
 #endif //__MOVEMENTS_CMD__

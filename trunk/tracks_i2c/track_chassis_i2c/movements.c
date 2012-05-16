@@ -33,7 +33,22 @@ bool set_movement(const char *mname)
 	return found;
 }
 
+void movement_stop()
+{
+	basetilt_servo.stop();
+	baseturn_servo.stop();
+	middletilt_servo.stop();
+}
+
 bool movementsUpdate()
 {
 	return baseturn_servo.update() && basetilt_servo.update() && middletilt_servo.update();
 }
+
+void get_angles(byte &angles[3])
+{
+	angles[BASETURN] = palmturn_servo.read();
+	angles[BASETILT] = palmtilt_servo.read();
+	angles[MIDDLETILT] = claw_servo.read();
+}
+

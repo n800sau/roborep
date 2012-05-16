@@ -81,6 +81,9 @@ void executeCommand(String c_args[], int n)
 							rs = "Ok";
 						}
 						break;
+					case CMD_MOVEMENT_STOP:
+						movement_stop();
+						break;
 					case CMD_SETBASETURN:
 						baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
 						break;
@@ -127,7 +130,8 @@ void loop()
 	String c_args[MAX_CMDARGS];
 	int nc = readSerial(c_args, MAX_CMDARGS);
 	if(nc > 0) {
-		executeCommand(c_args, nc);
+		String answer = executeCommand(c_args, nc);
+		Serial.println(answer);
 	}
 	float val = get_battery();
 	//Serial.print("b:");
@@ -182,9 +186,7 @@ float get_current()
 	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
 }
 
-struct {
-	char cmd;
-} I2C_request = {NULL};
+String I2C_answer = "";
 
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
@@ -193,16 +195,14 @@ void I2C_receiveEvent(int howMany)
 	String c_args[MAX_CMDARGS];
 	int nc = readI2C(c_args, MAX_CMDARGS);
 	if(nc > 0) {
-		executeCommand(c_args, nc);
+		I2C_answer = executeCommand(c_args, nc);
 	}
 }
 
 void I2C_requestData()
 {
-	if(I2C_request.cmd) {
-		Wire.beginTransmission(I2C_TopModule_Addr); // transmit to Top Module
-		Wire.send("ok");
-		Wire.endTransmission();       // stop transmitting
-		I2C_request.cmd = NULL;
+	if(I2C_answer != "") {
+		Wire.send(I2C_answer);
+		I2C_answer = "";
 	}
 }
