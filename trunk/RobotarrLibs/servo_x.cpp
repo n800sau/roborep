@@ -11,11 +11,13 @@ ServoX::ServoX():Servo()
 //speed - degree in secs
 void ServoX::setAngle(int angle, int speed)
 {
-	__angle = angle;
-	if (speed)
-		__speed = speed;
-	__last_time = millis();
-	__finished = false;
+	if(angle >= 0) {
+		__angle = angle;
+		if (speed)
+			__speed = speed;
+		__last_time = millis();
+		__finished = false;
+	}
 }
 
 bool ServoX::update()

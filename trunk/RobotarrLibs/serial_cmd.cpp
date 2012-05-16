@@ -7,9 +7,6 @@ void serialSetup(i2c_addr)
 	Serial.begin(9600);
 	//i2c
 	Wire.begin(i2c_addr);
-	//join i2c bus 
-	Wire.onReceive(I2C_receiveEvent);
-	Wire.onRequest(I2C_requestData);
 }
 
 int processCmdline(String &cmdline, String c_args[], int n)
@@ -115,27 +112,3 @@ void readI2C(String &c_args[], int max_c_args)
 	return (error)? -1: nc;
 }
 
-struct {
-	char cmd;
-} I2C_request = {NULL};
-
-// function that executes whenever data is received from master
-// this function is registered as an event, see setup()
-void I2C_receiveEvent(int howMany)
-{
-	String c_args[MAX_CMDARGS];
-	int nc = readI2C(c_args, MAX_CMDARGS);
-	if(nc > 0) {
-		executeCommand(c_args, nc);
-	}
-}
-
-void I2C_requestData()
-{
-	if(I2C_request.cmd) {
-		Wire.beginTransmission(I2C_TopModule_Addr); // transmit to Top Module
-		Wire.send("ok");
-		Wire.endTransmission();       // stop transmitting
-		I2C_request.cmd = NULL;
-	}
-}
