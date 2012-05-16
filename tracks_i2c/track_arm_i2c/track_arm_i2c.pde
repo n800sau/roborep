@@ -95,38 +95,15 @@ void setup()
 	Wire.onRequest(I2C_requestData);
 }
 
-void serialRead()
-{
-	String c_args[MAX_CMDARGS];
-	char cmdbuf[20];
-	int n = 0;
-	while(Serial.available()) {
-		int byte = Serial.read();
-		if(byte == '\n') {
-			byte = 0;
-		}
-		if(n < sizeof(cmdbuf)) {
-			cmdbuf[n++] = byte;
-		} else {
-			cmdbuf[0] = 0;
-			//beep();
-		}
-//		Serial.println(serialData);
-//		Serial.flush();
-	}
-	if(n > 0 && cmdbuf[0]) {
-		int nc = processCmdline(String(cmdbuf), c_args, MAX_CMDARGS);
-		if(nc > 0) {
-			executeCommand(c_args, nc);
-		}
-	}
-}
-
 void loop()
 {
 	//test();
 	//mag_print_values();
-	serialRead();
+	String c_args[MAX_CMDARGS];
+	int nc = readSerial(c_args, MAX_CMDARGS);
+	if(nc > 0) {
+		executeCommand(c_args, nc);
+	}
 	static unsigned long led_timer_state;
 	if (cycleCheck(&led_timer_state, 500)) {
 		digitalWrite(LED_PIN, led_state);

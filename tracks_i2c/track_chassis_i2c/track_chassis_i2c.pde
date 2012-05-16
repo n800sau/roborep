@@ -1,86 +1,22 @@
 #include <Wire.h>
 
 #include "pins.h"
-#include "servo_x.h"
 #include "cycle_check.h"
 #include "serial_cmd.h"
-//#include "Mag3110_v10.pde"
+#include "servo_x.h"
+
+#include "chassis.h"
+#include "movements.h"
+#include "commands.h"
 
 #define I2C_Addr 0x13 //19
 #define I2C_TopModule_Addr 0x14 //20
 
-#define CMD_LEFT 'l'
-#define CMD_RIGHT 'r'
-#define CMD_BOTH 'b'
-#define CMD_STOP 's'
-#define CMD_BATTERY 'v'
-#define CMD_CHARGER 'c'
-#define CMD_CURRENT 'e'
-#define CMD_LED 'd'
-#define CMD_OTHER ':'
-
-//movement queue
-//function: stop movement and decide
-
-enum SCOMMANDS {
-	CMD_SHOWCANDLE,
-	CMD_SHOWGE,
-	CMD_SETBASETURNANGLE,
-};
-
-//long string commands
-typedef struct {
-	const char *cmdstr;
-	int cmd;
-	int n_parms;
-} LONG_CMD;
-
-const LONG_CMD scommands[] = {
-	{"candle", CMD_SHOWCANDLE, 0},
-	{"ge", CMD_SHOWGE, 0},
-	{"setBaseTurnAngle", CMD_SETBASETURNANGLE, 2}
-};
+ServoX head_servo;
 
 int battery_led_state = 0;
 
 bool led_state = 0;
-
-struct {
-	char cmd;
-} I2C_request = {NULL};
-
-ServoX head_servo, baseturn_servo, basetilt_servo, middletilt_servo;
-
-//right
-void motorRight(int pwm, boolean reverse = false)
-{
-	if (pwm < 0) {
-		pwm = -pwm;
-		reverse = !reverse;
-	}
-	analogWrite(RIGHT_PWM_PIN, pwm);
-	//set pwm control, 0 for stop, and 255 for maximum speed
-	if (reverse) {
-		digitalWrite(RIGHT_DIR_PIN, HIGH);
-	} else {
-		digitalWrite(RIGHT_DIR_PIN, LOW);
-	}
-}
-
-//left
-void motorLeft(int pwm, boolean reverse = false)
-{
-	if (pwm < 0) {
-		pwm = -pwm;
-		reverse = !reverse;
-	}
-	analogWrite(LEFT_PWM_PIN, pwm);
-	if (reverse) {
-		digitalWrite(LEFT_DIR_PIN, HIGH);
-	} else {
-		digitalWrite(LEFT_DIR_PIN, LOW);
-	}
-}
 
 void test()
 {
@@ -106,88 +42,79 @@ void test()
 void executeCommand(String c_args[], int n)
 {
 	String rs("Command unknown");
-	char cmd = c_args[0].charAt(0);
-	int nparm = 1;
 	Serial.print("command:");
-	Serial.println(cmd);
-	switch (cmd) {
-		//run left motor
-		case CMD_LEFT:
-			motorLeft(getIntVal(c_args[1]));
-			break;
-			//run right motor
-		case CMD_RIGHT:
-			motorRight(getIntVal(c_args[1]));
-			break;
-			//run two motors
-		case CMD_BOTH:
-			motorLeft(getIntVal(c_args[1]));
-			motorRight(getIntVal(c_args[2]));
-			break;
-			//stop two motors
-		case CMD_STOP:
-			motorLeft(0);
-			motorRight(0);
-			break;
-			//make buildin led light
-		case CMD_LED:
-			analogWrite(LED_PIN, getIntVal(c_args[1]));
-			break;
-		case CMD_OTHER:
-			for(int ci=0; ci< sizeof(scommands)/sizeof(scommands[0]); ci++) {
-				if(c_args[0].equals(scommands[ci].cmdstr)) {
-					int icmd = scommands[ci].cmd;
-					switch(icmd) {
-						case CMD_SHOWCANDLE:
-							basetilt_servo.setAngle(90, 5);
-							middletilt_servo.setAngle(90, 5);
+	Serial.println(c_args[0]);
+	for(int ci=0; ci< sizeof(scommands)/sizeof(scommands[0]); ci++) {
+		if(c_args[0].equals(scommands[ci].cmdstr)) {
+			if(scommands[ci].n_parms != n) {
+				errorBeep();
+			} else {
+				int icmd = scommands[ci].cmd;
+				switch(icmd) {
+					//run left motor
+					case CMD_LEFT:
+						motorLeft(getIntVal(c_args[1]));
+						break;
+					//run right motor
+					case CMD_RIGHT:
+						motorRight(getIntVal(c_args[1]));
+						break;
+						//run two motors
+					case CMD_BOTH:
+						motorLeft(getIntVal(c_args[1]));
+						motorRight(getIntVal(c_args[2]));
+						break;
+						//stop two motors
+					case CMD_STOP:
+						motorLeft(0);
+						motorRight(0);
+						break;
+						//make buildin led light
+					case CMD_LED:
+						analogWrite(LED_PIN, getIntVal(c_args[1]));
+						break;
+					case CMD_MOVEMENT:
+						if(!set_movement(c_args[1])) {
+							errorBeep();
+							rs = "Error";
+						} else {
 							rs = "Ok";
-							break;
-						case CMD_SHOWGE:
-							basetilt_servo.setAngle(30, 10);
-							middletilt_servo.setAngle(0, 5);
-							Wire.send("palmturn_servo;90;5");
-							break;
-						case CMD_SETBASETURNANGLE:
-							baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
-							break;
-						default:
-//							beep();
-							break;
-					}
+						}
+						break;
+					case CMD_SETBASETURN:
+						baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
+						break;
+					case CMD_SETBASETILT:
+						basetilt_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
+						break;
+					case CMD_SETMIDDLETILT:
+						middletilt_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
+						break;
+					default:
+						errorBeep();
+						break;
 				}
 			}
-			break;
+		}
 	}
 	Serial.println(rs);
 }
 
+void errorBeep()
+{
+}
+
 void setup()
 {
-	Serial.begin(9600);
+	serialSetup(I2C_Addr);
+	chassisSetup();
+	movementsSetup();
+	head_servo.attach(HEAD_PWM_PIN);
 	//pins
-	pinMode(LEFT_PWM_PIN, OUTPUT);
-	pinMode(LEFT_DIR_PIN, OUTPUT);
-	pinMode(RIGHT_PWM_PIN, OUTPUT);
-	pinMode(RIGHT_DIR_PIN, OUTPUT);
 	pinMode(BATTERY_LED_PIN, OUTPUT);
 	pinMode(CURRENT_LED_PIN, OUTPUT);
 	pinMode(LED_PIN, OUTPUT);
-	//servos
-	head_servo.attach(HEAD_PWM_PIN);
-	head_servo.setAngle(90, 5);
-	basetilt_servo.attach(BASE_TILT_PWM_PIN);
-	basetilt_servo.setAngle(90, 30);
-	baseturn_servo.attach(BASE_TURN_PWM_PIN);
-	baseturn_servo.setAngle(90, 10);
-	middletilt_servo.attach(MIDDLE_TILT_PWM_PIN);
-	middletilt_servo.setAngle(90, 10);
-	//i2c
-	Wire.begin(I2C_Addr);
-	//join i2c bus 
-	Wire.onReceive(I2C_receiveEvent);
-	Wire.onRequest(I2C_requestData);
-	//mag_config();
+	set_movement("base");
 }
 
 #define MAX_CMDARGS 10
@@ -195,29 +122,9 @@ void setup()
 void loop()
 {
 	String c_args[MAX_CMDARGS];
-	//test();
-	//mag_print_values();
-	char cmdbuf[20];
-	int n = 0;
-	while(Serial.available()) {
-		int byte = Serial.read();
-		if(byte == '\n') {
-			byte = 0;
-		}
-		if(n < sizeof(cmdbuf)) {
-			cmdbuf[n++] = byte;
-		} else {
-			cmdbuf[0] = 0;
-			//beep();
-		}
-//		Serial.println(serialData);
-//		Serial.flush();
-	}
-	if(n > 0 && cmdbuf[0]) {
-		int nc = processCmdline(cmdbuf, c_args, MAX_CMDARGS);
-		if(nc > 0) {
-			executeCommand(c_args, nc);
-		}
+	int nc = readSerial(c_args, MAX_CMDARGS);
+	if(nc > 0) {
+		executeCommand(c_args, nc);
 	}
 	float val = get_battery();
 	//Serial.print("b:");
@@ -235,38 +142,20 @@ void loop()
 	//Serial.print(", c:");
 	//Serial.println(val);
 	digitalWrite(BATTERY_LED_PIN, battery_led_state);
-	static unsigned long	led_timer_state;
+	static unsigned long led_timer_state;
 	if (cycleCheck(&led_timer_state, 500)) {
 		digitalWrite(LED_PIN, led_state);
 		led_state = !led_state;
 	}
-	if (baseturn_servo.update()) {
-		if (baseturn_servo.read() == 90) {
-			baseturn_servo.setAngle(0);
-		} else if (baseturn_servo.read() == 0) {
-			baseturn_servo.setAngle(180);
+	if (movementsUpdate()) {
+		Serial.print(last_move);
+		Serial.println(" finished");
+		if (last_move && strcmp(last_move, "base")) {
+			set_movement("candle");
 		} else {
-			baseturn_servo.setAngle(90);
+			set_movement("base");
 		}
   	}
-	if (basetilt_servo.update()) {
-		if (basetilt_servo.read() == 90) {
-			basetilt_servo.setAngle(0);
-		} else if (basetilt_servo.read() == 0) {
-			basetilt_servo.setAngle(180);
-		} else {
-			basetilt_servo.setAngle(90);
-		}
-	}
-	if (middletilt_servo.update()) {
-		if (middletilt_servo.read() == 90) {
-			middletilt_servo.setAngle(0);
-		} else if (middletilt_servo.read() == 0) {
-			middletilt_servo.setAngle(180);
-		} else {
-			middletilt_servo.setAngle(90);
-		}
-	}
 //	Serial.println(baseturn_servo.read());
 //	Serial.println(basetilt_servo.read());
 	head_servo.update();
@@ -288,41 +177,4 @@ float get_charger()
 float get_current()
 {
 	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
-}
-
-// function that executes whenever data is received from master
-// this function is registered as an event, see setup()
-void I2C_receiveEvent(int howMany)
-{
-	String c_args[MAX_CMDARGS];
-	char cmdbuf[20];
-	int n = 0;
-	while(Wire.available()) {
-		int byte = Wire.receive();
-		if(byte == '\n') {
-			byte = 0;
-		}
-		if(n < sizeof(cmdbuf)) {
-			cmdbuf[n++] = byte;
-		} else {
-			cmdbuf[0] = 0;
-			//beep();
-		}
-	}
-	if(n > 0 && cmdbuf[0]) {
-		int nc = processCmdline(cmdbuf, c_args, MAX_CMDARGS);
-		if(nc > 0) {
-			executeCommand(c_args, nc);
-		}
-	}
-}
-
-void I2C_requestData()
-{
-	if(I2C_request.cmd) {
-		Wire.beginTransmission(I2C_TopModule_Addr); // transmit to Top Module
-		Wire.send("ok");
-		Wire.endTransmission();       // stop transmitting
-		I2C_request.cmd = NULL;
-	}
 }
