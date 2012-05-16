@@ -2,6 +2,8 @@
 
 #define __MOVEMENTS_CMD__
 
+#include "servo_x.h"
+
 enum TSERVO {
 	PALMTURN=0, PALMTILT, CLAW, TSERVONUM
 };
