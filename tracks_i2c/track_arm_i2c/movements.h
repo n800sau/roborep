@@ -2,6 +2,7 @@
 
 #define __MOVEMENTS_CMD__
 
+#include <Arduino.h>
 #include "servo_x.h"
 
 enum TSERVO {
@@ -9,7 +10,7 @@ enum TSERVO {
 };
 
 typedef struct {
-	const char *name;
+	String name;
 	byte angle[TSERVONUM];
 	byte speeds[TSERVONUM];
 } MOVEMENT;
@@ -19,15 +20,15 @@ const MOVEMENT moves[] = {
 	{"closeclaw", {-1, -1, 180}, {10, 10, 10}}
 };
 
-extern MOVEMENT *current_move;
+extern const MOVEMENT *current_move;
 
 extern ServoX palmturn_servo, palmtilt_servo, claw_servo;
 
 void movementsSetup();
 bool movementsUpdate();
 
-void set_movement(const char *mname);
+bool set_movement(String mname);
 void movement_stop();
-void get_angles(byte &angles[3]);
+void get_angles(byte angles[3]);
 
 #endif //__MOVEMENTS_CMD__

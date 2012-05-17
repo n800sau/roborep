@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 #include <Wire.h>
 #include <QTRSensors.h>
 
@@ -14,9 +16,14 @@
 #define MAX_CMDARGS 10
 
 #define QTRNUM 1
-QTRSensorsAnalog trsensors({QTR1_PIN}, QTRNUM);
+byte pins[] = {QTR1_PIN};
+QTRSensorsAnalog trsensors(pins, QTRNUM);
 
 bool led_state = false;
+
+void errorBeep()
+{
+}
 
 String executeCommand(String c_args[], int n)
 {
@@ -47,8 +54,8 @@ String executeCommand(String c_args[], int n)
 					case CMD_CHASSIS:
 						Wire.beginTransmission(I2C_LowModule_Addr); // transmit to Low Module
 						for(int k=1; k<n; k++) {
-							Wire.send(c_args[k]);
-							Wire.send(( k < n-1 ) ? ";" : "\n");
+							Wire.print(c_args[k]);
+							Wire.write(( k < n-1 ) ? ";" : "\n");
 						}
 						Wire.endTransmission();       // stop transmitting
 						Wire.requestFrom(I2C_LowModule_Addr, 100);
@@ -80,7 +87,6 @@ String executeCommand(String c_args[], int n)
 void setup()
 {
 	serialSetup(I2C_Addr);
-	chassisSetup();
 	movementsSetup();
 	pinMode(LED_PIN, OUTPUT);
 }
@@ -106,15 +112,16 @@ void loop()
 		Serial.println(sensor_values[0]);
 	}
 	if (movementsUpdate()) {
-		Serial.print(last_move);
+		Serial.print(current_move->name);
 		Serial.println(" finished");
-		if (last_move && strcmp(last_move, "base")) {
+		if (current_move->name == "base") {
 			set_movement("closeclaw");
 		} else {
 			set_movement("openclaw");
 		}
   	}
 }
+
 
 String I2C_answer = "";
 
@@ -132,7 +139,7 @@ void I2C_receiveEvent(int howMany)
 void I2C_requestData()
 {
 	if(I2C_answer != "") {
-		Wire.send(I2C_answer);
+		Wire.print(I2C_answer);
 		I2C_answer = "";
 	}
 }

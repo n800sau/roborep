@@ -1,4 +1,4 @@
-#include <WProgram.h>
+#include <Arduino.h>
 #include "servo_x.h"
 
 ServoX::ServoX():Servo()
