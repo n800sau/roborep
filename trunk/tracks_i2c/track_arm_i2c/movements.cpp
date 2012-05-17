@@ -1,9 +1,9 @@
-#include <WProgram.h>
+#include <WString.h>
 #include "pins.h"
 #include "movements.h"
 #include "servo_x.h"
 
-MOVEMENT *current_move = NULL;
+const MOVEMENT *current_move = NULL;
 
 ServoX palmturn_servo, palmtilt_servo, claw_servo;
 
@@ -15,16 +15,16 @@ void movementsSetup()
 	claw_servo.attach(CLAW_PWM_PIN);
 }
 
-bool set_movement(const char *mname)
+bool set_movement(String mname)
 {
 	bool found = false;
-	for(int i = 0; i < sizeof(moves/sizeof(moves[0])); i++)
+	for(int i = 0; i < sizeof(sizeof(moves)/sizeof(moves[0])); i++)
 	{
-		MOVEMENT *m = moves[i];
-		if(strcmp(m->name, mname) == 0) {
-			palmturn_servo.setAngle(m->angle[PALMTURN], m->speed[PALMTURN]);
-			palmtilt_servo.setAngle(m->angle[PALMTILT], m->speed[PALMTILT]);
-			claw_servo.setAngle(m->angle[CLAW], m->speed[CLAW]);
+		const MOVEMENT *m = &moves[i];
+		if(m->name == mname) {
+			palmturn_servo.setAngle(m->angle[PALMTURN], m->speeds[PALMTURN]);
+			palmtilt_servo.setAngle(m->angle[PALMTILT], m->speeds[PALMTILT]);
+			claw_servo.setAngle(m->angle[CLAW], m->speeds[CLAW]);
 			found = true;
 			current_move = m;
 			break;
@@ -45,7 +45,7 @@ bool movementsUpdate()
 	return palmturn_servo.update() && palmtilt_servo.update() && claw_servo.update();
 }
 
-void get_angles(byte &angles[3])
+void get_angles(byte angles[3])
 {
 	angles[PALMTURN] = palmturn_servo.read();
 	angles[PALMTILT] = palmtilt_servo.read();

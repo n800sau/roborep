@@ -1,4 +1,4 @@
-#include <WProgram.h>
+#include <Arduino.h>
 #include "cycle_check.h"
 
 bool cycleCheck(unsigned long *lastMillis, unsigned int cycle)

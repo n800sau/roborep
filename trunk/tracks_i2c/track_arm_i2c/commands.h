@@ -9,6 +9,9 @@ enum SCOMMANDS {
 	CMD_SETPALMTURN,
 	CMD_SETPALMTILT,
 	CMD_SETCLAW,
+	CMD_LED,
+	CMD_STOP,
+	CMD_CHASSIS
 };
 
 //long string commands

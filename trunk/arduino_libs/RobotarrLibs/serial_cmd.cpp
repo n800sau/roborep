@@ -1,15 +1,15 @@
-#include <WProgram.h>
+#include <Arduino.h>
 #include <Wire.h>
 #include "serial_cmd.h"
 
-void serialSetup(i2c_addr)
+void serialSetup(int i2c_addr)
 {
 	Serial.begin(9600);
 	//i2c
 	Wire.begin(i2c_addr);
 }
 
-int processCmdline(String &cmdline, String c_args[], int n)
+int processCmdline(const String &cmdline, String c_args[], int n)
 {
 	String val;
 	int lastpos=0, pos=0, i=0;
@@ -29,7 +29,7 @@ int processCmdline(String &cmdline, String c_args[], int n)
 	for(int j = i;j < n; j++) {
 		c_args[j] = "";
 	}
-	return i
+	return i;
 }
 
 int getIntVal(const String &strval)
@@ -39,7 +39,7 @@ int getIntVal(const String &strval)
 	int i=0;
 	while(i<strval.length() && strval.charAt(i) != ';' && strval.charAt(i) != 0) {
 		char b = strval.charAt(i++);
-		if(byte == ';') {
+		if(b == ';') {
 			break;
 		}
 		if(i == 0 && b == '-') {
@@ -54,7 +54,7 @@ int getIntVal(const String &strval)
 	return rs;
 }
 
-void readSerial(String &c_args[], int max_c_args)
+int readSerial(String c_args[], int max_c_args)
 {
 	byte cmdbuf[100];
 	byte n = 0, nc=0;
@@ -78,18 +78,18 @@ void readSerial(String &c_args[], int max_c_args)
 //		Serial.flush();
 	}
 	if(n > 0 && cmdbuf[0]) {
-		nc = processCmdline(String(cmdbuf), c_args, max_c_args);
+		nc = processCmdline(String((char*)cmdbuf), c_args, max_c_args);
 	}
 	return (error)? -1: nc;
 }
 
-void readI2C(String &c_args[], int max_c_args)
+int readI2C(String c_args[], int max_c_args)
 {
 	byte cmdbuf[100];
 	byte n = 0, nc=0;
 	bool error = false;
 	while(Wire.available()) {
-		byte b = Wire.receive();
+		byte b = Wire.read();
 		if(b == '\n') {
 			b = 0;
 		}
@@ -107,7 +107,7 @@ void readI2C(String &c_args[], int max_c_args)
 //		Serial.flush();
 	}
 	if(n > 0 && cmdbuf[0]) {
-		nc = processCmdline(String(cmdbuf), c_args, max_c_args);
+		nc = processCmdline(String((char*)cmdbuf), c_args, max_c_args);
 	}
 	return (error)? -1: nc;
 }
