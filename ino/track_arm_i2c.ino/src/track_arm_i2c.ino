@@ -19,6 +19,7 @@
 #define QTRNUM 1
 byte pins[] = {QTR1_PIN};
 QTRSensorsAnalog trsensors(pins, QTRNUM);
+ADXL345 Accel;
 
 bool led_state = false;
 
@@ -111,6 +112,21 @@ void loop()
 		trsensors.read(sensor_values);
 		Serial.print("QTR=");
 		Serial.println(sensor_values[0]);
+		double acc_data[3];
+		Accel.get_Gxyz(acc_data);
+		if(Accel.status){
+		    float length = 0.;
+		    for(int i = 0; i < 3; i++){
+			length += (float)acc_data[i] * (float)acc_data[i];
+			Serial.print(acc_data[i]);
+			Serial.print(" ");
+		    }
+		    length = sqrt(length);
+		    Serial.print(length);
+		    Serial.println("");
+	    } else {
+		Serial.println("ERROR: ADXL345 data read error");
+	    }
 	}
 	if (movementsUpdate()) {
 		Serial.print(current_move->name);
