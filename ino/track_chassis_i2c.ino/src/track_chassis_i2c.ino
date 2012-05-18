@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <Mag3110_v10.h>
 
 #include "pins.h"
 #include "cycle_check.h"

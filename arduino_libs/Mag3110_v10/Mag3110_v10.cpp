@@ -2,9 +2,9 @@
   MAG3110 Breakout Code
 */
 
+#include <Arduino.h>
 #include <Wire.h>
-
-#define MAG_ADDR  0x0E //7-bit address for the MAG3110, doesn't change
+#include <Mag3110_v10.h>
 
 void mag_config(void)
 {
