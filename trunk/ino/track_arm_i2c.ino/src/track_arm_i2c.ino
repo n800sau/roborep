@@ -114,7 +114,7 @@ void loop()
 	if (movementsUpdate()) {
 		Serial.print(current_move->name);
 		Serial.println(" finished");
-		if (current_move->name == "base") {
+		if (current_move->name == "openclaw") {
 			set_movement("closeclaw");
 		} else {
 			set_movement("openclaw");

@@ -2,12 +2,14 @@
 
 #define __MOVEMENTS_CMD__
 
+#include "servo_x.h"
+
 enum TSERVO {
 	BASETURN=0, BASETILT, MIDDLETILT, TSERVONUM
 };
 
 typedef struct {
-	const char *name;
+	String name;
 	byte angle[TSERVONUM];
 	byte speeds[TSERVONUM];
 } MOVEMENT;
@@ -17,15 +19,15 @@ const MOVEMENT moves[] = {
 	{"candle", {90, 90, 90}, {10, 10, 10}}
 };
 
-extern MOVEMENT *current_move;
+extern const MOVEMENT *current_move;
 
 extern ServoX baseturn_servo, basetilt_servo, middletilt_servo;
 
 void movementsSetup();
 bool movementsUpdate();
 
-void set_movement(const char *mname);
+bool set_movement(String mname);
 void movement_stop();
-void get_angles(byte &angles[3]);
+void get_angles(byte angles[3]);
 
 #endif //__MOVEMENTS_CMD__
