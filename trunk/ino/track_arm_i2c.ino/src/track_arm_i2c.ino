@@ -2,6 +2,7 @@
 
 #include <Wire.h>
 #include <QTRSensors.h>
+#include <ADXL345.h>
 
 #include "pins.h"
 #include "servo_x.h"
