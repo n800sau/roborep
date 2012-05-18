@@ -18,6 +18,29 @@ int battery_led_state = 0;
 
 bool led_state = 0;
 
+#define MAX_CMDARGS 10
+
+void errorBeep()
+{
+}
+
+float get_battery()
+{
+	return analogRead(BATTERY_PIN) / 1024. * 24.9;
+	//divider 21.6 / 82.4 = 0.262 1.84 / 8.94 = 0.205 5 / 0.205 = 24.39 5 / 0.262 =
+}
+
+float get_charger()
+{
+	return analogRead(CHARGER_PIN) / 1024. * 41.5;
+	//divider 12 / 82.4
+}
+
+float get_current()
+{
+	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
+}
+
 void test()
 {
 	motorLeft(200, 0);
@@ -39,7 +62,7 @@ void test()
 	Serial.println(val);
 }
 
-void executeCommand(String c_args[], int n)
+String executeCommand(String c_args[], int n)
 {
 	String rs("Command unknown");
 	Serial.print("command:");
@@ -100,11 +123,28 @@ void executeCommand(String c_args[], int n)
 			}
 		}
 	}
-	Serial.println(rs);
+	return rs;
 }
 
-void errorBeep()
+String I2C_answer = "";
+
+// function that executes whenever data is received from master
+// this function is registered as an event, see setup()
+void I2C_receiveEvent(int howMany)
 {
+	String c_args[MAX_CMDARGS];
+	int nc = readI2C(c_args, MAX_CMDARGS);
+	if(nc > 0) {
+		I2C_answer = executeCommand(c_args, nc);
+	}
+}
+
+void I2C_requestData()
+{
+	if(I2C_answer != "") {
+		Wire.println(I2C_answer);
+		I2C_answer = "";
+	}
 }
 
 void setup()
@@ -122,8 +162,6 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	set_movement("base");
 }
-
-#define MAX_CMDARGS 10
 
 void loop()
 {
@@ -155,9 +193,9 @@ void loop()
 		led_state = !led_state;
 	}
 	if (movementsUpdate()) {
-		Serial.print(last_move);
+		Serial.print(current_move->name);
 		Serial.println(" finished");
-		if (last_move && strcmp(last_move, "base")) {
+		if (current_move->name == "base") {
 			set_movement("candle");
 		} else {
 			set_movement("base");
@@ -167,42 +205,4 @@ void loop()
 //	Serial.println(basetilt_servo.read());
 	head_servo.update();
 //        delay(100);
-}
-
-float get_battery()
-{
-	return analogRead(BATTERY_PIN) / 1024. * 24.9;
-	//divider 21.6 / 82.4 = 0.262 1.84 / 8.94 = 0.205 5 / 0.205 = 24.39 5 / 0.262 =
-}
-
-float get_charger()
-{
-	return analogRead(CHARGER_PIN) / 1024. * 41.5;
-	//divider 12 / 82.4
-}
-
-float get_current()
-{
-	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
-}
-
-String I2C_answer = "";
-
-// function that executes whenever data is received from master
-// this function is registered as an event, see setup()
-void I2C_receiveEvent(int howMany)
-{
-	String c_args[MAX_CMDARGS];
-	int nc = readI2C(c_args, MAX_CMDARGS);
-	if(nc > 0) {
-		I2C_answer = executeCommand(c_args, nc);
-	}
-}
-
-void I2C_requestData()
-{
-	if(I2C_answer != "") {
-		Wire.send(I2C_answer);
-		I2C_answer = "";
-	}
 }
