@@ -23,6 +23,7 @@ int processCmdline(const String &cmdline, String c_args[], int n)
 			lastpos = pos + 1;
 		}
 		if(val.length() > 0) {
+//			Serial.println(val);
 			c_args[i++] = val;
 		}
 	}
@@ -49,20 +50,21 @@ int getIntVal(const String &strval)
 		}
 	}
 	rs *= signm;
-	Serial.print("value:");
-	Serial.println(rs);
 	return rs;
 }
 
 int readSerial(String c_args[], int max_c_args)
 {
-	byte cmdbuf[100];
-	byte n = 0, nc=0;
+	static byte cmdbuf[100]="";
+	static byte n=0;
+	byte nc=0;
+	bool finished = false;
 	bool error = false;
 	while(Serial.available()) {
 		byte b = Serial.read();
-		if(b == '\n') {
+		if(b == '\xa') {
 			b = 0;
+			finished = true;
 		}
 		if(n < sizeof(cmdbuf)) {
 			cmdbuf[n++] = b;
@@ -72,26 +74,32 @@ int readSerial(String c_args[], int max_c_args)
 		} else {
 			cmdbuf[0] = 0;
 			error = true;
+			cmdbuf[0] = 0;
+			n = 0;
+			finished = false;
 			break;
 		}
-//		Serial.println(serialData);
-//		Serial.flush();
 	}
-	if(n > 0 && cmdbuf[0]) {
+	if(finished) {
 		nc = processCmdline(String((char*)cmdbuf), c_args, max_c_args);
+		cmdbuf[0] = 0;
+		n = 0;
 	}
 	return (error)? -1: nc;
 }
 
 int readI2C(String c_args[], int max_c_args)
 {
-	byte cmdbuf[100];
-	byte n = 0, nc=0;
+	static byte cmdbuf[100] = "";
+	static byte n = 0;
+	byte nc = 0;
+	bool finished = false;
 	bool error = false;
 	while(Wire.available()) {
 		byte b = Wire.read();
-		if(b == '\n') {
+		if(b == '\xa') {
 			b = 0;
+			finished = true;
 		}
 		if(n < sizeof(cmdbuf)) {
 			cmdbuf[n++] = b;
@@ -101,13 +109,18 @@ int readI2C(String c_args[], int max_c_args)
 		} else {
 			cmdbuf[0] = 0;
 			error = true;
+			cmdbuf[0] = 0;
+			n = 0;
+			finished = false;
 			break;
 		}
 //		Serial.println(serialData);
 //		Serial.flush();
 	}
-	if(n > 0 && cmdbuf[0]) {
+	if(finished) {
 		nc = processCmdline(String((char*)cmdbuf), c_args, max_c_args);
+		cmdbuf[0] = 0;
+		n = 0;
 	}
 	return (error)? -1: nc;
 }

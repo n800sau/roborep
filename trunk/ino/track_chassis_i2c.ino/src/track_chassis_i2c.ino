@@ -39,7 +39,8 @@ float get_charger()
 
 float get_current()
 {
-	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
+//	return 13.12 - analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
+	return analogRead(CURRENT_SENSOR_PIN) / 1024. * 5 / 0.185;
 }
 
 void test()
@@ -70,10 +71,13 @@ String executeCommand(String c_args[], int n)
 	Serial.println(c_args[0]);
 	for(int ci=0; ci< sizeof(scommands)/sizeof(scommands[0]); ci++) {
 		if(c_args[0].equals(scommands[ci].cmdstr)) {
-			if(scommands[ci].n_parms != n) {
+			if(scommands[ci].n_parms != n - 1) {
+				rs = "Wrong number of parameters";
 				errorBeep();
 			} else {
 				int icmd = scommands[ci].cmd;
+				Serial.println(icmd);
+				rs = "Ok";
 				switch(icmd) {
 					//run left motor
 					case CMD_LEFT:
@@ -109,6 +113,9 @@ String executeCommand(String c_args[], int n)
 						movement_stop();
 						break;
 					case CMD_SETBASETURN:
+						Serial.print(getIntVal(c_args[1]));
+						Serial.print(";");
+						Serial.println(getIntVal(c_args[2]));
 						baseturn_servo.setAngle(getIntVal(c_args[1]), getIntVal(c_args[2]));
 						break;
 					case CMD_SETBASETILT:
@@ -173,11 +180,11 @@ void loop()
 		Serial.println(answer);
 	}
 	float val = get_battery();
-	//Serial.print("b:");
-	//Serial.print(val);
+	Serial.print("b:");
+	Serial.println(val);
 	if (val < 6) {
 		battery_led_state = !battery_led_state;
-		Serial.println("Battery is low");
+//		Serial.println("Battery is low");
 	} else if (val < 5) {
 		battery_led_state = 1;
 		Serial.println("Battery is flat");
@@ -187,6 +194,9 @@ void loop()
 	val = get_charger();
 	//Serial.print(", c:");
 	//Serial.println(val);
+	val = get_current();
+//	Serial.print(", curr:");
+//	Serial.println(val);
 	digitalWrite(BATTERY_LED_PIN, battery_led_state);
 	static unsigned long led_timer_state;
 	if (cycleCheck(&led_timer_state, 500)) {

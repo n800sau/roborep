@@ -11,8 +11,11 @@ void movementsSetup()
 {
 	//servos
 	basetilt_servo.attach(BASE_TILT_PWM_PIN);
+//	basetilt_servo.write(0);
 	baseturn_servo.attach(BASE_TURN_PWM_PIN);
-	middletilt_servo.attach(MIDDLE_TILT_PWM_PIN);
+//	baseturn_servo.write(90);
+	middletilt_servo.attach(MIDDLE_TILT_PWM_PIN, 0, 200);
+//	middletilt_servo.write(190);
 }
 
 bool set_movement(String mname)
