@@ -34,10 +34,12 @@ String executeCommand(String c_args[], int n)
 	Serial.println(c_args[0]);
 	for(int ci=0; ci< sizeof(scommands)/sizeof(scommands[0]); ci++) {
 		if(c_args[0].equals(scommands[ci].cmdstr)) {
-			if(scommands[ci].n_parms != n && scommands[ci].n_parms >= 0) {
+			if(scommands[ci].n_parms != n - 1) {
+				rs = "Wrong number of parameters";
 				errorBeep();
 			} else {
 				int icmd = scommands[ci].cmd;
+				rs = "Ok";
 				switch(icmd) {
 					case CMD_LED:
 						analogWrite(LED_PIN, getIntVal(c_args[1]));
