@@ -46,8 +46,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4142136"
-     inkscape:cx="1176.5065"
-     inkscape:cy="405.71591"
+     inkscape:cx="285.76303"
+     inkscape:cy="251.78817"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -64,7 +64,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -1089,7 +1089,7 @@
          y="883.36218">s1</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#f50ad0;font-family:Sans;-inkscape-font-specification:Sans;stroke-opacity:1"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#f50ad0;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
        x="538"
        y="914.36218"
        id="text4127"
@@ -1097,10 +1097,10 @@
          sodipodi:role="line"
          id="tspan4129"
          x="538"
-         y="914.36218">11</tspan></text>
+         y="914.36218">7</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#f50ad0;font-family:Sans;-inkscape-font-specification:Sans;stroke-opacity:1"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#f50ad0;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
        x="574"
        y="913.36218"
        id="text4131"
@@ -1108,10 +1108,10 @@
          sodipodi:role="line"
          id="tspan4133"
          x="574"
-         y="913.36218">10</tspan></text>
+         y="913.36218">6</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#f50ad0;font-family:Sans;-inkscape-font-specification:Sans;stroke-opacity:1"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#f50ad0;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
        x="613"
        y="914.36218"
        id="text4135"
@@ -1119,7 +1119,7 @@
          sodipodi:role="line"
          id="tspan4137"
          x="613"
-         y="914.36218">9</tspan></text>
+         y="914.36218">5</tspan></text>
     <path
        style="fill:none;stroke:#0b1df4;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 929,600.36218 33,1"

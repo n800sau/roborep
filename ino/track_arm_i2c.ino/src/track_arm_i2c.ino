@@ -66,7 +66,7 @@ String executeCommand(String c_args[], int n)
 						while(Wire.available()) // slave may send less than requested
 						{
 							byte b = Wire.read(); // receive a byte as character
-							Serial.print(b); // print the character
+//							Serial.print(b); // print the character
 						}
 						break;
 					case CMD_SETPALMTURN:
@@ -93,6 +93,7 @@ void setup()
 	serialSetup(I2C_Addr);
 	movementsSetup();
 	pinMode(LED_PIN, OUTPUT);
+//	set_movement("closeclaw");
 }
 
 void loop()
@@ -109,7 +110,7 @@ void loop()
 		led_state = !led_state;
 	}
 	static unsigned long sensors_timer_state = millis();
-	if (cycleCheck(&sensors_timer_state, 2000)) {
+	if (0 && cycleCheck(&sensors_timer_state, 2000)) {
 		unsigned int sensor_values[QTRNUM];
 		trsensors.read(sensor_values);
 		Serial.print("QTR=");
@@ -131,13 +132,16 @@ void loop()
 	    }
 	}
 	if (movementsUpdate()) {
-		Serial.print(current_move->name);
-		Serial.println(" finished");
-		if (current_move->name == "openclaw") {
-			set_movement("closeclaw");
-		} else {
-			set_movement("openclaw");
+		if(current_move) {
+			Serial.print(current_move->name);
+			Serial.println(" finished");
+			movement_stop();
 		}
+//		if (current_move->name == "openclaw") {
+//			set_movement("closeclaw");
+//		} else {
+//			set_movement("openclaw");
+//		}
   	}
 }
 

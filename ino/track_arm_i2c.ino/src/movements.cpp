@@ -38,6 +38,7 @@ void movement_stop()
 	palmtilt_servo.stop();
 	palmturn_servo.stop();
 	claw_servo.stop();
+	current_move = NULL;
 }
 
 bool movementsUpdate()

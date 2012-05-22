@@ -2,9 +2,9 @@
 
 #define __PINS_H
 
-#define PALM_TURN_PWM_PIN 9 //9
-#define PALM_TILT_PWM_PIN 10 //10
-#define CLAW_PWM_PIN 11 //11
+#define PALM_TURN_PWM_PIN 7 //9
+#define PALM_TILT_PWM_PIN 5 //10
+#define CLAW_PWM_PIN 6 //11
 
 #define LED_PIN 13 //13
 

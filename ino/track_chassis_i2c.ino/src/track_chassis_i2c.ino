@@ -180,8 +180,8 @@ void loop()
 		Serial.println(answer);
 	}
 	float val = get_battery();
-	Serial.print("b:");
-	Serial.println(val);
+//	Serial.print("b:");
+//	Serial.println(val);
 	if (val < 6) {
 		battery_led_state = !battery_led_state;
 //		Serial.println("Battery is low");
@@ -204,8 +204,11 @@ void loop()
 		led_state = !led_state;
 	}
 	if (movementsUpdate()) {
-		Serial.print(current_move->name);
-		Serial.println(" finished");
+		if(current_move) {
+			Serial.print(current_move->name);
+			Serial.println(" finished");
+//			movement_stop();
+		}
 		if (current_move->name == "base") {
 			set_movement("candle");
 		} else {

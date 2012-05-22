@@ -16,8 +16,8 @@ typedef struct {
 } MOVEMENT;
 
 const MOVEMENT moves[] = {
-	{"openclaw", {-1, -1, 0}, {10, 10, 10}},
-	{"closeclaw", {-1, -1, 180}, {10, 10, 10}}
+	{"openclaw", {90, 90, 90}, {10, 10, 120}},
+	{"closeclaw", {90, 90, 180}, {10, 10, 120}}
 };
 
 extern const MOVEMENT *current_move;
