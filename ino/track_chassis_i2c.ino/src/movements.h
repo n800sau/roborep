@@ -15,7 +15,7 @@ typedef struct {
 } MOVEMENT;
 
 const MOVEMENT moves[] = {
-	{"base", {90, 0, 90}, {10, 10, 10}},
+	{"base", {90, 90, 90}, {30, 30, 30}},
 	{"candle", {90, 90, 90}, {10, 10, 10}}
 };
 

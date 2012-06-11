@@ -209,11 +209,11 @@ void loop()
 			Serial.println(" finished");
 //			movement_stop();
 		}
-		if (current_move->name == "base") {
-			set_movement("candle");
-		} else {
-			set_movement("base");
-		}
+//		if (current_move->name == "base") {
+//			set_movement("candle");
+//		} else {
+//			set_movement("base");
+//		}
   	}
 //	Serial.println(baseturn_servo.read());
 //	Serial.println(basetilt_servo.read());
