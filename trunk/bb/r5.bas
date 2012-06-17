@@ -9,6 +9,9 @@ symbol EYERIGHT = c.3
 symbol LED_1 = c.5
 symbol IR_1 = b.4
 
+symbol RIGHT_PWM = b.1
+symbol RIGHT_DIR = b.2
+
 symbol EYE_L = b0
 symbol EYE_R = b1
 symbol EYE_T  = b2
@@ -62,7 +65,13 @@ main:
 	servo SERVO_V,POS_V
 	high LED_1
 	readadc IR_1, F_R
-	debug
+	if F_R > 200 then
+		high RIGHT_DIR
+		pwmout RIGHT_PWM, 150, 800
+	else
+		low RIGHT_DIR
+		pwmout RIGHT_PWM, 150, 0
+	endif
 	low LED_1
 	goto main
 	
