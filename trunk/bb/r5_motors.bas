@@ -1,4 +1,4 @@
-'needs 2 PWM, 4 ADC, 4 digital output
+'needs 2 PWM, 4 ADC, 4 digital output, 2 serial or 2 i2c
 
 symbol RIGHT_PWM = b.1
 symbol RIGHT_DIR = b.2
@@ -22,6 +22,8 @@ symbol F_LF = b5
 
 symbol F_RR = b6
 symbol F_LR = b7
+
+symbol t1 = b1
 
 symbol TOO_CLOSE = 200
 
@@ -67,3 +69,10 @@ main:
 
 	goto main
 
+turn:
+	random t1
+	if t1 > 3000:
+		'turn left
+	else:
+		'turn right
+	return
