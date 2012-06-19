@@ -1,3 +1,5 @@
+'needs 2 SERVO, 4 ADC, 1 digital output
+
 symbol SERVO_V = b.7
 symbol SERVO_H = b.5
 symbol EYEOUT = c.4
