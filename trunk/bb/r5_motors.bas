@@ -1,21 +1,21 @@
 'needs 2 PWM, 4 ADC, 4 digital output, 2 serial or 2 i2c
 
-symbol RIGHT_PWM = b.1
-symbol RIGHT_DIR = b.2
-symbol LEFT_PWM = b.1
-symbol LEFT_DIR = b.2
+symbol RIGHT_PWM = c.0
+symbol RIGHT_DIR = c.1
+symbol LEFT_PWM = c.0
+symbol LEFT_DIR = c.4
 
 symbol LED_RF = c.5
-symbol IR_RF = b.4
+symbol IR_RF = b.2
 
 symbol LED_LF = c.5
-symbol IR_LF = b.4
+symbol IR_LF = b.3
 
 symbol LED_RR = c.5
 symbol IR_RR = b.4
 
 symbol LED_LR = c.5
-symbol IR_LR = b.4
+symbol IR_LR = b.5
 
 symbol F_RF = b4
 symbol F_LF = b5
