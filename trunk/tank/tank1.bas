@@ -2,6 +2,8 @@ symbol M1_PWM = c.5
 symbol M1_DIR = c.4
 symbol M2_PWM = c.3
 symbol M2_DIR = c.2
+symbol MT_PWM = b.1
+symbol MT_DIR = b.0
 symbol CMD_LOC = 128
 symbol PARM_START= CMD_LOC + 1
 symbol PARM_END = 138
@@ -62,20 +64,21 @@ parsecmd:
 executecmd:
 		select case  CMD
 		case "l"
-'			pwmduty M1_PWM, NUM
-'			high M1_PWM
+			pwmduty M1_PWM, NUM
+			high M1_PWM
 			pause 100
-'			low M1_PWM
+			low M1_PWM
 		case "r"
-'			pwmduty M2_PWM, NUM
-'			high M2_PWM
+			pwmduty M2_PWM, NUM
+			high M2_PWM
 			pause 100
-'			low M2_PWM
-		case 's'
-			if M1_DIR
-			pwmduty M2_PWM, 
+			low M2_PWM
+		case "s"
+			low		M1_DIR
+			low		M2_DIR
+			pwmout M1_PWM,150,0
+			pwmout M2_PWM,150,0
 		endselect
-	hserout 0,(b1)
 	bintoascii NUM, b1,b2,b3,b4,b5
 	hserout 0,(b1)
 	hserout 0,(b2)
