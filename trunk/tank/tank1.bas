@@ -22,14 +22,17 @@ init:
 		hsersetup B9600_4 ,%00			; baud 19200 at 4MHz
 		pwmout M1_PWM,150,0
 		pwmout M2_PWM,150,0
+		pwmout MT_PWM,150,0
 '		output M1_PWM
 '		output M2_PWM
 '		low		M1_PWM
 '		low 		M2_PWM
 		output M1_DIR
 		output M2_DIR
+		output MT_DIR
 		low		M1_DIR
 		low		M2_DIR
+		low		MT_DIR
 		
 		'high 400 -  0
 		'low 200-1023
@@ -67,17 +70,24 @@ executecmd:
 			pwmduty M1_PWM, NUM
 			high M1_PWM
 			pause 100
-			low M1_PWM
+			pwmduty M1_PWM, 0
 		case "r"
 			pwmduty M2_PWM, NUM
 			high M2_PWM
 			pause 100
-			low M2_PWM
+			pwmduty M2_PWM, 0
+		case "t"
+			pwmduty MT_PWM, NUM
+			high MT_PWM
+			pause 100
+			pwmduty MT_PWM, 0
 		case "s"
 			low		M1_DIR
 			low		M2_DIR
+			low		MT_DIR
 			pwmout M1_PWM,150,0
 			pwmout M2_PWM,150,0
+			pwmout MT_PWM,150,0
 		endselect
 	bintoascii NUM, b1,b2,b3,b4,b5
 	hserout 0,(b1)
