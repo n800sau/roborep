@@ -9,6 +9,7 @@ symbol PARM_START= CMD_LOC + 1
 symbol PARM_END = 138
 symbol CMD = b1
 symbol NUM = w3
+symbol REVR = b2
 'temporary vars
 symbol TB1 = b8
 symbol TB2 = b9
@@ -49,11 +50,11 @@ main:
 parsecmd:
 	peek CMD_LOC, CMD
 	let NUM = 0
-	let TB3 = 1
+	let REVR = 0
 	for TB1 = PARM_START to PARM_END
 		peek TB1, TB2
 		if TB1 = PARM_START and TB2 = "-" then
-			let TB3 = -1
+			let REVR = 1
 		else
 			if TB2 <"0" or TB2 > "9" then
 				exit
@@ -61,26 +62,40 @@ parsecmd:
 			let NUM = NUM * 10 + TB2 - "0"
 		endif
 	next
-	let NUM = NUM * TB3
+	if REVR = 0 then
+		NUM = 1000 - NUM
+	endif
 	return
 
 executecmd:
 		select case  CMD
 		case "l"
 			pwmduty M1_PWM, NUM
-			high M1_PWM
-			pause 100
-			pwmduty M1_PWM, 0
+			if REVR <> 0 then
+				low M1_DIR
+			else
+				high M1_DIR
+			endif
+'			pause 100
+'			pwmduty M1_PWM, 0
 		case "r"
 			pwmduty M2_PWM, NUM
-			high M2_PWM
-			pause 100
-			pwmduty M2_PWM, 0
+			if REVR <> 0 then
+				low M2_DIR
+			else
+				high M2_DIR
+			endif
+'			pause 100
+'			pwmduty M2_PWM, 0
 		case "t"
 			pwmduty MT_PWM, NUM
-			high MT_PWM
-			pause 100
-			pwmduty MT_PWM, 0
+			if REVR <> 0 then
+				low MT_DIR
+			else
+				high MT_DIR
+			endif
+'			pause 100
+'			pwmduty MT_PWM, 0
 		case "s"
 			low		M1_DIR
 			low		M2_DIR
