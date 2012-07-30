@@ -4,6 +4,11 @@ symbol M2_PWM = c.3
 symbol M2_DIR = c.2
 symbol MT_PWM = b.1
 symbol MT_DIR = b.0
+'i2c : b.5 , b.7
+symbol LIGHT_LEFT = b.2
+symbol LIGHT_RIGHT = b.3
+symbol BLIGHT_LEFT= b.4
+symbol BLIGHT_RIGHT=c.1
 symbol CMD_LOC = 128
 symbol PARM_START= CMD_LOC + 1
 symbol PARM_END = 138
@@ -18,9 +23,17 @@ symbol TB4 = b11
 symbol TW1 = w6
 symbol TW2 = w7
 
+symbol DIRNUM = w8
+
+symbol accel = 0x1D
+symbol accel_power = 0x2D
+setfreq m32
+
 init:	
 		table 0,("Hello World")
 		hsersetup B9600_4 ,%00			; baud 19200 at 4MHz
+		hi2csetup i2cmaster, accel, i2cfast_32, i2cbyte
+		hi2cout accel_power, (8);
 		pwmout M1_PWM,150,0
 		pwmout M2_PWM,150,0
 		pwmout MT_PWM,150,0
@@ -34,6 +47,14 @@ init:
 		low		M1_DIR
 		low		M2_DIR
 		low		MT_DIR
+		output	LIGHT_LEFT
+		output	LIGHT_RIGHT
+		output	BLIGHT_LEFT
+		output	BLIGHT_RIGHT
+		low	LIGHT_LEFT
+		low	LIGHT_RIGHT
+		low	BLIGHT_LEFT
+		low	BLIGHT_RIGHT
 		
 		'high 400 -  0
 		'low 200-1023
@@ -62,6 +83,9 @@ parsecmd:
 			let NUM = NUM * 10 + TB2 - "0"
 		endif
 	next
+	if NUM > 1000 then
+		NUM = 1000
+	endif
 	if REVR = 0 then
 		NUM = 1000 - NUM
 	endif
@@ -73,18 +97,24 @@ executecmd:
 			pwmduty M1_PWM, NUM
 			if REVR <> 0 then
 				low M1_DIR
+				let DIRNUM = DIRNUM - NUM
 			else
 				high M1_DIR
+				let DIRNUM = DIRNUM + NUM
 			endif
+			gosub dirlights
 '			pause 100
 '			pwmduty M1_PWM, 0
 		case "r"
 			pwmduty M2_PWM, NUM
 			if REVR <> 0 then
 				low M2_DIR
+				let DIRNUM = DIRNUM + NUM
 			else
 				high M2_DIR
+				let DIRNUM = DIRNUM - NUM
 			endif
+			gosub dirlights
 '			pause 100
 '			pwmduty M2_PWM, 0
 		case "t"
@@ -103,6 +133,9 @@ executecmd:
 			pwmout M1_PWM,150,0
 			pwmout M2_PWM,150,0
 			pwmout MT_PWM,150,0
+			gosub dirlights
+			high BLIGHT_LEFT
+			high BLIGHT_RIGHT
 		endselect
 	bintoascii NUM, b1,b2,b3,b4,b5
 	hserout 0,(b1)
@@ -131,5 +164,20 @@ readcmd:
 			TB1 = TB1 + 1
 		endif
 	loop until TB2 = $0D or TB1 > PARM_END
+	return
+	
+dirlights:
+	if DIRNUM > 0 then
+		high LIGHT_RIGHT
+		low LIGHT_LEFT
+	elseif DIRNUM < 0 then
+		high LIGHT_LEFT
+		low LIGHT_RIGHT
+	else
+		low LIGHT_LEFT
+		low LIGHT_RIGHT
+	endif
+	low BLIGHT_LEFT
+	low BLIGHT_RIGHT
 	return
 	
