@@ -31,9 +31,9 @@ setfreq m32
 
 init:	
 		table 0,("Hello World")
-		hsersetup B9600_4 ,%00			; baud 19200 at 4MHz
-		hi2csetup i2cmaster, accel, i2cfast_32, i2cbyte
-		hi2cout accel_power, (8);
+		hsersetup B9600_32 ,%00			; baud 19200 at 4MHz
+'		hi2csetup i2cmaster, accel, i2cfast_32, i2cbyte
+'		hi2cout accel_power, (8);
 		pwmout M1_PWM,150,0
 		pwmout M2_PWM,150,0
 		pwmout MT_PWM,150,0
