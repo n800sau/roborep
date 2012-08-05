@@ -21,19 +21,35 @@ symbol TB2 = b9
 symbol TB3 = b10
 symbol TB4 = b11
 symbol TW1 = w6
+symbol TW1_0 = b12
+symbol TW1_1 = b13
 symbol TW2 = w7
+symbol TW2_0 = b14
+symbol TW2_1 = b15
+symbol TW3 = w8
+symbol TW3_0 = b16
+symbol TW3_1 = b17
+symbol COUNTER = w9
 
-symbol DIRNUM = w8
+symbol DIRNUM = w10
 
-symbol accel = 0x1D
+symbol accel = 0x53
 symbol accel_power = 0x2D
+symbol accel_dataformat = 0x31
+symbol accel_x = 0x32
+symbol accel_y = 0x34
+symbol accel_z = 0x36
+
 setfreq m32
 
 init:	
 		table 0,("Hello World")
 		hsersetup B9600_32 ,%00			; baud 19200 at 4MHz
-'		hi2csetup i2cmaster, accel, i2cfast_32, i2cbyte
-'		hi2cout accel_power, (8);
+		hi2csetup i2cmaster, accel, i2cfast_32, i2cbyte
+'		hi2cout accel_power, (0)
+'		hi2cout accel_power, (16)
+'		hi2cout accel_power, (8)
+		let COUNTER = 0
 		pwmout M1_PWM,150,0
 		pwmout M2_PWM,150,0
 		pwmout MT_PWM,150,0
@@ -55,6 +71,7 @@ init:
 		low	LIGHT_RIGHT
 		low	BLIGHT_LEFT
 		low	BLIGHT_RIGHT
+		gosub  test_lights
 		
 		'high 400 -  0
 		'low 200-1023
@@ -64,8 +81,11 @@ init:
 
 main:
 	gosub readcmd
-	gosub parsecmd
-	gosub executecmd
+	if TB1 > CMD_LOC then
+		gosub parsecmd
+		gosub executecmd
+	endif
+	gosub get_accel_data
 	goto main
 		
 parsecmd:
@@ -93,6 +113,19 @@ parsecmd:
 
 executecmd:
 		select case  CMD
+		case "f"
+			pwmduty M1_PWM, NUM
+			pwmduty M2_PWM, NUM
+			if REVR <> 0 then
+				low M1_DIR
+				low M2_DIR
+				let DIRNUM = DIRNUM - 2 * NUM
+			else
+				high M1_DIR
+				high M2_DIR
+				let DIRNUM = DIRNUM + 2 *NUM
+			endif
+			gosub dirlights
 		case "l"
 			pwmduty M1_PWM, NUM
 			if REVR <> 0 then
@@ -103,8 +136,6 @@ executecmd:
 				let DIRNUM = DIRNUM + NUM
 			endif
 			gosub dirlights
-'			pause 100
-'			pwmduty M1_PWM, 0
 		case "r"
 			pwmduty M2_PWM, NUM
 			if REVR <> 0 then
@@ -115,8 +146,6 @@ executecmd:
 				let DIRNUM = DIRNUM - NUM
 			endif
 			gosub dirlights
-'			pause 100
-'			pwmduty M2_PWM, 0
 		case "t"
 			pwmduty MT_PWM, NUM
 			if REVR <> 0 then
@@ -124,8 +153,7 @@ executecmd:
 			else
 				high MT_DIR
 			endif
-'			pause 100
-'			pwmduty MT_PWM, 0
+			gosub dirlights
 		case "s"
 			low		M1_DIR
 			low		M2_DIR
@@ -136,6 +164,8 @@ executecmd:
 			gosub dirlights
 			high BLIGHT_LEFT
 			high BLIGHT_RIGHT
+		case "z"
+			gosub test_lights
 		endselect
 	bintoascii NUM, b1,b2,b3,b4,b5
 	hserout 0,(b1)
@@ -145,13 +175,6 @@ executecmd:
 	hserout 0,(b5)
 	hserout 0,($0d)
 	hserout 0,($0a)
-'	pause 1000		; pause 1 s
-'	low M1_DIR
-'	high M2_DIR
-'	pause 1000		; pause 1 s
-'		high	M1_DIR
-'		low 	M2_DIR
-'	pause 1000
 	goto main		; loop back to start
 	
 readcmd:
@@ -163,7 +186,7 @@ readcmd:
 			poke TB1, TB2
 			TB1 = TB1 + 1
 		endif
-	loop until TB2 = $0D or TB1 > PARM_END
+	loop until TB2 = $0D or TB1 > PARM_END or TB1 = CMD_LOC
 	return
 	
 dirlights:
@@ -179,5 +202,34 @@ dirlights:
 	endif
 	low BLIGHT_LEFT
 	low BLIGHT_RIGHT
+	return
+	
+test_lights:
+	for TB1 = 0 to 5
+		high	LIGHT_LEFT
+		nap 5
+		low	LIGHT_LEFT
+		high	LIGHT_RIGHT
+		nap 5
+		low	LIGHT_RIGHT
+		high	BLIGHT_LEFT
+		nap 5
+		low	BLIGHT_LEFT
+		high	BLIGHT_RIGHT
+		nap 5
+		low	BLIGHT_RIGHT
+	next
+	return
+
+get_accel_data:
+	debug
+	let TW1 = 0
+	let TW2 = 0
+	let TW3 = 0
+'	for TB1=0 to 100
+	hi2cin  0, (TW1_0)
+'	hi2cin  accel_x, (TW1_0, TW1_1, TW2_0, TW2_1, TW3_0, TW3_1)
+	inc COUNTER
+'	next
 	return
 	
