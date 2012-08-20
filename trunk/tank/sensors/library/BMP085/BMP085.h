@@ -48,9 +48,9 @@
 #define BMP085_READPRESSURECMD            0x34
 
 
-class Adafruit_BMP085 {
+class BMP085 {
  public:
-  Adafruit_BMP085();
+  BMP085();
   void begin(uint8_t mode = BMP085_ULTRAHIGHRES);  // by default go highres
   float readTemperature(void);
   int32_t readPressure(void);
