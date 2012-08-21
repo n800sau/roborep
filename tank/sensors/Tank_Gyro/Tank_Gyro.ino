@@ -8,8 +8,8 @@
 #define CTRL_REG4 0x23
 #define CTRL_REG5 0x24
 
-//int L3G4200D_Address = 0x69; //105 - I2C address of the L3G4200D
-int L3G4200D_Address = 0x68; //I2C address of the L3G4200D
+int L3G4200D_Address = 0x69; //105 - I2C address of the L3G4200D
+//int L3G4200D_Address = 0x68; //I2C address of the L3G4200D
 
 int x;
 int y;
