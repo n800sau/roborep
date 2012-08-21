@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include <WProgram.h> 
+#include <Arduino.h> 
 #include "ADXL345.h"
 
 //#define SerialDebug
@@ -134,15 +134,15 @@ void ADXL345::Write(int address, int data)
 #endif
 
 	Wire.beginTransmission(m_Address);
-	Wire.send(address);
-	Wire.send(data);
+	Wire.write(address);
+	Wire.write(data);
 	Wire.endTransmission();
 }
 
 uint8_t* ADXL345::Read(int address, int length)
 {
 	Wire.beginTransmission(m_Address);
-	Wire.send(address);
+	Wire.write(address);
 	Wire.endTransmission();
   
 	Wire.beginTransmission(m_Address);
@@ -153,7 +153,7 @@ uint8_t* ADXL345::Read(int address, int length)
 	{
 		for(uint8_t i = 0; i < length; i++)
 		{
-			buffer[i] = Wire.receive();
+			buffer[i] = Wire.read();
 		}
 	}
 	Wire.endTransmission();
