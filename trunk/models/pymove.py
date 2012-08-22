@@ -52,4 +52,16 @@ class Ro:
 					self.speed = 0
 			print "(%d: %d, %d, sp:%g rsp:%g >>%d)" % (time() - self.starttime, self.x, self.y, self.speed, self.rspeed, self.heading)
 
+acc_list = []
+def test_accelerator():
+	x = x_ax()
+	y = y_ax()
+	z = z_ax()
+	if abs(x) > 1000 or abs(y) > 1000 or abs(z) > 1000:
+		stop()
+	remove noise
+	smooth list
+	position of max in list
+	maximum of list in range
+
 Ro().run()

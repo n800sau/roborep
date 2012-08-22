@@ -9,12 +9,14 @@ symbol LIGHT_LEFT = b.2
 symbol LIGHT_RIGHT = b.3
 symbol BLIGHT_LEFT= b.4
 symbol BLIGHT_RIGHT=c.1
+
 symbol CMD_LOC = 128
 symbol PARM_START= CMD_LOC + 1
 symbol PARM_END = 138
 symbol CMD = b1
 symbol NUM = w3
 symbol REVR = b2
+
 'temporary vars
 symbol TB1 = b8
 symbol TB2 = b9
@@ -33,22 +35,27 @@ symbol COUNTER = w9
 
 symbol DIRNUM = w10
 
-symbol accel = 0x53
+'ADXL345
+symbol ACCEL_I2C_ADDR = 0x53
 symbol accel_power = 0x2D
 symbol accel_dataformat = 0x31
 symbol accel_x = 0x32
 symbol accel_y = 0x34
 symbol accel_z = 0x36
+'$50 to $7E
+symbol accel_x_loc = $50
+symbol accel_y_loc = $52
+symbol accel_z_loc = $54
 
 setfreq m32
 
 init:	
 		table 0,("Hello World")
 		hsersetup B9600_32 ,%00			; baud 19200 at 4MHz
-		hi2csetup i2cmaster, accel, i2cfast_32, i2cbyte
+		hi2csetup i2cmaster, ACCEL_I2C_ADDR, i2cfast_32, i2cbyte
 '		hi2cout accel_power, (0)
 '		hi2cout accel_power, (16)
-'		hi2cout accel_power, (8)
+		hi2cout accel_power, (8)
 		let COUNTER = 0
 		pwmout M1_PWM,150,0
 		pwmout M2_PWM,150,0
@@ -223,13 +230,19 @@ test_lights:
 
 get_accel_data:
 	debug
-	let TW1 = 0
-	let TW2 = 0
-	let TW3 = 0
-'	for TB1=0 to 100
-	hi2cin  0, (TW1_0)
-'	hi2cin  accel_x, (TW1_0, TW1_1, TW2_0, TW2_1, TW3_0, TW3_1)
-	inc COUNTER
-'	next
+	hi2csetup i2cmaster, ACCEL_I2C_ADDR, i2cfast_32, i2cbyte
+	let bptr=accel_x_loc
+	for TB1=1 to 6
+		let @bptrInc = 0
+	next
+	let bptr = accel_x_loc
+	hi2cin  accel_x, (@bptrInc, @bptrInc, @bptrInc, @bptrInc, @bptrInc, @bptrInc)
+	let bptr = accel_x_loc
+	bintoascii TW1, b1,b2,b3,b4,b5
+	hserout 0,(b1, b2, b3, b4, b5, $0d, $0a)
 	return
-	
+
+get_bmp085:
+
+	hi2csetup i2cmaster, $68, mode, addresslen
+	return
