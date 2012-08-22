@@ -3,6 +3,11 @@
 
 #include <Arduino.h> // for byte data type
 
+// The Arduino two-wire interface uses a 7-bit number for the address, 
+// and sets the last bit correctly based on reads and writes
+//#define GYR_ADDRESS (0xD2 >> 1)
+#define DefaultL3G4200D_Address 0x69
+
 // register addresses
 
 #define L3G4200D_WHO_AM_I      0x0F
@@ -38,6 +43,9 @@
 
 class L3G4200D
 {
+	private:
+	  int m_Address;
+
 	public:
 		typedef struct vector
 		{
@@ -45,6 +53,9 @@ class L3G4200D
 		} vector;
 		
 		vector g; // gyro angular velocity readings
+
+		L3G4200D();
+		L3G4200D(uint8_t customAddress);
 
 		void enableDefault(void);
 		
