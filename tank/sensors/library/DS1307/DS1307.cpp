@@ -19,7 +19,7 @@ void DS1307::read(void)
   // use the Wire lib to connect to tho rtc
   // reset the resgiter pointer to zero
   Wire.beginTransmission(DS1307_CTRL_ID);
-  Wire.send(0x00);
+  Wire.write(0x00);
   Wire.endTransmission();
 
   // request the 7 bytes of data    (secs, min, hr, dow, date. mth, yr)
@@ -27,7 +27,7 @@ void DS1307::read(void)
   for(int i=0; i<7; i++)
   {
     // store data in raw bcd format
-    rtc_bcd[i]=Wire.receive();
+    rtc_bcd[i]=Wire.read();
   }
 }
 
@@ -35,10 +35,10 @@ void DS1307::read(void)
 void DS1307::save(void)
 {
   Wire.beginTransmission(DS1307_CTRL_ID);
-  Wire.send(0x00); // reset register pointer
+  Wire.write(0x00); // reset register pointer
   for(int i=0; i<7; i++)
   {
-    Wire.send(rtc_bcd[i]);
+    Wire.write(rtc_bcd[i]);
   }
   Wire.endTransmission();
 }
