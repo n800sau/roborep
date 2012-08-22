@@ -2,9 +2,13 @@
 #include <BMP085.h>
 #include <HMC5883L.h>
 #include <ADXL345.h>
+#include <L3G4200D.h>
+#include <DS1307.h>
 
 #define I2C_Address 2
 
+DS1307 rtc;
+L3G4200D gyro;
 BMP085 bmp;
 HMC5883L compass;
 // Record any errors that may occur in the compass.
@@ -60,11 +64,27 @@ void setup() {
   accel.SetRange(2, true);
   // Tell the accelerometer to start taking measurements.
   accel.EnableMeasurements();
+  gyro = L3G4200D();
+  gyro.enableDefault();
+  rtc = DS1307();
+  rtc.stop();
+  rtc.set(DS1307_SEC,1);        //set the seconds
+  rtc.set(DS1307_MIN,23);     //set the minutes
+  rtc.set(DS1307_HR,12);       //set the hours
+  rtc.set(DS1307_DOW,4);       //set the day of the week
+  rtc.set(DS1307_DATE,5);       //set the date
+  rtc.set(DS1307_MTH,3);        //set the month
+  rtc.set(DS1307_YR,9);         //set the year
+  rtc.start();
+
 }
 
 void loop() {
 	showBmp();
 	showCompass();
+	showAccel();
+	showGyro();
+	showTime();
     Serial.println();
     delay(500);
 }
@@ -184,6 +204,38 @@ void showAccel()
    Serial.print(scaled.ZAxis);
    Serial.println("G");
   }
+}
+
+void showGyro()
+{
+	if(gyro.read())
+	{
+		Serial.print("G ");
+		Serial.print("X: ");
+		Serial.print((int)gyro.g.x);
+		Serial.print(" Y: ");
+		Serial.print((int)gyro.g.y);
+		Serial.print(" Z: ");
+		Serial.println((int)gyro.g.z);
+	} else {
+		Serial.println("Error reading gyro");
+	}
+}
+
+void showTime()
+{
+  Serial.print(rtc.get(DS1307_HR,true)); //read the hour and also update all the values by pushing in true
+  Serial.print(":");
+  Serial.print(rtc.get(DS1307_MIN,false));//read minutes without update (false)
+  Serial.print(":");
+  Serial.print(rtc.get(DS1307_SEC,false));//read seconds
+  Serial.print("      ");                 // some space for a more happy life
+  Serial.print(rtc.get(DS1307_DATE,false));//read date
+  Serial.print("/");
+  Serial.print(rtc.get(DS1307_MTH,false));//read month
+  Serial.print("/");
+  Serial.print(rtc.get(DS1307_YR,false)); //read year 
+  Serial.println();
 }
 
 void handleRequest()
