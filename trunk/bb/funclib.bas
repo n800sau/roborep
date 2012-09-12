@@ -82,6 +82,8 @@ fl_parse_cmdbuf:
 	'read command byte
 	poke TB3, @bptr
 	inc bptr
+	'skip :
+	inc bptr
 	inc TB3
 	'parse 4 parameters
 	for TB2 = 1 TO 4
@@ -122,22 +124,56 @@ fl_execute_cmd:
 	select case @bptr
 		case "e"
 			'echo command
-			hserout 0,(@bptrinc)
-			hserout 0,(":")
-			for TB1 = 1 to 4
-				let TW1_1 = @bptrinc
-				let TW1_2 = @bptrinc
-				bintoascii TW1, TW2_1, TW2_2, TW3_1, TW3_2, TW4_1
-				hserout 0,(TW2_1)
-				hserout 0,(TW2_2)
-				hserout 0,(TW3_1)
-				hserout 0,(TW3_2)
-				hserout 0,(TW4_1)
-				if TB1 < 4 then
-					hserout 0,(",")
-				endif
-			next
-			hserout 0,($0d)
-			hserout 0,($0a)
+			let TB1 = "e"
+			inc bptr
+			peek bptrinc, WORD TW1
+			inc bptr
+			peek bptrinc, WORD TW2
+			inc bptr
+			peek bptrinc, WORD TW3
+			inc bptr
+			peek bptrinc, WORD TW4
+			inc bptr
+			gosub fl_fill_reply_buf
+			gosub fl_send_reply
 	endselect
+	return
+
+fl_fill_reply_buf:
+	'TB1 - type
+	'TW1 - arg1
+	'TW2 - arg2
+	'TW3 - arg3
+	'TW4 - arg4
+	let bptr = SENDBUF_PTR
+	let @bptrinc = TB1
+	let @bptrinc = TW1_1
+	let @bptrinc = TW1_2
+	let @bptrinc = TW2_1
+	let @bptrinc = TW2_2
+	let @bptrinc = TW3_1
+	let @bptrinc = TW3_2
+	let @bptrinc = TW4_1
+	let @bptrinc = TW4_2
+
+fl_send_reply:
+	'uses TB1, TW1, TW2, TW3
+	let bptr = SENDBUF_PTR
+	hserout 0,(@bptrincr)
+	hserout 0,(":")
+	for TB1 = 1 to 4
+		let TW1_1 = @bptrinc
+		let TW1_2 = @bptrinc
+		bintoascii TW1, TB1, TW2_1, TW2_2, TW3_1, TW3_2
+		hserout 0,(TB1)
+		hserout 0,(TW2_1)
+		hserout 0,(TW2_2)
+		hserout 0,(TW3_1)
+		hserout 0,(TW3_2)
+		if TB1 < 4 then
+			hserout 0,(",")
+		endif
+	next
+	hserout 0,($0d)
+	hserout 0,($0a)
 	return
