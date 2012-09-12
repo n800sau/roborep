@@ -136,8 +136,15 @@ fl_execute_cmd:
 			inc bptr
 			gosub fl_fill_reply_buf
 			gosub fl_send_reply
+		else
+			gosub execute_cmd
 	endselect
 	return
+
+fl_clear_reply_buf:
+	for i = SENDBUF_PTR to SENDBUF_END_PTR
+		poke i, 0
+	next
 
 fl_fill_reply_buf:
 	'TB1 - type
