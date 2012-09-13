@@ -1,16 +1,16 @@
 'include: tempvar.bas
 
-#serial command buffer
-#serial command structure "X",bCMD,bLEN,bDATA*,bCRC
+'serial command buffer
+'serial command structure "X",bCMD,bLEN,bDATA*,bCRC
 symbol CMDBUF_PTR = 100
 symbol CMDBUF_END_PTR = CMDBUF_PTR + 79
 symbol B_CUR_CMDBUF_PTR = CMDBUF_END_PTR + 1
 
-#parsed command buffer
+'parsed command buffer
 symbol UCMDBUF_PTR = B_CUR_CMDBUF_PTR + 1
-symbol UCMDBUF_END_PTR = UCMDBUF_PTR + 1 + 2 + 2 + 2 + 2
+symbol UCMDBUF_END_PTR = UCMDBUF_PTR + 9
 
-#send back buffer
+'send back buffer
 symbol SENDBUF_PTR = UCMDBUF_END_PTR + 1
 symbol SENDBUF_END_PTR = SENDBUF_PTR + 30
 
@@ -60,7 +60,6 @@ fl_reset_cmdbuf:
 	poke B_CUR_CMDBUF_PTR, CMDBUF_PTR
 	'no command sign
 	poke CMDBUF_PTR, $00
-	let CMD = 0
 	return
 
 fl_check_cmdbuf:
@@ -93,7 +92,7 @@ fl_parse_cmdbuf:
 		'skip until next digit
 		do
 			inc bptr
-		loop until (@bptr >= "0" and @bptr <= "9") or @bptr = $0D
+		loop until @bptr >= "0" and @bptr <= "9" or @bptr = $0D
 	next
 	return
 
@@ -101,21 +100,19 @@ fl_parse_num:
 	'parameters @bptr - pointer to the beginning of ascii source string
 	'returns value in TW1
 	'uses TB1
-	symbol NEG = TB1
-	symbol NUM = TW1
-	let NUM = 0
-	if @bptr = '-' then
-		let NEG = 1
+	let TW1 = 0
+	if @bptr = "-" then
+		let TB1 = 1
 		inc bptr
 	else
-		let NEG = 0
+		let TB1 = 0
 	endif
 	do while @bptr >= "0" and @bptr <= "9"
-		let NUM = NUM * 10 + @bptr - "0"
+		let TW1 = TW1 * 10 + @bptr - "0"
 		inc bptr
 	loop
-	if NEG <> 0 then
-		let NUM = -NUM
+	if TB1 <> 0 then
+		let TW1 = -TW1
 	endif
 	return
 
@@ -126,13 +123,17 @@ fl_execute_cmd:
 			'echo command
 			let TB1 = "e"
 			inc bptr
-			peek bptrinc, WORD TW1
+			peek bptr, WORD TW1
 			inc bptr
-			peek bptrinc, WORD TW2
 			inc bptr
-			peek bptrinc, WORD TW3
+			peek bptr, WORD TW2
 			inc bptr
-			peek bptrinc, WORD TW4
+			inc bptr
+			peek bptr, WORD TW3
+			inc bptr
+			inc bptr
+			peek bptr, WORD TW4
+			inc bptr
 			inc bptr
 			gosub fl_fill_reply_buf
 			gosub fl_send_reply
@@ -142,8 +143,9 @@ fl_execute_cmd:
 	return
 
 fl_clear_reply_buf:
-	for i = SENDBUF_PTR to SENDBUF_END_PTR
-		poke i, 0
+	'uses TW1
+	for TW1 = SENDBUF_PTR to SENDBUF_END_PTR
+		poke TW1, 0
 	next
 
 fl_fill_reply_buf:
@@ -154,29 +156,29 @@ fl_fill_reply_buf:
 	'TW4 - arg4
 	let bptr = SENDBUF_PTR
 	let @bptrinc = TB1
+	let @bptrinc = TW1_0
 	let @bptrinc = TW1_1
-	let @bptrinc = TW1_2
+	let @bptrinc = TW2_0
 	let @bptrinc = TW2_1
-	let @bptrinc = TW2_2
+	let @bptrinc = TW3_0
 	let @bptrinc = TW3_1
-	let @bptrinc = TW3_2
+	let @bptrinc = TW4_0
 	let @bptrinc = TW4_1
-	let @bptrinc = TW4_2
 
 fl_send_reply:
 	'uses TB1, TW1, TW2, TW3
 	let bptr = SENDBUF_PTR
-	hserout 0,(@bptrincr)
+	hserout 0,(@bptrinc)
 	hserout 0,(":")
 	for TB1 = 1 to 4
+		let TW1_0 = @bptrinc
 		let TW1_1 = @bptrinc
-		let TW1_2 = @bptrinc
-		bintoascii TW1, TB1, TW2_1, TW2_2, TW3_1, TW3_2
+		bintoascii TW1, TB1, TW2_0, TW2_1, TW3_0, TW3_1
 		hserout 0,(TB1)
+		hserout 0,(TW2_0)
 		hserout 0,(TW2_1)
-		hserout 0,(TW2_2)
+		hserout 0,(TW3_0)
 		hserout 0,(TW3_1)
-		hserout 0,(TW3_2)
 		if TB1 < 4 then
 			hserout 0,(",")
 		endif

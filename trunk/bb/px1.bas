@@ -1,5 +1,5 @@
 init:
-	gosub setup_serial
+	gosub fl_setup_serial
 
 main:
 	gosub fl_read_serial
@@ -7,10 +7,6 @@ main:
 	goto main
 
 execute_cmd:
-	select case @bptr
-		case 'z'
-			'buzz
-	endselect
 	return
 
 'include: funclib.bas
