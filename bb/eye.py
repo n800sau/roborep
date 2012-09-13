@@ -4,6 +4,8 @@ import sys, time, datetime
 import threading 
 from mmap import mmap 
 import struct 
+import numpy
+from numpy import ma
 
 # Pins
 
@@ -27,8 +29,6 @@ PULLUP_RESISTOR = 16
 DISABLE_RESISTOR = 8
 PWM_MUX_MODE = 6
 
-HIGH = 1
-LOW = 0
 IN = "in"
 OUT = "out"
 PWM = "pwm"
@@ -161,65 +161,56 @@ def getReg(address):
         mem = mmap(f.fileno(), MMAP_SIZE, offset=MMAP_OFFSET)     
         return struct.unpack("<L", mem[address:address+4])[0]         
 
+def path_write(pname, val):
+	f = open(pname, "wb")
+	f.write(str(val))
+#	f.close()
+
+def path_read(pname):
+	f = open(pname, "rb")
+	rs = f.read()
+	f.close()
+	return rs
+
 def pinMode(pin, direction, enableResistors = True, pullDown = False ):
     # returns error message, or "" if OK
     
     global PWMTimerSet
     
-    if not pin:
-        # don't return an error message, since code might have intentionally not set pin to disable feature
-        return ""
-    
     if direction not in (IN, OUT, PWM):
-        print "ERROR: Invalid direction " + direction
-        return "ERROR"
-    
+        raise Exception("ERROR: Invalid direction " + direction)
 
-    if not pin in bone_pins:
-        print "ERROR: Unknown pin " + pin
-        return "ERROR"
-    
     if direction == PWM:
         if not bone_pins[pin][PWM]:
-            print  "ERROR: pin %s does not support PWM" % pin
-            return "ERROR"
+            raise Exception("ERROR: pin %s does not support PWM" % pin)
         else:
             # note: hard-coded at mode 6: not true for all types of PWM!
             muxMode = PWM_MUX_MODE
     elif not "gpio" in bone_pins[pin]:
-        print  "ERROR: pin %s does not support GPIO" % pin
-        return "ERROR"
+        raise Exception("ERROR: pin %s does not support GPIO" % pin)
     else:
         muxMode = GPIO_MUX_MODE
     
-    # NOTE: assumes mux mode for any GPIO port is 7
-    try:        
         if direction == IN:
             muxMode += RECEIVE_ENABLE
             if not enableResistors:
                 muxMode += DISABLE_RESISTOR
             elif not pullDown:
                 muxMode += PULLUP_RESISTOR
-        
-        print("setting  " + MUX_PATH + bone_pins[pin]["mux"] + " to " + hex(muxMode))
-                
-        open(MUX_PATH + bone_pins[pin]["mux"], 'wb').write("%X" % muxMode)
-    except:
-        print "ERROR: Can't set mux mode for " + MUX_PATH + bone_pins[pin]["mux"]  
-        return "ERROR"      
+        path_write(MUX_PATH + bone_pins[pin]["mux"], "%X" % muxMode)
 
     if direction in (IN, OUT):
         try: 
             print "getting direction " + GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction"
             # check to see if the pin is already exported
-            currdirection = open(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction").read()
+            currdirection = path_read(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction")
         
             print  "Already exported " + bone_pins[pin]["gpio"] + " direction is " + currdirection
         except:    
             # it isn't, so export it
             print "exporting GPIO %s" % bone_pins[pin]["gpio"]
-            open(GPIO_PATH + "export", 'w').write(str(bone_pins[pin]["gpio"]))
-            currdirection = open(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction").read()
+            path_write(GPIO_PATH + "export", str(bone_pins[pin]["gpio"]))
+            currdirection = path_read(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction")
         
             print "Exported " + GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction is " + direction
                      
@@ -229,7 +220,7 @@ def pinMode(pin, direction, enableResistors = True, pullDown = False ):
         
         if (isInput and direction == OUT) or (not isInput and direction == IN):
             print "setting " + GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction to " + direction
-            open(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction", "w").write(direction) 
+            path_write(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/direction", direction) 
 
     if direction == PWM:
         # enable the PWM Timer - without this, other PWM settings will cause kernel error messages
@@ -238,150 +229,141 @@ def pinMode(pin, direction, enableResistors = True, pullDown = False ):
             PWMTimerSet = True
 
     bone_pins[pin]["init"] = direction 
-    return ""
+
+def releasePin(pin):
+	path_write(GPIO_PATH + "unexport", str(bone_pins[pin]["gpio"]))
 
 def digitalWrite(pin, value):
-    """ Sets specified GPIO port (e.g. 'P8_3' to specified value.
-    Value must be HIGH or LOW
-    Returns None or error message """
-    
-    if not pin:
-        # don't return an error message, since code might have intentionally not set pin to disable feature
-        return 
-
-    if not pin in bone_pins:
-        return  "ERROR: Unknown pin " + pin
-    
-    if value != HIGH and value != LOW:
-        return "Invalid value, must be HIGH or LOW"
-    
+    """ Sets specified GPIO port (e.g. 'P8_3' to specified value."""
     if "init" not in bone_pins[pin] or bone_pins[pin]["init"] != OUT:
-        return "Pin " + pin + " not initialized for output, call pinMode first"
-    
+        raise Exception("Pin " + pin + " not initialized for output, call pinMode first")
     # set the value
-    
-    print "setting ", GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/value to " + str(value)
-    open(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/value", 'w').write(str(value)) 
+    path_write(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/value", str(int(bool(value))))
 
 def digitalRead(pin):
     """ Reads value of specified GPIO pin (e.g. 'P8_3')
     Returns HIGH (1), LOW (0) or error message """
-        
-    if not pin:
-        # don't return an error message, since code might have intentionally not set pin to disable feature
-        return ""
-
-    if not pin in bone_pins:
-        return  "ERROR: Unknown pin " + pin
-
     if "init" not in bone_pins[pin] or bone_pins[pin]["init"] != IN:
-        return "Pin " + pin + " not initialized for input, call pinMode first"
+        raise Exception("Pin " + pin + " not initialized for input, call pinMode first")
 
-    val = int(open(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/value").read())
-    
-    print GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/value is " + str(val)
-    return val
+    rs = int(path_read(GPIO_PATH + "gpio" + str(bone_pins[pin]["gpio"]) + "/value"))
+    return rs
 
-def pwmWrite(pin, frequency, duty_cycle, start = True):
+def pwmWrite(pin, frequency, duty_cycle):
     """ Changes settings of specified PWM pin (e.g. 'P9_14') and optionally enables it.  
     Note that frequency and duty_cycle can be omitted to leave them unchanged """
-    if not pin:
-        # don't return an error message, since code might have intentionally not set pin to disable feature
-        return ""
-
-    if not pin in bone_pins:
-        return  "ERROR: Unknown pin " + pin
-
     if "init" not in bone_pins[pin] or bone_pins[pin]["init"] != PWM:
-        return "Pin " + pin + " not initialized for PWM, call pinMode first"
+        raise Exception("Pin " + pin + " not initialized for PWM, call pinMode first")
 
     # is the PWM port free?
-    val = open(PWM_PATH + str(bone_pins[pin][PWM]) + "/request").read()
+    val = path_read(PWM_PATH + str(bone_pins[pin][PWM]) + "/request")
     if val.find('free') < 0:
         print "PWM pin %s status is %s, but gonna go for it anyway!" % (pin, val)
 
     if frequency:
-        open(PWM_PATH + str(bone_pins[pin][PWM]) + "/period_freq", 'w').write(str(frequency)) 
+        path_write(PWM_PATH + str(bone_pins[pin][PWM]) + "/period_freq", str(frequency)) 
 
     if duty_cycle:
-        open(PWM_PATH + str(bone_pins[pin][PWM]) + "/duty_percent", 'w').write(str(duty_cycle)) 
-
-    if start:
-        pwmStart(pin)
-    else:
-        pwmStop(pin)
+        path_write(PWM_PATH + str(bone_pins[pin][PWM]) + "/duty_percent", str(duty_cycle)) 
 
 def pwmStop(pin):
     """ Turn off PWM on the specified pin """
 
-    if not pin:
-        # don't return an error message, since code might have intentionally not set pin to disable feature
-        return ""
-
-    if not pin in bone_pins:
-        return  "ERROR: Unknown pin " + pin
-
     if "init" not in bone_pins[pin] or bone_pins[pin]["init"] != PWM:
-        return "Pin " + pin + " not initialized for PWM, call pinMode first"
-
-    print PWM_PATH + str(bone_pins[pin][PWM]) + "/run"
-    open(PWM_PATH + str(bone_pins[pin][PWM]) + "/run", 'w').write("0")
+        raise Exception("Pin " + pin + " not initialized for PWM, call pinMode first")
+    path_write(PWM_PATH + str(bone_pins[pin][PWM]) + "/run", "0")
     
 def pwmStart(pin):
     """ Turn on PWM on the specified pin.  PWM settings must previously have been passed to pwmWrite() """
 
-    if not pin:
-        # don't return an error message, since code might have intentionally not set pin to disable feature
-        return ""
-
-    if not pin in bone_pins:
-        return  "ERROR: Unknown pin " + pin
-
     if "init" not in bone_pins[pin] or bone_pins[pin]["init"] != PWM:
-        return "Pin " + pin + " not initialized for PWM, call pinMode first"
+        raise Exception("Pin " + pin + " not initialized for PWM, call pinMode first")
 
-    open(PWM_PATH + str(bone_pins[pin][PWM]) + "/run", 'w').write("1")
+    path_write(PWM_PATH + str(bone_pins[pin][PWM]) + "/run", "1")
 
 
 def analogRead(pin):
-    """ Reads value of specified GPIO pin (e.g. 'P8_3')
-    Returns HIGH (1), LOW (0) or error message """
-        
-    if not pin:
-        # don't return an error message, since code might have intentionally not set pin to disable feature
-        return ""
+    val = path_read(AIN_PATH + "ain" + str(bone_pins[pin]["index"]))
+    return val.rstrip(' \t\r\n\0')
 
-    if not pin in bone_pins:
-        return  "ERROR: Unknown pin " + pin
-
-    val = open(AIN_PATH + "ain" + str(bone_pins[pin]["index"])).read()
-    
-#    print AIN_PATH + "ain" + str(bone_pins[pin]["index"]) + " is " + str(val)
-    return val
 
 def initializePins():
+	global eye_history
+	eye_history = []
+	pinMode(EYE_OUT_PIN, OUT)
+	digitalWrite(EYE_OUT_PIN, 1)
+	pinMode(TURN_PIN, PWM)
+	pinMode(TILT_PIN, PWM)
+	pwmStart(TURN_PIN)
+	pwmStart(TILT_PIN)
+	pwmWrite(TILT_PIN, 350, 40)
 
-#    pinMode(BUTTON_NC_PIN, IN, pullDown = False)
-    pinMode(EYE_OUT_PIN, OUT)
-    digitalWrite(EYE_OUT_PIN, 1)
-    pinMode(TURN_PIN, PWM)
-    pinMode(TILT_PIN, PWM)
-    pwmWrite(TURN_PIN, 350, 80, start = True)
-    pwmWrite(TILT_PIN, 350, 90, start = True)
-    time.sleep(3)
-    pwmWrite(TURN_PIN, 200, 80, start = False)
-    pwmWrite(TILT_PIN, 200, 1, start = False)
-    while True:
-	print "l:", analogRead(EYE_LEFT),
-	print "r:", analogRead(EYE_RIGHT),
-	print "t:", analogRead(EYE_TOP),
-	print "b:", analogRead(EYE_BOTTOM)
-	time.sleep(2)
+def close():
+    releasePin(EYE_OUT_PIN)
     pwmStop(TURN_PIN)
     pwmStop(TILT_PIN)
 
-if __name__ == '__main__': 
-    initializePins()
+def eye_image():
+	global eye_history
+	digitalWrite(EYE_OUT_PIN, 1)
+	rs = ma.empty((3,3), dtype=int)
+	rs.mask = numpy.array((
+		(1, 0, 1),
+		(0, 1, 0), 
+		(1, 0, 1)))
+	time.sleep(0.01)
+	rs[0,1] = analogRead(EYE_TOP)
+	rs[1,0] = analogRead(EYE_LEFT)
+	rs[1,2] = analogRead(EYE_RIGHT)
+	rs[2,1] = analogRead(EYE_BOTTOM)
+	eye_history.append(rs)
+	digitalWrite(EYE_OUT_PIN, 0)
+	return rs
+
+#indeces of the min value
+def min_loc(eyedata):
+	return numpy.unravel_index(eyedata.argmin(), eyedata.shape)
+
+#indeces of the max value
+def max_loc(eyedata):
+	return numpy.unravel_index(eyedata.argmax(), eyedata.shape)
+
+	if c[1,0] > p[1,0] and c[1,0] - p[1,0] > thres : moves_left
+		if c[1,0] > p[1,0]
+
+	if c[1,2] > p[1,2] and c[1,2] - p[1,2] > thres : moves_right
+
+	if c[0,1] > p[0,1] and c[0,1] - p[0,1] > thres : moves_up
+
+	if c[2,1] > p[2,1] and c[2,1] - p[2,1] > thres : moves_down
+#	if p[0,0] == c[
+#	ma.average(p)
+#	prev - currr
+collect data for learning
+
+1 2 3 4
+2 3 4 5
+
+left: -1
+right: 1
+
+up: -1
+down: 1
+
+
+def object_move():
+	rs = None
+	global eye_history
+	if len(eye_history) >= 2:
+		curr = eye_history[-1]
+		prev = eye_history[-2]
+
+if __name__ == '__main__':
+	initializePins()
+	try:
+		print eye_image()
+	finally:
+		close()
 #    threading.Thread(target=pollButtons).start()  
 #    while (1 == 1):
 #        time.sleep(5)
