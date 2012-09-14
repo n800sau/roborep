@@ -41,11 +41,34 @@ execute_cmd:
 			select case TW1
 				case 0:
 					let TW2 = a.0
-			if TW2 then
-				high TW1
-			else
-				low TW1
-			endif
+				case 1:
+					let TW2 = a.1
+			endselect
+			gosub fl_clear_reply_buf
+			let bptr = SENDBUF_PTR
+			let @bptrinc = "i"
+			let @bptrinc = TW2_0
+			let @bptrinc = TW2_1
+			gosub fl_send_reply
+		case "a"
+			'read analog input pin
+			inc bptr
+			'pin num
+			let TW1_0 = @bptrinc
+			let TW1_1 = @bptrinc
+			input TW1
+			select case TW1
+				case 0:
+					READADC10 0,TW2
+				case 1:
+					READADC10 1,TW2
+			endselect
+			gosub fl_clear_reply_buf
+			let bptr = SENDBUF_PTR
+			let @bptrinc = "a"
+			let @bptrinc = TW2_0
+			let @bptrinc = TW2_1
+			gosub fl_send_reply
 	endselect
 	return
 
