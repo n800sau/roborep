@@ -14,11 +14,11 @@ L3G4200D::L3G4200D(uint8_t customAddress)
 
 
 // Turns on the L3G4200D's gyro and places it in normal mode.
-void L3G4200D::enableDefault(void)
+void L3G4200D::enableDefault(int scale)
 {
-	// 0x0F = 0b00001111
-	// Normal power mode, all axes enabled
-	writeReg(L3G4200D_CTRL_REG1, 0x0F);
+  // 0x0F = 0b00001111
+  // Normal power mode, all axes enabled
+  writeRegister(L3G4200D_CTRL_REG1, 0x0F);
 
   //From  Jim Lindblom of Sparkfun's code
 
@@ -47,30 +47,6 @@ void L3G4200D::enableDefault(void)
   // if you'd like:
   writeRegister(L3G4200D_CTRL_REG5, 0b00000000);
 
-}
-
-// Writes a gyro register
-void L3G4200D::writeReg(byte reg, byte value)
-{
-	Wire.beginTransmission(m_Address);
-	Wire.write(reg);
-	Wire.write(value);
-	Wire.endTransmission();
-}
-
-// Reads a gyro register
-byte L3G4200D::readReg(byte reg)
-{
-	byte value;
-	
-	Wire.beginTransmission(m_Address);
-	Wire.write(reg);
-	Wire.endTransmission();
-	Wire.requestFrom(m_Address, 1);
-	value = Wire.read();
-	Wire.endTransmission();
-	
-	return value;
 }
 
 // Reads the 3 gyro channels and stores them in vector g
@@ -145,7 +121,7 @@ int L3G4200D::readRegister(byte address){
         // waiting
 		delay(1);
 		if(++count > 50)
-			break
+			break;
     }
 
 	if (Wire.available()) {

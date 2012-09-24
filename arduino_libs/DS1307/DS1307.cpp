@@ -1,6 +1,6 @@
-extern "C" {
-#include <../Wire/Wire.h>
-}
+//extern "C" {
+//#include <../Wire/Wire.h>
+//}
 #include "DS1307.h"
 
 DS1307::DS1307()
