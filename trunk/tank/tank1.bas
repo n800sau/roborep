@@ -12,7 +12,13 @@ symbol BLIGHT_RIGHT=c.1
 
 symbol CMD_LOC = 128
 symbol PARM_START= CMD_LOC + 1
-symbol PARM_END = 138
+symbol PARM_END = CMD_LOC + 10 '138
+symbol IDLE_TASK_LOC = PARM_END + 1
+
+
+symbol TESTLIGHTS_TASK_LOC = PARM_END + 2 'current testlights action
+symbol TESTLIGHTS_TASK_TIME_LOC = TESTLIGHTS_TASK_LOC + 1 ' word - time of the next testlights action
+
 symbol CMD = b1
 symbol NUM = w3
 symbol REVR = b2
@@ -43,20 +49,25 @@ symbol accel_x = 0x32
 symbol accel_y = 0x34
 symbol accel_z = 0x36
 '$50 to $7E
-symbol accel_x_loc = $50
-symbol accel_y_loc = $52
-symbol accel_z_loc = $54
+symbol accel_x_loc = 150
+symbol accel_y_loc = 152
+symbol accel_z_loc = 154
+
+'BMP085
+symbol BMP_I2C_ADDR = $68
 
 setfreq m32
 
 init:	
 		table 0,("Hello World")
+		poke IDLE_TASK_LOC, 0
 		hsersetup B9600_32 ,%00			; baud 19200 at 4MHz
 		hi2csetup i2cmaster, ACCEL_I2C_ADDR, i2cfast_32, i2cbyte
 '		hi2cout accel_power, (0)
 '		hi2cout accel_power, (16)
 		hi2cout accel_power, (8)
 		let COUNTER = 0
+		poke TESTLIGHTS_TASK_LOC, 0
 		pwmout M1_PWM,150,0
 		pwmout M2_PWM,150,0
 		pwmout MT_PWM,150,0
@@ -78,7 +89,7 @@ init:
 		low	LIGHT_RIGHT
 		low	BLIGHT_LEFT
 		low	BLIGHT_RIGHT
-		gosub  test_lights
+'		gosub  test_lights
 		
 		'high 400 -  0
 		'low 200-1023
@@ -91,6 +102,7 @@ main:
 	if TB1 > CMD_LOC then
 		gosub parsecmd
 		gosub executecmd
+		gosub idletask
 	endif
 	gosub get_accel_data
 	goto main
@@ -172,7 +184,9 @@ executecmd:
 			high BLIGHT_LEFT
 			high BLIGHT_RIGHT
 		case "z"
-			gosub test_lights
+			peek IDLE_TASK_LOC, TB1
+'			setbit TB1, LIGHT_TASK
+			poke IDLE_TASK_LOC, TB1
 		endselect
 	bintoascii NUM, b1,b2,b3,b4,b5
 	hserout 0,(b1)
@@ -211,21 +225,47 @@ dirlights:
 	low BLIGHT_RIGHT
 	return
 	
-test_lights:
-	for TB1 = 0 to 5
-		high	LIGHT_LEFT
-		nap 5
-		low	LIGHT_LEFT
-		high	LIGHT_RIGHT
-		nap 5
-		low	LIGHT_RIGHT
-		high	BLIGHT_LEFT
-		nap 5
-		low	BLIGHT_LEFT
-		high	BLIGHT_RIGHT
-		nap 5
-		low	BLIGHT_RIGHT
-	next
+tick_test_lights:
+	peek TESTLIGHTS_TASK_LOC, TB1
+	if TB1 = 0 then
+	  poke TESTLIGHTS_TASK_TIME_LOC, Time
+	endif
+    peek TESTLIGHTS_TASK_TIME_LOC, TW1
+    if Time > TW1 then
+      let TW1 = Time + 1
+      'next tick happened after 1 second
+	  poke TESTLIGHTS_TASK_TIME_LOC, TW1
+	  'check what should be done next
+	  inc TB1
+	  select case TB1
+		case 1
+		  high	LIGHT_LEFT
+		case 2
+		  low		LIGHT_LEFT
+		  high	LIGHT_RIGHT
+		case 3
+		  low		LIGHT_RIGHT
+		  high	BLIGHT_LEFT
+		case 4
+		  low	BLIGHT_LEFT
+		  high	BLIGHT_RIGHT
+		case 5
+		  low	BLIGHT_RIGHT
+		  peek IDLE_TASK_LOC, TB1
+'		  setbit TB1, LIGHT_TASK
+		  poke IDLE_TASK_LOC, TB1
+'		  unsetbit TB1, LIGHT_TASK
+		  let TB1 = 0
+	  endselect
+  	  poke TESTLIGHTS_TASK_LOC, TB1
+	endif
+	return
+
+idletask:
+	peek IDLE_TASK_LOC, TB1
+'	if TB1 bit LIGHT_TASK set then
+	  gosub tick_test_lights
+'	endif
 	return
 
 get_accel_data:
@@ -244,5 +284,5 @@ get_accel_data:
 
 get_bmp085:
 
-	hi2csetup i2cmaster, $68, mode, addresslen
+	hi2csetup i2cmaster, BMP_I2C_ADDR, i2cfast_32, i2cbyte
 	return
