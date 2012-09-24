@@ -57,10 +57,10 @@ class L3G4200D
 		L3G4200D();
 		L3G4200D(uint8_t customAddress);
 
-		void enableDefault(void);
+		void enableDefault(int scale=1);
 		
-		void writeReg(byte reg, byte value);
-		byte readReg(byte reg);
+		void writeRegister(byte reg, byte value);
+		int readRegister(byte reg);
 		
 		int read(void);
 		

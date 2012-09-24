@@ -4,6 +4,7 @@
 #include <ADXL345.h>
 #include <L3G4200D.h>
 #include <DS1307.h>
+#include <Arduino.h>
 
 #define I2C_Address 2
 
@@ -22,9 +23,9 @@ union Float {
 	byte b[sizeof(float)];
 };
 
-enum REGISTERS {R_tC=0, R_pressure};
+enum I2C_REGISTERS {R_tC=0, R_pressure};
 
-byte register = R_tC;
+byte i2c_register = R_tC;
 
 float tC; //temperature
 float pressure; //pressure
@@ -95,12 +96,12 @@ void showBmp()
     Serial.print("Temperature = ");
     Serial.print(tC);
     Serial.println(" *C");
-    
-	pressure = bmp.readPressure()
+
+    pressure = bmp.readPressure();
     Serial.print("Pressure = ");
     Serial.print(pressure);
     Serial.println(" Pa");
-    
+
     // Calculate altitude assuming 'standard' barometric
     // pressure of 1013.25 millibar = 101325 Pascal
     Serial.print("Altitude = ");
@@ -241,24 +242,24 @@ void showTime()
 void handleRequest()
 {
 	Float buf[1];
-	switch(register) {
+	switch(i2c_register) {
 		case R_tC:
-			buf[0] = tC;
+			buf[0].val = tC;
 			break;
 		case R_pressure:
-			buf[0] = pressure;
+			buf[0].val = pressure;
 			break;
 		default:
-			buf[0] = -1;
+			buf[0].val = -1;
 			break;
 	}
-	Wire.send(buf, sizeof(buf));
+	Wire.write((byte*)buf, sizeof(buf));
 }
 
 void handleReceive(int howMany)
 {
   if(Wire.available())
   {
-    register = Wire.receive();
+    i2c_register = Wire.read();
   }
 }

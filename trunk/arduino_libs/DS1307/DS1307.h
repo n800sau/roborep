@@ -7,10 +7,12 @@
 #define DS1307_h
 
 // include types & constants of Wiring core API
-#include <WConstants.h>
+//#include <WConstants.h>
 
 // include types & constants of Wire ic2 lib
 #include <Wire.h>
+
+#include <Arduino.h>
 
 #define DS1307_SEC 0
 #define DS1307_MIN 1
