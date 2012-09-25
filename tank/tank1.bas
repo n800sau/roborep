@@ -41,31 +41,11 @@ symbol COUNTER = w9
 
 symbol DIRNUM = w10
 
-'ADXL345
-symbol ACCEL_I2C_ADDR = 0x53
-symbol accel_power = 0x2D
-symbol accel_dataformat = 0x31
-symbol accel_x = 0x32
-symbol accel_y = 0x34
-symbol accel_z = 0x36
-'$50 to $7E
-symbol accel_x_loc = 150
-symbol accel_y_loc = 152
-symbol accel_z_loc = 154
-
-'BMP085
-symbol BMP_I2C_ADDR = $68
-
 setfreq m32
 
 init:	
-		table 0,("Hello World")
 		poke IDLE_TASK_LOC, 0
-		hsersetup B9600_32 ,%00			; baud 19200 at 4MHz
-		hi2csetup i2cmaster, ACCEL_I2C_ADDR, i2cfast_32, i2cbyte
-'		hi2cout accel_power, (0)
-'		hi2cout accel_power, (16)
-		hi2cout accel_power, (8)
+		hsersetup B19200_32 ,%00			; baud 19200 at 32MHz
 		let COUNTER = 0
 		poke TESTLIGHTS_TASK_LOC, 0
 		pwmout M1_PWM,150,0
@@ -104,7 +84,6 @@ main:
 		gosub executecmd
 		gosub idletask
 	endif
-	gosub get_accel_data
 	goto main
 		
 parsecmd:
@@ -268,21 +247,3 @@ idletask:
 '	endif
 	return
 
-get_accel_data:
-	debug
-	hi2csetup i2cmaster, ACCEL_I2C_ADDR, i2cfast_32, i2cbyte
-	let bptr=accel_x_loc
-	for TB1=1 to 6
-		let @bptrInc = 0
-	next
-	let bptr = accel_x_loc
-	hi2cin  accel_x, (@bptrInc, @bptrInc, @bptrInc, @bptrInc, @bptrInc, @bptrInc)
-	let bptr = accel_x_loc
-	bintoascii TW1, b1,b2,b3,b4,b5
-	hserout 0,(b1, b2, b3, b4, b5, $0d, $0a)
-	return
-
-get_bmp085:
-
-	hi2csetup i2cmaster, BMP_I2C_ADDR, i2cfast_32, i2cbyte
-	return
