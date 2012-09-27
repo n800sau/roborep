@@ -1,0 +1,6 @@
+pow 15v -@-> current limiter -> batt 8*1.2 = 9.6v
+					v diode <- 
+	 -> cvn 10v 		-> 		sw	-@->	pcb
+
+3 pwr pins
+possible 2 @ resistors = 2 more pins
