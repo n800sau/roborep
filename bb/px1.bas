@@ -9,5 +9,5 @@ main:
 execute_cmd:
 	return
 
-'include: funclib.bas
+'include: ../baslib/funclib.bas
 

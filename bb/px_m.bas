@@ -12,7 +12,7 @@ main:
 	gosub fl_check_cmdbuf
 	goto main
 
-'include: funclib.bas
+'include: ../baslib/funclib.bas
 
 execute_cmd:
 	select case @bptr
