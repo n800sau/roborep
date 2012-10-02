@@ -15,10 +15,6 @@ symbol PARM_START= CMD_LOC + 1
 symbol PARM_END = CMD_LOC + 10 '138
 symbol IDLE_TASK_LOC = PARM_END + 1
 
-
-symbol TESTLIGHTS_TASK_LOC = PARM_END + 2 'current testlights action
-symbol TESTLIGHTS_TASK_TIME_LOC = TESTLIGHTS_TASK_LOC + 1 ' word - time of the next testlights action
-
 symbol CMD = b1
 symbol NUM = w3
 symbol REVR = b2
@@ -37,24 +33,20 @@ symbol TW2_1 = b15
 symbol TW3 = w8
 symbol TW3_0 = b16
 symbol TW3_1 = b17
-symbol COUNTER = w9
 
 symbol DIRNUM = w10
 
 setfreq m32
 
 init:	
-		poke IDLE_TASK_LOC, 0
 		hsersetup B19200_32 ,%00			; baud 19200 at 32MHz
-		let COUNTER = 0
-		poke TESTLIGHTS_TASK_LOC, 0
 		pwmout M1_PWM,150,0
 		pwmout M2_PWM,150,0
 		pwmout MT_PWM,150,0
 '		output M1_PWM
 '		output M2_PWM
 '		low		M1_PWM
-'		low 		M2_PWM
+'		low 	M2_PWM
 		output M1_DIR
 		output M2_DIR
 		output MT_DIR
@@ -79,10 +71,10 @@ init:
 
 main:
 	gosub readcmd
+	debug TB1
 	if TB1 > CMD_LOC then
 		gosub parsecmd
 		gosub executecmd
-		gosub idletask
 	endif
 	goto main
 		
@@ -162,10 +154,6 @@ executecmd:
 			gosub dirlights
 			high BLIGHT_LEFT
 			high BLIGHT_RIGHT
-		case "z"
-			peek IDLE_TASK_LOC, TB1
-'			setbit TB1, LIGHT_TASK
-			poke IDLE_TASK_LOC, TB1
 		endselect
 	bintoascii NUM, b1,b2,b3,b4,b5
 	hserout 0,(b1)
@@ -202,48 +190,5 @@ dirlights:
 	endif
 	low BLIGHT_LEFT
 	low BLIGHT_RIGHT
-	return
-	
-tick_test_lights:
-	peek TESTLIGHTS_TASK_LOC, TB1
-	if TB1 = 0 then
-	  poke TESTLIGHTS_TASK_TIME_LOC, Time
-	endif
-    peek TESTLIGHTS_TASK_TIME_LOC, TW1
-    if Time > TW1 then
-      let TW1 = Time + 1
-      'next tick happened after 1 second
-	  poke TESTLIGHTS_TASK_TIME_LOC, TW1
-	  'check what should be done next
-	  inc TB1
-	  select case TB1
-		case 1
-		  high	LIGHT_LEFT
-		case 2
-		  low		LIGHT_LEFT
-		  high	LIGHT_RIGHT
-		case 3
-		  low		LIGHT_RIGHT
-		  high	BLIGHT_LEFT
-		case 4
-		  low	BLIGHT_LEFT
-		  high	BLIGHT_RIGHT
-		case 5
-		  low	BLIGHT_RIGHT
-		  peek IDLE_TASK_LOC, TB1
-'		  setbit TB1, LIGHT_TASK
-		  poke IDLE_TASK_LOC, TB1
-'		  unsetbit TB1, LIGHT_TASK
-		  let TB1 = 0
-	  endselect
-  	  poke TESTLIGHTS_TASK_LOC, TB1
-	endif
-	return
-
-idletask:
-	peek IDLE_TASK_LOC, TB1
-'	if TB1 bit LIGHT_TASK set then
-	  gosub tick_test_lights
-'	endif
 	return
 
