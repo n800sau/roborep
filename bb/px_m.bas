@@ -26,7 +26,7 @@ execute_cmd:
 			let TW2_0 = @bptrinc
 			let TW2_1 = @bptrinc
 			output TW1
-			if TW2 then
+			if TW2 != 0 then
 				high TW1
 			else
 				low TW1
@@ -39,9 +39,9 @@ execute_cmd:
 			let TW1_1 = @bptrinc
 			input TW1
 			select case TW1
-				case 0:
+				case 0
 					let TW2 = a.0
-				case 1:
+				case 1
 					let TW2 = a.1
 			endselect
 			gosub fl_clear_reply_buf
@@ -58,9 +58,9 @@ execute_cmd:
 			let TW1_1 = @bptrinc
 			input TW1
 			select case TW1
-				case 0:
+				case 0
 					READADC10 0,TW2
-				case 1:
+				case 1
 					READADC10 1,TW2
 			endselect
 			gosub fl_clear_reply_buf
