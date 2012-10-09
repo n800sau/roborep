@@ -1,6 +1,6 @@
 'serial command buffer
 'NO:serial command structure "X",bCMD,bLEN,bDATA*,bCRC
-'YES:serial command structure "X",bCMD,:,NUM1?,NUM2?,NUM3?,NUM4?,$0D
+'YES:serial command structure "X",bCMD,:,NUM1?,NUM2?,NUM3?,NUM4?,$0A
 symbol CMDBUF_PTR = 100
 symbol CMDBUF_END_PTR = CMDBUF_PTR + 79
 symbol B_CUR_CMDBUF_PTR = CMDBUF_END_PTR + 1
@@ -13,6 +13,8 @@ symbol UCMDBUF_END_PTR = UCMDBUF_PTR + 9
 symbol SENDBUF_PTR = UCMDBUF_END_PTR + 1
 symbol SENDBUF_END_PTR = SENDBUF_PTR + 30
 
+symbol REQUEST_END = $2e '"."
+
 fl_setup_serial:
 	setfreq m16
 	hsersetup B19200_16 ,%00			; baud 19200 at 16MHz
@@ -23,35 +25,63 @@ fl_scream_error:
 	'here it should be some way to show error
 	return
 
-fl_read_serial:
-	do
-		peek B_CUR_CMDBUF_PTR, bptr
-		if bptr = CMDBUF_PTR then
-			'search for 'X'
-			let @bptr = $FF
-			hserin @bptr
-			if @bptr <> "X" then
-				'nothing to read
-				return
-			endif
-			'command begins
+fl_echo_input:
+	let TB1 = 0
+	for bptr = CMDBUF_PTR to CMDBUF_END_PTR
+		hserout 0,(@bptr)
+		inc TB1
+		if @bptr = REQUEST_END then
+			hserout 0,(TB1)
+			hserout 0,($0a)
+			return
 		endif
-		let bptr = bptr + 1
+	next
+	hserout 0,(TB1)
+	hserout 0,($0a)
+	return
+
+fl_read_serial:
+	peek B_CUR_CMDBUF_PTR, bptr
+	if bptr = CMDBUF_PTR and @bptr <> "X" then
+'		hserout 0,("X search")
+'		hserout 0,($0a)
+		'search for 'X'
+		let @bptr = $FF
+		hserin @bptr
+		if @bptr <> "X" then
+			'nothing to read
+			return
+		endif
+'		hserout 0,("found")
+'		hserout 0,($0a)
+	endif
+	do
+		inc bptr
 		if bptr > CMDBUF_END_PTR then
 			'overloading, complain by some means
 			gosub fl_scream_error
 			gosub fl_reset_cmdbuf
+'			hserout 0,("error")
+'			hserout 0,($0a)
 			return
 		endif
 		let @bptr = $FF
 		hserin @bptr
 		if @bptr = $FF then
 			'nothing to read
+'			hserout 0,("not full")
+'			hserout 0,($0a)
 			return
 		endif
 		poke B_CUR_CMDBUF_PTR, bptr
-		'command ends with $0D
-	loop until @bptr = $0D
+'		hserout 0,(":")
+'		hserout 0,(@bptr)
+'		hserout 0,($0a)
+		'command ends with $0A
+	loop until @bptr = REQUEST_END
+	hserout 0,("completed")
+	hserout 0,($0a)
+	gosub fl_echo_input
 	return
 
 fl_reset_cmdbuf:
@@ -63,9 +93,13 @@ fl_reset_cmdbuf:
 
 fl_check_cmdbuf:
 	peek B_CUR_CMDBUF_PTR, bptr
-	if @bptr = $0D then
+	if @bptr = REQUEST_END then
+		hserout 0,("parse")
+		hserout 0,($0a)
 		'parse cmdbuf
 		gosub fl_parse_cmdbuf
+		hserout 0,("execute")
+		hserout 0,($0a)
 		'execute_cmd
 		gosub fl_execute_cmd
 		'reset command buffer for a new command
@@ -91,7 +125,10 @@ fl_parse_cmdbuf:
 		'skip until next digit
 		do
 			inc bptr
-		loop until @bptr >= "0" and @bptr <= "9" or @bptr = $0D
+		loop until @bptr >= "0" and @bptr <= "9" or @bptr = REQUEST_END
+		if @bptr = REQUEST_END then
+			return
+		endif
 	next
 	return
 
@@ -184,6 +221,5 @@ fl_send_reply:
 			hserout 0,(",")
 		endif
 	next
-'	hserout 0,($0d)
 	hserout 0,($0a)
 	return
