@@ -1,7 +1,6 @@
-'include: tempvar.bas
-
 'serial command buffer
-'serial command structure "X",bCMD,bLEN,bDATA*,bCRC
+'NO:serial command structure "X",bCMD,bLEN,bDATA*,bCRC
+'YES:serial command structure "X",bCMD,:,NUM1?,NUM2?,NUM3?,NUM4?,$0D
 symbol CMDBUF_PTR = 100
 symbol CMDBUF_END_PTR = CMDBUF_PTR + 79
 symbol B_CUR_CMDBUF_PTR = CMDBUF_END_PTR + 1
@@ -15,8 +14,8 @@ symbol SENDBUF_PTR = UCMDBUF_END_PTR + 1
 symbol SENDBUF_END_PTR = SENDBUF_PTR + 30
 
 fl_setup_serial:
-	setfreq m32
-	hsersetup B9600_32 ,%00			; baud 9600 at 32MHz
+	setfreq m16
+	hsersetup B19200_16 ,%00			; baud 19200 at 16MHz
 	gosub fl_reset_cmdbuf
 	return
 
@@ -147,6 +146,7 @@ fl_clear_reply_buf:
 	for TW1 = SENDBUF_PTR to SENDBUF_END_PTR
 		poke TW1, 0
 	next
+	return
 
 fl_fill_reply_buf:
 	'TB1 - type
@@ -164,13 +164,14 @@ fl_fill_reply_buf:
 	let @bptrinc = TW3_1
 	let @bptrinc = TW4_0
 	let @bptrinc = TW4_1
+	return
 
 fl_send_reply:
-	'uses TB1, TW1, TW2, TW3
+	'uses TB1, TB2, TW1, TW2, TW3
 	let bptr = SENDBUF_PTR
 	hserout 0,(@bptrinc)
 	hserout 0,(":")
-	for TB1 = 1 to 4
+	for TB2 = 1 to 4
 		let TW1_0 = @bptrinc
 		let TW1_1 = @bptrinc
 		bintoascii TW1, TB1, TW2_0, TW2_1, TW3_0, TW3_1
@@ -179,10 +180,10 @@ fl_send_reply:
 		hserout 0,(TW2_1)
 		hserout 0,(TW3_0)
 		hserout 0,(TW3_1)
-		if TB1 < 4 then
+		if TB2 < 4 then
 			hserout 0,(",")
 		endif
 	next
-	hserout 0,($0d)
+'	hserout 0,($0d)
 	hserout 0,($0a)
 	return
