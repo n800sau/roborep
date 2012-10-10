@@ -16,8 +16,8 @@ symbol SENDBUF_END_PTR = SENDBUF_PTR + 30
 symbol REQUEST_END = $2e '"."
 
 fl_setup_serial:
-	setfreq m16
-	hsersetup B19200_16 ,%00			; baud 19200 at 16MHz
+	setfreq m32
+	hsersetup B19200_32 ,%00			; baud 19200 at 32MHz
 	gosub fl_reset_cmdbuf
 	return
 
@@ -79,9 +79,9 @@ fl_read_serial:
 '		hserout 0,($0a)
 		'command ends with $0A
 	loop until @bptr = REQUEST_END
-	hserout 0,("completed")
-	hserout 0,($0a)
-	gosub fl_echo_input
+'	hserout 0,("completed")
+'	hserout 0,($0a)
+'	gosub fl_echo_input
 	return
 
 fl_reset_cmdbuf:
@@ -94,12 +94,12 @@ fl_reset_cmdbuf:
 fl_check_cmdbuf:
 	peek B_CUR_CMDBUF_PTR, bptr
 	if @bptr = REQUEST_END then
-		hserout 0,("parse")
-		hserout 0,($0a)
+'		hserout 0,("parse")
+'		hserout 0,($0a)
 		'parse cmdbuf
 		gosub fl_parse_cmdbuf
-		hserout 0,("execute")
-		hserout 0,($0a)
+'		hserout 0,("execute")
+'		hserout 0,($0a)
 		'execute_cmd
 		gosub fl_execute_cmd
 		'reset command buffer for a new command
@@ -125,10 +125,10 @@ fl_parse_cmdbuf:
 		'skip until next digit
 		do
 			inc bptr
-		loop until @bptr >= "0" and @bptr <= "9" or @bptr = REQUEST_END
-		if @bptr = REQUEST_END then
-			return
-		endif
+			if @bptr = REQUEST_END then
+				return
+			endif
+		loop until @bptr >= "0" and @bptr <= "9"
 	next
 	return
 
@@ -143,7 +143,7 @@ fl_parse_num:
 	else
 		let TB1 = 0
 	endif
-	do while @bptr >= "0" and @bptr <= "9"
+	do while @bptr >= "0" and @bptr <= "9" and @bptr <> REQUEST_END
 		let TW1 = TW1 * 10 + @bptr - "0"
 		inc bptr
 	loop
