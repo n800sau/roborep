@@ -12,6 +12,8 @@ symbol V_SW2 = b.5
 
 'b.6,b.5 free
 
+'include: ../baslib/funclib.bas
+
 init:
 	gosub fl_setup_serial
 	pwmout M1_PWM,150,0
@@ -31,14 +33,15 @@ init:
 	fvrsetup FVR2048
 	'set FVR as ADC Vref+, 0V Vref-
 	adcconfig %011
+	let TW4 = 0
 
 main:
 	gosub fl_read_serial
 	gosub fl_check_cmdbuf
+	gosub m_send_reply
 	debug
+	pause 1
 	goto main
-
-'include: ../baslib/funclib.bas
 
 m_send_reply:
 	'TB1 - cmd
