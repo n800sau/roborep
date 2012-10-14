@@ -4,3 +4,10 @@ pow 15v -@-> current limiter -> batt 8*1.2 = 9.6v
 
 3 pwr pins
 possible 2 @ resistors = 2 more pins
+
+B.2 26.8k 9.9k
+B.3 26.8k 9.7k
+B.4 26.8k 9.8k
+B.5 26.6k 9.78k
+
+0.05 ohm
