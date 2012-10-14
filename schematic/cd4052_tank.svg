@@ -279,7 +279,7 @@
          sodipodi:role="line"
          id="tspan3950"
          x="431.33514"
-         y="575.57019">0, arduino</tspan></text>
+         y="575.57019">ch0, arduino</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
@@ -290,7 +290,7 @@
          sodipodi:role="line"
          id="tspan3954"
          x="444.4671"
-         y="507.88995">3, picaxe</tspan></text>
+         y="507.88995">ch2, picaxe</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 170.71578,280.60564 0,13.13198"
@@ -342,7 +342,7 @@
          sodipodi:role="line"
          id="tspan3974"
          x="147.48227"
-         y="363.43814">0, arduino</tspan></text>
+         y="363.43814">ch0, arduino</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
@@ -353,7 +353,7 @@
          sodipodi:role="line"
          id="tspan3978"
          x="451.53818"
-         y="414.95593">3ch</tspan></text>
+         y="414.95593">ch3</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
@@ -364,7 +364,7 @@
          sodipodi:role="line"
          id="tspan3982"
          x="195.96959"
-         y="321.01175">3ch</tspan></text>
+         y="321.01175">ch3</tspan></text>
     <rect
        style="fill:none;stroke:#131313;stroke-width:2.83412313000000005;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect3984"
@@ -435,7 +435,7 @@
          sodipodi:role="line"
          id="tspan4008"
          x="158.59395"
-         y="506.87982">3/picaxe</tspan></text>
+         y="506.87982">ch2,picaxe</tspan></text>
     <rect
        style="fill:none;stroke:#2ce51a;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect4010"
@@ -507,5 +507,59 @@
          id="tspan3071"
          x="-55.558392"
          y="241.20969">GPIO24</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 668.72099,295.75792 113.13708,0"
+       id="path3075"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 669.73114,330.10311 109.09647,0"
+       id="path3077"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       x="791.95959"
+       y="276.56503"
+       id="text3079"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3081"
+         x="791.95959"
+         y="276.56503">CMUcam4</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       x="169.70563"
+       y="462.43307"
+       id="text3083"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3085"
+         x="169.70563"
+         y="462.43307">ch1</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       x="421.23361"
+       y="379.60059"
+       id="text3087"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3089"
+         x="421.23361"
+         y="379.60059">ch1</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       x="797.01038"
+       y="309.90005"
+       id="text3091"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3093"
+         x="797.01038"
+         y="309.90005">ch1</tspan></text>
   </g>
 </svg>
