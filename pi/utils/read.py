@@ -45,6 +45,8 @@ def parse_reply(reply):
 #ser = serial.Serial('/dev/ttyAMA0', 4800, timeout=None)
 #i = 0
 #timeout = 0
+df = file('data.log', 'a')
+
 while True:
     cmd1,parms1 = parse_reply(communicate('X<:.'))
     time.sleep(0.05)
@@ -57,6 +59,8 @@ while True:
     print parms1[0],parms2[0],parms3[0],parms4[0]
     print (parms1[0]-parms2[0])/0.5, (parms3[0]-parms4[0])/0.5
     print
+    print >>df, '%s,%s,%s' % (time.strftime('%H:%M:%S', time.localtime(time.time())), (parms1[0]-parms2[0])/0.5, (parms3[0]-parms4[0])/0.5)
+    df.flush()
     time.sleep(1)
 #    print '%.2x ' % ord(ser.read(1))
 #    a = array('B')
