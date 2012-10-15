@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import serial
+from sercom import SerCom
 import struct
 import time
 
-ser = serial.Serial('/dev/ttyAMA0', 19200, timeout=1)
+ser = SerCom('/dev/ttyAMA0', 19200, timeout=1)
 
 def communicate(cmdline):
     global ser
@@ -16,27 +16,27 @@ def communicate(cmdline):
 	time.sleep(0.01)
     ser.flush()
 #    i += 2
-    timeout = 0
-    while True:
-        line = ser.readline()
-        if line:
+#    timeout = 0
+#    while True:
+    rs = ser.eol_readline(eol='\r')
+#        if line:
 #            for c in line:
 #                print '%.2x ' % ord(c),
 #            print
 #            for c in line:
 #                print '%.2c ' % c,
 #            print
-	    rs = line
-        else:
-    	    timeout += 1
+#	    rs = line
+#        else:
+#    	    timeout += 1
 #	    print 'timeout %d' % timeout
-	    break
+#	    break
     return rs
 
 def parse_reply(reply):
     if reply:
         cmd,parms = reply.split(':')
-        parms = [5/1024. * int(p) for p in parms.split(',')]
+        parms = [int(p) for p in parms.split(',')]
     else:
 	cmd,parms = None,[0,0,0,0]
     return cmd,parms
@@ -47,19 +47,24 @@ def parse_reply(reply):
 #timeout = 0
 df = file('data.log', 'a')
 
+#< - BATT1
+#> - BATT2
+#{ - SW1
+#} - SW2
+
 while True:
-    cmd1,parms1 = parse_reply(communicate('X<:.'))
-    time.sleep(0.05)
-    cmd2,parms2 = parse_reply(communicate('X>:.'))
-    time.sleep(0.05)
-    cmd3,parms3 = parse_reply(communicate('X{:.'))
-    time.sleep(0.05)
-    cmd4,parms4 = parse_reply(communicate('X}:.'))
-    print cmd1,cmd2,cmd3,cmd4
-    print parms1[0],parms2[0],parms3[0],parms4[0]
-    print (parms1[0]-parms2[0])/0.5, (parms3[0]-parms4[0])/0.5
-    print
-    print >>df, '%s,%s,%s' % (time.strftime('%H:%M:%S', time.localtime(time.time())), (parms1[0]-parms2[0])/0.5, (parms3[0]-parms4[0])/0.5)
+    cmd,parms = parse_reply(communicate('XV:\r'))
+#    time.sleep(0.05)
+#    cmd2,parms2 = parse_reply(communicate('X>:\r'))
+#    time.sleep(0.05)
+#    cmd3,parms3 = parse_reply(communicate('X{:\r'))
+#    time.sleep(0.05)
+#    cmd4,parms4 = parse_reply(communicate('X}:\r'))
+    print cmd
+    print parms[0]/1000.,parms[1]/1000.,parms[2]/1000.,parms[3]/1000.
+    print (parms[0]-parms[1])/1000./0.05, (parms[2]-parms[3])/1000./0.05
+#    print
+#    print >>df, '%s,%s,%s' % (time.strftime('%m:%d %H:%M:%S', time.localtime(time.time())), (parms1[0]-parms2[0])/1000./0.05, (parms3[0]-parms4[0])/1000./0.05)
     df.flush()
     time.sleep(1)
 #    print '%.2x ' % ord(ser.read(1))
