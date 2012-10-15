@@ -65,22 +65,31 @@ execute_cmd:
 	let TW1_0 = @bptrinc
 	let TW1_1 = @bptrinc
 	select case TB1
-		case "<"
+		case "V"
+			let bptr = SENDBUF_PTR
+			let @bptrinc = TB1
+
 			readadc10 V_BATT1, TW2
 			'vd/9.9*(26.8+9.9) = v
 			let TW2 = 4 * 367 / 99 * TW2
-			gosub m_send_reply
-		case ">"
+			let @bptrinc = TW2_0
+			let @bptrinc = TW2_1
+
 			readadc10 V_BATT2, TW2
 			let TW2 = 4 * 366 / 98 * TW2
-			gosub m_send_reply
-		case "{"
+			let @bptrinc = TW2_0
+			let @bptrinc = TW2_1
+
 			readadc10 V_SW1, TW2
 			let TW2 = 4 * 365 / 97 * TW2
-			gosub m_send_reply
-		case "}"
+			let @bptrinc = TW2_0
+			let @bptrinc = TW2_1
+
 			readadc10 V_SW2, TW2
 			let TW2 = 4 * 3638 / 978 * TW2
-			gosub m_send_reply
+			let @bptrinc = TW2_0
+			let @bptrinc = TW2_1
+
+			gosub fl_send_reply
 	endselect
 	return
