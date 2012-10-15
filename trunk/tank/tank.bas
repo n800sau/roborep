@@ -29,12 +29,11 @@ init:
 	input	V_SW1
 	input	V_BATT2
 	input	V_SW2
-	'set FVR as 2.048V
-	fvrsetup FVR4096
-'	fvrsetup FVR2048
 	'set FVR as ADC Vref+, 0V Vref-
-'	adcconfig %011
-	adcconfig %000
+	adcconfig %011
+'	adcconfig %000
+	'set FVR as 4.096V
+	fvrsetup FVR4096
 '	let TW4 = 0
 
 main:
@@ -68,19 +67,20 @@ execute_cmd:
 	select case TB1
 		case "<"
 			readadc10 V_BATT1, TW2
-'			let TW2 = TW2 * 2048 / 1023
+			'vd/9.9*(26.8+9.9) = v
+			let TW2 = 4 * 367 / 99 * TW2
 			gosub m_send_reply
 		case ">"
 			readadc10 V_BATT2, TW2
-'			let TW2 = TW2 * 2048 / 1023
+			let TW2 = 4 * 366 / 98 * TW2
 			gosub m_send_reply
 		case "{"
 			readadc10 V_SW1, TW2
-'			let TW2 = TW2 * 2048 / 1023
+			let TW2 = 4 * 365 / 97 * TW2
 			gosub m_send_reply
 		case "}"
 			readadc10 V_SW2, TW2
-'			let TW2 = TW2 * 2048 / 1023
+			let TW2 = 4 * 3638 / 978 * TW2
 			gosub m_send_reply
 	endselect
 	return
