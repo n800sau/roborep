@@ -13,7 +13,7 @@ symbol UCMDBUF_END_PTR = UCMDBUF_PTR + 9
 symbol SENDBUF_PTR = UCMDBUF_END_PTR + 1
 symbol SENDBUF_END_PTR = SENDBUF_PTR + 30
 
-symbol REQUEST_END = $2e '"."
+symbol REQUEST_END = $0d '"\r"
 
 fl_setup_serial:
 	setfreq m32
@@ -32,19 +32,19 @@ fl_echo_input:
 		inc TB1
 		if @bptr = REQUEST_END then
 			hserout 0,(TB1)
-			hserout 0,($0a)
+			hserout 0,(REQUEST_END)
 			return
 		endif
 	next
 	hserout 0,(TB1)
-	hserout 0,($0a)
+	hserout 0,(REQUEST_END)
 	return
 
 fl_read_serial:
 	peek B_CUR_CMDBUF_PTR, bptr
 	if bptr = CMDBUF_PTR and @bptr <> "X" then
 '		hserout 0,("X search")
-'		hserout 0,($0a)
+'		hserout 0,(REQUEST_END)
 		'search for 'X'
 		let @bptr = $FF
 		hserin @bptr
@@ -53,7 +53,7 @@ fl_read_serial:
 			return
 		endif
 '		hserout 0,("found")
-'		hserout 0,($0a)
+'		hserout 0,(REQUEST_END)
 	endif
 	do
 		inc bptr
@@ -62,7 +62,7 @@ fl_read_serial:
 			gosub fl_scream_error
 			gosub fl_reset_cmdbuf
 '			hserout 0,("error")
-'			hserout 0,($0a)
+'			hserout 0,(REQUEST_END)
 			return
 		endif
 		let @bptr = $FF
@@ -70,17 +70,17 @@ fl_read_serial:
 		if @bptr = $FF then
 			'nothing to read
 '			hserout 0,("not full")
-'			hserout 0,($0a)
+'			hserout 0,(REQUEST_END)
 			return
 		endif
 		poke B_CUR_CMDBUF_PTR, bptr
 '		hserout 0,(":")
 '		hserout 0,(@bptr)
-'		hserout 0,($0a)
-		'command ends with $0A
+'		hserout 0,(REQUEST_END)
+		'command ends with REQUEST_END
 	loop until @bptr = REQUEST_END
 '	hserout 0,("completed")
-'	hserout 0,($0a)
+'	hserout 0,(REQUEST_END)
 '	gosub fl_echo_input
 	return
 
@@ -95,11 +95,11 @@ fl_check_cmdbuf:
 	peek B_CUR_CMDBUF_PTR, bptr
 	if @bptr = REQUEST_END then
 '		hserout 0,("parse")
-'		hserout 0,($0a)
+'		hserout 0,(REQUEST_END)
 		'parse cmdbuf
 		gosub fl_parse_cmdbuf
 '		hserout 0,("execute")
-'		hserout 0,($0a)
+'		hserout 0,(REQUEST_END)
 		'execute_cmd
 		gosub fl_execute_cmd
 		'reset command buffer for a new command
@@ -221,5 +221,5 @@ fl_send_reply:
 			hserout 0,(",")
 		endif
 	next
-	hserout 0,($0a)
+	hserout 0,(REQUEST_END)
 	return
