@@ -1,0 +1,7 @@
+cd5042
+
+gpio1_13 (8_11) -> B
+gpio1_12 (8_12) -> A
+
+uart2tx (9_21) -> common X blue     -> rx
+uart2rx (9_22) -> common Y green    <- tx
