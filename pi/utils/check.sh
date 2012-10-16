@@ -1,6 +1,6 @@
 if ( [ -e /sys/devices/virtual/gpio/gpio18/direction ] && [ -e /sys/devices/virtual/gpio/gpio23/direction ] )
 then
-    echo exists
+    echo busy
 else
-    echo not exist
+    echo available
 fi
