@@ -6,11 +6,24 @@ import csv
 from datetime import datetime
 
 def to_datetime(sval):
-    return datetime.strptime(sval, '%Y.%m.%d %H:%M:%S')
+	return datetime.strptime(sval, '%Y.%m.%d %H:%M:%S')
 
 reader = csv.reader(file('data.log'))
 converters = [to_datetime, float, float, float, float, float, float]
-data = np.array([[conv(col) for col, conv in zip(row, converters)] for row in reader])
+#reader = csv.reader(file('data.log'))
+#data = np.array([[conv(col) for col, conv in zip(row, converters)] for row in reader])
+cdata = []
+for row in reader:
+	rdata = []
+	try:
+		for col, conv in zip(row, converters):
+			rdata.append(conv(col))
+		cdata.append(rdata)
+	except ValueError, e:
+		print e
+data = np.array(cdata)
+
+#print data.shape, data[0]
 ndx = data[:,0]
 
 df = pd.DataFrame(data[:, 1:], index=ndx, columns=['bc', 'b1', 'b2', 'swc', 'sw1', 'sw2'])
