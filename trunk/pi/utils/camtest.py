@@ -6,7 +6,13 @@ import time
 from sercom import SerCom
 from ser2multi import is_busy, m_on, m_off, camera_on
 
-ser = SerCom('/dev/ttyAMA0', 19200, timeout=1)
+ser = SerCom('/dev/ttyAMA0', 19200, timeout=2)
+
+def request(cmdline):
+	ser.flushInput()
+	ser.write(cmdline + '\r')
+	ser.flushOutput()
+	return ser.eol_readlines(eol='\r', mincount=1)
 
 while True:
 	if is_busy():
@@ -19,18 +25,22 @@ while True:
 		for cmd in (
 				'GV',
 				'GW',
-				'GI',
-				'GS 0',
-				'GS 1',
-				'TM 1',
+				'ST',
+				'ST 100 200 100 200 100 200',
+#				'ST 52 64 218 240 0 22',
+				'GT',
+#				'GI',
+#				'GS 0',
+#				'GS 1',
+#				'TM 1',
+#				'DI',
 				):
-			ser.flushInput()
-			ser.write(cmd + '\r')
-			ser.flushOutput()
 			print cmd
+			reply = request(cmd)
 			i += 1
-			print '\n'.join(ser.eol_readlines(eol='\r'))
+			print '\n'.join(reply)
 			print
+			time.sleep(1)
 		break
 	finally:
 		m_off()
