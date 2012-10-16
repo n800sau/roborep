@@ -10,7 +10,7 @@ ser = SerCom('/dev/ttyAMA0', 19200, timeout=1)
 def communicate(cmdline):
 	rs = None
 	if is_busy():
-		sleep(1)
+		time.sleep(1)
 	else:
 		global ser
 		m_on()
