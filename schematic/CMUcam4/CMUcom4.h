@@ -240,6 +240,8 @@ int _port;
 
 //misllis started on the program run
 unsigned long _millis;
+
+int _fd;
 };
 
 #endif
