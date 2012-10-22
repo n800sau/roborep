@@ -7,14 +7,14 @@ NAME=camTest
 .cpp.o:
 		$(CC) $(CCOPTS) -c $<
 
+all: $(NAME)
+
 libcmucam4.a: $(OBJECTS)
 		$(AR) r libcmucam4.a $(OBJECTS)
-
-all: $(NAME)
 
 clean:
 	rm -f $(OBJECTS) $(NAME) libcmucam4.a
 
-$(NAME):	$(NAME).c
-	$(CC) -o $(NAME) $(NAME).c $(CCOPTS) libcmucam4.a
+$(NAME):	$(NAME).cpp libcmucam4.a
+	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a
 	$(STRIP) -s $(NAME)
