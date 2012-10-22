@@ -45,11 +45,12 @@ SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c	\
 
 OBJ	=	$(SRC:.c=.o)
 
+all:		$(STATIC)
 #all:		$(STATIC) $(DYNAMIC)
-all:		$(DYNAMIC)
+#all:		$(DYNAMIC)
 
 $(STATIC):	$(OBJ)
-	@echo [Link (Static)]
+	@echo "[Link (Static)]"
 	@ar rcs $(STATIC) $(OBJ)
 	@ranlib $(STATIC)
 	@size   $(STATIC)
