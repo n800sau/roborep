@@ -59,12 +59,16 @@ void loop()
 
 void start()
 {
+		printf("1\n");
   cam.begin();
+		printf("2\n");
 
   // Wait for auto gain and auto white balance to run.
 
   cam.LEDOn(LED_BLINK);
+		printf("3\n");
   sleep(WAIT_TIME);
+		printf("4\n");
 
   // Turn auto gain and auto white balance off.
 
@@ -73,6 +77,7 @@ void start()
 
   cam.LEDOn(CMUCAM4_LED_ON);
 	while(true) {
+		printf("Here\n");
 		loop();
 	}
 }

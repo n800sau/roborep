@@ -212,7 +212,7 @@ void flush();
 * @return The first byte of incoming serial data available.
 * @see http://arduino.cc/en/Serial/Peek
 *******************************************************************************/
-int peek();
+//int peek();
 
 /***************************************************************************//**
 * Arduino delay() wrapper.
