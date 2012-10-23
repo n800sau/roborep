@@ -10,6 +10,9 @@ symbol V_SW1 = b.3
 symbol V_BATT2 = b.4
 symbol V_SW2 = b.5
 
+symbol U_ECHO = c.6
+symbol U_TRIG = c.7
+
 'b.6,b.5 free
 
 'include: ../baslib/tempvar.bas
@@ -37,9 +40,7 @@ init:
 '	let TW4 = 0
 
 main:
-'	let TW4 = TW4+1
-'	let TB1 = ">"
-'	let TW2 = TW4
+	gosub u_distance
 	gosub fl_read_serial
 	gosub fl_check_cmdbuf
 '	gosub m_send_reply
@@ -48,6 +49,8 @@ main:
 	goto main
 
 'include: ../baslib/funclib.bas
+
+symbol UDISTANCE_PTR = USER_MEM
 
 m_send_reply:
 	'TB1 - cmd
@@ -91,5 +94,32 @@ execute_cmd:
 			let @bptrinc = TW2_1
 
 			gosub fl_send_reply
+		case "U"
+			let TW1 = UDISTANCE_PTR
+			peek TW1, WORD TW2
+			let bptr = SENDBUF_PTR
+			let @bptrinc = TB1
+			let @bptrinc = TW2_0
+			let @bptr = TW2_1
+			gosub m_send_reply
 	endselect
+	return
+
+u_distance:
+	'get distance
+	'uses TW1, bptr
+	low U_TRIG
+	setint %00000000,%00000000 		' disable interrupts
+	pulsout U_TRIG, 1				' Send a pulse to start the ranging
+	pulsin U_ECHO, 1, TW1			' Recieve timed pulse from SRF05/04
+	setint %00010000,%00010000		' enable interrupt
+	TW1 = TW1 * 10 / 58				' Calculate distance
+	if TW1 > 0 then
+		let bptr = UDISTANCE_PTR
+		let @bptrinc = TW1_0
+		let @bptr = TW1_1
+	endif
+	return
+
+interrupt:
 	return
