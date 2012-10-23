@@ -13,6 +13,9 @@ symbol UCMDBUF_END_PTR = UCMDBUF_PTR + 9
 symbol SENDBUF_PTR = UCMDBUF_END_PTR + 1
 symbol SENDBUF_END_PTR = SENDBUF_PTR + 30
 
+'user mem
+symbol USER_MEM = SENDBUF_END_PTR + 1
+
 symbol REQUEST_END = $0d '"\r"
 
 fl_setup_serial:
