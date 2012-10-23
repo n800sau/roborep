@@ -254,7 +254,7 @@ int CMUcam4::begin()
     _state = DEACTIVATED;
     _setReadTimeout(CMUCAM4_RESET_TIMEOUT);
 
-    _com.end();
+/*    _com.end();
     _com.begin(CMUCOM4_FAST_BAUD_RATE);
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
@@ -267,13 +267,14 @@ int CMUcam4::begin()
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
     _com.write("\rRS\r");
-
+*/
     _com.end();
     _com.begin(CMUCOM4_SLOW_BAUD_RATE);
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
     _com.write("\rRS\r");
+	printf("here\n");
 
     // Get the firmware version.
 
@@ -1877,8 +1878,8 @@ void CMUcam4::_waitForString(const char * string)
         {
             _resBuffer[index - 1] = _resBuffer[index];
         }
-
         _resBuffer[length - 1] = _readWithTimeout();
+		printf("read %s\n", _resBuffer);
     }
     while(strcmp(_resBuffer, string) != 0);
 }
@@ -2018,7 +2019,7 @@ int CMUcam4::_readWithTimeout()
         }
     }
     while(_com.available() == 0);
-
+	printf("com.read()\n");
     return _com.read();
 }
 

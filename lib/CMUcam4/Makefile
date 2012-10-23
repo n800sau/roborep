@@ -1,4 +1,4 @@
-CC=g++
+CC=g++ -I../wiringPi/wiringPi
 CCOPTS=-L.
 STRIP=-strip
 OBJECTS=CMUcam4.o CMUcom4.o
@@ -17,4 +17,4 @@ clean:
 
 $(NAME):	$(NAME).cpp libcmucam4.a
 	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a
-	$(STRIP) -s $(NAME)
+#	$(STRIP) -s $(NAME)

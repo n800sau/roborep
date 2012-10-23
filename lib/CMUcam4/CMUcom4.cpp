@@ -26,6 +26,7 @@ CMUcom4::CMUcom4(int port):_millis(time(NULL))
 
 void CMUcom4::begin(unsigned long baud)
 {
+	printf("open %d\n", baud);
 	_fd = serialOpen((char*)"/dev/ttyAMA0", baud);
 }
 
@@ -36,23 +37,26 @@ void CMUcom4::end()
 
 int CMUcom4::read()
 {
-	serialGetchar(_fd);
+	return serialGetchar(_fd);
 }
 
 size_t CMUcom4::write(uint8_t c)
 {
+	printf("write1 '%c'\n", c);
 	serialPutchar(_fd, c);
 	return 1;
 }
 
 size_t CMUcom4::write(const char * str)
 {
+	printf("write2 %s\n", str);
 	serialPuts(_fd, (char*)str);
 	return strlen(str);
 }
 
 size_t CMUcom4::write(const uint8_t * buffer, size_t size)
 {
+	printf("write3 %s\n", buffer);
 	size_t rs=0;
 	for(int i=0; i< size; i++) {
 		rs += write(buffer[i]);
@@ -68,10 +72,6 @@ int CMUcom4::available()
 void CMUcom4::flush()
 {
 	serialFlush(_fd);
-}
-
-int CMUcom4::peek()
-{
 }
 
 void CMUcom4::delayMilliseconds(unsigned long ms)

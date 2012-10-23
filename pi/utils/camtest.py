@@ -6,7 +6,7 @@ import time
 from sercom import SerCom
 from ser2multi import is_busy, m_on, m_off, camera_on
 
-ser = SerCom('/dev/ttyAMA0', 19200, timeout=2)
+ser = SerCom('/dev/ttyAMA0', 19200, timeout=2, interCharTimeout=None)
 
 def request(cmdline):
 	ser.flushInput()
@@ -23,12 +23,17 @@ while True:
 	try:
 		i = 1
 		for cmd in (
-				'GV',
-				'GW',
-				'ST',
-				'ST 100 200 100 200 100 200',
-#				'ST 52 64 218 240 0 22',
-				'GT',
+				'RS',
+#				'GV',
+#				'AT 0 0',
+#				'GW',
+#				'ST',
+#				'ST 100 200 100 200 100 200',
+#				'ST 52 64 218 240 0 22 11 12',
+#				'GT',
+#				'SW 0 0 79 30',
+#				'GM',
+#				'SS 1 0 1400',
 #				'GI',
 #				'GS 0',
 #				'GS 1',
@@ -40,7 +45,7 @@ while True:
 			i += 1
 			print '\n'.join(reply)
 			print
-			time.sleep(1)
+#			time.sleep(1)
 		break
 	finally:
 		m_off()
