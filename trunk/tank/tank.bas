@@ -10,8 +10,8 @@ symbol V_SW1 = b.3
 symbol V_BATT2 = b.4
 symbol V_SW2 = b.5
 
-symbol U_ECHO = c.6
-symbol U_TRIG = c.7
+symbol U_ECHO = b.1
+symbol U_TRIG = b.0
 
 'b.6,b.5 free
 
