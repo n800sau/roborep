@@ -23,8 +23,8 @@ while True:
 	try:
 		i = 1
 		for cmd in (
-				'RS',
-#				'GV',
+#				'RS',
+#				'SB',
 #				'AT 0 0',
 #				'GW',
 #				'ST',
@@ -33,7 +33,10 @@ while True:
 #				'GT',
 #				'SW 0 0 79 30',
 #				'GM',
-#				'SS 1 0 1400',
+#				'SS 1 1 1000', #center vert
+#				'SS 0 1 1400', #center horiz
+				'SS 1 1 1000',
+				'SS 0 1 1400',
 #				'GI',
 #				'GS 0',
 #				'GS 1',

@@ -28,13 +28,14 @@ def communicate(cmdline):
 				time.sleep(0.005)
 				ser.flush()
 			ser.write('\r')
+			time.sleep(0.05)
 			rs = ser.eol_readline(eol='\r')
 		finally:
 			m_off()
 	return rs
 
 def parse_reply(reply):
-#	print reply
+	print 'REPLY:', reply
 	if reply:
 		cmd,parms = reply.split(':')
 		parms = [int(p) for p in parms.split(',')]
@@ -53,6 +54,7 @@ mpb2=-1
 mpsw1=-1
 mpsw2=-1
 
+cmd = None
 doit=False
 while True:
 	cmd,parms = parse_reply(communicate('XV:\r'))
@@ -60,7 +62,7 @@ while True:
 		b1,b2,sw1,sw2 = parms
 		print >>df, '%s,%s,%s,%s,%s' % (time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time())), b1, b2, sw1, sw2)
 		df.flush()
-		print b1, b2, sw1, sw2
+		print b1-b2, sw1, sw2
 		b1list.append(b1)
 		b2list.append(b2)
 		sw1list.append(sw1)
@@ -76,9 +78,9 @@ while True:
 			sw2=float(sum(sw2list))/len(sw2list)
 		#2.85,2.88,2.67,2.67
 #		b1,b2,sw1,sw2 = [p/1000.*4096 for p in parms]
-			print cmd
-			print b1, b2, sw1, sw2
-			print mpb1,mpb2,mpsw1,mpsw2
+			#print cmd
+			#print b1, b2, sw1, sw2
+			#print mpb1,mpb2,mpsw1,mpsw2
 #			bc = (b1 - b2) / 0.05
 #			swc = (sw1 - sw2) / 0.05
 #			print bc, swc
@@ -94,4 +96,8 @@ while True:
 			pb2=b2
 			psw1=sw1
 			psw2=sw2
+	cmd,parms = parse_reply(communicate('XU:\r'))
+	if cmd == 'U':
+		distance = parms[0]
+		print cmd, 'distance', distance
 	time.sleep(1)
