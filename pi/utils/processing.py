@@ -49,6 +49,13 @@ rs = df.resample('1min', how=rmean)
 #print rs
 
 pieces = {'bc': rs['b1']-rs['b2'], 'swc': rs['sw1']-rs['sw2']}
-print pd.concat(pieces, axis=1)
+ts = pd.concat(pieces, axis=1)
+
+ts = ts.cumsum()
+
+import matplotlib
+matplotlib.use('Agg')
+ts.plot().figure.savefig("plot.png")
+
 
 

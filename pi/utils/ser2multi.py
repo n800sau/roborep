@@ -4,8 +4,8 @@ import os
 from subprocess import check_call
 from time import sleep
 
-B0 = '18'
-B1 = '23'
+B0 = '17'
+B1 = '24'
 
 def is_busy():
 	rs = False
