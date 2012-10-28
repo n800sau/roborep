@@ -1,0 +1,9 @@
+D
+9 echo
+8 trig
+7 C.7
+6 C.6
+5 led1
+4 led2
+3 led3
+2 led4
