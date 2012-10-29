@@ -235,6 +235,7 @@ int CMUcam4::isArchive(CMUcam4_directory_entry_t * pointer)
 /*******************************************************************************
 * State Functions
 *******************************************************************************/
+
 int CMUcam4::begin()
 {
     int errorValue; int retVal0; int retVal1; static int resetTries;
@@ -254,21 +255,13 @@ int CMUcam4::begin()
     _setReadTimeout(CMUCAM4_RESET_TIMEOUT);
 
     _com.end();
-
-    _com.begin(115200);
-//    _com.write((uint8_t) '\0');
-//    _com.write((uint8_t) '\0');
-//    _com.write((uint8_t) '\0');
-    _com.write("GV\r");
-
-/*    _com.begin(CMUCOM4_FAST_BAUD_RATE);
+    _com.begin(CMUCOM4_FAST_BAUD_RATE);
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
     _com.write("\rRS\r");
+
     _com.end();
-
-
     _com.begin(CMUCOM4_MEDIUM_BAUD_RATE);
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
@@ -280,9 +273,7 @@ int CMUcam4::begin()
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
     _com.write((uint8_t) '\0');
-    _com.write("\rRS\r");*/
-
-	printf("here\n");
+    _com.write("\rRS\r");
 
     // Get the firmware version.
 
@@ -310,7 +301,7 @@ int CMUcam4::begin()
 
     // Adjust the baud rate.
 
-/*    _setReadTimeout(CMUCAM4_NON_FS_TIMEOUT);
+    _setReadTimeout(CMUCAM4_NON_FS_TIMEOUT);
     _com.write("BM ");
 
     switch(_version)
@@ -324,8 +315,8 @@ int CMUcam4::begin()
     _com.write((uint8_t) '\r');
     _waitForResponce();
     _com.end();
-*/
-/*    switch(_version)
+
+    switch(_version)
     {
         case VERSION_100:
         case VERSION_101: _com.begin(CMUCOM4_MEDIUM_BAUD_RATE); break;
@@ -353,7 +344,7 @@ int CMUcam4::begin()
     _com.write((uint8_t) '\r');
     _waitForResponce();
     _waitForIdle();
-*/
+
     _state = ACTIVATED;
     return CMUCAM4_RETURN_SUCCESS;
 }
@@ -1669,7 +1660,6 @@ int CMUcam4::_commandWrapper(const char * command, unsigned long timeout)
         return errorValue;
     }
 
-	printf("idle\n");
     if(errorValue = setjmp(_env))
     {
         return errorValue;
@@ -1728,12 +1718,10 @@ int CMUcam4::_responceWrapper(char responce)
 
 void CMUcam4::_waitForIdle()
 {
-	printf("waiting responce\n");
     for(;;)
     {
         _readText();
 
-		printf("text read\n");
         if(_startsWithString("MSG"))
         {
             continue; // Throw the message away.
@@ -1889,9 +1877,8 @@ void CMUcam4::_waitForString(const char * string)
         {
             _resBuffer[index - 1] = _resBuffer[index];
         }
-//		printf("reading...\n");
+
         _resBuffer[length - 1] = _readWithTimeout();
-//		printf("read %s\n", _resBuffer);
     }
     while(strcmp(_resBuffer, string) != 0);
 }
@@ -2031,9 +2018,8 @@ int CMUcam4::_readWithTimeout()
         }
     }
     while(_com.available() == 0);
-	int rs = _com.read();
-//	printf("com.read %c\n", rs);
-    return rs;
+
+    return _com.read();
 }
 
 /***************************************************************************//**
