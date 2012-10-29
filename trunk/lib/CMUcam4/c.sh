@@ -2,4 +2,4 @@ make && \
 cd ../../pi/utils && \
 ./ser2cam.sh && \
 cd - && \
-./camTest
+./camP

@@ -49,14 +49,14 @@ size_t CMUcom4::write(uint8_t c)
 
 size_t CMUcom4::write(const char * str)
 {
-	printf("write2 %s\n", str);
+	printf("write2 \n%s\n", str);
 	serialPuts(_fd, (char*)str);
 	return strlen(str);
 }
 
 size_t CMUcom4::write(const uint8_t * buffer, size_t size)
 {
-	printf("write3 %s\n", buffer);
+	printf("write3 \n%s\n", buffer);
 	size_t rs=0;
 	for(int i=0; i< size; i++) {
 		rs += write(buffer[i]);
