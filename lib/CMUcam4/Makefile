@@ -2,7 +2,7 @@ CC=g++ -I../wiringPi/wiringPi
 CCOPTS=-L.
 STRIP=-strip
 OBJECTS=CMUcam4.o CMUcom4.o
-NAME=camTest
+NAME=camP
 
 .cpp.o:
 		$(CC) $(CCOPTS) -c $<
