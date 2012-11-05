@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include "CMUcam4.h"
 #include "CMUcom4.h"
+#include "wiringPi.h"
 
 #define RED_TOLERANCE 30
 #define GREEN_TOLERANCE 30
@@ -13,9 +14,23 @@
 
 CMUcam4 cam(CMUCOM4_SERIAL);
 
+void cam_begin()
+{
+	pinMode(17, OUTPUT);
+	pinMode(24, OUTPUT);
+	digitalWrite(17, false);
+	digitalWrite(24, true);
+	cam.begin();
+}
+
+void cam_end()
+{
+	cam.end();
+}
+
 void setup()
 {
-  cam.begin();
+	cam_begin();
 
   // Wait for auto gain and auto white balance to run.
 
@@ -28,6 +43,7 @@ void setup()
   cam.autoWhiteBalance(false);
 
   cam.LEDOn(CMUCAM4_LED_ON);
+	cam_end();
 }
 
 void loop()
@@ -36,7 +52,8 @@ void loop()
   CMUcam4_statistics_data_t base;
   CMUcam4_statistics_data_t sample;
 
-  // Wait for the scene to settle.
+	cam_begin();
+	 // Wait for the scene to settle.
   cam.LEDOn(LED_SETUP);
   usleep(WAIT_TIME*1000);
 
@@ -61,13 +78,15 @@ void loop()
   );
 
   // Something changed.
-  cam.idleCamera();
-  cam.LEDOn(LED_BLINK);
-  usleep(POSE_TIME*1000);
+	cam.idleCamera();
+	cam.LEDOn(LED_BLINK);
+
+	cam_end();
+	usleep(POSE_TIME*1000);
 
   // So take a picture.
-  cam.dumpFrame(CMUCAM4_HR_160, CMUCAM4_VR_120);
-  cam.unmountDisk();
+//  cam.dumpFrame(CMUCAM4_HR_160, CMUCAM4_VR_120);
+//  cam.unmountDisk();
 }
 
 void start()
@@ -80,6 +99,7 @@ void start()
 
 int main(int argc, const char **argv)
 {
+	wiringPiSetup();
 	start();
 	return 0;
 }
