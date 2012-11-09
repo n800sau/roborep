@@ -5,12 +5,18 @@
 #include <alloca.h>
 #include <fcgiapp.h>
 
+#include "CMUcam4.h"
+#include "CMUcom4.h"
+
 #define LISTENSOCK_FILENO 0
 #define LISTENSOCK_FLAGS 0
+
+CMUcam4 cam(CMUCOM4_SERIAL);
 
 int main(int argc, char** argv) 
 {
   openlog("testfastcgi", LOG_CONS|LOG_NDELAY, LOG_USER);
+  cam.begin();
   int err = FCGX_Init(); /* call before Accept in multithreaded apps */
   if (err) { syslog (LOG_INFO, "FCGX_Init failed: %d", err); return 1; }
   FCGX_Request cgi;
@@ -37,5 +43,6 @@ int main(int argc, char** argv)
     FCGX_PutStr(result, strlen(result), cgi.out);
   }
 
+	cam.end();
   return 0;
 }

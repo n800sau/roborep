@@ -4,22 +4,22 @@
 SPAWNFCGI="/usr/bin/spawn-fcgi" 
 
 ## ABSOLUTE path to the PHP binary
-FCGIPROGRAM="/home/n800s/bin/server" 
+FCGIPROGRAM="/home/n800s/bin/server.py" 
 
 ## bind to tcp-port on localhost
 #FCGIPORT="1026" 
 
 ## bind to unix domain socket
-FCGISOCKET="/home/n800s/www/bon.sock" 
+FCGISOCKET="/home/n800s/www/robo.sock"
 
-FCGIPID="/home/n800s/www/bon.pid" 
+FCGIPID="/home/n800s/www/robo.pid"
 
 ## IP adresses where PHP should access server connections
 ## from
 FCGI_WEB_SERVER_ADDRS="127.0.0.1,192.168.1.25" 
 
 # allowed environment variables separated by spaces
-ALLOWED_ENV="USER" 
+ALLOWED_ENV="USER"
 
 ## if this script is run as root switch to the following user
 USERID=www-data
