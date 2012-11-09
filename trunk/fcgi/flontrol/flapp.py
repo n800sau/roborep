@@ -5,8 +5,8 @@ app = Flask(__name__)
 app.debug = True
 
 @app.route('/robo')
-def hello_world():
-	return render_template('hello.html')
+def home():
+	return render_template('home.html')
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
