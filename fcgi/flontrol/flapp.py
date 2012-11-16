@@ -6,6 +6,7 @@ app.debug = True
 
 @app.route('/robo')
 def home():
+	
 	return render_template('home.html')
 
 @app.route('/login', methods=['POST', 'GET'])

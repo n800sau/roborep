@@ -16,7 +16,7 @@ CMUcam4 cam(CMUCOM4_SERIAL);
 int main(int argc, char** argv) 
 {
   openlog("testfastcgi", LOG_CONS|LOG_NDELAY, LOG_USER);
-  cam.begin();
+//  cam.begin();
   int err = FCGX_Init(); /* call before Accept in multithreaded apps */
   if (err) { syslog (LOG_INFO, "FCGX_Init failed: %d", err); return 1; }
   FCGX_Request cgi;
@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     err = FCGX_Accept_r(&cgi);
     if (err) { syslog(LOG_INFO, "FCGX_Accept_r stopped: %d", err); break; }
     char** envp;
-    int size = 200;
+    int size = 20000;
     for (envp = cgi.envp; *envp; ++envp) size += strlen(*envp) + 11;
     char*  result = (char*) alloca(size);
     strcpy(result, "Status: 200 OK\r\nContent-Type: text/html\r\n\r\n");
@@ -39,10 +39,19 @@ int main(int argc, char** argv)
       strcat(result, "</li>\r\n");
     }
 
+	const char *ruri = getenv("REQUEST_URI");
+	if( ruri ) {
+		strcat(result, "<h2>");
+		strcat(result, ruri);
+		strcat(result, "</h2>\r\n");
+	} else {
+		strcat(result, "REQUEST_URI not found");
+	}
+
     strcat(result, "</ul></body></html>\r\n");
     FCGX_PutStr(result, strlen(result), cgi.out);
   }
 
-	cam.end();
+//	cam.end();
   return 0;
 }
