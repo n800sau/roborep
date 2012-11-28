@@ -1,5 +1,5 @@
 make && \
 cd ../../pi/utils && \
-./ser2cam.sh && \
+./reset_cam.sh && \
 cd - && \
-./camP
+./camTr

@@ -6,6 +6,12 @@
 #include <wiringSerial.h>
 
 
+const char *serial_devices[] = {
+	"/dev/ttyUSB0",
+	"/dev/ttyAMA0"
+};
+#define N_SERIALS (sizeof(serial_devices) / sizeof(*serial_devices))
+
 /*******************************************************************************
 * Constructor Functions
 *******************************************************************************/
@@ -26,8 +32,8 @@ CMUcom4::CMUcom4(int port):_millis(time(NULL))
 
 void CMUcom4::begin(unsigned long baud)
 {
-	printf("open %d\n", baud);
-	_fd = serialOpen((char*)"/dev/ttyAMA0", baud);
+//	printf("open %d\n", baud);
+	_fd = serialOpen((char*)serial_devices[(_port >= 0 && _port < N_SERIALS) ? _port : 0], baud);
 }
 
 void CMUcom4::end()
@@ -42,7 +48,7 @@ int CMUcom4::read()
 
 size_t CMUcom4::write(uint8_t c)
 {
-	printf("write1 '%c'\n", c);
+//	printf("write1 '%c'\n", c);
 	serialPutchar(_fd, c);
 	return 1;
 }
