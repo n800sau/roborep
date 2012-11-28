@@ -53,6 +53,7 @@
 * Version 1.02 firmware and above maximum baud rate number.
 *******************************************************************************/
 #define CMUCOM4_FAST_BAUD_RATE      115200
+//#define CMUCOM4_FAST_BAUD_RATE      500000
 
 /***************************************************************************//**
 * Version 1.02 firmware and above maximum baud rate string.

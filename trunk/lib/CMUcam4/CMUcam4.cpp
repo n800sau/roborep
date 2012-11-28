@@ -1531,9 +1531,7 @@ int CMUcam4::sendFrame(int horizontalResolution, int verticalResolution,
     resolutionX = (CMUCAM4_FRAME_H_RES >> horizontalResolution);
     resolutionY = (CMUCAM4_FRAME_V_RES >> verticalResolution);
 
-    if(snprintf(_cmdBuffer, CMUCAM4_CMD_BUFFER_SIZE,
-    "SF %d %d\r", horizontalResolution, verticalResolution)
-    >= CMUCAM4_CMD_BUFFER_SIZE)
+    if(snprintf(_cmdBuffer, CMUCAM4_CMD_BUFFER_SIZE, "SF %d %d\r", horizontalResolution, verticalResolution) >= CMUCAM4_CMD_BUFFER_SIZE)
     {
         return CMUCAM4_COMMAND_OVERFLOW;
     }
