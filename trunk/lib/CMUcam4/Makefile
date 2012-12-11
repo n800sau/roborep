@@ -1,4 +1,4 @@
-CC=g++ -I../wiringPi/wiringPi
+CC=g++ -I../wiringPi/wiringPi -I/usr/include/hiredis
 CCOPTS=-L.
 STRIP=-strip
 OBJECTS=CMUcam4.o CMUcom4.o
@@ -17,5 +17,5 @@ clean:
 	rm -f $(OBJECTS) $(NAME) libcmucam4.a
 
 $(NAME):	$(NAME).cpp libcmucam4.a
-	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a -lopencv_core -lopencv_highgui
+	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a -lopencv_core -lopencv_highgui -lhiredis -levent
 #	$(STRIP) -s $(NAME)
