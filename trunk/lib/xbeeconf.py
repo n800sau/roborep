@@ -32,7 +32,6 @@ class XBee:
 		return self.sendCommand('CN') == 'OK'
 
 	def sendCommand(self, cmd):
-		print 'cmd:', cmd
 		self.emptyBuffer()
 		self.ser.write('AT' + cmd + '\r')
 		if cmd == "AS":
@@ -50,7 +49,6 @@ class XBee:
 				return None
 			reply += char
 
-		print 'reply:', reply
 		return reply
 
 if __name__ == '__main__':
