@@ -43,7 +43,6 @@ void setup()
   cam.autoWhiteBalance(false);
 
   cam.LEDOn(CMUCAM4_LED_ON);
-	cam_end();
 }
 
 void loop()
@@ -52,7 +51,6 @@ void loop()
   CMUcam4_statistics_data_t base;
   CMUcam4_statistics_data_t sample;
 
-	cam_begin();
 	 // Wait for the scene to settle.
   cam.LEDOn(LED_SETUP);
   usleep(WAIT_TIME*1000);
@@ -81,7 +79,6 @@ void loop()
 	cam.idleCamera();
 	cam.LEDOn(LED_BLINK);
 
-	cam_end();
 	usleep(POSE_TIME*1000);
 
   // So take a picture.
