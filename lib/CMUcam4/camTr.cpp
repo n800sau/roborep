@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <time.h>
-
+#include <signal.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -12,6 +12,10 @@
 #include <vector>
 #include <iostream>
 #include <string>
+
+#include "hiredis.h"
+#include "async.h"
+#include "adapters/libevent.h"
 
 #include "CMUcam4.h"
 #include "CMUcom4.h"
@@ -27,6 +31,50 @@
 #define WAIT_TIME 5000 // 5 seconds
 
 CMUcam4 cam(CMUCOM4_SERIAL);
+struct event_base *base;
+redisAsyncContext *redis;
+int exiting = 0;
+int tilt_ndx = 0;
+int pan_ndx = 0;
+int pan_dir = 1;
+const int servo_steps = 2250 - 750;
+
+
+#define E(func) (_E((func), __LINE__))
+
+long _E(long func, unsigned long line)
+{
+  if(func < CMUCAM4_RETURN_SUCCESS)
+  {
+    printf("\nCaught error %d on line %d\n", func, line);
+  }
+
+  return func;
+}
+
+void printH(int tilt, int p, const uint8_t *bins, int length)
+{
+//	redisAsyncCommand(redis, NULL, NULL, "SET bin:%d:%d %b", tilt, p, bins, length*sizeof(uint8_t));
+	char *buf = (char *)calloc(sizeof(char), length * 3 + 50);
+	time_t t = time(NULL);
+	struct tm *st = localtime(&t);
+	sprintf(buf, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d,%d,%d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec, tilt, p);
+	for(int i = 0; i< length; i++) {
+		sprintf(buf + strlen(buf), ",%d", bins[i]);
+	}
+	redisAsyncCommand(redis, NULL, NULL, "SET h%d:%d %s", tilt, p, buf, strlen(buf));
+	FILE *f = fopen("bins.txt", "a");
+	if(f) {
+		fputs(buf, f);
+		fputs("\n", f);
+		fclose(f);
+	} else {
+		printf("Can not open log file\n");
+		exit(1);
+	}
+	free(buf);
+}
+
 
 void cam_begin()
 {
@@ -57,73 +105,25 @@ void setup()
   cam.autoWhiteBalance(false);
 
   cam.LEDOn(CMUCAM4_LED_ON);
+  cam.formatDisk();
 	cam.monitorOn();
 	//cam.automaticPan(1, 0);
 	cam_end();
+
+//	cam.lineMode(true);
+//	cam.automaticPan(1, 0);
+//	cam.testMode(1);
+	//printf("colorT=%d\n", cam.colorTracking(1));
+	tilt_ndx = 0;
+	pan_ndx = 0;
+	
 }
 
 
 void loop()
 {
-
-
-
-
-//  for(;;)
-//  {
-//    cam.getTypeTDataPacket(&t_data); // Get a tracking packet.
-//    cam.getTypeFDataPacket(&f_data); // Get an image packet.
-
-    // Process the packet data safely here.
-//  }
-
-  // Do something else here.
-}
-
-
-
-void createAlphaMat(cv::Mat &mat)
-{
-    for (int i = 0; i < mat.rows; ++i) {
-        for (int j = 0; j < mat.cols; ++j) {
-            cv::Vec4b& rgba = mat.at<cv::Vec4b>(i, j);
-            rgba[0] = UCHAR_MAX;
-            rgba[1] = cv::saturate_cast<uchar>((float (mat.cols - j)) / ((float)mat.cols) * UCHAR_MAX);
-            rgba[2] = cv::saturate_cast<uchar>((float (mat.rows - i)) / ((float)mat.rows) * UCHAR_MAX);
-            rgba[3] = cv::saturate_cast<uchar>(0.5 * (rgba[1] + rgba[2]));
-        }
-    }
-}
-
-
-void printH(int tilt, int p, const uint8_t *bins, int length)
-{
-	FILE *f = fopen("bins.txt", "a");
-	if(f) {
-		time_t t = time(NULL);
-		struct tm *st = localtime(&t);
-		fprintf(f, "%.4d.%2d.%2d %.2d:%.2d:%.2d,%d,%d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec, tilt, p);
-		for(int i = 0; i< length; i++) {
-			fprintf(f, ",%d", bins[i]);
-		}
-		fprintf(f, "\n");
-		fclose(f);
-	} else {
-		printf("Can not open log file\n");
-		exit(1);
-	}
-}
-
-
-void start()
-{
 	CMUcam4_image_data_t f_data;
 	CMUcam4_tracking_data_t t_data;
-	setup();
-//	cam.lineMode(true);
-//	cam.automaticPan(1, 0);
-//	cam.testMode(1);
-	cam_begin();
 
 #define HISTOGRAM_CHANNEL CMUCAM4_GREEN_CHANNEL
 #define HISTOGRAM_BINS CMUCAM4_H4_BINS
@@ -135,14 +135,25 @@ void start()
   CMUcam4_histogram_data_32_t h_32_data;
   CMUcam4_histogram_data_64_t h_64_data;
 
-	//printf("colorT=%d\n", cam.colorTracking(1));
-	int servo_steps = 2250 - 750;
-	for(int t = 0; t < servo_steps/2 ; t += 40) {
-		cam.setServoPosition(CMUCAM4_TILT_SERVO, true, t+750);
-		for(int p = 0; p < servo_steps; p += 40) {
-			printf("\nt=%d, p=%d:\n", t, p);
-			cam.setServoPosition(CMUCAM4_PAN_SERVO, true, p+750);
-			usleep(100000L);
+//	printf("\nt=%d, p=%d:\n", tilt_ndx, pan_ndx);
+	cam.setServoPosition(CMUCAM4_TILT_SERVO, true, tilt_ndx+750);
+	cam.setServoPosition(CMUCAM4_PAN_SERVO, true, pan_ndx+750);
+
+
+#define DE_SIZE 4
+		CMUcam4_directory_entry_t de[DE_SIZE]; // Directory entry array.
+		int directorySize;
+		do {
+			directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
+			if(directorySize > 0) {
+				for(int i=0; i < std::min(DE_SIZE, directorySize); i++) {
+					cam.removeEntry(de[i].name);
+				}
+			}
+		} while(directorySize > DE_SIZE);
+		printf("Dir size=%d\n", directorySize);
+
+			usleep(1000000L);
 			printf("histogram=%d\n", cam.getHistogram(HISTOGRAM_CHANNEL, HISTOGRAM_BINS));
 			uint16_t buffer[80*80]; // 10 by 10 pixel buffer
 			uint8_t buffer3[80*80][3]; // 10 by 10 pixel buffer
@@ -150,7 +161,7 @@ void start()
 /*			printf("sendFrame=%d\n", cam.sendFrame(CMUCAM4_HR_80, CMUCAM4_HR_80, buffer, 80, 0, 80, 0));
 
 			char fname[256];
-			sprintf(fname, "%d.%d.jpg", t, p);
+			sprintf(fname, "%d.%d.jpg", tilt_ndx, pan_ndx);
 	
 			for(int k=0; k<80*80; k++)
 			{
@@ -169,8 +180,8 @@ void start()
 			printf("Width step:%d\n", cv_image->widthStep);
 			cvSetData(cv_image, buffer3, cv_image->widthStep);
 
-			int p[3] = {CV_IMWRITE_JPEG_QUALITY, 10, 0};
-			cvSaveImage(fname, cv_image, p);
+			int pan_ndx[3] = {CV_IMWRITE_JPEG_QUALITY, 10, 0};
+			cvSaveImage(fname, cv_image, pan_ndx);
 			printf("end\n");
 
 			// release resources
@@ -179,38 +190,44 @@ void start()
 
     #if(HISTOGRAM_BINS == CMUCAM4_H1_BINS)
       cam.getTypeHDataPacket(&h_1_data); // Get a histogram packet.
-		printH(t, p, h_1_data.bins, CMUCAM4_HD_1_T_LENGTH);
+		printH(tilt_ndx, pan_ndx, h_1_data.bins, CMUCAM4_HD_1_T_LENGTH);
 
     #elif(HISTOGRAM_BINS == CMUCAM4_H2_BINS)
       cam.getTypeHDataPacket(&h_2_data); // Get a histogram packet.
-		printH(t, p, h_2_data.bins, CMUCAM4_HD_2_T_LENGTH);
+		printH(tilt_ndx, pan_ndx, h_2_data.bins, CMUCAM4_HD_2_T_LENGTH);
 
     #elif(HISTOGRAM_BINS == CMUCAM4_H4_BINS)
       cam.getTypeHDataPacket(&h_4_data); // Get a histogram packet.
-		printH(t, p, h_4_data.bins, CMUCAM4_HD_4_T_LENGTH);
+		printH(tilt_ndx, pan_ndx, h_4_data.bins, CMUCAM4_HD_4_T_LENGTH);
 
     #elif(HISTOGRAM_BINS == CMUCAM4_H8_BINS)
       cam.getTypeHDataPacket(&h_8_data); // Get a histogram packet.
-		printH(t, p, h_8_data.bins, CMUCAM4_HD_8_T_LENGTH);
+		printH(tilt_ndx, pan_ndx, h_8_data.bins, CMUCAM4_HD_8_T_LENGTH);
 
     #elif(HISTOGRAM_BINS == CMUCAM4_H16_BINS)
       cam.getTypeHDataPacket(&h_16_data); // Get a histogram packet.
-		printH(t, p, h_16_data.bins, CMUCAM4_HD_16_T_LENGTH);
+		printH(tilt_ndx, pan_ndx, h_16_data.bins, CMUCAM4_HD_16_T_LENGTH);
 
     #elif(HISTOGRAM_BINS == CMUCAM4_H32_BINS)
       cam.getTypeHDataPacket(&h_32_data); // Get a histogram packet.
-		printH(t, p, h_32_data.bins, CMUCAM4_HD_64_T_LENGTH);
+		printH(tilt_ndx, pan_ndx, h_32_data.bins, CMUCAM4_HD_64_T_LENGTH);
 
     #elif((HISTOGRAM_BINS == CMUCAM4_H64_BINS) && \
     (HISTOGRAM_CHANNEL == CMUCAM4_GREEN_CHANNEL))
       cam.getTypeHDataPacket(&h_64_data); // Get a histogram packet.
-		printH(t, p, h_64_data.bins, CMUCAM4_HD_64_T_LENGTH);
+		printH(tilt_ndx, pan_ndx, h_64_data.bins, CMUCAM4_HD_64_T_LENGTH);
 
     #else // 1 to 64 bins...
       #error "Invalid number of bins"
 
     #endif
 
+	if(E(cam.dumpFrame(CMUCAM4_HR_160, CMUCAM4_VR_120)) == 0) {
+		directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
+		if(directorySize > 0) {
+			printf("File name:%s\n", de[directorySize - 1].name);
+		}
+	}
 
 
 /*			cv::Mat M(80,80, CV_16UC3, buffer);
@@ -262,15 +279,70 @@ void start()
 //			}
 //			printf("\n");
 //			usleep(1000000L);
+	pan_ndx += 40 * pan_dir;
+	if(pan_ndx >= servo_steps || pan_ndx < 0) {
+		tilt_ndx += 40;
+		pan_dir *= -1;
+		pan_ndx += 40 * pan_dir;
+		if(tilt_ndx >= servo_steps / 2) {
+			tilt_ndx = 0;
+			exit(0);
 		}
 	}
-	cam_end();
-//	cam.automaticPan(0, 0);
 }
 
-int main(int argc, const char **argv)
+
+
+void createAlphaMat(cv::Mat &mat)
 {
-	start();
-	return 0;
+    for (int i = 0; i < mat.rows; ++i) {
+        for (int j = 0; j < mat.cols; ++j) {
+            cv::Vec4b& rgba = mat.at<cv::Vec4b>(i, j);
+            rgba[0] = UCHAR_MAX;
+            rgba[1] = cv::saturate_cast<uchar>((float (mat.cols - j)) / ((float)mat.cols) * UCHAR_MAX);
+            rgba[2] = cv::saturate_cast<uchar>((float (mat.rows - i)) / ((float)mat.rows) * UCHAR_MAX);
+            rgba[3] = cv::saturate_cast<uchar>(0.5 * (rgba[1] + rgba[2]));
+        }
+    }
+}
+
+
+void connectCallback(const redisAsyncContext *c) {
+    ((void)c);
+    printf("connected...\n");
+}
+
+void disconnectCallback(const redisAsyncContext *c, int status) {
+    if (status != REDIS_OK) {
+        printf("Error: %s\n", c->errstr);
+    }
+    printf("disconnected...\n");
+}
+
+
+int main (int argc, char **argv) {
+    signal(SIGPIPE, SIG_IGN);
+    base = event_base_new();
+
+    redis = redisAsyncConnect("localhost", 6379);
+    if (redis->err) {
+        /* Let *redis leak for now... */
+        printf("Error: %s\n", redis->errstr);
+        return 1;
+    }
+	setup();
+	cam_begin();
+    redisLibeventAttach(redis,base);
+    redisAsyncSetConnectCallback(redis,connectCallback);
+    redisAsyncSetDisconnectCallback(redis,disconnectCallback);
+    redisAsyncCommand(redis, NULL, NULL, "SET temp.a %b", argv[argc-1], strlen(argv[argc-1]));
+//    redisAsyncCommand(redis, getCallback, (char*)"end-1", "GET temp.a");
+	do {
+    	event_base_loop(base, EVLOOP_NONBLOCK);
+		loop();
+    } while(!exiting);
+    event_base_dispatch(base);
+	cam_end();
+    return 0;
 }
 
