@@ -61,7 +61,7 @@ if __name__ == '__main__':
 	for port in ('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EONT-if00-port0', '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EM1A-if00-port0'):
 		if os.path.exists(port):
 
-			xbee = XBee('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EONT-if00-port0', 9600);
+			xbee = XBee(port, 9600);
 
 			if not xbee.startCommandMode():
 				print("Could not enter command mode")
