@@ -54,15 +54,17 @@ class XBee:
 if __name__ == '__main__':
 	import sys
 
-#pi SH,SL =  13 A2 00 40 92 D7 A0
-#HP SH,SL =  13 A2 00 40 92 D7 19
+#pi SH,SL =  13 A2 00  40 92 D7 A0
+#HP SH,SL =  13 A2 00  40 92 D7 19
 
 #	cmdlist = ['ID', 'CH', 'MY', 'DL', 'DH', 'AP']
-	cmdlist = ['BD', 'CH', 'ID', 'SH', 'SL', 'NI', 'ND', 'NR']
 
-	for port in ('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EONT-if00-port0', '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EM1A-if00-port0'):
+	for port,dh,dl in (
+			('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EONT-if00-port0', '13A200', '4092D7A0'), 
+			('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EM1A-if00-port0', '13A200', '4092D719')):
 		if os.path.exists(port):
 
+			cmdlist = ['BD', 'CH', 'ID', 'SH', 'SL', 'DH', 'DL', 'DH%s' % dh, 'DL%s' % dl, 'NI', 'ND', 'NR']
 			xbee = XBee(port, 9600);
 
 			if not xbee.startCommandMode():
