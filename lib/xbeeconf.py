@@ -54,7 +54,10 @@ class XBee:
 if __name__ == '__main__':
 	import sys
 
-	cmdlist = ['ID', 'CH', 'MY', 'DL', 'DH', 'AP']
+#pi SH,SL =  13 A2 00 40 92 D7 A0
+
+#	cmdlist = ['ID', 'CH', 'MY', 'DL', 'DH', 'AP']
+	cmdlist = ['BD', 'CH', 'ID', 'SH', 'SL', 'NI', 'ND', 'NR']
 
 	for port in ('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EONT-if00-port0', '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EM1A-if00-port0'):
 		if os.path.exists(port):
@@ -65,7 +68,7 @@ if __name__ == '__main__':
 				print("Could not enter command mode")
 				sys.exit(1)
 			for cmd in cmdlist:
-				print(cmd + ': ' + str(xbee.sendCommand(cmd)))
+				print cmd + ': ' + str(xbee.sendCommand(cmd))
 			xbee.close()
 			break
 
