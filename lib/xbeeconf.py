@@ -55,6 +55,7 @@ if __name__ == '__main__':
 	import sys
 
 #pi SH,SL =  13 A2 00 40 92 D7 A0
+#HP SH,SL =  13 A2 00 40 92 D7 19
 
 #	cmdlist = ['ID', 'CH', 'MY', 'DL', 'DH', 'AP']
 	cmdlist = ['BD', 'CH', 'ID', 'SH', 'SL', 'NI', 'ND', 'NR']
