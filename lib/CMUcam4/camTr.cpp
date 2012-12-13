@@ -17,8 +17,12 @@
 #include "async.h"
 #include "adapters/libevent.h"
 
+#include <jansson.h>
+
 #include "CMUcam4.h"
 #include "CMUcom4.h"
+
+const char r_cam_cmd[] = "cam_cmd";
 
 #define RED_MIN 20
 #define RED_MAX 255
@@ -324,6 +328,35 @@ void createAlphaMat(cv::Mat &mat)
 }
 
 
+void cmdCallback(redisAsyncContext *c, void *r, void *privdata) {
+    redisReply *reply = (redisReply *)r;
+    if (reply == NULL) {
+		printf("no reply\n");
+	} else {
+		if(reply->str) {
+			json_error_t error;
+			json_t *js = json_loads(reply->str, JSON_DECODE_ANY, &error);
+			if (js == NULL) {
+				printf("Error JSON decoding:%s", error.text);
+			} else {
+				char *jstr = json_dumps(js, JSON_INDENT(4));
+				if(jstr) {
+					printf("%s\n", jstr);
+					free(jstr);
+				} else {
+					printf("Can not decode JSON\n");
+				}
+				json_decref(js);
+			}
+		}
+	}
+
+    /* Disconnect after receiving the reply to GET */
+//    redisAsyncDisconnect(c);
+    redisAsyncCommand(redis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
+}
+
+
 void connectCallback(const redisAsyncContext *c) {
     ((void)c);
     printf("connected...\n");
@@ -353,10 +386,10 @@ int main (int argc, char **argv) {
     redisAsyncSetConnectCallback(redis,connectCallback);
     redisAsyncSetDisconnectCallback(redis,disconnectCallback);
     redisAsyncCommand(redis, NULL, NULL, "SET temp.a %b", argv[argc-1], strlen(argv[argc-1]));
-//    redisAsyncCommand(redis, getCallback, (char*)"end-1", "GET temp.a");
+    redisAsyncCommand(redis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
 	do {
     	event_base_loop(base, EVLOOP_NONBLOCK);
-		loop();
+//		loop();
     } while(!exiting);
     event_base_dispatch(base);
 	cam_end();
