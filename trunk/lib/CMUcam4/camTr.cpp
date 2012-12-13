@@ -225,9 +225,26 @@ void loop()
 	if(E(cam.dumpFrame(CMUCAM4_HR_160, CMUCAM4_VR_120)) == 0) {
 		directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
 		if(directorySize > 0) {
-			printf("File name:%s\n", de[directorySize - 1].name);
+			const char *fname = de[directorySize - 1].name;
+			uint8_t filebuf[160*120*4];
+			char dfname[100];
+			printf("File name:%s\n", fname);
+			long fsize = cam.filePrint(fname, filebuf, sizeof(filebuf), 0);
+			if(fsize >= 0) {
+				sprintf(dfname, "%d_%d.bmp", tilt_ndx, pan_ndx);
+				FILE *df = fopen(dfname, "wb");
+				if (df) {
+					fwrite(filebuf, 1, fsize, df);
+					fclose(df);
+				} else {
+					printf("Error writing file %s\n", dfname);
+				}
+			} else {
+				printf("Error reading file %s\n", fname);
+			}
 		}
 	}
+
 
 
 /*			cv::Mat M(80,80, CV_16UC3, buffer);
