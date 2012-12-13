@@ -17,5 +17,5 @@ clean:
 	rm -f $(OBJECTS) $(NAME) libcmucam4.a
 
 $(NAME):	$(NAME).cpp libcmucam4.a
-	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a -lopencv_core -lopencv_highgui -lhiredis -levent
+	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a -lopencv_core -lopencv_highgui -lhiredis -levent -ljansson
 #	$(STRIP) -s $(NAME)
