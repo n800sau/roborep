@@ -64,8 +64,11 @@ if __name__ == '__main__':
 			('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EM1A-if00-port0', '13A200', '4092D719')):
 		if os.path.exists(port):
 
-			cmdlist = ['BD', 'CH', 'ID', 'SH', 'SL', 'DH', 'DL', 'DH%s' % dh, 'DL%s' % dl, 'NI', 'ND', 'NR']
-			xbee = XBee(port, 9600);
+			cmdlist = ['ID', 'DH', 'DL', 'MY', 'SH', 'SL']
+#			cmdlist = ['ID3332', 'DL1234', 'MY5678', 'D02', 'D12', 'IR14', 'IT5',]
+#			cmdlist = ['BD', 'CH', 'MY', 'ID', 'ID1111', 'SH', 'SL', 'DH', 'DL', 'DH%s' % dh, 'DL%s' % dl, 'NI', 'ND', 'WR', 'AS']
+#			cmdlist = ['RE']
+			xbee = XBee(port, 115200);
 
 			if not xbee.startCommandMode():
 				print("Could not enter command mode")
