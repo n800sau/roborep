@@ -1,0 +1,49 @@
+<!DOCTYPE html> 
+<html> 
+<head>
+	<base href="https://n800s.dyndns.org:7443/robo/">
+	<title>Robo Homo</title> 
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+	<script src="js/robo.js"></script>
+	<script>
+$(document).ready(function() {
+	$.ajaxSetup({
+		cache: false
+	});
+	$("#image_but").click(function () {
+		$("#placeholder").attr("src", "cam.png");
+		alert('Load was performed.');
+	});
+});
+$.ajax({
+  url: '/bon',
+  success: function(data) {
+    $('camver').html(data);
+    alert('Load was performed.');
+  }
+});
+</script>
+</head> 
+<body> 
+
+<div data-role="page">
+
+	<div data-role="header">
+		<h1>Histogram</h1>
+	</div><!-- /header -->
+
+	<div data-role="content">
+	Nothing
+	</div><!-- /content -->
+
+	<div id="camver"></div>
+	<img id="placeholder" width="160" height="80"></img>
+
+<button type="button" id="image_but">Image</button> 
+</div><!-- /page -->
+
+</body>
+</html>
