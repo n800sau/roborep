@@ -9,21 +9,54 @@
 	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
 	<script src="js/robo.js"></script>
+	<style type="text/css">
+		html.busy, html.busy * {
+			cursor: wait !important;
+		}
+	</style>
 	<script>
 $(document).ready(function() {
 	$.ajaxSetup({
 		cache: false
 	});
+	var update_images = function(msg) {
+		alert("update:" + msg);
+	};
 	$("#image_but").click(function () {
 		$("#placeholder").attr("src", "cam.png");
-		alert('Load was performed.');
 	});
+	$("#move_up").click(function () {
+		jQuery.ajax(
+			url="{% url 'robo.views.move_up' %}"
+		).done(update_images);
+	});
+	$("#move_left").click(function () {
+		jQuery.ajax(
+			url="{% url 'robo.views.move_left' %}"
+		).done(update_images);
+	});
+	$("#move_right").click(function () {
+		jQuery.ajax(
+			url="{% url 'robo.views.move_right' %}"
+		).done(update_images);
+	});
+	$("#move_down").click(function () {
+		jQuery.ajax(
+			url="{% url 'robo.views.move_down' %}"
+		).done(update_images);
+	});
+	$("html").bind("ajaxStart", function(){
+		$(this).addClass('busy');
+	}).bind("ajaxStop", function(){
+		$(this).removeClass('busy');
+	});
+});
+
 });
 $.ajax({
   url: '/bon',
   success: function(data) {
     $('camver').html(data);
-    alert('Load was performed.');
   }
 });
 $(function() {
@@ -51,7 +84,11 @@ $(function() {
 	<div id="camver"></div>
 	<img id="placeholder" width="160" height="80"></img>
 
-<button type="button" id="image_but">Image</button> 
+<table>
+<tr><td colspan="2" align="center"><button type="button" id="move_up">Up</button></td></tr>
+<tr><td><button type="button" id="move_left">&lt;</button></td><td><button type="button" id="move_right">&gt;</button></td></tr>
+<tr><td colspan="2" align="center"><button type="button" id="move_down">Down</button></td></tr>
+</table>
 </div><!-- /page -->
 
 </body>
