@@ -9,6 +9,10 @@ urlpatterns = patterns('',
 
 	url('^$', views.home),
 	url('^histogram/$', views.histogram),
+	url('^move_right/$', views.move_right),
+	url('^move_left/$', views.move_left),
+	url('^move_up/$', views.move_up),
+	url('^move_down/$', views.move_down),
 
 	# Examples:
 	# url(r'^$', 'djface.views.home', name='home'),
