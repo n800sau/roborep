@@ -13,6 +13,8 @@ urlpatterns = patterns('',
 	url('^move_left/$', views.move_left),
 	url('^move_up/$', views.move_up),
 	url('^move_down/$', views.move_down),
+	url('^make_image/$', views.make_image),
+	url('^get_image/$', views.get_image),
 
 	# Examples:
 	# url(r'^$', 'djface.views.home', name='home'),

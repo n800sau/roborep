@@ -15,15 +15,26 @@
 		}
 	</style>
 	<script>
+	$( document ).on( 'mobileinit', function(){
+		$.mobile.loader.prototype.options.text = "loading";
+		$.mobile.loader.prototype.options.textVisible = false;
+		$.mobile.loader.prototype.options.theme = "a";
+		$.mobile.loader.prototype.options.html = "";
+	});
 	$(document).ready(function() {
 		$.ajaxSetup({
 			cache: false
 		});
 		var update_images = function(msg) {
-			alert("update:" + msg);
+//			alert("update:" + msg);
 		};
-		$("#image_but").click(function () {
-			$("#placeholder").attr("src", "cam.png");
+		$("#get_image").click(function () {
+			$("#placeholder").attr("src", "{% url 'robo.views.get_image' %}");
+		});
+		$("#make_image").click(function () {
+			jQuery.ajax(
+				url="{% url 'robo.views.make_image' %}"
+			).done(update_images);
 		});
 		$("#move_up").click(function () {
 			jQuery.ajax(
@@ -45,12 +56,6 @@
 				url="{% url 'robo.views.move_down' %}"
 			).done(update_images);
 		});
-//	var loading = function(){
-//		$.mobile.loader.prototype.options.text = "loading";
-//		$.mobile.loader.prototype.options.textVisible = false;
-//		$.mobile.loader.prototype.options.theme = "a";
-//		$.mobile.loader.prototype.options.html = "";
-//	}
 //	$.ajaxStart(function() {
 //		$.addClass('busy');
 //	}).ajaxComplete(function() {
@@ -86,13 +91,14 @@
 	</div><!-- /content -->
 
 	<div id="camver"></div>
-	<img id="placeholder" width="160" height="80"></img>
+	<img id="placeholder" width="160" height="120"></img>
 
 <table>
-<tr><td colspan="2" align="center"><button type="button" id="move_up">Up</button></td></tr>
-<tr><td><button type="button" id="move_left">&lt;</button></td><td><button type="button" id="move_right">&gt;</button></td></tr>
-<tr><td colspan="2" align="center"><button type="button" id="move_down">Down</button></td></tr>
+<tr><td colspan="3" align="center"><button type="button" id="move_up">Up</button></td></tr>
+<tr><td><button type="button" id="move_left">&lt;</button></td><td><button type="button" id="make_image">img</button></td><td><button type="button" id="move_right">&gt;</button></td></tr>
+<tr><td colspan="3" align="center"><button type="button" id="move_down">Down</button></td></tr>
 </table>
+<button type="button" id="get_image">get</button>
 </div><!-- /page -->
 
 </body>

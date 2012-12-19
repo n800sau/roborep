@@ -1,6 +1,6 @@
 <!DOCTYPE html> 
 <html> 
-<head> 
+<head>
 	<title>Robo Homo</title> 
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
@@ -24,6 +24,9 @@ $.ajax({
     alert('Load was performed.');
   }
 });
+$(function() {
+        $( "#menu" ).menu();
+});
 </script>
 </head> 
 <body> 
@@ -34,8 +37,13 @@ $.ajax({
 		<h1>Robo homo</h1>
 	</div><!-- /header -->
 
-	<div data-role="content">	
-		<p>Hello world</p>		
+	<ul id="menu">
+		<li><a href="histogram" data-ajax="false">Histogram {{page}}</a></li>
+		<li><a href="cam">Camera</a></li>
+	</ul>
+
+	<div data-role="content">
+	Nothing
 	</div><!-- /content -->
 
 	<div id="camver"></div>

@@ -36,7 +36,8 @@ const char r_cam_cmd[] = "cam_cmd";
 
 CMUcam4 cam(CMUCOM4_SERIAL);
 struct event_base *base;
-redisAsyncContext *redis;
+redisAsyncContext *aredis;
+redisContext *redis;
 int exiting = 0;
 int tilt_ndx = 0;
 int pan_ndx = 0;
@@ -58,7 +59,7 @@ long _E(long func, unsigned long line)
 
 void printH(int tilt, int p, const uint8_t *bins, int length)
 {
-//	redisAsyncCommand(redis, NULL, NULL, "SET bin:%d:%d %b", tilt, p, bins, length*sizeof(uint8_t));
+//	redisAsyncCommand(aredis, NULL, NULL, "SET bin:%d:%d %b", tilt, p, bins, length*sizeof(uint8_t));
 	char *buf = (char *)calloc(sizeof(char), length * 3 + 50);
 	time_t t = time(NULL);
 	struct tm *st = localtime(&t);
@@ -66,7 +67,7 @@ void printH(int tilt, int p, const uint8_t *bins, int length)
 	for(int i = 0; i< length; i++) {
 		sprintf(buf + strlen(buf), ",%d", bins[i]);
 	}
-	redisAsyncCommand(redis, NULL, NULL, "SET h%d:%d %s", tilt, p, buf, strlen(buf));
+	redisAsyncCommand(aredis, NULL, NULL, "SET h%d:%d %s", tilt, p, buf, strlen(buf));
 	FILE *f = fopen("bins.txt", "a");
 	if(f) {
 		fputs(buf, f);
@@ -124,7 +125,111 @@ void setup()
 }
 
 
+void clearSD()
+{
+#define DE_SIZE 4
+	CMUcam4_directory_entry_t de[DE_SIZE]; // Directory entry array.
+	int directorySize;
+	do {
+		directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
+		if(directorySize > 0) {
+			for(int i=0; i < std::min(DE_SIZE, directorySize); i++) {
+				cam.removeEntry(de[i].name);
+			}
+		}
+	} while(directorySize > DE_SIZE);
+}
+
+struct IMBUF {
+	int isize;
+	uint8_t ibuf[160*120*4];
+};
+
+int getImage(IMBUF &ibuf)
+{
+#define DE_SIZE 4
+	ibuf.isize = 0;
+	CMUcam4_directory_entry_t de[DE_SIZE]; // Directory entry array.
+	if(E(cam.dumpFrame(CMUCAM4_HR_160, CMUCAM4_VR_120)) == 0) {
+		int directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
+		if(directorySize > 0) {
+			const char *fname = de[directorySize - 1].name;
+			printf("File name:%s\n", fname);
+			ibuf.isize = cam.filePrint(fname, ibuf.ibuf, sizeof(ibuf.ibuf), 0);
+			if(ibuf.isize < 0) {
+				printf("Error reading file %s\n", fname);
+			}
+		}
+	}
+	return ibuf.isize;
+}
+
 void loop()
+{
+	CMUcam4_image_data_t f_data;
+	CMUcam4_tracking_data_t t_data;
+#define HISTOGRAM_CHANNEL CMUCAM4_GREEN_CHANNEL
+#define HISTOGRAM_BINS CMUCAM4_H4_BINS
+	CMUcam4_histogram_data_1_t h_1_data;
+	CMUcam4_histogram_data_2_t h_2_data;
+	CMUcam4_histogram_data_4_t h_4_data;
+	CMUcam4_histogram_data_8_t h_8_data;
+	CMUcam4_histogram_data_16_t h_16_data;
+	CMUcam4_histogram_data_32_t h_32_data;
+	CMUcam4_histogram_data_64_t h_64_data;
+	int rs = cam.getHistogram(HISTOGRAM_CHANNEL, HISTOGRAM_BINS);
+	if ( rs == 0 ) {
+		#if(HISTOGRAM_BINS == CMUCAM4_H1_BINS)
+			cam.getTypeHDataPacket(&h_1_data); // Get a histogram packet.
+			int length = CMUCAM4_HD_1_T_LENGTH;
+			uint8_t *bins = h_1_data.bins;
+		#elif(HISTOGRAM_BINS == CMUCAM4_H2_BINS)
+			cam.getTypeHDataPacket(&h_2_data); // Get a histogram packet.
+			int length = CMUCAM4_HD_2_T_LENGTH;
+			uint8_t *bins = h_2_data.bins;
+		#elif(HISTOGRAM_BINS == CMUCAM4_H4_BINS)
+			cam.getTypeHDataPacket(&h_4_data); // Get a histogram packet.
+			int length = CMUCAM4_HD_4_T_LENGTH;
+			uint8_t *bins = h_4_data.bins;
+		#elif(HISTOGRAM_BINS == CMUCAM4_H8_BINS)
+			cam.getTypeHDataPacket(&h_8_data); // Get a histogram packet.
+			int length = CMUCAM4_HD_8_T_LENGTH;
+			uint8_t *bins = h_8_data.bins;
+		#elif(HISTOGRAM_BINS == CMUCAM4_H16_BINS)
+			cam.getTypeHDataPacket(&h_16_data); // Get a histogram packet.
+			int length = CMUCAM4_HD_16_T_LENGTH;
+			uint8_t *bins = h_16_data.bins;
+		#elif(HISTOGRAM_BINS == CMUCAM4_H32_BINS)
+			cam.getTypeHDataPacket(&h_32_data); // Get a histogram packet.
+			int length = CMUCAM4_HD_32_T_LENGTH;
+			uint8_t *bins = h_32_data.bins;
+		#elif((HISTOGRAM_BINS == CMUCAM4_H64_BINS) && (HISTOGRAM_CHANNEL == CMUCAM4_GREEN_CHANNEL))
+			cam.getTypeHDataPacket(&h_64_data); // Get a histogram packet.
+			int length = CMUCAM4_HD_64_T_LENGTH;
+			uint8_t *bins = h_64_data.bins;
+		#else // 1 to 64 bins...
+			#error "Invalid number of bins"
+			int length = 0;
+			uint8_t *bins = 0;
+		#endif
+		if(length > 0) {
+			char *buf = (char *)calloc(sizeof(char), length * 3 + 50);
+			if(buf) {
+				time_t t = time(NULL);
+				struct tm *st = localtime(&t);
+				sprintf(buf, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
+				for(int i = 0; i< length; i++) {
+					sprintf(buf + strlen(buf), ",%d", bins[i]);
+				}
+				redisAsyncCommand(aredis, NULL, NULL, "SET cur_hist %s", buf, strlen(buf));
+				free(buf);
+			}
+		}
+	}
+}
+
+
+void loop1()
 {
 	CMUcam4_image_data_t f_data;
 	CMUcam4_tracking_data_t t_data;
@@ -143,19 +248,7 @@ void loop()
 	cam.setServoPosition(CMUCAM4_TILT_SERVO, true, tilt_ndx+750);
 	cam.setServoPosition(CMUCAM4_PAN_SERVO, true, pan_ndx+750);
 
-
-#define DE_SIZE 4
-		CMUcam4_directory_entry_t de[DE_SIZE]; // Directory entry array.
-		int directorySize;
-		do {
-			directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
-			if(directorySize > 0) {
-				for(int i=0; i < std::min(DE_SIZE, directorySize); i++) {
-					cam.removeEntry(de[i].name);
-				}
-			}
-		} while(directorySize > DE_SIZE);
-		printf("Dir size=%d\n", directorySize);
+	clearSD();
 
 			usleep(1000000L);
 			printf("histogram=%d\n", cam.getHistogram(HISTOGRAM_CHANNEL, HISTOGRAM_BINS));
@@ -226,6 +319,9 @@ void loop()
 
     #endif
 
+#define DE_SIZE 4
+	int directorySize;
+	CMUcam4_directory_entry_t de[DE_SIZE]; // Directory entry array.
 	if(E(cam.dumpFrame(CMUCAM4_HR_160, CMUCAM4_VR_120)) == 0) {
 		directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
 		if(directorySize > 0) {
@@ -327,18 +423,109 @@ void createAlphaMat(cv::Mat &mat)
     }
 }
 
+int cur_pan = 750 + servo_steps / 2;
+int cur_tilt = 750 + servo_steps / 2;
+
+void storeCurPos()
+{
+    redisAsyncCommand(aredis, NULL, NULL, "SET cur_tilt %d", cur_tilt);
+    redisAsyncCommand(aredis, NULL, NULL, "SET cur_pan %d", cur_pan);
+}
+
+void move_up(json_t *js)
+{
+	int value = json_integer_value(json_object_get(js, "value"));
+	cur_tilt += value;
+	if(cur_tilt > servo_steps) {
+		cur_tilt = servo_steps;
+	}
+	printf("move up to %d\n", cur_tilt);
+	cam.setServoPosition(CMUCAM4_TILT_SERVO, true, cur_tilt+750);
+	storeCurPos();
+}
+
+void move_down(json_t *js)
+{
+	int value = json_integer_value(json_object_get(js, "value"));
+	cur_tilt -= value;
+	if(cur_tilt < 0) {
+		cur_tilt = 0;
+	}
+	printf("move down to %d\n", cur_tilt);
+	cam.setServoPosition(CMUCAM4_TILT_SERVO, true, cur_tilt+750);
+	storeCurPos();
+}
+
+void move_right(json_t *js)
+{
+	int value = json_integer_value(json_object_get(js, "value"));
+	cur_pan -= value;
+	if(cur_pan < 0) {
+		cur_pan = 0;
+	}
+	printf("move right to %d\n", cur_pan);
+	cam.setServoPosition(CMUCAM4_PAN_SERVO, true, cur_pan+750);
+	storeCurPos();
+}
+
+void move_left(json_t *js)
+{
+	int value = json_integer_value(json_object_get(js, "value"));
+	cur_pan += value;
+	if(cur_pan > servo_steps) {
+		cur_pan = servo_steps;
+	}
+	printf("move left to %d\n", cur_pan);
+	cam.setServoPosition(CMUCAM4_PAN_SERVO, true, cur_pan+750);
+	storeCurPos();
+}
+
+int next_id()
+{
+	return ((redisReply*)redisCommand(redis, "HINCR counter"))->integer;
+}
+
+void make_image(json_t *js)
+{
+	IMBUF ibuf;
+	if(getImage(ibuf) > 0) {
+		redisAsyncCommand(aredis, NULL, NULL, "SET cur_image %b", ibuf.ibuf, ibuf.isize);
+	}
+}
+
+typedef void AFUNC(json_t *js);
+
+struct CMD_FUNC {
+	const char *cmd;
+	AFUNC *func;
+} cmdlist[] = {
+	{ "move_up", move_up },
+	{ "move_down", move_down },
+	{ "move_left", move_left },
+	{ "move_right", move_right },
+	{ "make_image", make_image }
+};
 
 void cmdCallback(redisAsyncContext *c, void *r, void *privdata) {
     redisReply *reply = (redisReply *)r;
     if (reply == NULL) {
 		printf("no reply\n");
 	} else {
+//		printf("lpop %d %p %d %d\n", reply->type, reply->str, REDIS_REPLY_ARRAY, REDIS_REPLY_STRING, REDIS_REPLY_NIL);
 		if(reply->str) {
 			json_error_t error;
 			json_t *js = json_loads(reply->str, JSON_DECODE_ANY, &error);
 			if (js == NULL) {
 				printf("Error JSON decoding:%s", error.text);
 			} else {
+				json_t *cmd = json_object_get(js, "cmd");
+				for(int i=0; i< sizeof(cmdlist) / sizeof(*cmdlist); i++) {
+					CMD_FUNC *cf = &cmdlist[i];
+					if(strcmp(cf->cmd, json_string_value(cmd)) == 0) {
+						cf->func(js);
+						break;
+					}
+				}
 				char *jstr = json_dumps(js, JSON_INDENT(4));
 				if(jstr) {
 					printf("%s\n", jstr);
@@ -350,10 +537,10 @@ void cmdCallback(redisAsyncContext *c, void *r, void *privdata) {
 			}
 		}
 	}
+	redisAsyncCommand(aredis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
 
     /* Disconnect after receiving the reply to GET */
 //    redisAsyncDisconnect(c);
-    redisAsyncCommand(redis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
 }
 
 
@@ -369,27 +556,46 @@ void disconnectCallback(const redisAsyncContext *c, int status) {
     printf("disconnected...\n");
 }
 
+static int n_calls = 0;
+struct event *timer_ev;
+
+void cb_func(evutil_socket_t fd, short what, void *arg)
+{
+    printf("cb_func called %d times so far.\n", ++n_calls);
+	loop();
+    if (n_calls > 100)
+       event_del(timer_ev);
+}
+
 
 int main (int argc, char **argv) {
     signal(SIGPIPE, SIG_IGN);
     base = event_base_new();
 
-    redis = redisAsyncConnect("localhost", 6379);
-    if (redis->err) {
-        /* Let *redis leak for now... */
-        printf("Error: %s\n", redis->errstr);
+	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+	redis = redisConnectWithTimeout((char*)"localhost", 6379, timeout);
+	if (redis->err) {
+        printf("Connection error: %s\n", redis->errstr);
+        exit(1);
+    }
+    aredis = redisAsyncConnect("localhost", 6379);
+    if (aredis->err) {
+        /* Let *aredis leak for now... */
+        printf("Error: %s\n", aredis->errstr);
         return 1;
     }
 	setup();
 	cam_begin();
-    redisLibeventAttach(redis,base);
-    redisAsyncSetConnectCallback(redis,connectCallback);
-    redisAsyncSetDisconnectCallback(redis,disconnectCallback);
-    redisAsyncCommand(redis, NULL, NULL, "SET temp.a %b", argv[argc-1], strlen(argv[argc-1]));
-    redisAsyncCommand(redis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
+    redisLibeventAttach(aredis,base);
+    redisAsyncSetConnectCallback(aredis,connectCallback);
+    redisAsyncSetDisconnectCallback(aredis,disconnectCallback);
+    redisAsyncCommand(aredis, NULL, NULL, "SET temp.a %b", argv[argc-1], strlen(argv[argc-1]));
+    redisAsyncCommand(aredis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
+	timer_ev = event_new(base, -1, EV_PERSIST, cb_func, NULL);
+	struct timeval one_sec = { 5, 0 };
+	event_add(timer_ev, &one_sec);
 	do {
     	event_base_loop(base, EVLOOP_NONBLOCK);
-//		loop();
     } while(!exiting);
     event_base_dispatch(base);
 	cam_end();
