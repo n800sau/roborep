@@ -1,5 +1,7 @@
 #!/bin/sh
 
+../../pi/utils/reset_cam.sh
+
 ## ABSOLUTE path to the spawn-fcgi binary
 SPAWNFCGI="/usr/bin/spawn-fcgi" 
 

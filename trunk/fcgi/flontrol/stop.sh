@@ -6,6 +6,6 @@ PID=`cat $FCGIPID`
 
 if [ "x$PID" != "x" ]
 then
-	sudo kill $PID && rm $FCGIPID
+	sudo kill $PID && rm -f $FCGIPID
 fi
 

@@ -4,6 +4,7 @@
 #include <syslog.h>
 #include <alloca.h>
 #include <fcgiapp.h>
+#include <uriparser/Uri.h>
 
 #include "CMUcam4.h"
 #include "CMUcom4.h"
@@ -17,40 +18,34 @@ int main(int argc, char** argv)
 {
   openlog("testfastcgi", LOG_CONS|LOG_NDELAY, LOG_USER);
 //  cam.begin();
-  int err = FCGX_Init(); /* call before Accept in multithreaded apps */
-  if (err) { syslog (LOG_INFO, "FCGX_Init failed: %d", err); return 1; }
-  FCGX_Request cgi;
-  err = FCGX_InitRequest(&cgi, LISTENSOCK_FILENO, LISTENSOCK_FLAGS);
-  if (err) { syslog(LOG_INFO, "FCGX_InitRequest failed: %d", err); return 2; }
+  FCGX_Stream *in, *out, *err;
+  FCGX_ParamArray envp;
 
-  while (1) {
-    err = FCGX_Accept_r(&cgi);
-    if (err) { syslog(LOG_INFO, "FCGX_Accept_r stopped: %d", err); break; }
-    char** envp;
-    int size = 20000;
-    for (envp = cgi.envp; *envp; ++envp) size += strlen(*envp) + 11;
-    char*  result = (char*) alloca(size);
-    strcpy(result, "Status: 200 OK\r\nContent-Type: text/html\r\n\r\n");
-    strcat(result, "<html><head><title>testcgi</title></head><body><ul>\r\n");
+  while (FCGX_Accept(&in, &out, &err, &envp) >= 0) 
+  {
+    FCGX_FPrintF(out,"Content-type: text/plain\r\n\r\n");      
+    
+    char *pathInfo = FCGX_GetParam("PATH_INFO",envp);
+    
+	FCGX_FPrintF(out,"REQUEST_URI=%s\n", FCGX_GetParam("REQUEST_URI",envp));
 
-    for (envp = cgi.envp; *envp; ++envp) {
-      strcat(result, "<li>"); 
-      strcat(result, *envp); 
-      strcat(result, "</li>\r\n");
-    }
+        const char *query_string = FCGX_GetParam("QUERY_STRING", envp);
+	FCGX_FPrintF(out,"QUERY=%s\n", query_string);
 
-	const char *ruri = getenv("REQUEST_URI");
-	if( ruri ) {
-		strcat(result, "<h2>");
-		strcat(result, ruri);
-		strcat(result, "</h2>\r\n");
-	} else {
-		strcat(result, "REQUEST_URI not found");
-	}
+	 UriUriA uri;
+        UriQueryListA * queryList;
+        int itemCount;
+        if (uriDissectQueryMallocA(&queryList, &itemCount, uri.query.first, uri.query.afterLast) != URI_SUCCESS) {
+			FCGX_FPrintF(out,"QUERY PARSING FAILED\n");
+			
+        }
+        uriFreeQueryListA(queryList);
 
-    strcat(result, "</ul></body></html>\r\n");
-    FCGX_PutStr(result, strlen(result), cgi.out);
+
+
+
   }
+
 
 //	cam.end();
   return 0;
