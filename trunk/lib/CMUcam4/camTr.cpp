@@ -228,6 +228,15 @@ void setCurPos()
     redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET set_pan");
 }
 
+void restoreCurPos()
+{
+	char buf[50];
+	sprintf(buf, "%d", CMUCAM4_TILT_SERVO);
+    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET cur_tilt");
+	sprintf(buf, "%d", CMUCAM4_PAN_SERVO);
+    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET cur_pan");
+}
+
 void loop()
 {
 	CMUcam4_image_data_t f_data;
@@ -299,6 +308,9 @@ void loop()
 			}
 		}
 	}
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	E(redisAsyncCommand(aredis, NULL, NULL, "SET timestamp %d.%6.6d", tv.tv_sec, tv.tv_usec));
 }
 
 
@@ -535,7 +547,7 @@ int main (int argc, char **argv) {
     }
 	setup();
 	cam_begin();
-	storeCurPos();
+	restoreCurPos();
     redisLibeventAttach(aredis,base);
     redisAsyncSetConnectCallback(aredis,connectCallback);
     redisAsyncSetDisconnectCallback(aredis,disconnectCallback);
