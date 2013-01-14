@@ -2,6 +2,8 @@
 #include <time.h>
 #include <signal.h>
 #include <malloc.h>
+#include <syslog.h>
+
 
 #include <vector>
 #include <iostream>
@@ -61,7 +63,7 @@ long _E(long func, unsigned long line)
   {
 	char s_err[256];
 	sprintf(s_err, "Caught error %d on line %d", func, line);
-	printf("\n%s\n", s_err);
+	syslog(LOG_ERR, "\n%s\n", s_err);
     redisAsyncCommand(aredis, NULL, NULL, "SET cam_error_code %s,%d", s_timestamp(), func);
     redisAsyncCommand(aredis, NULL, NULL, "SET cam_error %s,%s", s_timestamp(), s_err);
   }
@@ -84,7 +86,7 @@ void printH(int tilt, int p, const uint8_t *bins, int length)
 		fputs("\n", f);
 		fclose(f);
 	} else {
-		printf("Can not open log file\n");
+		syslog(LOG_ERR, "Can not open log file\n");
 		exit(1);
 	}
 	free(buf);
@@ -128,7 +130,7 @@ void setup()
 //	cam.lineMode(true);
 //	cam.automaticPan(1, 0);
 //	cam.testMode(1);
-	//printf("colorT=%d\n", cam.colorTracking(1));
+	//syslog(LOG_DEBUG, "colorT=%d\n", cam.colorTracking(1));
 	tilt_ndx = 0;
 	pan_ndx = 0;
 	
@@ -164,10 +166,10 @@ int getImage(IMBUF &ibuf)
 		int directorySize = E(cam.listDirectory(de, DE_SIZE, 0));
 		if(directorySize > 0) {
 			const char *fname = de[directorySize - 1].name;
-			printf("File name:%s\n", fname);
+			syslog(LOG_NOTICE, "File name:%s\n", fname);
 			ibuf.isize = E(cam.filePrint(fname, ibuf.ibuf, sizeof(ibuf.ibuf), 0));
 			if(ibuf.isize < 0) {
-				printf("Error reading file %s\n", fname);
+				syslog(LOG_ERR, "Error reading file %s\n", fname);
 			}
 		}
 	}
@@ -203,7 +205,7 @@ void setCurPosCallback(redisAsyncContext *c, void *r, void *privdata) {
 		if(reply->str) {
 			int servo = atoi((char*)privdata);
 			int pos = atoi(reply->str);
-			printf("setting servo %s to %d\n", (char*)privdata, pos);
+			syslog(LOG_NOTICE, "setting servo %s to %d\n", (char*)privdata, pos);
 			free(privdata);
 			E(cam.setServoPosition(servo, true, pos));
 			switch(servo) {
@@ -343,7 +345,7 @@ void loop1()
 void move_up(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
-	printf("move up by %d\n", value);
+	syslog(LOG_DEBUG, "move up by %d\n", value);
 	E(cam.setServoPosition(CMUCAM4_TILT_SERVO, true, cam.getServoPosition(CMUCAM4_TILT_SERVO) + value));
 	storeCurPos();
 }
@@ -351,7 +353,7 @@ void move_up(json_t *js)
 void move_down(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
-	printf("move down by %d\n", value);
+	syslog(LOG_DEBUG, "move down by %d\n", value);
 	E(cam.setServoPosition(CMUCAM4_TILT_SERVO, true, cam.getServoPosition(CMUCAM4_TILT_SERVO) - value));
 	storeCurPos();
 }
@@ -359,7 +361,7 @@ void move_down(json_t *js)
 void move_right(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
-	printf("move right by %d\n", value);
+	syslog(LOG_DEBUG, "move right by %d\n", value);
 	E(cam.setServoPosition(CMUCAM4_PAN_SERVO, true, cam.getServoPosition(CMUCAM4_PAN_SERVO) - value));
 	storeCurPos();
 }
@@ -367,7 +369,7 @@ void move_right(json_t *js)
 void move_left(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
-	printf("move left by %d\n", value);
+	syslog(LOG_DEBUG, "move left by %d\n", value);
 	E(cam.setServoPosition(CMUCAM4_PAN_SERVO, true, cam.getServoPosition(CMUCAM4_PAN_SERVO) + value));
 	storeCurPos();
 }
@@ -376,7 +378,7 @@ void set_servo_hpos(json_t *js)
 {
 	int angle = json_integer_value(json_object_get(js, "angle"));
 	int pos = (servo_max - servo_min)/ 180. * (angle + 90) + servo_min;
-	printf("pan to %d\n", pos);
+	syslog(LOG_DEBUG, "pan to %d\n", pos);
 	E(cam.setServoPosition(CMUCAM4_PAN_SERVO, true, pos));
 	storeCurPos();
 }
@@ -385,7 +387,7 @@ void set_servo_vpos(json_t *js)
 {
 	int angle = json_integer_value(json_object_get(js, "angle"));
 	int pos = (servo_max - servo_min)/ 180. * (angle + 90) + servo_min;
-	printf("tilt to %d\n", pos);
+	syslog(LOG_DEBUG, "tilt to %d\n", pos);
 	E(cam.setServoPosition(CMUCAM4_TILT_SERVO, true, pos));
 	storeCurPos();
 }
@@ -470,14 +472,14 @@ struct CMD_FUNC {
 void cmdCallback(redisAsyncContext *c, void *r, void *privdata) {
     redisReply *reply = (redisReply *)r;
     if (reply == NULL) {
-		printf("no reply\n");
+		syslog(LOG_WARNING, "no reply\n");
 	} else {
 //		printf("lpop %d %p %d %d\n", reply->type, reply->str, REDIS_REPLY_ARRAY, REDIS_REPLY_STRING, REDIS_REPLY_NIL);
 		if(reply->str) {
 			json_error_t error;
 			json_t *js = json_loads(reply->str, JSON_DECODE_ANY, &error);
 			if (js == NULL) {
-				printf("Error JSON decoding:%s", error.text);
+				syslog(LOG_ERR, "Error JSON decoding:%s", error.text);
 			} else {
 				json_t *cmd = json_object_get(js, "cmd");
 				for(int i=0; i< sizeof(cmdlist) / sizeof(*cmdlist); i++) {
@@ -489,10 +491,10 @@ void cmdCallback(redisAsyncContext *c, void *r, void *privdata) {
 				}
 				char *jstr = json_dumps(js, JSON_INDENT(4));
 				if(jstr) {
-					printf("%s\n", jstr);
+					syslog(LOG_DEBUG, "%s\n", jstr);
 					free(jstr);
 				} else {
-					printf("Can not decode JSON\n");
+					syslog(LOG_ERR, "Can not decode JSON\n");
 				}
 				json_decref(js);
 			}
@@ -507,14 +509,14 @@ void cmdCallback(redisAsyncContext *c, void *r, void *privdata) {
 
 void connectCallback(const redisAsyncContext *c) {
     ((void)c);
-    printf("connected...\n");
+    syslog(LOG_NOTICE, "connected...\n");
 }
 
 void disconnectCallback(const redisAsyncContext *c, int status) {
     if (status != REDIS_OK) {
-        printf("Error: %s\n", c->errstr);
+        syslog(LOG_ERR, c->errstr);
     }
-    printf("disconnected...\n");
+    syslog(LOG_NOTICE, "disconnected...\n");
 }
 
 static int n_calls = 0;
@@ -522,7 +524,7 @@ struct event *timer_ev;
 
 void cb_func(evutil_socket_t fd, short what, void *arg)
 {
-    printf("cb_func called %d times so far.\n", ++n_calls);
+    syslog(LOG_NOTICE, "cb_func called %d times so far.\n", ++n_calls);
 	loop();
 //    if (n_calls > 100)
 //       event_del(timer_ev);
@@ -530,19 +532,23 @@ void cb_func(evutil_socket_t fd, short what, void *arg)
 
 
 int main (int argc, char **argv) {
+	setlogmask (LOG_UPTO (LOG_DEBUG));
+	openlog("camTr", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+	syslog(LOG_NOTICE, "Hello from camTr\n");
     signal(SIGPIPE, SIG_IGN);
     base = event_base_new();
 
 	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
 	redis = redisConnectWithTimeout((char*)"localhost", 6379, timeout);
 	if (redis->err) {
-        printf("Connection error: %s\n", redis->errstr);
+        syslog(LOG_ERR, "Connection error: %s\n", redis->errstr);
         exit(1);
     }
     aredis = redisAsyncConnect("localhost", 6379);
     if (aredis->err) {
         /* Let *aredis leak for now... */
-        printf("Error: %s\n", aredis->errstr);
+        syslog(LOG_ERR, "Error: %s\n", aredis->errstr);
         return 1;
     }
 	setup();
@@ -560,6 +566,7 @@ int main (int argc, char **argv) {
     } while(!exiting);
     event_base_dispatch(base);
 	cam_end();
+	closelog();
     return 0;
 }
 
