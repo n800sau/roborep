@@ -48,7 +48,7 @@ void I2CWire::writeToDevice(uint8_t reg, uint8_t val)
    buf[0]=reg; buf[1]=val;
    if (write(fd, buf, 2) != 2)
    {
-      fprintf(stderr, "Can't write to HMC5883L\n");
+      fprintf(stderr, "Can't write to i2c slave\n");
       //exit(1);
    }
 }

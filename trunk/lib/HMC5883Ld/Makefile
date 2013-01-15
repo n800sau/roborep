@@ -1,8 +1,9 @@
-CC=g++ -I/usr/include/hiredis
+CC=g++ -I/usr/include/hiredis -I../I2CWire
 CCOPTS=-L.
 STRIP=-strip
-OBJECTS=I2CWire.o HMC5883L.o
-HEADERS=I2CWire.h HMC5883L.h
+OBJECTS=HMC5883L.o
+HEADERS=HMC5883L.h
+LIBS=../I2CWire/libi2cwire.a
 NAME=hmc5883ld
 
 .cpp.o: $(HEADERS)
@@ -10,12 +11,9 @@ NAME=hmc5883ld
 
 all: $(NAME)
 
-libi2cwire.a: $(OBJECTS) $(HEADERS)
-		$(AR) r libi2cwire.a $(OBJECTS)
-
 clean:
-	rm -f $(OBJECTS) $(NAME) libi2cwire.a
+	rm -f $(OBJECTS) $(NAME)
 
-$(NAME):	$(NAME).cpp libi2cwire.a
-	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) -lhiredis -levent -ljansson libi2cwire.a
+$(NAME):	$(NAME).cpp $(OBJECTS) $(LIBS)
+	$(CC) -o $(NAME) $(NAME).cpp $(OBJECTS) $(LIBS) $(CCOPTS) -lhiredis -levent -ljansson
 #	$(STRIP) -s $(NAME)

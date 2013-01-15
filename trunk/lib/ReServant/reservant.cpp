@@ -1,69 +1,63 @@
+#include "reservant.h"
+
 #include <stdio.h>
 #include <math.h>
 #include <syslog.h>
 #include <signal.h>
 #include <malloc.h>
 #include <string.h>
-
-#include <hiredis.h>
-#include <async.h>
 #include <adapters/libevent.h>
 
-#include <jansson.h>
-
-
-typedef void AFUNC(json_t *js);
-
-struct CMD_FUNC {
-	const char *cmd;
-	AFUNC *func;
-};
-
-
-class RedisServant
+//#################
+void ReServant_connectCallback(const redisAsyncContext *c)
 {
+    ((void)c);
+    syslog(LOG_NOTICE, "connected...\n");
+}
 
-	private:
-		const char *r_cmd;
-		const CMD_FUNC *cmdlist;
-		const char *logname;
+void ReServant_disconnectCallback(const redisAsyncContext *c, int status) {
+    if (status != REDIS_OK) {
+        syslog(LOG_ERR, c->errstr);
+    }
+    syslog(LOG_NOTICE, "disconnected...\n");
+}
 
-		int exiting;
-		int n_calls;
-
-		struct event_base *base;
-		struct event *timer_ev;
-
-		redisAsyncContext *aredis;
-		redisContext *redis;
-
-	protected:
-		virtual void create_servant() = 0;
-		void loop();
-
-		static void cmdCallback(redisAsyncContext *c, void *r, void *privdata);
-		static void connectCallback(const redisAsyncContext *c);
-		static void disconnectCallback(const redisAsyncContext *c, int status);
-		static void cb_func(evutil_socket_t fd, short what, void *privdata);
-
-	public:
-
-		RedisServant(const char *r_cmd, const CMD_FUNC *cmdlist, const char *logname);
-		~RedisServant();
-
-		void run();
-
-};
-
-
-RedisServant::RedisServant(const char *r_cmd, const CMD_FUNC *cmdlist, const char *logname):exiting(0),n_calls(0)
+void ReServant_cb_func(evutil_socket_t fd, short what, void *privdata)
 {
+	ReServant *ths = (ReServant *)privdata;
+	ths->cb_func(what);
+}
+
+void ReServant_cmdCallback(redisAsyncContext *c, void *r, void *privdata)
+{
+	ReServant *ths = (ReServant *)privdata;
+	ths->cmdCallback(c, (redisReply *)r);
+}
+//###############
+
+
+ReServant::ReServant(const char *r_cmd, const char *logname):exiting(0),n_calls(0)
+{
+	const CMD_FUNC cmdlist[] = {};
+	this->setCmdList(cmdlist);
 	this->logname = logname;
 	this->r_cmd = r_cmd;
+}
+
+ReServant::~ReServant()
+{
+}
+
+void ReServant::create_servant()
+{
+}
+
+void ReServant::setCmdList(const CMD_FUNC *cmdlist)
+{
 	this->cmdlist = cmdlist;
 }
 
-void RedisServant::run()
+void ReServant::run()
 {
 	setlogmask (LOG_UPTO (LOG_DEBUG));
 	openlog(logname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
@@ -88,10 +82,10 @@ void RedisServant::run()
 	create_servant();
 
     redisLibeventAttach(aredis,base);
-    redisAsyncSetConnectCallback(aredis, connectCallback);
-    redisAsyncSetDisconnectCallback(aredis, disconnectCallback);
-    redisAsyncCommand(aredis, cmdCallback, this, "LPOP %s", r_cmd);
-	timer_ev = event_new(base, -1, EV_PERSIST, cb_func, this);
+    redisAsyncSetConnectCallback(aredis, ReServant_connectCallback);
+    redisAsyncSetDisconnectCallback(aredis, ReServant_disconnectCallback);
+    redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP %s", r_cmd);
+	timer_ev = event_new(base, -1, EV_PERSIST, ReServant_cb_func, this);
 	struct timeval one_sec = { 5, 0 };
 	event_add(timer_ev, &one_sec);
 	do {
@@ -101,37 +95,21 @@ void RedisServant::run()
 	closelog();
 }
 
-void RedisServant::loop()
+void ReServant::loop()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	redisAsyncCommand(aredis, NULL, NULL, "SET timestamp %d.%6.6d", tv.tv_sec, tv.tv_usec);
 }
 
-void RedisServant::connectCallback(const redisAsyncContext *c)
+void ReServant::cb_func(short what)
 {
-    ((void)c);
-    syslog(LOG_NOTICE, "connected...\n");
+    syslog(LOG_NOTICE, "cb_func called %d times so far.\n", ++n_calls);
+	loop();
 }
 
-void RedisServant::disconnectCallback(const redisAsyncContext *c, int status) {
-    if (status != REDIS_OK) {
-        syslog(LOG_ERR, c->errstr);
-    }
-    syslog(LOG_NOTICE, "disconnected...\n");
-}
-
-void RedisServant::cb_func(evutil_socket_t fd, short what, void *privdata)
+void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 {
-	RedisServant *ths = (RedisServant *)privdata;
-    syslog(LOG_NOTICE, "cb_func called %d times so far.\n", ++ths->n_calls);
-	ths->loop();
-}
-
-void RedisServant::cmdCallback(redisAsyncContext *c, void *r, void *privdata)
-{
-	RedisServant *ths = (RedisServant *)privdata;
-	redisReply *reply = (redisReply *)r;
 	if (reply == NULL) {
 		syslog(LOG_WARNING, "no reply\n");
 	} else {
@@ -143,7 +121,7 @@ void RedisServant::cmdCallback(redisAsyncContext *c, void *r, void *privdata)
 			} else {
 				json_t *cmd = json_object_get(js, "cmd");
 				for(int i=0; i< sizeof(cmdlist) / sizeof(*cmdlist); i++) {
-					const CMD_FUNC *cf = &ths->cmdlist[i];
+					const CMD_FUNC *cf = &cmdlist[i];
 					if(strcmp(cf->cmd, json_string_value(cmd)) == 0) {
 						cf->func(js);
 						break;
@@ -160,6 +138,5 @@ void RedisServant::cmdCallback(redisAsyncContext *c, void *r, void *privdata)
 			}
 		}
 	}
-	redisAsyncCommand(ths->aredis, cmdCallback, NULL, "LPOP %s", ths->r_cmd);
+	redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP %s", r_cmd);
 }
-
