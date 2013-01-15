@@ -9,9 +9,9 @@
 #include <iostream>
 #include <string>
 
-#include "hiredis.h"
-#include "async.h"
-#include "adapters/libevent.h"
+#include <hiredis.h>
+#include <async.h>
+#include <adapters/libevent.h>
 
 #include <jansson.h>
 
@@ -312,7 +312,7 @@ void loop()
 	}
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	E(redisAsyncCommand(aredis, NULL, NULL, "SET timestamp %d.%6.6d", tv.tv_sec, tv.tv_usec));
+	redisAsyncCommand(aredis, NULL, NULL, "SET timestamp %d.%6.6d", tv.tv_sec, tv.tv_usec);
 }
 
 

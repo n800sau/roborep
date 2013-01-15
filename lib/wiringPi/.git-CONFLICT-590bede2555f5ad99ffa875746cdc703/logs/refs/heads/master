@@ -1,1 +1,3 @@
 0000000000000000000000000000000000000000 183c5a6b5c16f15b1da7812744f58d19a5446bf6 n800s <n800s@n800s-HP-4525s.(none)> 1350882974 +1100	clone: from git://git.drogon.net/wiringPi
+183c5a6b5c16f15b1da7812744f58d19a5446bf6 e13527818fbb46202acf2cb9ecebe8e7228db9ba n800s <n800sau@gmail.com> 1357864652 +1100	commit: all STATIC only
+e13527818fbb46202acf2cb9ecebe8e7228db9ba b647367d5c8788c27a1dc3050114df97c171d690 n800s <n800sau@gmail.com> 1357865199 +1100	commit (merge): Merge branch 'master' of git://git.drogon.net/wiringPi
