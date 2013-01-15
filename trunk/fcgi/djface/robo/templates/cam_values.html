@@ -1,0 +1,63 @@
+<table border="0">
+<tr>
+<td>Timestamp:</td><td>{{ timestamp }}</td>
+</tr>
+<tr>
+<td>Last activity timestamp:</td><td>{{ last_activity_timestamp }}</td>
+</tr>
+<tr>
+<td>{{ time_diff }}</td><td>late</td>
+</tr>
+<tr>
+<td>Cam pan::</td><td>{{ cur_pan }}</td>
+</tr>
+<tr>
+<td>Cam tilt::</td><td>{{ cur_tilt }}</td>
+</tr>
+<tr>
+<td>Heading degrees::</td><td>{{ cur_heading_degrees }}</td>
+</tr>
+<tr>
+<td colspan="2"><canvas id="m_canvas"></canvas></td>
+</tr>
+</table>
+<h2>Acceleration</h2>
+<table border="0">
+<tr>
+<td>X</td><td>{{ acc_x }}</td>
+</tr>
+<tr>
+<td>Y</td><td>{{ acc_y }}</td>
+</tr>
+<tr>
+<td>Z</td><td>{{ acc_z }}</td>
+</tr>
+<tr>
+<th>XZ</th><th>YZ</th>
+</tr>
+<tr>
+<td><canvas id="xz_canvas"></canvas></td><td><canvas id="yz_canvas"></canvas></td>
+</tr>
+</table>
+<script>
+	var ctx = document.getElementById('m_canvas').getContext('2d');
+	ctx.fillStyle = "red";
+	ctx.beginPath();
+	ctx.translate(70, 90);
+	ctx.rotate({{ cur_heading_degrees }} * Math.PI / 180);
+	ctx.moveTo(40, 60);
+	ctx.lineTo(0, -60);
+	ctx.lineTo(-40, 60);
+	ctx.bezierCurveTo(-40, 60, 0, 0, 40, 60); // <- this is right formula for the image on the right ->
+	ctx.moveTo(0, 0);
+	ctx.fill();
+	var ctx = document.getElementById('xz_canvas').getContext('2d');
+	ctx.fillStyle = "red";
+	var ctx = document.getElementById('yz_canvas').getContext('2d');
+	ctx.fillStyle = "red";
+	ctx.beginPath();
+	ctx.translate(50, 50);
+	ctx.rotate(45 * Math.PI / 180);
+	ctx.moveTo(40, 60);
+	ctx.lineTo(0, -60);
+</script>
