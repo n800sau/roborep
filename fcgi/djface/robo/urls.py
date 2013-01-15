@@ -8,6 +8,7 @@ import views
 urlpatterns = patterns('',
 
 	url('^$', views.home),
+	url('^monitor/$', views.monitor),
 	url('^histogram/$', views.histogram),
 	url('^move_right/$', views.move_right),
 	url('^move_left/$', views.move_left),
@@ -15,6 +16,7 @@ urlpatterns = patterns('',
 	url('^move_down/$', views.move_down),
 	url('^make_image/$', views.make_image),
 	url('^get_image/$', views.get_image),
+	url('^cam_values/$', views.cam_values),
 
 	# Examples:
 	# url(r'^$', 'djface.views.home', name='home'),

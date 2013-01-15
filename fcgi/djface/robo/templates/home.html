@@ -2,13 +2,22 @@
 <!DOCTYPE html> 
 <html> 
 <head>
-	<base href="https://n800s.dyndns.org:7443/robo/">
+	<base href="/robo/">
 	<title>Robo Homo</title> 
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
 	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
-<--	<script src="js/robo.js"></script> 
+
+
+	<script class="include" type="text/javascript" src="{{ STATIC_URL }}jquery.jqplot/jquery.jqplot.min.js"></script>
+	<script class="include" type="text/javascript" src="{{ STATIC_URL }}jquery.jqplot/plugins/jqplot.barRenderer.min.js"></script>
+	<script class="include" type="text/javascript" src="{{ STATIC_URL }}jquery.jqplot/plugins/jqplot.pieRenderer.min.js"></script>
+	<script class="include" type="text/javascript" src="{{ STATIC_URL }}jquery.jqplot/plugins/jqplot.categoryAxisRenderer.min.js"></script>
+	<script class="include" type="text/javascript" src="{{ STATIC_URL }}jquery.jqplot/plugins/jqplot.pointLabels.min.js"></script>
+	<link href="{{ STATIC_URL }}jquery.terminal/css/jquery.terminal.css" rel="stylesheet"/>
+	<script class="include" type="text/javascript" src="{{ STATIC_URL }}jquery.terminal/js/jquery.terminal-0.4.22.min.js"></script>
+
 	<style type="text/css">
 		html.busy, html.busy * {
 			cursor: wait !important;
@@ -22,12 +31,26 @@
 		$.mobile.loader.prototype.options.html = "";
 	});
 	$(document).ready(function() {
+		var nimg = 1;
+		function update_images() { 
+			$("#placeholder").attr("src", "{% url 'robo.views.get_image' %}?n=" + nimg);
+			nimg++;
+		}
+		window.setInterval(update_images, 10000);
 		$.ajaxSetup({
 			cache: false
 		});
-		var update_images = function(msg) {
+//		var update_images = function(msg) {
 //			alert("update:" + msg);
-		};
+//		};
+		$('#terminal').terminal({
+			echo: function(arg1) {
+				this.echo(arg1);
+			},
+			add: function(a, b) {
+				this.echo(parseInt(a)+parseInt(b));
+			}
+		}, { prompt: '>', greeting: false });
 		$("#get_image").click(function () {
 			$("#placeholder").attr("src", "{% url 'robo.views.get_image' %}");
 		});
@@ -56,6 +79,30 @@
 				url="{% url 'robo.views.move_down' %}"
 			).done(update_images);
 		});
+		$("#plot").click(function () {
+	        plot5 = $.jqplot('chart5', [[[2,1], [null,2], [7,3], [10,4]]], {
+	            captureRightClick: true,
+	            seriesDefaults:{
+	                renderer:$.jqplot.BarRenderer,
+	                shadowAngle: 135,
+	                rendererOptions: {
+	                    barDirection: 'horizontal',
+	                    highlightMouseDown: true    
+	                },
+	                pointLabels: {show: true, formatString: '%d'}
+	            },
+	            legend: {
+	                show: true,
+	                location: 'e',
+	                placement: 'outside'
+	            },
+	            axes: {
+	                yaxis: {
+	                    renderer: $.jqplot.CategoryAxisRenderer
+	                }
+	            }
+			});
+		});
 //	$.ajaxStart(function() {
 //		$.addClass('busy');
 //	}).ajaxComplete(function() {
@@ -67,9 +114,9 @@
 //	    $('camver').html(data);
 //	  }
 //	});
-	$(function() {
-	        $( "#menu" ).menu();
-	});
+//	$(function() {
+//	        $("#menu").menu();
+//	});
 });
 </script>
 </head> 
@@ -81,9 +128,11 @@
 		<h1>Robo homo</h1>
 	</div><!-- /header -->
 
+	<div id="terminal"/>
+
 	<ul id="menu">
 		<li><a href="{% url 'robo.views.histogram' %}" data-ajax="false">Histogram {{page}}</a></li>
-		<li><a href="cam">Camera</a></li>
+		<li><a href="{% url 'robo.views.monitor' %}" data-ajax="false">Monitor</a></li>
 	</ul>
 
 	<div data-role="content">
@@ -98,7 +147,10 @@
 <tr><td><button type="button" id="move_left">&lt;</button></td><td><button type="button" id="make_image">img</button></td><td><button type="button" id="move_right">&gt;</button></td></tr>
 <tr><td colspan="3" align="center"><button type="button" id="move_down">Down</button></td></tr>
 </table>
+    <div><span>You Clicked: </span><span id="info1">Nothing yet</span></div>
+   <div id="chart5" style="margin-top:20px; margin-left:20px; width:300px; height:300px;"></div>
 <button type="button" id="get_image">get</button>
+<button type="button" id="plot">plot</button>
 </div><!-- /page -->
 
 </body>

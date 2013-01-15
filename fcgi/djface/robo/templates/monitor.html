@@ -1,0 +1,38 @@
+{% load url from future %}
+<!DOCTYPE html> 
+<html>
+<head>
+	<base href="/robo/">
+	<title>Robo Monitor</title> 
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+	<script> 
+		var reload_info = function() {
+			$('#cam_values').load("{% url 'robo.views.cam_values' %}");
+		};
+		var auto_refresh = setInterval(reload_info , 5000);
+		$(document).ready(function() {
+			reload_info();
+		});
+	</script>
+</head>
+<body>
+	<div data-role="header">
+		<h1>Monitor</h1>
+	</div><!-- /header -->
+	<table>
+	<tr>
+		<td>
+			<div id="cam_values"/>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<canvas id="canvas"></canvas>
+		</td>
+	</tr>
+	</table>
+</body>
+</html>
