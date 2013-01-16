@@ -5,32 +5,77 @@
 	<base href="/robo/">
 	<title>Robo Monitor</title> 
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
-	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />
-	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
-	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
-	<script> 
+	<script>
+		function insertAndExecute(id, text)
+		{
+			domelement = document.getElementById(id);
+			domelement.innerHTML = text;
+			var scripts = [];
+
+			ret = domelement.childNodes;
+			for ( var i = 0; ret[i]; i++ ) {
+				if ( scripts && nodeName( ret[i], "script" ) && (!ret[i].type || ret[i].type.toLowerCase() === "text/javascript") ) {
+					scripts.push( ret[i].parentNode ? ret[i].parentNode.removeChild( ret[i] ) : ret[i] );
+				}
+			}
+
+			for(script in scripts)
+			{
+				evalScript(scripts[script]);
+			}
+		}
+		function nodeName( elem, name ) {
+			return elem.nodeName && elem.nodeName.toUpperCase() === name.toUpperCase();
+		}
+		function evalScript( elem ) {
+			data = ( elem.text || elem.textContent || elem.innerHTML || "" );
+
+			var head = document.getElementsByTagName("head")[0] || document.documentElement,
+			script = document.createElement("script");
+			script.type = "text/javascript";
+			script.appendChild( document.createTextNode( data ) );
+			head.insertBefore( script, head.firstChild );
+			head.removeChild( script );
+
+			if ( elem.parentNode ) {
+				elem.parentNode.removeChild( elem );
+			}
+		}
+
+		var bustcachevar = 1;
+		var bustcacheparameter = "";
+		function ajaxpage(url, containerid) {
+			var page_request = false
+			// if Mozilla, Safari etc
+			page_request = new XMLHttpRequest()
+			page_request.onreadystatechange = function() {
+				loadpage(page_request, containerid)
+			}
+			if (bustcachevar) {
+				//if bust caching of external page
+				bustcacheparameter = (url.indexOf("?") != -1) ? "&" + new Date().getTime() : "?" + new Date().getTime()
+			}
+			page_request.open('GET', url + bustcacheparameter, true)
+			page_request.send(null)
+		}
+		function loadpage(page_request, containerid) {
+			if (page_request.readyState == 4 && page_request.status == 200) {
+				document.getElementById(containerid).innerHTML = page_request.responseText;
+			}
+		}
 		var reload_info = function() {
-			$('#cam_values').load("{% url 'robo.views.cam_values' %}");
+			ajaxpage("{% url 'robo.views.cam_values' %}", 'cam_values');
 		};
 		var auto_refresh = setInterval(reload_info , 5000);
-		$(document).ready(function() {
-			reload_info();
-		});
 	</script>
 </head>
-<body>
+<body onLoad="reload_info()">
 	<div data-role="header">
-		<h1>Monitor</h1>
 	</div><!-- /header -->
 	<table>
 	<tr>
 		<td>
 			<div id="cam_values"/>
-		</td>
-	</tr>
-	<tr>
-		<td>
-			<canvas id="canvas"></canvas>
 		</td>
 	</tr>
 	</table>
