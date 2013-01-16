@@ -67,6 +67,8 @@ def cam_values(request):
 	values['acc_x'] = r.get('adxl345.x')
 	values['acc_y'] = r.get('adxl345.y')
 	values['acc_z'] = r.get('adxl345.z')
+	values['xz_degrees'] = r.get('adxl345.xz')
+	values['yz_degrees'] = r.get('adxl345.yz')
 	try:
 		act_time = float(r.get('timestamp'))
 		atimestamp = time.strftime('%d.%m.%Y %H:%M:%S', time.localtime(act_time))
