@@ -1,19 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <linux/i2c-dev.h>
-
 #include "HMC5883L.h"
+#include <syslog.h>
+#include <math.h>
 
 
-HMC5883L::HMC5883L()
+HMC5883L::HMC5883L():ReServant("cmd.hmc5883l", "hmc5883l"),m_Scale(1)
 {
-  m_Scale = 1;
+	const CMD_FUNC cmdlist[] = {};
+	this->setCmdList(cmdlist);
 }
 
 MagnetometerRaw HMC5883L::ReadRawAxis()
@@ -113,5 +106,63 @@ const char* HMC5883L::GetErrorText(int errorCode)
 		return ErrorCode_1;
 	
 	return "Error not defined.";
+}
+
+void HMC5883L::create_servant()
+{
+	ReServant::create_servant();
+}
+
+void HMC5883L::loop()
+{
+	syslog(LOG_NOTICE, "Setting scale to +/- 1.3 Ga\n");
+	int error = SetScale(GAUSS_1_3); // Set the scale of the compass->
+	if(error != 0) // If there is an error, print it out.
+	  syslog(LOG_ERR, "%d:%s\n", error, GetErrorText(error));
+	// Retrive the raw values from the compass (not scaled).
+	MagnetometerRaw raw = ReadRawAxis();
+	// Retrived the scaled values from the compass (scaled to the configured scale).
+	MagnetometerScaled scaled = ReadScaledAxis();
+
+	// Values are accessed like so:
+	int MilliGauss_OnThe_XAxis = scaled.XAxis;// (or YAxis, or ZAxis)
+
+	// Calculate heading when the magnetometer is level, then correct for signs of axis.
+	float heading = atan2(scaled.YAxis, scaled.XAxis);
+
+	// Once you have your heading, you must then add your 'Declination Angle', which is the 'Error' of the magnetic field in your location.
+	// Find yours here: http://www.magnetic-declination.com/
+	// Mine is: 2� 37' W, which is 2.617 Degrees, or (which we need) 0.0456752665 radians, I will use 0.0457
+	// If you cannot find your Declination, comment out these two lines, your compass will be slightly off.
+		//12 + 34/60E = 12.56667 / 180 * pi() = 0.2193297
+	float declinationAngle = 0.2193297;
+	heading += declinationAngle;
+
+	// Correct for when signs are reversed.
+	if(heading < 0)
+		heading += 2 * M_PI;
+  
+	// Check for wrap due to addition of declination.
+	if(heading > 2 * M_PI)
+		heading -= 2*M_PI;
+
+	// Convert radians to degrees for readability.
+	float headingDegrees = heading * 180/M_PI; 
+
+	syslog(LOG_NOTICE, "Raw: %d %d %d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET raw.X %d", raw.XAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET raw.Y %d", raw.YAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET raw.Z %d", raw.ZAxis);
+
+	syslog(LOG_NOTICE, "Scaled: %g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET scaled.X %g", scaled.XAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET scaled.Y %g", scaled.YAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET scaled.Z %g", scaled.ZAxis);
+
+	syslog(LOG_NOTICE, "Heading: %g radians, %g degrees\n", heading, headingDegrees);
+	redisAsyncCommand(aredis, NULL, NULL, "SET heading.radians %g", heading);
+	redisAsyncCommand(aredis, NULL, NULL, "SET heading.degrees %g", headingDegrees);
+
+	ReServant::loop();
 }
 

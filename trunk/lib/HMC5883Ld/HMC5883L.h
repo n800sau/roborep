@@ -24,7 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HMC5883L_h
 
 #include <inttypes.h>
-#include "I2CWire.h"
+#include <reservant.h>
+#include <I2CWire.h>
+
 
 #define HMC5883L_Address 0x1E
 #define ConfigurationRegisterA 0x00
@@ -55,8 +57,18 @@ struct MagnetometerRaw
 	int ZAxis;
 };
 
-class HMC5883L
+class HMC5883L:public ReServant
 {
+	private:
+	  float m_Scale;
+
+	protected:
+		I2CWire i2cwire;
+		void Write(int address, int byte);
+		uint8_t *Read(int address, uint8_t *buf, int length);
+		virtual void create_servant();
+		virtual void loop();
+
 	public:
 	  HMC5883L();
 
@@ -68,12 +80,5 @@ class HMC5883L
 
 	  const char* GetErrorText(int errorCode);
 
-	protected:
-		I2CWire i2cwire;
-		void Write(int address, int byte);
-		uint8_t *Read(int address, uint8_t *buf, int length);
-
-	private:
-	  float m_Scale;
 };
 #endif
