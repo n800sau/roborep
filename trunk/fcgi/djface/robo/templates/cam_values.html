@@ -36,6 +36,9 @@
 <th>XZ</th><th>YZ</th>
 </tr>
 <tr>
+<td>{{ xz_degrees }}</td><td>{{ yz_degrees }}</td>
+</tr>
+<tr>
 <td><canvas id="xz_canvas"></canvas></td><td><canvas id="yz_canvas"></canvas></td>
 </tr>
 </table>
@@ -53,11 +56,18 @@
 	ctx.fill();
 	var ctx = document.getElementById('xz_canvas').getContext('2d');
 	ctx.fillStyle = "red";
+	ctx.beginPath();
+	ctx.translate(50, 50);
+	ctx.rotate({{ xz_degrees }} * Math.PI / 180);
+	ctx.moveTo(40, 60);
+	ctx.lineTo(0, -60);
+	ctx.stroke();
 	var ctx = document.getElementById('yz_canvas').getContext('2d');
 	ctx.fillStyle = "red";
 	ctx.beginPath();
 	ctx.translate(50, 50);
-	ctx.rotate(45 * Math.PI / 180);
+	ctx.rotate({{ yz_degrees }} * Math.PI / 180);
 	ctx.moveTo(40, 60);
 	ctx.lineTo(0, -60);
+	ctx.stroke();
 </script>
