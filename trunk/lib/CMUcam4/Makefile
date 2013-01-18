@@ -1,5 +1,5 @@
 CC=g++
-CCOPTS=-L. -I../wiringPi/wiringPi
+CCOPTS=-L. -I../wiringPi
 STRIP=-strip
 OBJECTS=CMUcam4.o CMUcom4.o
 HEADERS=CMUcam4.h CMUcom4.h
