@@ -1,25 +1,19 @@
-CC=g++ -I../wiringPi/wiringPi -I/usr/include/hiredis
-CCOPTS=-L.
+CC=g++
+CCOPTS=-L. -I../wiringPi -I../CMUcam4 -I/usr/include/hiredis
 STRIP=-strip
-OBJECTS=CMUcam4.o CMUcom4.o
-HEADERS=CMUcam4.h CMUcom4.h
+OBJECTS=camTr.o
+HEADERS=../CMUcam4/CMUcam4.h ../CMUcam4/CMUcom4.h
+LIBS=../CMUcam4/libcmucam4.a ../wiringPi/libwiringPi.a
 NAME=camTr
-TNAME=camTest
 
 .cpp.o: $(HEADERS)
 		$(CC) $(CCOPTS) -c $<
 
 all: $(NAME)
 
-libcmucam4.a: $(OBJECTS) $(HEADERS)
-		$(AR) r libcmucam4.a $(OBJECTS)
-
 clean:
-	rm -f $(OBJECTS) $(NAME) libcmucam4.a
+	rm -f $(OBJECTS) $(NAME)
 
-$(NAME):	$(NAME).cpp libcmucam4.a
-	$(CC) -o $(NAME) $(NAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a -lhiredis -levent -ljansson
+$(NAME):	$(HEADERS) $(OBJECTS)
+	$(CC) -o $(NAME) $(CCOPTS) $(OBJECTS) $(LIBS) -lhiredis -levent -ljansson
 #	$(STRIP) -s $(NAME)
-
-$(TNAME):	$(TNAME).cpp libcmucam4.a
-	$(CC) -o $(TNAME) $(TNAME).cpp $(CCOPTS) libcmucam4.a ../wiringPi/wiringPi/libwiringPi.a -lopencv_core -lopencv_highgui -lhiredis -levent -ljansson
