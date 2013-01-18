@@ -39,7 +39,11 @@ int I2CWire::requestFromDevice(uint8_t addr, int num, uint8_t buf[])
          //exit(1);
       }
 
-	return read(fd, buf, num);
+	int n = read(fd, buf, num);
+	if( n != num) {
+		fprintf(stderr, "Error reading from i2c slave (received %d != requested %d)\n", n, num);
+	}
+	return n;
 }
 
 void I2CWire::writeToDevice(uint8_t reg, uint8_t val)
