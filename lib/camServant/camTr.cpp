@@ -1,24 +1,26 @@
-#include <unistd.h>
+#include <reservant.h>
+#include <syslog.h>
 #include <time.h>
-#include <signal.h>
+#include <unistd.h>
+
+#include <string>
+
+/*
 #include <malloc.h>
 #include <syslog.h>
 
 
 #include <vector>
 #include <iostream>
-#include <string>
 
 #include <hiredis.h>
 #include <async.h>
 #include <adapters/libevent.h>
 
 #include <jansson.h>
-
-#include "CMUcam4.h"
-#include "CMUcom4.h"
-
-const char r_cam_cmd[] = "cam_cmd";
+*/
+#include <CMUcam4.h>
+#include <CMUcom4.h>
 
 #define RED_MIN 20
 #define RED_MAX 255
@@ -30,21 +32,9 @@ const char r_cam_cmd[] = "cam_cmd";
 #define LED_BLINK 5 // 5 Hz
 #define WAIT_TIME 5000 // 5 seconds
 
-CMUcam4 cam(CMUCOM4_SERIAL);
-struct event_base *base;
-redisAsyncContext *aredis;
-redisContext *redis;
-int exiting = 0;
-int tilt_ndx = 0;
-int pan_ndx = 0;
-int pan_dir = 1;
 const int servo_min = 750;
 const int servo_max = 2250;
 const int servo_steps = servo_max - servo_min;
-
-
-int h_chan = CMUCAM4_GREEN_CHANNEL;
-int h_bins = CMUCAM4_H4_BINS;
 
 #define E(func) (_E((func), __LINE__))
 
@@ -57,7 +47,64 @@ const char *s_timestamp()
 	return rs;
 }
 
-long _E(long func, unsigned long line)
+struct IMBUF {
+	int isize;
+	uint8_t ibuf[160*120*4];
+};
+
+class camTr:public ReServant
+{
+	private:
+		long _E(long func, unsigned long line);
+		void printH(int tilt, int p, const uint8_t *bins, int length);
+		void cam_begin();
+		void cam_end();
+		void setup();
+		void clearSD();
+		int getImage(IMBUF &ibuf);
+		const char *chan_color(int chan);
+		void storeCurPos();
+		void setCurPos();
+		void restoreCurPos();
+		void move_up(json_t *js);
+		void move_down(json_t *js);
+		void move_left(json_t *js);
+		void move_right(json_t *js);
+		void set_servo_hpos(json_t *js);
+		void set_servo_vpos(json_t *js);
+		void make_image(json_t *js);
+		void set_histogram_mode(json_t *js);
+		void set_window(json_t *js);
+
+	protected:
+		CMUcam4 cam;
+
+		int h_chan;
+		int h_bins;
+		virtual void create_servant();
+		virtual void loop();
+	public:
+		camTr();
+		void setCurPosCb(redisAsyncContext *c, void *r, int servo);
+};
+
+camTr::camTr():ReServant("cmd.camTr", "camTr"),h_chan(CMUCAM4_GREEN_CHANNEL),h_bins(CMUCAM4_H4_BINS),cam(CMUCOM4_SERIAL)
+{
+	const CMD_FUNC cmdlist[] = {
+		{ "move_up", move_up },
+		{ "move_down", move_down },
+		{ "move_left", move_left },
+		{ "move_right", move_right },
+		{ "set_servo_hpos", set_servo_hpos },
+		{ "set_servo_vpos", set_servo_vpos },
+		{ "make_image", make_image },
+		{ "set_histogram_mode", set_histogram_mode },
+		{ "set_window", set_window }
+	};
+	this->setCmdList(cmdlist);
+}
+
+long camTr::_E(long func, unsigned long line)
 {
   if(func < CMUCAM4_RETURN_SUCCESS)
   {
@@ -71,7 +118,7 @@ long _E(long func, unsigned long line)
   return func;
 }
 
-void printH(int tilt, int p, const uint8_t *bins, int length)
+void camTr::printH(int tilt, int p, const uint8_t *bins, int length)
 {
 //	redisAsyncCommand(aredis, NULL, NULL, "SET bin:%d:%d %b", tilt, p, bins, length*sizeof(uint8_t));
 	char *buf = (char *)calloc(sizeof(char), length * 3 + 50);
@@ -93,7 +140,7 @@ void printH(int tilt, int p, const uint8_t *bins, int length)
 }
 
 
-void cam_begin()
+void camTr::cam_begin()
 {
 //	pinMode(17, OUTPUT);
 //	pinMode(24, OUTPUT);
@@ -102,12 +149,12 @@ void cam_begin()
 	cam.begin();
 }
 
-void cam_end()
+void camTr::cam_end()
 {
 	cam.end();
 }
 
-void setup()
+void camTr::setup()
 {
   cam_begin();
 
@@ -131,13 +178,11 @@ void setup()
 //	cam.automaticPan(1, 0);
 //	cam.testMode(1);
 	//syslog(LOG_DEBUG, "colorT=%d\n", cam.colorTracking(1));
-	tilt_ndx = 0;
-	pan_ndx = 0;
 	
 }
 
 
-void clearSD()
+void camTr::clearSD()
 {
 #define DE_SIZE 4
 	CMUcam4_directory_entry_t de[DE_SIZE]; // Directory entry array.
@@ -152,12 +197,7 @@ void clearSD()
 	} while(directorySize > DE_SIZE);
 }
 
-struct IMBUF {
-	int isize;
-	uint8_t ibuf[160*120*4];
-};
-
-int getImage(IMBUF &ibuf)
+int camTr::getImage(IMBUF &ibuf)
 {
 #define DE_SIZE 4
 	ibuf.isize = 0;
@@ -176,7 +216,7 @@ int getImage(IMBUF &ibuf)
 	return ibuf.isize;
 }
 
-const char *chan_color(int chan)
+const char *camTr::chan_color(int chan)
 {
 	const char *rs = "none";
 	switch(chan) {
@@ -193,20 +233,35 @@ const char *chan_color(int chan)
 	return rs;
 }
 
-void storeCurPos()
+void camTr::storeCurPos()
 {
     redisAsyncCommand(aredis, NULL, NULL, "SET cur_tilt %d", cam.getServoPosition(CMUCAM4_TILT_SERVO));
     redisAsyncCommand(aredis, NULL, NULL, "SET cur_pan %d", cam.getServoPosition(CMUCAM4_PAN_SERVO));
 }
 
-void setCurPosCallback(redisAsyncContext *c, void *r, void *privdata) {
+struct SPCb {
+	camTr *ths;
+	int servo;
+	SPCb(camTr *ths, int servo) {
+		this->ths = ths;
+		this->servo = servo;
+	}
+};
+
+void setCurPosCallback(redisAsyncContext *c, void *r, void *privdata)
+{
+	SPCb *pdata=(SPCb*)privdata;
+	pdata->ths->setCurPosCb(c, r, pdata->servo);
+	delete pdata; 
+}
+
+void camTr::setCurPosCb(redisAsyncContext *c, void *r, int servo) 
+{
     redisReply *reply = (redisReply *)r;
     if (reply != NULL) {
 		if(reply->str) {
-			int servo = atoi((char*)privdata);
 			int pos = atoi(reply->str);
-			syslog(LOG_NOTICE, "setting servo %s to %d\n", (char*)privdata, pos);
-			free(privdata);
+			syslog(LOG_NOTICE, "setting servo %d to %d\n", servo, pos);
 			E(cam.setServoPosition(servo, true, pos));
 			switch(servo) {
 				case CMUCAM4_PAN_SERVO:
@@ -221,16 +276,13 @@ void setCurPosCallback(redisAsyncContext *c, void *r, void *privdata) {
 	}
 }
 
-void setCurPos()
+void camTr::setCurPos()
 {
-	char buf[50];
-	sprintf(buf, "%d", CMUCAM4_TILT_SERVO);
-    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET set_tilt");
-	sprintf(buf, "%d", CMUCAM4_PAN_SERVO);
-    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET set_pan");
+    redisAsyncCommand(aredis, setCurPosCallback, new SPCb(this, CMUCAM4_TILT_SERVO), "GET set_tilt");
+    redisAsyncCommand(aredis, setCurPosCallback, new SPCb(this, CMUCAM4_PAN_SERVO), "GET set_pan");
 }
 
-void restoreCurPos()
+void camTr::restoreCurPos()
 {
 	char buf[50];
 	sprintf(buf, "%d", CMUCAM4_TILT_SERVO);
@@ -239,7 +291,7 @@ void restoreCurPos()
     redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET cur_pan");
 }
 
-void loop()
+void camTr::loop()
 {
 	CMUcam4_image_data_t f_data;
 	CMUcam4_tracking_data_t t_data;
@@ -316,33 +368,7 @@ void loop()
 }
 
 
-void loop1()
-{
-	CMUcam4_image_data_t f_data;
-	CMUcam4_tracking_data_t t_data;
-
-			usleep(1000000L);
-			uint16_t buffer[80*80]; // 10 by 10 pixel buffer
-			uint8_t buffer3[80*80][3]; // 10 by 10 pixel buffer
-			memset(buffer, 0, sizeof(buffer));
-
-//			cam.pollMode(true);
-//			cam.trackColor(RED_MIN, RED_MAX, GREEN_MIN, GREEN_MAX, BLUE_MIN, BLUE_MAX);
-//			cam.getTypeTDataPacket(&t_data); // Get a tracking packet.
-//			memset(&f_data, 0, sizeof(f_data));
-//			cam.getTypeFDataPacket(&f_data); // Get an image packet.
-//			printf("sendBitmap ret=%d\n", cam.sendBitmap(&f_data));
-//			for(int y = 0; y < CMUCAM4_ID_T_R ; y++) {
-//				for(int x = 0; x < CMUCAM4_ID_T_C ; x++) {
-//					printf("%.2X ", f_data.pixels[y * CMUCAM4_ID_T_C + x]);
-//				}
-//				printf("\n");
-//			}
-//			printf("\n");
-//			usleep(1000000L);
-}
-
-void move_up(json_t *js)
+void camTr::move_up(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
 	syslog(LOG_DEBUG, "move up by %d\n", value);
@@ -350,7 +376,7 @@ void move_up(json_t *js)
 	storeCurPos();
 }
 
-void move_down(json_t *js)
+void camTr::move_down(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
 	syslog(LOG_DEBUG, "move down by %d\n", value);
@@ -358,7 +384,7 @@ void move_down(json_t *js)
 	storeCurPos();
 }
 
-void move_right(json_t *js)
+void camTr::move_right(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
 	syslog(LOG_DEBUG, "move right by %d\n", value);
@@ -366,7 +392,7 @@ void move_right(json_t *js)
 	storeCurPos();
 }
 
-void move_left(json_t *js)
+void camTr::move_left(json_t *js)
 {
 	int value = json_integer_value(json_object_get(js, "value"));
 	syslog(LOG_DEBUG, "move left by %d\n", value);
@@ -374,7 +400,7 @@ void move_left(json_t *js)
 	storeCurPos();
 }
 
-void set_servo_hpos(json_t *js)
+void camTr::set_servo_hpos(json_t *js)
 {
 	int angle = json_integer_value(json_object_get(js, "angle"));
 	int pos = (servo_max - servo_min)/ 180. * (angle + 90) + servo_min;
@@ -383,7 +409,7 @@ void set_servo_hpos(json_t *js)
 	storeCurPos();
 }
 
-void set_servo_vpos(json_t *js)
+void camTr::set_servo_vpos(json_t *js)
 {
 	int angle = json_integer_value(json_object_get(js, "angle"));
 	int pos = (servo_max - servo_min)/ 180. * (angle + 90) + servo_min;
@@ -392,12 +418,7 @@ void set_servo_vpos(json_t *js)
 	storeCurPos();
 }
 
-int next_id()
-{
-	return ((redisReply*)redisCommand(redis, "HINCR counter"))->integer;
-}
-
-void make_image(json_t *js)
+void camTr::make_image(json_t *js)
 {
 	IMBUF ibuf;
 	if(getImage(ibuf) > 0) {
@@ -405,7 +426,7 @@ void make_image(json_t *js)
 	}
 }
 
-void set_histogram_mode(json_t *js)
+void camTr::set_histogram_mode(json_t *js)
 {
 	int nbins = json_integer_value(json_object_get(js, "bins"));
 	switch(nbins) {
@@ -441,7 +462,8 @@ void set_histogram_mode(json_t *js)
 	}
 }
 
-void set_window(json_t *js) {
+void camTr::set_window(json_t *js)
+{
 	CMUcam4_tracking_window_t tw;
 	int topLeftX = json_integer_value(json_object_get(js, "x1"));
 	int topLeftY = json_integer_value(json_object_get(js, "y1"));
@@ -452,121 +474,15 @@ void set_window(json_t *js) {
 	redisAsyncCommand(aredis, NULL, NULL, "SET cur_window %s,%d,%d,%d,%d", s_timestamp(), tw.topLeftX, tw.topLeftY, tw.bottomRightX, tw.bottomRightY);
 }
 
-typedef void AFUNC(json_t *js);
-
-struct CMD_FUNC {
-	const char *cmd;
-	AFUNC *func;
-} cmdlist[] = {
-	{ "move_up", move_up },
-	{ "move_down", move_down },
-	{ "move_left", move_left },
-	{ "move_right", move_right },
-	{ "set_servo_hpos", set_servo_hpos },
-	{ "set_servo_vpos", set_servo_vpos },
-	{ "make_image", make_image },
-	{ "set_histogram_mode", set_histogram_mode },
-	{ "set_window", set_window }
-};
-
-void cmdCallback(redisAsyncContext *c, void *r, void *privdata) {
-    redisReply *reply = (redisReply *)r;
-    if (reply == NULL) {
-		syslog(LOG_WARNING, "no reply\n");
-	} else {
-//		printf("lpop %d %p %d %d\n", reply->type, reply->str, REDIS_REPLY_ARRAY, REDIS_REPLY_STRING, REDIS_REPLY_NIL);
-		if(reply->str) {
-			json_error_t error;
-			json_t *js = json_loads(reply->str, JSON_DECODE_ANY, &error);
-			if (js == NULL) {
-				syslog(LOG_ERR, "Error JSON decoding:%s", error.text);
-			} else {
-				json_t *cmd = json_object_get(js, "cmd");
-				for(int i=0; i< sizeof(cmdlist) / sizeof(*cmdlist); i++) {
-					CMD_FUNC *cf = &cmdlist[i];
-					if(strcmp(cf->cmd, json_string_value(cmd)) == 0) {
-						cf->func(js);
-						break;
-					}
-				}
-				char *jstr = json_dumps(js, JSON_INDENT(4));
-				if(jstr) {
-					syslog(LOG_DEBUG, "%s\n", jstr);
-					free(jstr);
-				} else {
-					syslog(LOG_ERR, "Can not decode JSON\n");
-				}
-				json_decref(js);
-			}
-		}
-	}
-	redisAsyncCommand(aredis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
-
-    /* Disconnect after receiving the reply to GET */
-//    redisAsyncDisconnect(c);
-}
-
-
-void connectCallback(const redisAsyncContext *c) {
-    ((void)c);
-    syslog(LOG_NOTICE, "connected...\n");
-}
-
-void disconnectCallback(const redisAsyncContext *c, int status) {
-    if (status != REDIS_OK) {
-        syslog(LOG_ERR, c->errstr);
-    }
-    syslog(LOG_NOTICE, "disconnected...\n");
-}
-
-static int n_calls = 0;
-struct event *timer_ev;
-
-void cb_func(evutil_socket_t fd, short what, void *arg)
+void camTr::create_servant()
 {
-    syslog(LOG_NOTICE, "cb_func called %d times so far.\n", ++n_calls);
-	loop();
-//    if (n_calls > 100)
-//       event_del(timer_ev);
+	ReServant::create_servant();
 }
 
 
-int main (int argc, char **argv) {
-	setlogmask (LOG_UPTO (LOG_DEBUG));
-	openlog("camTr", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-	syslog(LOG_NOTICE, "Hello from camTr\n");
-    signal(SIGPIPE, SIG_IGN);
-    base = event_base_new();
-
-	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-	redis = redisConnectWithTimeout((char*)"localhost", 6379, timeout);
-	if (redis->err) {
-        syslog(LOG_ERR, "Connection error: %s\n", redis->errstr);
-        exit(1);
-    }
-    aredis = redisAsyncConnect("localhost", 6379);
-    if (aredis->err) {
-        /* Let *aredis leak for now... */
-        syslog(LOG_ERR, "Error: %s\n", aredis->errstr);
-        return 1;
-    }
-	setup();
-	cam_begin();
-	restoreCurPos();
-    redisLibeventAttach(aredis,base);
-    redisAsyncSetConnectCallback(aredis,connectCallback);
-    redisAsyncSetDisconnectCallback(aredis,disconnectCallback);
-    redisAsyncCommand(aredis, cmdCallback, NULL, "LPOP %s", r_cam_cmd);
-	timer_ev = event_new(base, -1, EV_PERSIST, cb_func, NULL);
-	struct timeval one_sec = { 5, 0 };
-	event_add(timer_ev, &one_sec);
-	do {
-    	event_base_loop(base, EVLOOP_NONBLOCK);
-    } while(!exiting);
-    event_base_dispatch(base);
-	cam_end();
-	closelog();
-    return 0;
+int main (int argc, char **argv) 
+{
+	camTr srv = camTr();
+	srv.run();
+	return 0;
 }
-

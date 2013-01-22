@@ -51,7 +51,7 @@ SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c	\
 
 OBJ	=	$(SRC:.c=.o)
 
-all:		$(DYNAMIC)
+#all:		$(DYNAMIC)
 
 static:		$(STATIC)
 
