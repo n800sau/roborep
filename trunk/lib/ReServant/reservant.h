@@ -7,16 +7,18 @@
 #include <async.h>
 
 
-typedef void AFUNC(json_t *js);
-
-struct CMD_FUNC {
-	const char *cmd;
-	AFUNC *func;
-};
-
 
 class ReServant
 {
+	protected:
+
+		typedef void AFUNC(json_t *js);
+
+		struct CMD_FUNC {
+			const char *cmd;
+			AFUNC *func;
+		};
+
 
 	private:
 		const char *r_cmd;
@@ -30,6 +32,7 @@ class ReServant
 		struct event *timer_ev;
 
 	protected:
+
 		redisAsyncContext *aredis;
 		redisContext *redis;
 
