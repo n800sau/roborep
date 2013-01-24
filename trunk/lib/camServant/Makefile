@@ -3,7 +3,7 @@ CCOPTS=-L. -I../ReServant -I../wiringPi -I../CMUcam4 -I/usr/include/hiredis
 STRIP=-strip
 SRCS=camTr.cpp
 OBJECTS=camTr.o
-LIBS=../CMUcam4/libcmucam4.a ../wiringPi/libwiringPi.a
+LIBS=../CMUcam4/libcmucam4.a ../wiringPi/libwiringPi.a ../ReServant/libreservant.a
 NAME=camTr
 
 .cpp.o:
@@ -14,7 +14,7 @@ all: $(NAME)
 clean:
 	rm -f $(OBJECTS) $(NAME)
 
-$(NAME):	$(OBJECTS)
+$(NAME):	$(OBJECTS) $(LIBS)
 	$(CC) -o $(NAME) $(CCOPTS) $(OBJECTS) $(LIBS) -lhiredis -levent -ljansson
 #	$(STRIP) -s $(NAME)
 
