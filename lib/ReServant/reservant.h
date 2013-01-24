@@ -6,23 +6,19 @@
 #include <hiredis.h>
 #include <async.h>
 
+struct CMD_FUNC {
+	const char *cmd;
+};
 
+typedef CMD_FUNC *pCMD_FUNC;
 
 class ReServant
 {
-	protected:
-
-		typedef void AFUNC(json_t *js);
-
-		struct CMD_FUNC {
-			const char *cmd;
-			AFUNC *func;
-		};
-
 
 	private:
 		const char *r_cmd;
-		const CMD_FUNC *cmdlist;
+		const pCMD_FUNC *cmdlist;
+		int cmdlist_size;
 		const char *logname;
 
 		int exiting;
@@ -39,12 +35,14 @@ class ReServant
 		virtual void create_servant();
 		virtual void loop();
 
+		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
+
 	public:
 
 		ReServant(const char *r_cmd, const char *logname);
 		~ReServant();
 
-		void setCmdList(const CMD_FUNC *cmdlist);
+		void setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size);
 		void run();
 
 		void cb_func(short what);

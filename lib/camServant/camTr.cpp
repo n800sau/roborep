@@ -83,25 +83,50 @@ class camTr:public ReServant
 		int h_bins;
 		virtual void create_servant();
 		virtual void loop();
+
+		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 	public:
+		typedef void (camTr::*tFunction)(json_t *js);
+
 		camTr();
 		void setCurPosCb(redisAsyncContext *c, void *r, int servo);
 };
 
+struct CAM_CMD_FUNC:public CMD_FUNC {
+	public:
+		CAM_CMD_FUNC(const char *cmd, camTr::tFunction ptr) {
+			this->cmd = cmd;
+			this->ptr = ptr;
+		}
+		camTr::tFunction ptr;
+};
+
+typedef CAM_CMD_FUNC *pCAM_CMD_FUNC;
+
 camTr::camTr():ReServant("cmd.camTr", "camTr"),h_chan(CMUCAM4_GREEN_CHANNEL),h_bins(CMUCAM4_H4_BINS),cam(CMUCOM4_SERIAL)
 {
-	const CMD_FUNC cmdlist[] = {
-		{ "move_up", move_up },
-		{ "move_down", move_down },
-		{ "move_left", move_left },
-		{ "move_right", move_right },
-		{ "set_servo_hpos", set_servo_hpos },
-		{ "set_servo_vpos", set_servo_vpos },
-		{ "make_image", make_image },
-		{ "set_histogram_mode", set_histogram_mode },
-		{ "set_window", set_window }
+	const static pCAM_CMD_FUNC cmdlist[] = {
+		new CAM_CMD_FUNC("move_up", &camTr::move_up),
+		new CAM_CMD_FUNC("move_down", &camTr::move_down),
+		new CAM_CMD_FUNC("move_left", &camTr::move_left),
+		new CAM_CMD_FUNC("move_right", &camTr::move_right),
+		new CAM_CMD_FUNC("set_servo_hpos", &camTr::set_servo_hpos),
+		new CAM_CMD_FUNC("set_servo_vpos", &camTr::set_servo_vpos),
+		new CAM_CMD_FUNC("make_image", &camTr::make_image),
+		new CAM_CMD_FUNC("set_histogram_mode", &camTr::set_histogram_mode),
+		new CAM_CMD_FUNC("set_window", &camTr::set_window)
 	};
-	this->setCmdList(cmdlist);
+	this->setCmdList((pCMD_FUNC *)cmdlist, sizeof(cmdlist)/sizeof(cmdlist[0]));
+}
+
+void camTr::call_cmd(const pCMD_FUNC cmd, json_t *js)
+{
+	pCAM_CMD_FUNC ccmd = (pCAM_CMD_FUNC)cmd;
+	syslog(LOG_NOTICE, "Executing %s", ccmd->cmd);
+	tFunction FunctionPointer = ccmd->ptr;
+	(this->*FunctionPointer)(js);
+	syslog(LOG_NOTICE, "%s finished", ccmd->cmd);
+//	(this->&((void (camTr::*))(json_t*)))cmd->ptr(js);
 }
 
 long camTr::_E(long func, unsigned long line)
@@ -172,7 +197,7 @@ void camTr::setup()
   cam.formatDisk();
 	cam.monitorOn();
 	//cam.automaticPan(1, 0);
-	cam_end();
+//	cam_end();
 
 //	cam.lineMode(true);
 //	cam.automaticPan(1, 0);
@@ -477,6 +502,7 @@ void camTr::set_window(json_t *js)
 void camTr::create_servant()
 {
 	ReServant::create_servant();
+	setup();
 }
 
 

@@ -5,8 +5,6 @@
 
 HMC5883L::HMC5883L():ReServant("cmd.hmc5883l", "hmc5883l"),m_Scale(1)
 {
-	const CMD_FUNC cmdlist[] = {};
-	this->setCmdList(cmdlist);
 }
 
 MagnetometerRaw HMC5883L::ReadRawAxis()

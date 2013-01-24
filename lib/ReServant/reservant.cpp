@@ -36,10 +36,8 @@ void ReServant_cmdCallback(redisAsyncContext *c, void *r, void *privdata)
 //###############
 
 
-ReServant::ReServant(const char *r_cmd, const char *logname):exiting(0),n_calls(0)
+ReServant::ReServant(const char *r_cmd, const char *logname):exiting(0),n_calls(0),cmdlist_size(0)
 {
-	const CMD_FUNC cmdlist[] = {};
-	this->setCmdList(cmdlist);
 	this->logname = logname;
 	this->r_cmd = r_cmd;
 }
@@ -52,9 +50,10 @@ void ReServant::create_servant()
 {
 }
 
-void ReServant::setCmdList(const CMD_FUNC *cmdlist)
+void ReServant::setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size)
 {
 	this->cmdlist = cmdlist;
+	this->cmdlist_size = cmdlist_size;
 }
 
 void ReServant::run()
@@ -104,8 +103,12 @@ void ReServant::loop()
 
 void ReServant::cb_func(short what)
 {
-    syslog(LOG_NOTICE, "cb_func called %d times so far.\n", ++n_calls);
+//    syslog(LOG_NOTICE, "cb_func called %d times so far.\n", ++n_calls);
 	loop();
+}
+
+void ReServant::call_cmd(const pCMD_FUNC cmd, json_t *js)
+{
 }
 
 void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
@@ -120,10 +123,10 @@ void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 				syslog(LOG_ERR, "Error JSON decoding:%s", error.text);
 			} else {
 				json_t *cmd = json_object_get(js, "cmd");
-				for(int i=0; i< sizeof(cmdlist) / sizeof(*cmdlist); i++) {
-					const CMD_FUNC *cf = &cmdlist[i];
+				for(int i=0; i< cmdlist_size; i++) {
+					const pCMD_FUNC cf = cmdlist[i];
 					if(strcmp(cf->cmd, json_string_value(cmd)) == 0) {
-						cf->func(js);
+						call_cmd(cf, js);
 						break;
 					}
 				}

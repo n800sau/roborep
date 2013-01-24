@@ -21,8 +21,6 @@
 
 ADXL345::ADXL345():ReServant("cmd.adxl345", "adxl345"),m_Scale(1)
 {
-	const CMD_FUNC cmdlist[] = {};
-	this->setCmdList(cmdlist);
 }
 
 void ADXL345::create_servant()
