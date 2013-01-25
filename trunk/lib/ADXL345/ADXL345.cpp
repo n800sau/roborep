@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <libgen.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -35,6 +36,8 @@ const char *s_timestamp()
 
 ADXL345::ADXL345(int port):ReServant("cmd.adxl345", "adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
 {
+	mypath[readlink("/proc/self/exe", mypath, sizeof(mypath))] = 0;
+	dirname(mypath);
 }
 
 void ADXL345::create_servant()
@@ -214,24 +217,28 @@ void ADXL345::http_request(struct evhttp_request *req)
 	syslog(LOG_NOTICE, ">>>");
 
 	if(strcmp(req->uri, "/") == 0) {
-		int fd = open("/home/n800s/work/sourceforge/robotarr-code/lib/ADXL345/index.html", O_RDONLY);
+		char index_path[400];
+		strcpy(index_path, mypath);
+		strcat(index_path, "/index.html");
+		int fd = open(index_path, O_RDONLY);
 		if(fd >= 0) {
 			struct stat st;
 			fstat(fd, &st);
 			evbuffer_read(buf, fd, st.st_size);
 			close(fd);
 		} else {
-			syslog(LOG_WARNING, "Error opening index.html");
+			syslog(LOG_WARNING, "Error opening %s", index_path);
 		}
 	} else {
 		evbuffer_add_printf(buf, "<html><head><title>Data</title></head><body>"
 			"<ul>"
 			"<li>%s</li>"
+			"<li>%s</li>"
 			"<li>%d,%d,%d</li>"
 			"<li>%g,%g,%g</li>"
 			"<li>%g,%g</li>"
 			"</ul>"
-			"</body></html>",s_timestamp(), rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis, scaled.XAxis, scaled.YAxis, scaled.ZAxis, xz_degrees, yz_degrees);
+			"</body></html>",mypath, s_timestamp(), rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis, scaled.XAxis, scaled.YAxis, scaled.ZAxis, xz_degrees, yz_degrees);
 	}
 	syslog(LOG_NOTICE, "URI:%s", req->uri);
 	evhttp_send_reply(req, 200, "OK", buf);
