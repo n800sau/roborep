@@ -1,6 +1,8 @@
 #include "ADXL345.h"
 #include <syslog.h>
 #include <math.h>
+#include <event2/keyvalq_struct.h>
+#include <event2/buffer.h>
 
 #define ADXL345_I2C_ADDR 0x53
 
@@ -19,7 +21,7 @@
 #define ScaleFor16G 0.0312
 
 
-ADXL345::ADXL345():ReServant("cmd.adxl345", "adxl345"),m_Scale(1)
+ADXL345::ADXL345():ReServant("cmd.adxl345", "adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0)
 {
 }
 
@@ -31,6 +33,7 @@ void ADXL345::create_servant()
 	setRange(2, true);
 //	i2cwire.writeToDevice(Register_DataFormat, 0);
 //	i2cwire.writeToDevice(Register_DataFormat, 11);
+	runHttpd();
 }
 
 
@@ -129,14 +132,14 @@ float ADXL345::heading(float axis1, float axis2)
 void ADXL345::loop()
 {
 
-	AccelerometerRaw data = readRawAxis();
-	AccelerometerScaled scaled = readScaledAxis();
-	float xz_degrees = heading(scaled.XAxis, scaled.ZAxis);
-	float yz_degrees = heading(scaled.YAxis, scaled.ZAxis);
+	rawdata = readRawAxis();
+	scaled = readScaledAxis();
+	xz_degrees = heading(scaled.XAxis, scaled.ZAxis);
+	yz_degrees = heading(scaled.YAxis, scaled.ZAxis);
 
-	syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", data.XAxis, data.YAxis, data.ZAxis);
-	syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
-	syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
+	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis);
+	//syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
+	//syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
 	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.x %g", scaled.XAxis);
 	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.y %g", scaled.YAxis);
 	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.z %g", scaled.ZAxis);
@@ -146,6 +149,58 @@ void ADXL345::loop()
 	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.yz %g", yz_degrees);
 
 	ReServant::loop();
+}
+
+void ADXL345::http_request(struct evhttp_request *req)
+{
+//	ReServant::http_request(req);
+	const char *cmdtype;
+	struct evkeyvalq *headers;
+	struct evkeyval *header;
+	struct evbuffer *buf;
+
+	switch (evhttp_request_get_command(req)) {
+		case EVHTTP_REQ_GET: cmdtype = "GET"; break;
+		case EVHTTP_REQ_POST: cmdtype = "POST"; break;
+		case EVHTTP_REQ_HEAD: cmdtype = "HEAD"; break;
+		case EVHTTP_REQ_PUT: cmdtype = "PUT"; break;
+		case EVHTTP_REQ_DELETE: cmdtype = "DELETE"; break;
+		case EVHTTP_REQ_OPTIONS: cmdtype = "OPTIONS"; break;
+		case EVHTTP_REQ_TRACE: cmdtype = "TRACE"; break;
+		case EVHTTP_REQ_CONNECT: cmdtype = "CONNECT"; break;
+		case EVHTTP_REQ_PATCH: cmdtype = "PATCH"; break;
+		default: cmdtype = "unknown"; break;
+	}
+
+	syslog(LOG_NOTICE, "Received a %s request for %s\nHeaders:\n", cmdtype, evhttp_request_get_uri(req));
+
+	headers = evhttp_request_get_input_headers(req);
+	for (header = headers->tqh_first; header;
+	    header = header->next.tqe_next) {
+		syslog(LOG_NOTICE, "  %s: %s\n", header->key, header->value);
+	}
+
+	buf = evhttp_request_get_input_buffer(req);
+	syslog(LOG_NOTICE, "Input data: <<<");
+	while (evbuffer_get_length(buf)) {
+		int n;
+		char cbuf[128];
+		n = evbuffer_remove(buf, cbuf, sizeof(buf)-1);
+		if (n > 0)
+			syslog(LOG_NOTICE, "%s", cbuf);
+	}
+	syslog(LOG_NOTICE, ">>>");
+
+
+	evbuffer_add_printf(buf, "<html><head><title>Data</title></head><body>"
+		"<ul>"
+		"<li>%d,%d,%d</li>"
+		"<li>%g,%g,%g</li>"
+		"<li>%g,%g</li>"
+		"</ul>"
+		"</body></html>",rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis, scaled.XAxis, scaled.YAxis, scaled.ZAxis, xz_degrees, yz_degrees);
+	evhttp_send_reply(req, 200, "OK", buf);
+
 }
 
 
