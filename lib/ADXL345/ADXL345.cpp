@@ -1,8 +1,12 @@
 #include "ADXL345.h"
 #include <syslog.h>
 #include <math.h>
-#include <event2/keyvalq_struct.h>
-#include <event2/buffer.h>
+#include <evhttp.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define ADXL345_I2C_ADDR 0x53
 
@@ -20,6 +24,14 @@
 #define ScaleFor8G 0.0156
 #define ScaleFor16G 0.0312
 
+const char *s_timestamp()
+{
+	static char rs[50];
+	time_t t = time(NULL);
+	struct tm *st = localtime(&t);
+	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
+	return rs;
+}
 
 ADXL345::ADXL345(int port):ReServant("cmd.adxl345", "adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
 {
@@ -153,6 +165,14 @@ void ADXL345::loop()
 	ReServant::loop();
 }
 
+int fsize(FILE *fp){
+    int prev=ftell(fp);
+    fseek(fp, 0L, SEEK_END);
+    int sz=ftell(fp);
+    fseek(fp,prev,SEEK_SET); //go back to where we were
+    return sz;
+}
+
 void ADXL345::http_request(struct evhttp_request *req)
 {
 //	ReServant::http_request(req);
@@ -174,7 +194,7 @@ void ADXL345::http_request(struct evhttp_request *req)
 		default: cmdtype = "unknown"; break;
 	}
 
-	syslog(LOG_NOTICE, "Received a %s request for %s\nHeaders:\n", cmdtype, evhttp_request_get_uri(req));
+	syslog(LOG_NOTICE, "Received a %s request for %s", cmdtype, evhttp_request_get_uri(req));
 
 	headers = evhttp_request_get_input_headers(req);
 	for (header = headers->tqh_first; header;
@@ -193,14 +213,27 @@ void ADXL345::http_request(struct evhttp_request *req)
 	}
 	syslog(LOG_NOTICE, ">>>");
 
-
-	evbuffer_add_printf(buf, "<html><head><title>Data</title></head><body>"
-		"<ul>"
-		"<li>%d,%d,%d</li>"
-		"<li>%g,%g,%g</li>"
-		"<li>%g,%g</li>"
-		"</ul>"
-		"</body></html>",rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis, scaled.XAxis, scaled.YAxis, scaled.ZAxis, xz_degrees, yz_degrees);
+	if(strcmp(req->uri, "/") == 0) {
+		int fd = open("/home/n800s/work/sourceforge/robotarr-code/lib/ADXL345/index.html", O_RDONLY);
+		if(fd >= 0) {
+			struct stat st;
+			fstat(fd, &st);
+			evbuffer_read(buf, fd, st.st_size);
+			close(fd);
+		} else {
+			syslog(LOG_WARNING, "Error opening index.html");
+		}
+	} else {
+		evbuffer_add_printf(buf, "<html><head><title>Data</title></head><body>"
+			"<ul>"
+			"<li>%s</li>"
+			"<li>%d,%d,%d</li>"
+			"<li>%g,%g,%g</li>"
+			"<li>%g,%g</li>"
+			"</ul>"
+			"</body></html>",s_timestamp(), rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis, scaled.XAxis, scaled.YAxis, scaled.ZAxis, xz_degrees, yz_degrees);
+	}
+	syslog(LOG_NOTICE, "URI:%s", req->uri);
 	evhttp_send_reply(req, 200, "OK", buf);
 
 }
