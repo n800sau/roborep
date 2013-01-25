@@ -201,7 +201,7 @@ void ReServant::runHttpd(const char *host, int port)
 	/* Create a new evhttp object to handle requests. */
 	http = evhttp_new(base);
 	if (!http) {
-		fprintf(stderr, "couldn't create evhttp. Exiting.\n");
+		syslog(LOG_ERR, "couldn't create evhttp. Exiting.\n");
 		exit(1);
 	}
 
@@ -214,7 +214,7 @@ void ReServant::runHttpd(const char *host, int port)
 	/* Now we tell the evhttp what port to listen on */
 	sock = evhttp_bind_socket_with_handle(http, host, port);
 	if (!sock) {
-		fprintf(stderr, "couldn't bind to port %d. Exiting.\n", (int)port);
+		syslog(LOG_ERR, "couldn't bind to port %d. Exiting.\n", (int)port);
 		exit(1);
 	}
 	/* Extract and display the address we're listening on. */
@@ -228,7 +228,7 @@ void ReServant::runHttpd(const char *host, int port)
 	fd = evhttp_bound_socket_get_fd(sock);
 	memset(&ss, 0, sizeof(ss));
 	if (getsockname(fd, (struct sockaddr *)&ss, &socklen)) {
-		perror("getsockname() failed");
+		syslog(LOG_ERR, "getsockname() failed");
 		exit(1);
 	}
 	if (ss.ss_family == AF_INET) {
@@ -238,14 +238,14 @@ void ReServant::runHttpd(const char *host, int port)
 		got_port = ntohs(((struct sockaddr_in6*)&ss)->sin6_port);
 		inaddr = &((struct sockaddr_in6*)&ss)->sin6_addr;
 	} else {
-		fprintf(stderr, "Weird address family %d\n", ss.ss_family);
+		syslog(LOG_ERR, "Weird address family %d\n", ss.ss_family);
 		exit(1);
 	}
 	addr = evutil_inet_ntop(ss.ss_family, inaddr, addrbuf, sizeof(addrbuf));
 	if (addr) {
-		printf("Listening on %s:%d\n", addr, got_port);
+		syslog(LOG_NOTICE, "Listening on %s:%d\n", addr, got_port);
 	} else {
-		fprintf(stderr, "evutil_inet_ntop failed\n");
+		syslog(LOG_ERR, "evutil_inet_ntop failed\n");
 		exit(1);
 	}
 }
