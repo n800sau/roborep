@@ -21,7 +21,7 @@
 #define ScaleFor16G 0.0312
 
 
-ADXL345::ADXL345():ReServant("cmd.adxl345", "adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0)
+ADXL345::ADXL345(int port):ReServant("cmd.adxl345", "adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
 {
 }
 
@@ -33,7 +33,9 @@ void ADXL345::create_servant()
 	setRange(2, true);
 //	i2cwire.writeToDevice(Register_DataFormat, 0);
 //	i2cwire.writeToDevice(Register_DataFormat, 11);
-	runHttpd();
+	if(port > 0) {
+		runHttpd("0.0.0.0", port);
+	}
 }
 
 

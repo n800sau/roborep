@@ -50,7 +50,7 @@ class ReServant
 		void setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size);
 		void run();
 		//can be run after run() only
-		void runHttpd(const char *host="0.0.0.0", int port=7880);
+		void runHttpd(const char *host, int port);
 
 		void cmdCallback(redisAsyncContext *c, redisReply *reply);
 		void timer_cb_func(short what);
