@@ -30,12 +30,13 @@ class ADXL345:public ReServant
 		AccelerometerScaled scaled;
 		float xz_degrees;
 		float yz_degrees;
+		int port;
 	protected:
 		I2CWire i2cwire;
 		virtual void create_servant();
 		virtual void loop();
 	public:
-		ADXL345();
+		ADXL345(int port=0);
 		int setRange(int gNum, bool fullResolution);
 		void enableMeasurements();
 		float heading(float axis1, float axis2);
