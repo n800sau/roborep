@@ -192,7 +192,7 @@ void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 	redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP %s", r_cmd);
 }
 
-void http_request(struct evhttp_request *req)
+void ReServant::http_request(struct evhttp_request *req)
 {
 }
 

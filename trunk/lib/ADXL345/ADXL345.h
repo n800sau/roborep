@@ -7,6 +7,7 @@
 
 struct AccelerometerScaled
 {
+	AccelerometerScaled() { XAxis = YAxis = ZAxis = 0; }
 	float XAxis;
 	float YAxis;
 	float ZAxis;
@@ -14,6 +15,7 @@ struct AccelerometerScaled
 
 struct AccelerometerRaw
 {
+	AccelerometerRaw() { XAxis = YAxis = ZAxis = 0; }
 	int XAxis;
 	int YAxis;
 	int ZAxis;
@@ -24,6 +26,10 @@ class ADXL345:public ReServant
 {
 	private:
 		float m_Scale;
+		AccelerometerRaw rawdata;
+		AccelerometerScaled scaled;
+		float xz_degrees;
+		float yz_degrees;
 	protected:
 		I2CWire i2cwire;
 		virtual void create_servant();
@@ -35,6 +41,8 @@ class ADXL345:public ReServant
 		float heading(float axis1, float axis2);
 		AccelerometerRaw readRawAxis();
 		AccelerometerScaled readScaledAxis();
+
+		virtual void http_request(struct evhttp_request *req);
 };
 
 #endif //__ADXL345_H
