@@ -216,6 +216,7 @@ void ADXL345::http_request(struct evhttp_request *req)
 	}
 	syslog(LOG_NOTICE, ">>>");
 
+	buf = evbuffer_new();
 	if(strcmp(req->uri, "/") == 0) {
 		char index_path[400];
 		strcpy(index_path, mypath);
@@ -225,23 +226,38 @@ void ADXL345::http_request(struct evhttp_request *req)
 			struct stat st;
 			fstat(fd, &st);
 			evbuffer_read(buf, fd, st.st_size);
+			evhttp_send_reply(req, 200, "OK", buf);
 			close(fd);
 		} else {
 			syslog(LOG_WARNING, "Error opening %s", index_path);
+			evhttp_send_reply(req, 500, "Internal Error", buf);
 		}
 	} else {
-		evbuffer_add_printf(buf, "<html><head><title>Data</title></head><body>"
-			"<ul>"
-			"<li>%s</li>"
-			"<li>%s</li>"
-			"<li>%d,%d,%d</li>"
-			"<li>%g,%g,%g</li>"
-			"<li>%g,%g</li>"
-			"</ul>"
-			"</body></html>",mypath, s_timestamp(), rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis, scaled.XAxis, scaled.YAxis, scaled.ZAxis, xz_degrees, yz_degrees);
+		json_t *js = json_object();
+		json_object_set_new(js, "mypath", json_string(mypath));
+		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
+		json_object_set_new(js, "rawXAxis", json_integer(rawdata.XAxis));
+		json_object_set_new(js, "rawYAxis", json_integer(rawdata.YAxis));
+		json_object_set_new(js, "rawZAxis", json_integer(rawdata.ZAxis));
+		json_object_set_new(js, "scaledXAxis", json_real(scaled.XAxis));
+		json_object_set_new(js, "scaledYAxis", json_real(scaled.YAxis));
+		json_object_set_new(js, "scaledZAxis", json_real(scaled.ZAxis));
+		json_object_set_new(js, "xy_degrees", json_real(xz_degrees));
+		json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
+		char *jstr = json_dumps(js, JSON_INDENT(4));
+		if(jstr) {
+			syslog(LOG_DEBUG, "%s\n", jstr);
+			evbuffer_add(buf, jstr, strlen(jstr));
+			evhttp_send_reply(req, 200, "OK", buf);
+			free(jstr);
+		} else {
+			syslog(LOG_ERR, "Can not decode JSON\n");
+			evhttp_send_reply(req, 500, "Internal Error", buf);
+		}
+		json_decref(js);
 	}
+	evbuffer_free(buf);
 	syslog(LOG_NOTICE, "URI:%s", req->uri);
-	evhttp_send_reply(req, 200, "OK", buf);
 
 }
 
