@@ -225,7 +225,9 @@ void ADXL345::http_request(struct evhttp_request *req)
 		if(fd >= 0) {
 			struct stat st;
 			fstat(fd, &st);
-			evbuffer_read(buf, fd, st.st_size);
+			evbuffer_add_file(buf, fd, 0, st.st_size);
+//			evbuffer_read(buf, fd, -1);
+			syslog(LOG_NOTICE, "file size=%d, bufsize=%d", st.st_size, evbuffer_get_length(buf));
 			evhttp_send_reply(req, 200, "OK", buf);
 			close(fd);
 		} else {
@@ -248,6 +250,8 @@ void ADXL345::http_request(struct evhttp_request *req)
 		if(jstr) {
 			syslog(LOG_DEBUG, "%s\n", jstr);
 			evbuffer_add(buf, jstr, strlen(jstr));
+			headers = evhttp_request_get_output_headers(req);
+			evhttp_add_header(headers, "Content-Type", "application/json");
 			evhttp_send_reply(req, 200, "OK", buf);
 			free(jstr);
 		} else {

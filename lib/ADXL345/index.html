@@ -49,13 +49,18 @@
 			page_request = new XMLHttpRequest()
 			page_request.onreadystatechange = function() {
 				if (page_request.responseText) {
+
+
 					var adxldata = JSON.parse(page_request.responseText);
 					for(var pname in adxldata) {
 						domelement = document.getElementById(pname);
 						if (domelement) {
-							domelement.innerHTML = adxldata[pname];
+							domelement.innerHTML = '';
+							domelement.appendChild(document.createTextNode(adxldata[pname]));
 						}
 					}
+
+
 				}
 				try {
 					loadpage(page_request, containerid)
@@ -123,12 +128,20 @@
 	</script>
 </head>
 <body onLoad="reload_info()">
-	Time:<br/>
+	Time:
 	<div id="curtime"></div>
 	<table>
 	<tr>
+	<td id="s_timestamp"></td>
+	</tr>
+	<tr>
 	<td id="rawXAxis"></td><td id="rawYAxis"></td><td id="rawZAxis"></td>
+	</tr>
+	<tr>
 	<td id="scaledXAxis"></td><td id="scaledYAxis"></td><td id="scaledZAxis"></td>
+	</tr>
+	<tr>
+	<td id="xy_degrees"></td><td id="yz_degrees"></td><td></td>
 	</tr>
 	<tr>
 		<td>
