@@ -244,7 +244,7 @@ void ADXL345::http_request(struct evhttp_request *req)
 		json_object_set_new(js, "scaledXAxis", json_real(scaled.XAxis));
 		json_object_set_new(js, "scaledYAxis", json_real(scaled.YAxis));
 		json_object_set_new(js, "scaledZAxis", json_real(scaled.ZAxis));
-		json_object_set_new(js, "xy_degrees", json_real(xz_degrees));
+		json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
 		json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
 		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
