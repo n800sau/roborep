@@ -97,7 +97,7 @@ void L3G4200D::loop()
 		redisAsyncCommand(aredis, NULL, NULL, "SET l3g4200d.z %g", g.z);
 	}
 
-	syslog(LOG_NOTICE, "gyro:%d %4d %4d\n", g.x, g.y, g.z);
+	syslog(LOG_NOTICE, "gyro:%g %g %g\n", g.x, g.y, g.z);
 
 	ReServant::loop();
 }
