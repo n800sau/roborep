@@ -32,6 +32,7 @@ class ReServant
 		struct evhttp *http;
 		struct evhttp_bound_socket *sock;
 
+		char _mypath[256];
 	protected:
 
 		redisAsyncContext *aredis;
@@ -41,6 +42,8 @@ class ReServant
 		virtual void loop();
 
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
+
+		inline const char *mypath() { return _mypath; }
 
 	public:
 

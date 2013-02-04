@@ -7,6 +7,8 @@
 #include <malloc.h>
 #include <string.h>
 #include <adapters/libevent.h>
+#include <unistd.h>
+#include <libgen.h>
 
 //#################
 static void ReServant_cmd_request_cb(struct evhttp_request *req, void *arg)
@@ -88,6 +90,8 @@ ReServant::ReServant(const char *r_cmd, const char *logname):exiting(0),n_calls(
 {
 	this->logname = logname;
 	this->r_cmd = r_cmd;
+	_mypath[readlink("/proc/self/exe", _mypath, sizeof(_mypath))] = 0;
+	dirname(_mypath);
 }
 
 ReServant::~ReServant()
