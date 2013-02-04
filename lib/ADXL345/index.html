@@ -59,7 +59,7 @@
 							domelement.appendChild(document.createTextNode(adxldata[pname]));
 						}
 					}
-
+					update_image(adxldata);
 
 				}
 				try {
@@ -68,7 +68,7 @@
 					loadpage(err.message, containerid)
 				}
 				clearTimeout(nextTime)
-				nextTime = setTimeout(reload_info , 1000)
+				nextTime = setTimeout(reload_info , 2000)
 			}
 			if (bustcachevar) {
 				//if bust caching of external page
@@ -87,43 +87,70 @@
 			domelement = document.getElementById('curtime');
 			domelement.innerHTML = d.toTimeString();
 			
-			if ('WebSocket' in window){
+			//if ('WebSocket' in window){
 				/* WebSocket is supported. You can proceed with your code*/
-				document.getElementById('header').innerHtml = "websocket";
-			} else {
-				/*WebSockets are not supported. Try a fallback method like long-polling etc*/
-			}
+			//	document.getElementById('header').innerHtml = "websocket";
+			//} else {
+			//	/*WebSockets are not supported. Try a fallback method like long-polling etc*/
+			//}
 			ajaxpage("/values", 'cam_values');
-			 nextTime = setTimeout(reload_info , 10000);
+			nextTime = setTimeout(reload_info , 10000);
 		};
+
+		var gauge = function(context, diameter, angle)
+		{
+			var radius = diameter/2;
+			context.save();
+			context.translate(radius, radius);
+			context.beginPath();
+			context.lineWidth="2";
+			context.arc(0, 0, radius, 0 , 2 * Math.PI, false);
+			context.fillStyle = 'green';
+			context.fill();
+			context.lineWidth="1";
+			context.strokeStyle = "black";
+
+			if (context.setLineDash) {
+				context.setLineDash([5,10]);
+			}
+
+			for(var i=0; i < 360; i+=45) {
+				context.save();
+				context.rotate(i * Math.PI / 180);
+				context.moveTo(0, radius / 4);
+				context.lineTo(0, radius * 3 / 4);
+				context.restore();
+			}
+			context.moveTo(-radius, 0);
+			context.lineTo(radius, 0);
+			context.stroke();
+
+			context.rotate(angle * Math.PI / 180);
+			context.beginPath();
+			context.strokeStyle = "red";
+			context.lineWidth="5";
+			context.moveTo(0, radius);
+			context.lineTo(0, 0);
+			context.stroke();
+			context.restore();
+		}
+
 		var update_image = function(data) {
-			var ctx = document.getElementById('m_canvas').getContext('2d');
-			ctx.fillStyle = "red";
-			ctx.beginPath();
-			ctx.translate(70, 90);
-			ctx.rotate(data['cur_heading_degrees'] * Math.PI / 180);
-			ctx.moveTo(40, 60);
-			ctx.lineTo(0, -60);
-			ctx.lineTo(-40, 60);
-			ctx.bezierCurveTo(-40, 60, 0, 0, 40, 60); // <- this is right formula for the image on the right ->
-			ctx.moveTo(0, 0);
-			ctx.fill();
+//			var ctx = document.getElementById('m_canvas').getContext('2d');
+//			ctx.fillStyle = "red";
+//			ctx.beginPath();
+//			ctx.translate(70, 90);
+//			ctx.rotate(data['cur_heading_degrees'] * Math.PI / 180);
+//			ctx.moveTo(40, 60);
+//			ctx.lineTo(0, -60);
+//			ctx.lineTo(-40, 60);
+//			ctx.bezierCurveTo(-40, 60, 0, 0, 40, 60); // <- this is right formula for the image on the right ->
+//			ctx.moveTo(0, 0);
+//			ctx.fill();
 			var ctx = document.getElementById('xz_canvas').getContext('2d');
-			ctx.fillStyle = "red";
-			ctx.beginPath();
-			ctx.translate(50, 50);
-			ctx.rotate(data['xz_degrees'] * Math.PI / 180);
-			ctx.moveTo(40, 60);
-			ctx.lineTo(0, -60);
-			ctx.stroke();
+			gauge(ctx, 100, data['xz_degrees']);
 			var ctx = document.getElementById('yz_canvas').getContext('2d');
-			ctx.fillStyle = "red";
-			ctx.beginPath();
-			ctx.translate(50, 50);
-			ctx.rotate(data['yz_degrees'] * Math.PI / 180);
-			ctx.moveTo(40, 60);
-			ctx.lineTo(0, -60);
-			ctx.stroke();
+			gauge(ctx, 100, data['yz_degrees']);
 		};
 	</script>
 </head>
@@ -132,16 +159,21 @@
 	<div id="curtime"></div>
 	<table>
 	<tr>
-	<td id="s_timestamp"></td>
+	<td><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td><td><canvas id="yz_canvas" width="100" height="100" style="background-color:green;"/></td>
+	</tr>
+	</table>
+	<table>
+	<tr>
+	<td id="s_timestamp1"></td>
 	</tr>
 	<tr>
-	<td id="rawXAxis"></td><td id="rawYAxis"></td><td id="rawZAxis"></td>
+	<td id="rawXAxis1"></td><td id="rawYAxis1"></td><td id="rawZAxis1"></td>
 	</tr>
 	<tr>
-	<td id="scaledXAxis"></td><td id="scaledYAxis"></td><td id="scaledZAxis"></td>
+	<td id="scaledXAxis1"></td><td id="scaledYAxis1"></td><td id="scaledZAxis1"></td>
 	</tr>
 	<tr>
-	<td id="xy_degrees"></td><td id="yz_degrees"></td><td></td>
+	<td id="xz_degrees"></td><td id="yz_degrees"></td><td></td>
 	</tr>
 	<tr>
 		<td>
