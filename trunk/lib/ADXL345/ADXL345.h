@@ -31,7 +31,6 @@ class ADXL345:public ReServant
 		float xz_degrees;
 		float yz_degrees;
 		int port;
-		char mypath[256];
 	protected:
 		I2CWire i2cwire;
 		virtual void create_servant();

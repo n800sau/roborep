@@ -34,10 +34,8 @@ const char *s_timestamp()
 	return rs;
 }
 
-ADXL345::ADXL345(int port):ReServant("cmd.adxl345", "adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
+ADXL345::ADXL345(int port):ReServant("adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
 {
-	mypath[readlink("/proc/self/exe", mypath, sizeof(mypath))] = 0;
-	dirname(mypath);
 }
 
 void ADXL345::create_servant()
@@ -157,13 +155,13 @@ void ADXL345::loop()
 	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis);
 	//syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
 	//syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
-	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.x %g", scaled.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.y %g", scaled.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.z %g", scaled.ZAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.x %g", myid(), scaled.XAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.y %g", myid(), scaled.YAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.z %g", myid(), scaled.ZAxis);
 
 
-	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.xz %g", xz_degrees);
-	redisAsyncCommand(aredis, NULL, NULL, "SET adxl345.yz %g", yz_degrees);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.xz %g", myid(), xz_degrees);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.yz %g", myid(), yz_degrees);
 
 	ReServant::loop();
 }
@@ -219,7 +217,7 @@ void ADXL345::http_request(struct evhttp_request *req)
 	buf = evbuffer_new();
 	if(strcmp(req->uri, "/") == 0) {
 		char index_path[400];
-		strcpy(index_path, mypath);
+		strcpy(index_path, mypath());
 		strcat(index_path, "/index.html");
 		int fd = open(index_path, O_RDONLY);
 		if(fd >= 0) {
@@ -236,7 +234,7 @@ void ADXL345::http_request(struct evhttp_request *req)
 		}
 	} else {
 		json_t *js = json_object();
-		json_object_set_new(js, "mypath", json_string(mypath));
+		json_object_set_new(js, "mypath()", json_string(mypath()));
 		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
 		json_object_set_new(js, "rawXAxis", json_integer(rawdata.XAxis));
 		json_object_set_new(js, "rawYAxis", json_integer(rawdata.YAxis));

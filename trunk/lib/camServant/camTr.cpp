@@ -103,7 +103,7 @@ struct CAM_CMD_FUNC:public CMD_FUNC {
 
 typedef CAM_CMD_FUNC *pCAM_CMD_FUNC;
 
-camTr::camTr():ReServant("cmd.camTr", "camTr"),h_chan(CMUCAM4_GREEN_CHANNEL),h_bins(CMUCAM4_H4_BINS),cam(CMUCOM4_SERIAL)
+camTr::camTr():ReServant("camTr"),h_chan(CMUCAM4_GREEN_CHANNEL),h_bins(CMUCAM4_H4_BINS),cam(CMUCOM4_SERIAL)
 {
 	const static pCAM_CMD_FUNC cmdlist[] = {
 		new CAM_CMD_FUNC("move_up", &camTr::move_up),

@@ -2,7 +2,7 @@
 #include <math.h>
 #include <syslog.h>
 
-L3G4200D::L3G4200D(uint8_t address):ReServant("cmd.l3g4200d", "l3g4200d"),g()
+L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g()
 {
 	m_Address = address;
 }
