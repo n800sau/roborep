@@ -86,10 +86,9 @@ void ReServant_cmdCallback(redisAsyncContext *c, void *r, void *privdata)
 //###############
 
 
-ReServant::ReServant(const char *r_cmd, const char *logname):exiting(0),n_calls(0),cmdlist_size(0)
+ReServant::ReServant(const char *s_id):exiting(0),n_calls(0),cmdlist_size(0)
 {
-	this->logname = logname;
-	this->r_cmd = r_cmd;
+	this->s_id = s_id;
 	_mypath[readlink("/proc/self/exe", _mypath, sizeof(_mypath))] = 0;
 	dirname(_mypath);
 }
@@ -111,6 +110,8 @@ void ReServant::setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size)
 void ReServant::run()
 {
 	setlogmask (LOG_UPTO (LOG_DEBUG));
+	char logname[256];
+	sprintf(logname, "%s.log", myid());
 	openlog(logname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
 	syslog(LOG_NOTICE, "Hello from %s\n", logname);
@@ -135,9 +136,9 @@ void ReServant::run()
     redisLibeventAttach(aredis,base);
     redisAsyncSetConnectCallback(aredis, ReServant_connectCallback);
     redisAsyncSetDisconnectCallback(aredis, ReServant_disconnectCallback);
-    redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP %s", r_cmd);
+    redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP cmd.%s", myid());
 	timer_ev = event_new(base, -1, EV_PERSIST, ReServant_timer_cb_func, this);
-	struct timeval one_sec = { 5, 0 };
+	struct timeval one_sec = { 0, 500000 };
 	event_add(timer_ev, &one_sec);
 	do {
     	event_base_loop(base, EVLOOP_NONBLOCK);
@@ -193,7 +194,7 @@ void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 			}
 		}
 	}
-	redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP %s", r_cmd);
+	redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP cmd.%s", myid());
 }
 
 void ReServant::http_request(struct evhttp_request *req)

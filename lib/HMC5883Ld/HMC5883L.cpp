@@ -3,7 +3,7 @@
 #include <math.h>
 
 
-HMC5883L::HMC5883L():ReServant("cmd.hmc5883l", "hmc5883l"),m_Scale(1)
+HMC5883L::HMC5883L():ReServant("hmc5883l"),m_Scale(1)
 {
 }
 

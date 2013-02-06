@@ -18,10 +18,9 @@ class ReServant
 {
 
 	private:
-		const char *r_cmd;
+		const char *s_id;
 		const pCMD_FUNC *cmdlist;
 		int cmdlist_size;
-		const char *logname;
 
 		int exiting;
 		int n_calls;
@@ -45,9 +44,11 @@ class ReServant
 
 		inline const char *mypath() { return _mypath; }
 
+		inline const char *myid() { return s_id; }
+
 	public:
 
-		ReServant(const char *r_cmd, const char *logname);
+		ReServant(const char *s_id);
 		~ReServant();
 
 		void setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size);
