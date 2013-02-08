@@ -2,12 +2,27 @@
 #include <syslog.h>
 #include <math.h>
 #include <evhttp.h>
-#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+
+rhttp_redisReply::rhttp_redisReply(Rhttp *ths, const char *rgroup, const char *rtype, const char *rkey)
+{
+	this->ths = ths;
+	this->rgroup = strdup(rgroup);
+	this->rtype = strdup(rtype);
+	this->rkey = (rkey) ? strdup(rkey) : NULL; 
+}
+
+rhttp_redisReply::~rhttp_redisReply()
+{
+	free((void*)this->rgroup);
+	free((void*)this->rtype);
+	if(this->rkey)
+		free((void*)this->rkey);
+}
 
 const char *s_timestamp()
 {
@@ -21,19 +36,26 @@ const char *s_timestamp()
 void Rhttp_keyCallBack(redisAsyncContext *c, void *r, void *privdata)
 {
 	rhttp_redisReply *rr = (rhttp_redisReply *)privdata;
-	rr->ths->keyCallback(c, rr->rtype, (redisReply *)r);
+	rr->ths->keyCallback(c, rr->rgroup, rr->rtype, (redisReply *)r);
 	delete rr;
 }
 
 void Rhttp_paramCallBack(redisAsyncContext *c, void *r, void *privdata)
 {
 	rhttp_redisReply *rr = (rhttp_redisReply *)privdata;
-	rr->ths->paramCallback(c, rr->rkey, rr->rtype, (redisReply *)r);
+	rr->ths->paramCallback(c, rr->rkey, rr->rgroup, rr->rtype, (redisReply *)r);
 	delete rr;
 }
 
 Rhttp::Rhttp(int port):ReServant("rhttp"),port(port),rvals_count(0)
 {
+}
+
+Rhttp::~Rhttp()
+{
+	for(int i=0; i<rvals_count; i++) {
+		delete rvals[i];
+	}
 }
 
 void Rhttp::create_servant()
@@ -45,14 +67,16 @@ void Rhttp::create_servant()
 
 void Rhttp::loop()
 {
+	printf("............................................\n");
 	for(int i=0; i<rgroups_count; i++) {
+		const char *rgroup = rgroups[i];
 		rhttp_redisReply *rr;
-		rr = new rhttp_redisReply(this, 'r');
-		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%c.*", rgroups[i], rr->rtype);
-		rr = new rhttp_redisReply(this, 'i');
-		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%c.*", rgroups[i], rr->rtype);
-		rr = new rhttp_redisReply(this, 's');
-		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%c.*", rgroups[i], rr->rtype);
+		rr = new rhttp_redisReply(this, rgroup, "r");
+		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%s.*", rr->rgroup, rr->rtype);
+		rr = new rhttp_redisReply(this, rgroup, "i");
+		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%s.*", rr->rgroup, rr->rtype);
+		rr = new rhttp_redisReply(this, rgroup, "s");
+		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%s.*", rr->rgroup, rr->rtype);
 	}
 	ReServant::loop();
 }
@@ -128,7 +152,17 @@ void Rhttp::http_request(struct evhttp_request *req)
 		json_object_set_new(js, "mypath()", json_string(mypath()));
 		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
 		for(int i=0; i<rvals_count; i++) {
-			json_object_set_new(js, rkeys[i], json_real(rvals[i]));
+			switch(rvals[i]->rtype) {
+				case R_INT:
+					json_object_set_new(js, rvals[i]->key, json_integer(rvals[i]->u.ival));
+					break;
+				case R_REAL:
+					json_object_set_new(js, rvals[i]->key, json_real(rvals[i]->u.rval));
+					break;
+				case R_STR:
+					json_object_set_new(js, rvals[i]->key, json_string(rvals[i]->u.sval));
+					break;
+			}
 		}
 		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
@@ -149,30 +183,56 @@ void Rhttp::http_request(struct evhttp_request *req)
 
 }
 
-void Rhttp::keyCallback(redisAsyncContext *c, const char rtype, redisReply *reply)
+void Rhttp::keyCallback(redisAsyncContext *c, const char *rgroup, const char *rtype, redisReply *reply)
 {
 	if (reply == NULL) {
 		syslog(LOG_WARNING, "no keys in reply\n");
 	} else {
 		if(reply->type == REDIS_REPLY_ARRAY) {
-			printf(">>>%s, %d %d %d\n", reply->str, reply->elements, reply->type, reply->len);
+//			printf(">>>%s.%s: %d\n", rgroup, rtype, reply->elements);
 			for(int i=0;i<reply->elements; i++) {
 				redisReply *el = reply->element[i];
-				printf("key reply %s\n", el->str);
-				rhttp_redisReply *rr = new rhttp_redisReply(this, rtype, el->str);
-				redisAsyncCommand(aredis, Rhttp_paramCallBack, rr, "GET %s", el->str);
+//				printf("key reply %s\n", el->str);
+				rhttp_redisReply *rr = new rhttp_redisReply(this, rgroup, rtype, el->str);
+				redisAsyncCommand(aredis, Rhttp_paramCallBack, rr, "GET %s", rr->rkey);
 			}
 		}
 	}
 }
 
-void Rhttp::paramCallback(redisAsyncContext *c, const char *rkey, const char rtype, redisReply *reply)
+void Rhttp::paramCallback(redisAsyncContext *c, const char *rkey, const char *rgroup, const char *rtype, redisReply *reply)
 {
 	if (reply == NULL) {
 		syslog(LOG_WARNING, "no reply\n");
 	} else {
 		if(reply->str) {
-			printf("param reply %s(%c)=%s\n", rkey, rtype, reply->str);
+			int found=-1;
+			for(int i=0; i<rvals_count; i++) {
+				if(strcmp(rvals[i]->key, rkey) == 0) {
+					found = i;
+					break;
+				}
+			}
+			if(found < 0) {
+				if (rvals_count < MAX_RVALS_COUNT) {
+					found = rvals_count;
+					rvals_count++;
+				}
+			} else {
+				delete rvals[found];
+			}
+			if (found >= 0) {
+				if ( strcmp(rtype, rtypes[R_REAL]) == 0 ) {
+					rvals[found] = new RVAL(rkey, atof(reply->str));
+					printf("param reply real %s=%g\n", rvals[found]->key, rvals[found]->u.rval);
+				} else if ( strcmp(rtype, rtypes[R_INT]) == 0 ) {
+					rvals[found] = new RVAL(rkey, atoi(reply->str));
+					printf("param reply int %s=%d\n", rvals[found]->key, rvals[found]->u.ival);
+				} else if ( strcmp(rtype, rtypes[R_STR]) == 0 ) {
+					rvals[found] = new RVAL(rkey, reply->str);
+					printf("param reply str %s=%s\n", rvals[found]->key, rvals[found]->u.sval);
+				}
+			}
 		}
 	}
 }

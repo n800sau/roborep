@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PIDFILE=/home/n800s/run/rhttp.pid
-DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/ADXL345/rhttpd
+DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/rhttp/rhttpd
 
 PPID=`pidof -o %PPID ${DAEMON}`
 if [ -z "$PPID" ]; then

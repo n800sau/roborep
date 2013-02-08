@@ -92,9 +92,9 @@ void L3G4200D::create_servant()
 void L3G4200D::loop()
 {
 	if(read()) {
-		redisAsyncCommand(aredis, NULL, NULL, "SET l3g4200d.x %g", g.x);
-		redisAsyncCommand(aredis, NULL, NULL, "SET l3g4200d.y %g", g.y);
-		redisAsyncCommand(aredis, NULL, NULL, "SET l3g4200d.z %g", g.z);
+		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.x %g", myid(), g.x);
+		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.y %g", myid(), g.y);
+		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.z %g", myid(), g.z);
 	}
 
 	syslog(LOG_NOTICE, "gyro:%g %g %g\n", g.x, g.y, g.z);

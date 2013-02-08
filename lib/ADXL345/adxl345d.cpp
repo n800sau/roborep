@@ -3,7 +3,7 @@
 
 int main(int argc, char const **argv)
 {
-	ADXL345 srv = ADXL345(7880);
+	ADXL345 srv = ADXL345(7881);
 	srv.setRange(2, true);
 	srv.enableMeasurements();
 	srv.run();

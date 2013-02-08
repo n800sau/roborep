@@ -34,7 +34,7 @@ const char *s_timestamp()
 	return rs;
 }
 
-ADXL345::ADXL345(int port):ReServant("adxl345"),m_Scale(1),rawdata(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
+ADXL345::ADXL345(int port):ReServant("adxl345"),m_Scale(1),raw(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
 {
 }
 
@@ -147,17 +147,20 @@ float ADXL345::heading(float axis1, float axis2)
 void ADXL345::loop()
 {
 
-	rawdata = readRawAxis();
+	raw = readRawAxis();
 	scaled = readScaledAxis();
 	xz_degrees = heading(scaled.XAxis, scaled.ZAxis);
 	yz_degrees = heading(scaled.YAxis, scaled.ZAxis);
 
-	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", rawdata.XAxis, rawdata.YAxis, rawdata.ZAxis);
+	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
 	//syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
 	//syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.x %g", myid(), scaled.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.y %g", myid(), scaled.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.z %g", myid(), scaled.ZAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_x %d", myid(), raw.XAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_y %d", myid(), raw.YAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_z %d", myid(), raw.ZAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_x %g", myid(), scaled.XAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_y %g", myid(), scaled.YAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_z %g", myid(), scaled.ZAxis);
 
 
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.xz %g", myid(), xz_degrees);
@@ -236,9 +239,9 @@ void ADXL345::http_request(struct evhttp_request *req)
 		json_t *js = json_object();
 		json_object_set_new(js, "mypath()", json_string(mypath()));
 		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
-		json_object_set_new(js, "rawXAxis", json_integer(rawdata.XAxis));
-		json_object_set_new(js, "rawYAxis", json_integer(rawdata.YAxis));
-		json_object_set_new(js, "rawZAxis", json_integer(rawdata.ZAxis));
+		json_object_set_new(js, "rawXAxis", json_integer(raw.XAxis));
+		json_object_set_new(js, "rawYAxis", json_integer(raw.YAxis));
+		json_object_set_new(js, "rawZAxis", json_integer(raw.ZAxis));
 		json_object_set_new(js, "scaledXAxis", json_real(scaled.XAxis));
 		json_object_set_new(js, "scaledYAxis", json_real(scaled.YAxis));
 		json_object_set_new(js, "scaledZAxis", json_real(scaled.ZAxis));
