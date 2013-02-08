@@ -26,7 +26,7 @@ class ADXL345:public ReServant
 {
 	private:
 		float m_Scale;
-		AccelerometerRaw rawdata;
+		AccelerometerRaw raw;
 		AccelerometerScaled scaled;
 		float xz_degrees;
 		float yz_degrees;

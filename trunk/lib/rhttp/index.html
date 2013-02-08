@@ -51,15 +51,15 @@
 				if (page_request.responseText) {
 
 
-					var adxldata = JSON.parse(page_request.responseText);
-					for(var pname in adxldata) {
+					var rdata = JSON.parse(page_request.responseText);
+					for(var pname in rdata) {
 						domelement = document.getElementById(pname);
 						if (domelement) {
 							domelement.innerHTML = '';
-							domelement.appendChild(document.createTextNode(adxldata[pname]));
+							domelement.appendChild(document.createTextNode(rdata[pname]));
 						}
 					}
-					update_image(adxldata);
+					update_image(rdata);
 
 				}
 				try {
@@ -148,9 +148,9 @@
 //			ctx.moveTo(0, 0);
 //			ctx.fill();
 			var ctx = document.getElementById('xz_canvas').getContext('2d');
-			gauge(ctx, 100, data['xz_degrees']);
+			gauge(ctx, 100, data['adxl345.r.xz']);
 			var ctx = document.getElementById('yz_canvas').getContext('2d');
-			gauge(ctx, 100, data['yz_degrees']);
+			gauge(ctx, 100, data['adxl345.r.yz']);
 		};
 	</script>
 </head>

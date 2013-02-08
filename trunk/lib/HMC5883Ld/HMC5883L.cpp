@@ -148,18 +148,18 @@ void HMC5883L::loop()
 	float headingDegrees = heading * 180/M_PI; 
 
 	syslog(LOG_NOTICE, "Raw: %d %d %d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET raw.X %d", raw.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET raw.Y %d", raw.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET raw.Z %d", raw.ZAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.raw_x %d", myid(), raw.XAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.raw_y %d", myid(), raw.YAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.raw_z %d", myid(), raw.ZAxis);
 
 	syslog(LOG_NOTICE, "Scaled: %g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET scaled.X %g", scaled.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET scaled.Y %g", scaled.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET scaled.Z %g", scaled.ZAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_x %g", myid(), scaled.XAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_y %g", myid(), scaled.YAxis);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_z %g", myid(), scaled.ZAxis);
 
 	syslog(LOG_NOTICE, "Heading: %g radians, %g degrees\n", heading, headingDegrees);
-	redisAsyncCommand(aredis, NULL, NULL, "SET heading.radians %g", heading);
-	redisAsyncCommand(aredis, NULL, NULL, "SET heading.degrees %g", headingDegrees);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.heading_radians %g", myid(), heading);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.heading_degrees %g", myid(), headingDegrees);
 
 	ReServant::loop();
 }
