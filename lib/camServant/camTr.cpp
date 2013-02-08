@@ -136,8 +136,9 @@ long camTr::_E(long func, unsigned long line)
 	char s_err[256];
 	sprintf(s_err, "Caught error %d on line %d", func, line);
 	syslog(LOG_ERR, "\n%s\n", s_err);
-    redisAsyncCommand(aredis, NULL, NULL, "SET cam_error_code %s,%d", s_timestamp(), func);
-    redisAsyncCommand(aredis, NULL, NULL, "SET cam_error %s,%s", s_timestamp(), s_err);
+    redisAsyncCommand(aredis, NULL, NULL, "SET %s.s.error.timestamp %s", myid(), s_timestamp());
+    redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.error_code %d", myid(), func);
+    redisAsyncCommand(aredis, NULL, NULL, "SET %s.s.cam_error %s", myid(), s_err);
   }
 
   return func;
@@ -151,7 +152,7 @@ void camTr::printH(int tilt, int p, const uint8_t *bins, int length)
 	for(int i = 0; i< length; i++) {
 		sprintf(buf + strlen(buf), ",%d", bins[i]);
 	}
-	redisAsyncCommand(aredis, NULL, NULL, "SET h%d:%d %s", tilt, p, buf, strlen(buf));
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.s.h%d:%d %s", myid(), tilt, p, buf, strlen(buf));
 	FILE *f = fopen("bins.txt", "a");
 	if(f) {
 		fputs(buf, f);
@@ -260,8 +261,8 @@ const char *camTr::chan_color(int chan)
 
 void camTr::storeCurPos()
 {
-    redisAsyncCommand(aredis, NULL, NULL, "SET cur_tilt %d", cam.getServoPosition(CMUCAM4_TILT_SERVO));
-    redisAsyncCommand(aredis, NULL, NULL, "SET cur_pan %d", cam.getServoPosition(CMUCAM4_PAN_SERVO));
+    redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.tilt %d", myid(), cam.getServoPosition(CMUCAM4_TILT_SERVO));
+    redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.pan %d", myid(), cam.getServoPosition(CMUCAM4_PAN_SERVO));
 }
 
 struct SPCb {
@@ -311,9 +312,9 @@ void camTr::restoreCurPos()
 {
 	char buf[50];
 	sprintf(buf, "%d", CMUCAM4_TILT_SERVO);
-    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET cur_tilt");
+    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET %s.i.tilt", myid());
 	sprintf(buf, "%d", CMUCAM4_PAN_SERVO);
-    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET cur_pan");
+    redisAsyncCommand(aredis, setCurPosCallback, strdup(buf), "GET %s.i.pan", myid());
 }
 
 void camTr::loop()
@@ -382,14 +383,14 @@ void camTr::loop()
 				for(int i = 0; i< length; i++) {
 					sprintf(buf + strlen(buf), ",%d", bins[i]);
 				}
-				redisAsyncCommand(aredis, NULL, NULL, "SET %s_hist %s", chan_color(h_chan), buf, strlen(buf));
+				redisAsyncCommand(aredis, NULL, NULL, "SET %s.s.%s_hist %s", myid(), chan_color(h_chan), buf, strlen(buf));
 				free(buf);
 			}
 		}
 	}
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	redisAsyncCommand(aredis, NULL, NULL, "SET timestamp %d.%6.6d", tv.tv_sec, tv.tv_usec);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.s.timestamp %d.%6.6d", myid(), tv.tv_sec, tv.tv_usec);
 }
 
 
@@ -447,7 +448,7 @@ void camTr::make_image(json_t *js)
 {
 	IMBUF ibuf;
 	if(getImage(ibuf) > 0) {
-		redisAsyncCommand(aredis, NULL, NULL, "SET cur_image %b", ibuf.ibuf, ibuf.isize);
+		redisAsyncCommand(aredis, NULL, NULL, "SET %s.b.image %b", myid(), ibuf.ibuf, ibuf.isize);
 	}
 }
 
@@ -496,7 +497,7 @@ void camTr::set_window(json_t *js)
 	int bottomRightY = json_integer_value(json_object_get(js, "y2"));
 	E(cam.setTrackingWindow(topLeftX, topLeftY, bottomRightX, bottomRightY));
 	E(cam.getTrackingWindow(&tw));
-	redisAsyncCommand(aredis, NULL, NULL, "SET cur_window %s,%d,%d,%d,%d", s_timestamp(), tw.topLeftX, tw.topLeftY, tw.bottomRightX, tw.bottomRightY);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.l.cur_window %s,%d,%d,%d,%d", myid(), s_timestamp(), tw.topLeftX, tw.topLeftY, tw.bottomRightX, tw.bottomRightY);
 }
 
 void camTr::create_servant()
