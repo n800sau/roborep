@@ -52,12 +52,17 @@
 
 
 					var rdata = JSON.parse(page_request.responseText);
+					var params_e = document.getElementById("params");
+					params_e.innerHTML = '';
 					for(var pname in rdata) {
-						domelement = document.getElementById(pname);
-						if (domelement) {
-							domelement.innerHTML = '';
-							domelement.appendChild(document.createTextNode(rdata[pname]));
-						}
+						var tr_e = document.createElement('tr');
+						params_e.appendChild(tr_e);
+						var td_e = document.createElement('td');
+						td_e.appendChild(document.createTextNode(pname));
+						tr_e.appendChild(td_e);
+						var td_e = document.createElement('td');
+						td_e.appendChild(document.createTextNode(rdata[pname]));
+						tr_e.appendChild(td_e);
 					}
 					update_image(rdata);
 
@@ -166,24 +171,6 @@
 	<td><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td><td><canvas id="yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
 	</tr>
 	</table>
-	<table>
-	<tr>
-	<td id="s_timestamp1"></td>
-	</tr>
-	<tr>
-	<td id="rawXAxis1"></td><td id="rawYAxis1"></td><td id="rawZAxis1"></td>
-	</tr>
-	<tr>
-	<td id="scaledXAxis1"></td><td id="scaledYAxis1"></td><td id="scaledZAxis1"></td>
-	</tr>
-	<tr>
-	<td id="xz_degrees"></td><td id="yz_degrees"></td><td></td>
-	</tr>
-	<tr>
-		<td>
-			<div id="cam_values"/>
-		</td>
-	</tr>
-	</table>
+	<div style="overflow:auto;height:120px;width:120px;"><table id="params"></table></div>
 </body>
 </html>
