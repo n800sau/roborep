@@ -47,6 +47,7 @@ class Rhttp:public ReServant
 		~Rhttp();
 
 		virtual void http_request(struct evhttp_request *req);
+		void send_file(struct evhttp_request *req,  const char *fname, const char *mime="text/html");
 
 		void keyCallback(redisAsyncContext *c, const char *rgroup, const char *rtype, redisReply *reply);
 		void paramCallback(redisAsyncContext *c, const char *rkey, const char *rgroup, const char *rtype, redisReply *reply);

@@ -8,6 +8,14 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+int fsize(FILE *fp){
+    int prev=ftell(fp);
+    fseek(fp, 0L, SEEK_END);
+    int sz=ftell(fp);
+    fseek(fp,prev,SEEK_SET); //go back to where we were
+    return sz;
+}
+
 rhttp_redisReply::rhttp_redisReply(Rhttp *ths, const char *rgroup, const char *rtype, const char *rkey)
 {
 	this->ths = ths;
@@ -67,7 +75,7 @@ void Rhttp::create_servant()
 
 void Rhttp::loop()
 {
-	printf("............................................\n");
+//	printf("............................................\n");
 	for(int i=0; i<rgroups_count; i++) {
 		const char *rgroup = rgroups[i];
 		rhttp_redisReply *rr;
@@ -81,12 +89,28 @@ void Rhttp::loop()
 	ReServant::loop();
 }
 
-int fsize(FILE *fp){
-    int prev=ftell(fp);
-    fseek(fp, 0L, SEEK_END);
-    int sz=ftell(fp);
-    fseek(fp,prev,SEEK_SET); //go back to where we were
-    return sz;
+void Rhttp::send_file(struct evhttp_request *req, const char *fname, const char *mime)
+{
+	char index_path[400];
+	strcpy(index_path, mypath());
+	strcat(index_path, "/");
+	strcat(index_path, fname);
+	struct evbuffer *buf = evbuffer_new();
+	struct evkeyvalq *headers = evhttp_request_get_output_headers(req);
+	int fd = open(index_path, O_RDONLY);
+	if(fd >= 0) {
+		struct stat st;
+		fstat(fd, &st);
+		evbuffer_add_file(buf, fd, 0, st.st_size);
+		syslog(LOG_NOTICE, "file size=%d, bufsize=%d", st.st_size, evbuffer_get_length(buf));
+		evhttp_add_header(headers, "Content-Type", mime);
+		evhttp_send_reply(req, 200, "OK", buf);
+		close(fd);
+	} else {
+		const char *r404 = "404 Not found";
+		evbuffer_add(buf, r404, strlen(r404));
+		evhttp_send_reply(req, 404, "not found", buf);
+	}
 }
 
 void Rhttp::http_request(struct evhttp_request *req)
@@ -95,7 +119,6 @@ void Rhttp::http_request(struct evhttp_request *req)
 	const char *cmdtype;
 	struct evkeyvalq *headers;
 	struct evkeyval *header;
-	struct evbuffer *buf;
 
 	switch (evhttp_request_get_command(req)) {
 		case EVHTTP_REQ_GET: cmdtype = "GET"; break;
@@ -118,36 +141,26 @@ void Rhttp::http_request(struct evhttp_request *req)
 		syslog(LOG_NOTICE, "  %s: %s\n", header->key, header->value);
 	}
 
-	buf = evhttp_request_get_input_buffer(req);
+	struct evbuffer *ibuf = evhttp_request_get_input_buffer(req);
 	syslog(LOG_NOTICE, "Input data: <<<");
-	while (evbuffer_get_length(buf)) {
+	while (evbuffer_get_length(ibuf)) {
 		int n;
 		char cbuf[128];
-		n = evbuffer_remove(buf, cbuf, sizeof(buf)-1);
+		n = evbuffer_remove(ibuf, cbuf, sizeof(cbuf)-1);
 		if (n > 0)
 			syslog(LOG_NOTICE, "%s", cbuf);
 	}
 	syslog(LOG_NOTICE, ">>>");
 
-	buf = evbuffer_new();
 	if(strcmp(req->uri, "/") == 0) {
-		char index_path[400];
-		strcpy(index_path, mypath());
-		strcat(index_path, "/index.html");
-		int fd = open(index_path, O_RDONLY);
-		if(fd >= 0) {
-			struct stat st;
-			fstat(fd, &st);
-			evbuffer_add_file(buf, fd, 0, st.st_size);
-//			evbuffer_read(buf, fd, -1);
-			syslog(LOG_NOTICE, "file size=%d, bufsize=%d", st.st_size, evbuffer_get_length(buf));
-			evhttp_send_reply(req, 200, "OK", buf);
-			close(fd);
-		} else {
-			syslog(LOG_WARNING, "Error opening %s", index_path);
-			evhttp_send_reply(req, 500, "Internal Error", buf);
-		}
+		send_file(req, "index.html");
+	} else if(strcmp(req->uri, "/car_back") == 0) {
+		send_file(req, "car_back.png", "image/png");
+	} else if(strcmp(req->uri, "/car_side") == 0) {
+		send_file(req, "car_side.png", "image/png");
 	} else {
+		struct evbuffer *buf = evbuffer_new();
+		headers = evhttp_request_get_output_headers(req);
 		json_t *js = json_object();
 		json_object_set_new(js, "mypath()", json_string(mypath()));
 		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
@@ -168,7 +181,6 @@ void Rhttp::http_request(struct evhttp_request *req)
 		if(jstr) {
 			syslog(LOG_DEBUG, "%s\n", jstr);
 			evbuffer_add(buf, jstr, strlen(jstr));
-			headers = evhttp_request_get_output_headers(req);
 			evhttp_add_header(headers, "Content-Type", "application/json");
 			evhttp_send_reply(req, 200, "OK", buf);
 			free(jstr);
@@ -177,8 +189,8 @@ void Rhttp::http_request(struct evhttp_request *req)
 			evhttp_send_reply(req, 500, "Internal Error", buf);
 		}
 		json_decref(js);
+		evbuffer_free(buf);
 	}
-	evbuffer_free(buf);
 	syslog(LOG_NOTICE, "URI:%s", req->uri);
 
 }
@@ -224,13 +236,13 @@ void Rhttp::paramCallback(redisAsyncContext *c, const char *rkey, const char *rg
 			if (found >= 0) {
 				if ( strcmp(rtype, rtypes[R_REAL]) == 0 ) {
 					rvals[found] = new RVAL(rkey, atof(reply->str));
-					printf("param reply real %s=%g\n", rvals[found]->key, rvals[found]->u.rval);
+//					printf("param reply real %s=%g\n", rvals[found]->key, rvals[found]->u.rval);
 				} else if ( strcmp(rtype, rtypes[R_INT]) == 0 ) {
 					rvals[found] = new RVAL(rkey, atoi(reply->str));
-					printf("param reply int %s=%d\n", rvals[found]->key, rvals[found]->u.ival);
+//					printf("param reply int %s=%d\n", rvals[found]->key, rvals[found]->u.ival);
 				} else if ( strcmp(rtype, rtypes[R_STR]) == 0 ) {
 					rvals[found] = new RVAL(rkey, reply->str);
-					printf("param reply str %s=%s\n", rvals[found]->key, rvals[found]->u.sval);
+//					printf("param reply str %s=%s\n", rvals[found]->key, rvals[found]->u.sval);
 				}
 			}
 		}
