@@ -149,12 +149,12 @@ void ADXL345::loop()
 	json_t *js = json_object();
 	json_object_set_new(js, "mypath", json_string(mypath()));
 	json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
-	json_object_set_new(js, "rawXAxis", json_integer(raw.XAxis));
-	json_object_set_new(js, "rawYAxis", json_integer(raw.YAxis));
-	json_object_set_new(js, "rawZAxis", json_integer(raw.ZAxis));
-	json_object_set_new(js, "scaledXAxis", json_real(scaled.XAxis));
-	json_object_set_new(js, "scaledYAxis", json_real(scaled.YAxis));
-	json_object_set_new(js, "scaledZAxis", json_real(scaled.ZAxis));
+	json_object_set_new(js, "rawX", json_integer(raw.XAxis));
+	json_object_set_new(js, "rawY", json_integer(raw.YAxis));
+	json_object_set_new(js, "rawZ", json_integer(raw.ZAxis));
+	json_object_set_new(js, "scaledX", json_real(scaled.XAxis));
+	json_object_set_new(js, "scaledY", json_real(scaled.YAxis));
+	json_object_set_new(js, "scaledZ", json_real(scaled.ZAxis));
 	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
 	json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
 	char *jstr = json_dumps(js, JSON_INDENT(4));
@@ -167,17 +167,6 @@ void ADXL345::loop()
 		syslog(LOG_ERR, "Can not encode JSON\n");
 	}
 	json_decref(js);
-
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_x %d", myid(), raw.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_y %d", myid(), raw.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_z %d", myid(), raw.ZAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_x %g", myid(), scaled.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_y %g", myid(), scaled.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_z %g", myid(), scaled.ZAxis);
-
-
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.xz %g", myid(), xz_degrees);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.yz %g", myid(), yz_degrees);
 
 	ReServant::loop();
 }
