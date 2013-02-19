@@ -3,7 +3,6 @@
 #include <math.h>
 #include <evhttp.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <fcntl.h>
@@ -24,15 +23,6 @@
 #define ScaleFor4G 0.0078
 #define ScaleFor8G 0.0156
 #define ScaleFor16G 0.0312
-
-const char *s_timestamp()
-{
-	static char rs[50];
-	time_t t = time(NULL);
-	struct tm *st = localtime(&t);
-	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
-	return rs;
-}
 
 ADXL345::ADXL345(int port):ReServant("adxl345"),m_Scale(1),raw(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
 {
@@ -155,6 +145,29 @@ void ADXL345::loop()
 	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
 	//syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
 	//syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
+
+	json_t *js = json_object();
+	json_object_set_new(js, "mypath", json_string(mypath()));
+	json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
+	json_object_set_new(js, "rawXAxis", json_integer(raw.XAxis));
+	json_object_set_new(js, "rawYAxis", json_integer(raw.YAxis));
+	json_object_set_new(js, "rawZAxis", json_integer(raw.ZAxis));
+	json_object_set_new(js, "scaledXAxis", json_real(scaled.XAxis));
+	json_object_set_new(js, "scaledYAxis", json_real(scaled.YAxis));
+	json_object_set_new(js, "scaledZAxis", json_real(scaled.ZAxis));
+	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
+	json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
+	char *jstr = json_dumps(js, JSON_INDENT(4));
+	if(jstr) {
+		syslog(LOG_DEBUG, "%s\n", jstr);
+		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
+		redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
+		free(jstr);
+	} else {
+		syslog(LOG_ERR, "Can not encode JSON\n");
+	}
+	json_decref(js);
+
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_x %d", myid(), raw.XAxis);
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_y %d", myid(), raw.YAxis);
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.raw_z %d", myid(), raw.ZAxis);
@@ -256,7 +269,7 @@ void ADXL345::http_request(struct evhttp_request *req)
 			evhttp_send_reply(req, 200, "OK", buf);
 			free(jstr);
 		} else {
-			syslog(LOG_ERR, "Can not decode JSON\n");
+			syslog(LOG_ERR, "Can not encode JSON\n");
 			evhttp_send_reply(req, 500, "Internal Error", buf);
 		}
 		json_decref(js);

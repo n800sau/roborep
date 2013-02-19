@@ -1,8 +1,9 @@
 #include "L3G4200D.h"
 #include <math.h>
 #include <syslog.h>
+#include "Kalman.h"
 
-L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g()
+L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g(),zeroValue({0, 0, 0})
 {
 	m_Address = address;
 }
@@ -96,6 +97,8 @@ void L3G4200D::loop()
 		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.y %g", myid(), g.y);
 		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.z %g", myid(), g.z);
 	}
+
+	//kalman filter
 
 	syslog(LOG_NOTICE, "gyro:%g %g %g\n", g.x, g.y, g.z);
 

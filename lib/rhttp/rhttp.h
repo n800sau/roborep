@@ -14,8 +14,8 @@ static const char *rgroups[] = {
 
 static const int rgroups_count = sizeof(rgroups) / sizeof(*rgroups);
 
-enum RTYPES {R_INT, R_REAL, R_STR};
-static const char *rtypes[] = {"i", "r", "s"};
+enum RTYPES {R_INT, R_REAL, R_STR, R_JSON};
+static const char *rtypes[] = {"i", "r", "s", "js"};
 
 struct RVAL {
 	const char *key;
@@ -25,7 +25,7 @@ struct RVAL {
 		double rval;
 		int ival;
 	} u;
-	inline RVAL(const char *key, const char *sval) { this->key = strdup(key); u.sval = strdup(sval); rtype = R_STR; }
+	inline RVAL(const char *key, const char *sval, RTYPES rtype=R_STR) { this->key = strdup(key); u.sval = strdup(sval); this->rtype = rtype; }
 	inline RVAL(const char *key, double rval) { this->key = strdup(key); u.rval = rval; rtype = R_REAL; }
 	inline RVAL(const char *key, int ival) { this->key = strdup(key); u.ival = ival; rtype = R_INT; }
 	~RVAL() { free((void*) key); if (rtype == R_STR) free((void*) u.sval); }

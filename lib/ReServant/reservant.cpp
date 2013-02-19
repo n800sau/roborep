@@ -9,6 +9,18 @@
 #include <adapters/libevent.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <time.h>
+
+
+const char *s_timestamp()
+{
+	static char rs[50];
+	time_t t = time(NULL);
+	struct tm *st = localtime(&t);
+	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
+	return rs;
+}
+
 
 //#################
 static void ReServant_cmd_request_cb(struct evhttp_request *req, void *arg)
@@ -111,7 +123,7 @@ void ReServant::run()
 {
 	setlogmask (LOG_UPTO (LOG_DEBUG));
 	char logname[256];
-	sprintf(logname, "%s.log", myid());
+	sprintf(logname, "%s", myid());
 	openlog(logname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
 	syslog(LOG_NOTICE, "Hello from %s\n", logname);

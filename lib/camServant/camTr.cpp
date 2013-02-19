@@ -38,15 +38,6 @@ const int servo_steps = servo_max - servo_min;
 
 #define E(func) (_E((func), __LINE__))
 
-const char *s_timestamp()
-{
-	static char rs[50];
-	time_t t = time(NULL);
-	struct tm *st = localtime(&t);
-	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
-	return rs;
-}
-
 struct IMBUF {
 	int isize;
 	uint8_t ibuf[160*120*4];
