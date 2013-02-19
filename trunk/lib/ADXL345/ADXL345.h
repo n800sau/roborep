@@ -5,6 +5,8 @@
 #include <reservant.h>
 #include <I2CWire.h>
 
+#define REDIS_LIST_SIZE 10
+
 struct AccelerometerScaled
 {
 	AccelerometerScaled() { XAxis = YAxis = ZAxis = 0; }

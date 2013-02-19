@@ -41,6 +41,29 @@
 			}
 		}
 
+		function json2list(placement, jsobj) {
+			for(var pname in jsobj) {
+				var ul_e = document.createElement('ul');
+				placement.appendChild(ul_e);
+				var li_e = document.createElement('li');
+				ul_e.appendChild(li_e);
+				var t_e = document.createElement('table');
+				li_e.appendChild(t_e);
+				var tr_e = document.createElement('tr');
+				t_e.appendChild(tr_e);
+				var td_e = document.createElement('td');
+				tr_e.appendChild(td_e);
+				td_e.appendChild(document.createTextNode(pname));
+				var td_e = document.createElement('td');
+				tr_e.appendChild(td_e);
+				if(typeof(jsobj[pname]) == "object") {
+					json2list(td_e, jsobj[pname]);
+				} else {
+					td_e.appendChild(document.createTextNode(jsobj[pname]));
+				}
+			}
+		}
+
 		var bustcachevar = 1;
 		var bustcacheparameter = "";
 		function ajaxpage(url, containerid) {
@@ -54,16 +77,7 @@
 					var rdata = JSON.parse(page_request.responseText);
 					var params_e = document.getElementById("params");
 					params_e.innerHTML = '';
-					for(var pname in rdata) {
-						var tr_e = document.createElement('tr');
-						params_e.appendChild(tr_e);
-						var td_e = document.createElement('td');
-						td_e.appendChild(document.createTextNode(pname));
-						tr_e.appendChild(td_e);
-						var td_e = document.createElement('td');
-						td_e.appendChild(document.createTextNode(rdata[pname]));
-						tr_e.appendChild(td_e);
-					}
+					json2list(params_e, rdata);
 					update_image(rdata);
 
 				}
@@ -157,9 +171,9 @@
 //			ctx.moveTo(0, 0);
 //			ctx.fill();
 			var ctx = document.getElementById('xz_canvas').getContext('2d');
-			gauge(ctx, 100, data['adxl345.r.xz'], img_side);
+			gauge(ctx, 100, data['adxl345.js.obj']['xz_degrees'], img_side);
 			var ctx = document.getElementById('yz_canvas').getContext('2d');
-			gauge(ctx, 100, data['adxl345.r.yz'], img_back);
+			gauge(ctx, 100, data['adxl345.js.obj']['yz_degrees'], img_back);
 		};
 	</script>
 </head>
@@ -171,6 +185,6 @@
 	<td><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td><td><canvas id="yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
 	</tr>
 	</table>
-	<div style="overflow:auto;height:120px;width:120px;"><table id="params"></table></div>
+	<div style="overflow:auto;height:100%;width:100%;"><div id="params"></div></div>
 </body>
 </html>

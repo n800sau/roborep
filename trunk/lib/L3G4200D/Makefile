@@ -44,4 +44,4 @@ L3G4200D.o: /usr/include/event2/util.h /usr/include/event2/event-config.h
 L3G4200D.o: /usr/include/stdint.h /usr/include/netdb.h
 L3G4200D.o: /usr/include/netinet/in.h /usr/include/endian.h
 L3G4200D.o: /usr/include/rpc/netdb.h ../I2CWire/I2CWire.h /usr/include/math.h
-L3G4200D.o: /usr/include/syslog.h
+L3G4200D.o: /usr/include/syslog.h Kalman.h

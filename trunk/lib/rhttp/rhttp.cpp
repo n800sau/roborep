@@ -32,15 +32,6 @@ rhttp_redisReply::~rhttp_redisReply()
 		free((void*)this->rkey);
 }
 
-const char *s_timestamp()
-{
-	static char rs[50];
-	time_t t = time(NULL);
-	struct tm *st = localtime(&t);
-	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
-	return rs;
-}
-
 void Rhttp_keyCallBack(redisAsyncContext *c, void *r, void *privdata)
 {
 	rhttp_redisReply *rr = (rhttp_redisReply *)privdata;
@@ -84,6 +75,8 @@ void Rhttp::loop()
 		rr = new rhttp_redisReply(this, rgroup, "i");
 		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%s.*", rr->rgroup, rr->rtype);
 		rr = new rhttp_redisReply(this, rgroup, "s");
+		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%s.*", rr->rgroup, rr->rtype);
+		rr = new rhttp_redisReply(this, rgroup, "js");
 		redisAsyncCommand(aredis, Rhttp_keyCallBack, rr, "KEYS %s.%s.*", rr->rgroup, rr->rtype);
 	}
 	ReServant::loop();
@@ -162,7 +155,7 @@ void Rhttp::http_request(struct evhttp_request *req)
 		struct evbuffer *buf = evbuffer_new();
 		headers = evhttp_request_get_output_headers(req);
 		json_t *js = json_object();
-		json_object_set_new(js, "mypath()", json_string(mypath()));
+		json_object_set_new(js, "mypath", json_string(mypath()));
 		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
 		for(int i=0; i<rvals_count; i++) {
 			switch(rvals[i]->rtype) {
@@ -175,11 +168,16 @@ void Rhttp::http_request(struct evhttp_request *req)
 				case R_STR:
 					json_object_set_new(js, rvals[i]->key, json_string(rvals[i]->u.sval));
 					break;
+				case R_JSON:
+					json_error_t error;
+					json_t *jsv = json_loads(rvals[i]->u.sval, JSON_DISABLE_EOF_CHECK, &error);
+					json_object_set_new(js, rvals[i]->key, jsv);
+					break;
 			}
 		}
 		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
-			syslog(LOG_DEBUG, "%s\n", jstr);
+			syslog(LOG_NOTICE, "%s\n", jstr);
 			evbuffer_add(buf, jstr, strlen(jstr));
 			evhttp_add_header(headers, "Content-Type", "application/json");
 			evhttp_send_reply(req, 200, "OK", buf);
@@ -206,7 +204,11 @@ void Rhttp::keyCallback(redisAsyncContext *c, const char *rgroup, const char *rt
 				redisReply *el = reply->element[i];
 //				printf("key reply %s\n", el->str);
 				rhttp_redisReply *rr = new rhttp_redisReply(this, rgroup, rtype, el->str);
-				redisAsyncCommand(aredis, Rhttp_paramCallBack, rr, "GET %s", rr->rkey);
+				if ( strcmp(rr->rtype, rtypes[R_JSON]) == 0 ) {
+					redisAsyncCommand(aredis, Rhttp_paramCallBack, rr, "LINDEX %s -1", rr->rkey);
+				} else {
+					redisAsyncCommand(aredis, Rhttp_paramCallBack, rr, "GET %s", rr->rkey);
+				}
 			}
 		}
 	}
@@ -242,6 +244,9 @@ void Rhttp::paramCallback(redisAsyncContext *c, const char *rkey, const char *rg
 //					printf("param reply int %s=%d\n", rvals[found]->key, rvals[found]->u.ival);
 				} else if ( strcmp(rtype, rtypes[R_STR]) == 0 ) {
 					rvals[found] = new RVAL(rkey, reply->str);
+//					printf("param reply str %s=%s\n", rvals[found]->key, rvals[found]->u.sval);
+				} else if ( strcmp(rtype, rtypes[R_JSON]) == 0 ) {
+					rvals[found] = new RVAL(rkey, reply->str, R_JSON);
 //					printf("param reply str %s=%s\n", rvals[found]->key, rvals[found]->u.sval);
 				}
 			}

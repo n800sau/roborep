@@ -62,5 +62,6 @@ class ReServant
 		virtual void http_request(struct evhttp_request *req);
 };
 
+const char *s_timestamp();
 
 #endif //__RESERVANT_H

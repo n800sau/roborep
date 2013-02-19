@@ -45,7 +45,8 @@
 class L3G4200D:public ReServant
 {
 	private:
-	  int m_Address;
+		int m_Address;
+		double zeroValue[3];
 
 	protected:
 		I2CWire i2cwire;
