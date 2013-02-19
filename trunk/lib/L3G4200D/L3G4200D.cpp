@@ -1,10 +1,14 @@
 #include "L3G4200D.h"
 #include <math.h>
+#include <memory.h>
 #include <syslog.h>
 #include "Kalman.h"
 
-L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g(),zeroValue({0, 0, 0})
+L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g()
 {
+	for(int i=0; i< sizeof(zeroValue)/sizeof(zeroValue[0]); i++) {
+		zeroValue[i] = 0;
+	}
 	m_Address = address;
 }
 
@@ -93,9 +97,27 @@ void L3G4200D::create_servant()
 void L3G4200D::loop()
 {
 	if(read()) {
-		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.x %g", myid(), g.x);
-		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.y %g", myid(), g.y);
-		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.z %g", myid(), g.z);
+		json_t *js = json_object();
+		json_object_set_new(js, "mypath", json_string(mypath()));
+		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
+		json_object_set_new(js, "x", json_real(g.x));
+		json_object_set_new(js, "y", json_real(g.y));
+		json_object_set_new(js, "z", json_real(g.z));
+		char *jstr = json_dumps(js, JSON_INDENT(4));
+		if(jstr) {
+			syslog(LOG_DEBUG, "%s\n", jstr);
+			redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
+			redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
+			free(jstr);
+		} else {
+			syslog(LOG_ERR, "Can not encode JSON\n");
+		}
+		json_decref(js);
+
+
+//		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.x %g", myid(), g.x);
+//		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.y %g", myid(), g.y);
+//		redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.z %g", myid(), g.z);
 	}
 
 	//kalman filter

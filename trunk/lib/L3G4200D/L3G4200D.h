@@ -4,6 +4,8 @@
 #include <reservant.h>
 #include <I2CWire.h>
 
+#define REDIS_LIST_SIZE 10
+
 // The Arduino two-wire interface uses a 7-bit number for the address, 
 // and sets the last bit correctly based on reads and writes
 //#define GYR_ADDRESS (0xD2 >> 1)

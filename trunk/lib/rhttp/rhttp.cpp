@@ -108,7 +108,6 @@ void Rhttp::send_file(struct evhttp_request *req, const char *fname, const char 
 
 void Rhttp::http_request(struct evhttp_request *req)
 {
-//	ReServant::http_request(req);
 	const char *cmdtype;
 	struct evkeyvalq *headers;
 	struct evkeyval *header;
