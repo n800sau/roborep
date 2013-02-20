@@ -68,6 +68,7 @@ class HMC5883L:public ReServant
 		uint8_t *Read(int address, uint8_t *buf, int length);
 		virtual void create_servant();
 		virtual void loop();
+		virtual void fill_json(json_t *js);
 
 	public:
 	  HMC5883L();
