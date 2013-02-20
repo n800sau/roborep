@@ -9,14 +9,18 @@
 #include <adapters/libevent.h>
 #include <unistd.h>
 #include <libgen.h>
-#include <time.h>
 
 
-const char *s_timestamp()
+const char *s_timestamp(const time_t *t)
 {
+	time_t lt;
 	static char rs[50];
-	time_t t = time(NULL);
-	struct tm *st = localtime(&t);
+	if(t) {
+		lt = *t;
+	} else {
+		time(&lt);
+	}
+	struct tm *st = localtime(&lt);
 	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
 	return rs;
 }
@@ -161,9 +165,6 @@ void ReServant::run()
 
 void ReServant::loop()
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	redisAsyncCommand(aredis, NULL, NULL, "SET timestamp %d.%6.6d", tv.tv_sec, tv.tv_usec);
 }
 
 void ReServant::timer_cb_func(short what)
@@ -267,3 +268,25 @@ void ReServant::runHttpd(const char *host, int port)
 	}
 }
 
+void ReServant::fill_json(json_t *js)
+{
+}
+
+void ReServant::json2redislist()
+{
+	time_t t = time(NULL);
+	json_t *js = json_object();
+	json_object_set_new(js, "timestamp", json_integer(t));
+	fill_json(js);
+	char *jstr = json_dumps(js, JSON_INDENT(4));
+	if(jstr) {
+		syslog(LOG_DEBUG, "%s\n", jstr);
+		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
+		redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
+		free(jstr);
+	} else {
+		syslog(LOG_ERR, "Can not encode JSON\n");
+	}
+	json_decref(js);
+	redisAsyncCommand(aredis, NULL, NULL, "SET %s.timestamp %s", myid(), s_timestamp(&t));
+}

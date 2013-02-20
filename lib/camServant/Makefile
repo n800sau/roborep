@@ -1,10 +1,10 @@
 CC=g++
 CCOPTS=-L. -I../ReServant -I../wiringPi -I../CMUcam4 -I/usr/include/hiredis
 STRIP=-strip
-SRCS=camTr.cpp
-OBJECTS=camTr.o
+SRCS=camServant.cpp
+OBJECTS=camServant.o
 LIBS=../CMUcam4/libcmucam4.a ../wiringPi/libwiringPi.a ../ReServant/libreservant.a
-NAME=camTr
+NAME=camServant
 
 .cpp.o:
 		$(CC) $(CCOPTS) -c $<
@@ -23,12 +23,12 @@ depend: $(SRCS)
 	makedepend $(CCOPTS) $(SRCS)
 # DO NOT DELETE
 
-camTr.o: ../ReServant/reservant.h /usr/include/jansson.h /usr/include/stdio.h
-camTr.o: /usr/include/features.h /usr/include/libio.h
-camTr.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
-camTr.o: /usr/include/alloca.h /usr/include/jansson_config.h
-camTr.o: /usr/include/hiredis/hiredis.h /usr/include/hiredis/async.h
-camTr.o: /usr/include/syslog.h /usr/include/time.h /usr/include/xlocale.h
-camTr.o: /usr/include/unistd.h /usr/include/getopt.h ../CMUcam4/CMUcam4.h
-camTr.o: ../CMUcam4/CMUcom4.h /usr/include/stdint.h /usr/include/setjmp.h
-camTr.o: /usr/include/string.h
+camServant.o: ../ReServant/reservant.h /usr/include/jansson.h /usr/include/stdio.h
+camServant.o: /usr/include/features.h /usr/include/libio.h
+camServant.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
+camServant.o: /usr/include/alloca.h /usr/include/jansson_config.h
+camServant.o: /usr/include/hiredis/hiredis.h /usr/include/hiredis/async.h
+camServant.o: /usr/include/syslog.h /usr/include/time.h /usr/include/xlocale.h
+camServant.o: /usr/include/unistd.h /usr/include/getopt.h ../CMUcam4/CMUcam4.h
+camServant.o: ../CMUcam4/CMUcom4.h /usr/include/stdint.h /usr/include/setjmp.h
+camServant.o: /usr/include/string.h

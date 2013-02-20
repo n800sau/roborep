@@ -6,6 +6,9 @@
 #include <hiredis.h>
 #include <async.h>
 #include <event2/http.h>
+#include <time.h>
+
+#define REDIS_LIST_SIZE 10
 
 
 struct CMD_FUNC {
@@ -46,6 +49,10 @@ class ReServant
 
 		inline const char *myid() { return s_id; }
 
+		virtual void fill_json(json_t *js);
+
+		void json2redislist();
+
 	public:
 
 		ReServant(const char *s_id);
@@ -62,6 +69,6 @@ class ReServant
 		virtual void http_request(struct evhttp_request *req);
 };
 
-const char *s_timestamp();
+const char *s_timestamp(const time_t *t=NULL);
 
 #endif //__RESERVANT_H

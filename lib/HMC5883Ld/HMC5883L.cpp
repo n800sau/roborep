@@ -111,7 +111,7 @@ void HMC5883L::create_servant()
 	ReServant::create_servant();
 }
 
-void HMC5883L::loop()
+void HMC5883L::fill_json(json_t *js)
 {
 	syslog(LOG_NOTICE, "Setting scale to +/- 1.3 Ga\n");
 	int error = SetScale(GAUSS_1_3); // Set the scale of the compass->
@@ -148,19 +148,22 @@ void HMC5883L::loop()
 	float headingDegrees = heading * 180/M_PI; 
 
 	syslog(LOG_NOTICE, "Raw: %d %d %d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.raw_x %d", myid(), raw.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.raw_y %d", myid(), raw.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.raw_z %d", myid(), raw.ZAxis);
+	json_object_set_new(js, "rawX", json_integer(raw.XAxis));
+	json_object_set_new(js, "rawY", json_integer(raw.YAxis));
+	json_object_set_new(js, "rawZ", json_integer(raw.ZAxis));
 
 	syslog(LOG_NOTICE, "Scaled: %g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_x %g", myid(), scaled.XAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_y %g", myid(), scaled.YAxis);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.scaled_z %g", myid(), scaled.ZAxis);
+	json_object_set_new(js, "scaledX", json_real(scaled.XAxis));
+	json_object_set_new(js, "scaledY", json_real(scaled.YAxis));
+	json_object_set_new(js, "scaledZ", json_real(scaled.ZAxis));
 
 	syslog(LOG_NOTICE, "Heading: %g radians, %g degrees\n", heading, headingDegrees);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.heading_radians %g", myid(), heading);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.r.heading_degrees %g", myid(), headingDegrees);
-
-	ReServant::loop();
+	json_object_set_new(js, "heading_radians", json_real(heading));
+	json_object_set_new(js, "heading_degrees", json_real(headingDegrees));
 }
 
+void HMC5883L::loop()
+{
+	json2redislist();
+	ReServant::loop();
+}

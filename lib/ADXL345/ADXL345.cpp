@@ -24,7 +24,7 @@
 #define ScaleFor8G 0.0156
 #define ScaleFor16G 0.0312
 
-ADXL345::ADXL345(int port):ReServant("adxl345"),m_Scale(1),raw(),scaled(),xz_degrees(0),yz_degrees(0),port(port)
+ADXL345::ADXL345():ReServant("adxl345"),m_Scale(1),raw(),scaled(),xz_degrees(0),yz_degrees(0)
 {
 }
 
@@ -36,9 +36,6 @@ void ADXL345::create_servant()
 	setRange(2, true);
 //	i2cwire.writeToDevice(Register_DataFormat, 0);
 //	i2cwire.writeToDevice(Register_DataFormat, 11);
-	if(port > 0) {
-		runHttpd("0.0.0.0", port);
-	}
 }
 
 
@@ -134,9 +131,8 @@ float ADXL345::heading(float axis1, float axis2)
 	return heading * 180 / M_PI;
 }
 
-void ADXL345::loop()
+void ADXL345::fill_json(json_t *js)
 {
-
 	raw = readRawAxis();
 	scaled = readScaledAxis();
 	xz_degrees = heading(scaled.XAxis, scaled.ZAxis);
@@ -146,9 +142,6 @@ void ADXL345::loop()
 	//syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
 	//syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
 
-	json_t *js = json_object();
-	json_object_set_new(js, "mypath", json_string(mypath()));
-	json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
 	json_object_set_new(js, "rawX", json_integer(raw.XAxis));
 	json_object_set_new(js, "rawY", json_integer(raw.YAxis));
 	json_object_set_new(js, "rawZ", json_integer(raw.ZAxis));
@@ -157,17 +150,11 @@ void ADXL345::loop()
 	json_object_set_new(js, "scaledZ", json_real(scaled.ZAxis));
 	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
 	json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
-	char *jstr = json_dumps(js, JSON_INDENT(4));
-	if(jstr) {
-		syslog(LOG_DEBUG, "%s\n", jstr);
-		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
-		redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
-		free(jstr);
-	} else {
-		syslog(LOG_ERR, "Can not encode JSON\n");
-	}
-	json_decref(js);
+}
 
+void ADXL345::loop()
+{
+	json2redislist();
 	ReServant::loop();
 }
 
@@ -178,94 +165,3 @@ int fsize(FILE *fp){
     fseek(fp,prev,SEEK_SET); //go back to where we were
     return sz;
 }
-
-void ADXL345::http_request(struct evhttp_request *req)
-{
-//	ReServant::http_request(req);
-	const char *cmdtype;
-	struct evkeyvalq *headers;
-	struct evkeyval *header;
-	struct evbuffer *buf;
-
-	switch (evhttp_request_get_command(req)) {
-		case EVHTTP_REQ_GET: cmdtype = "GET"; break;
-		case EVHTTP_REQ_POST: cmdtype = "POST"; break;
-		case EVHTTP_REQ_HEAD: cmdtype = "HEAD"; break;
-		case EVHTTP_REQ_PUT: cmdtype = "PUT"; break;
-		case EVHTTP_REQ_DELETE: cmdtype = "DELETE"; break;
-		case EVHTTP_REQ_OPTIONS: cmdtype = "OPTIONS"; break;
-		case EVHTTP_REQ_TRACE: cmdtype = "TRACE"; break;
-		case EVHTTP_REQ_CONNECT: cmdtype = "CONNECT"; break;
-		case EVHTTP_REQ_PATCH: cmdtype = "PATCH"; break;
-		default: cmdtype = "unknown"; break;
-	}
-
-	syslog(LOG_NOTICE, "Received a %s request for %s", cmdtype, evhttp_request_get_uri(req));
-
-	headers = evhttp_request_get_input_headers(req);
-	for (header = headers->tqh_first; header;
-	    header = header->next.tqe_next) {
-		syslog(LOG_NOTICE, "  %s: %s\n", header->key, header->value);
-	}
-
-	buf = evhttp_request_get_input_buffer(req);
-	syslog(LOG_NOTICE, "Input data: <<<");
-	while (evbuffer_get_length(buf)) {
-		int n;
-		char cbuf[128];
-		n = evbuffer_remove(buf, cbuf, sizeof(buf)-1);
-		if (n > 0)
-			syslog(LOG_NOTICE, "%s", cbuf);
-	}
-	syslog(LOG_NOTICE, ">>>");
-
-	buf = evbuffer_new();
-	if(strcmp(req->uri, "/") == 0) {
-		char index_path[400];
-		strcpy(index_path, mypath());
-		strcat(index_path, "/index.html");
-		int fd = open(index_path, O_RDONLY);
-		if(fd >= 0) {
-			struct stat st;
-			fstat(fd, &st);
-			evbuffer_add_file(buf, fd, 0, st.st_size);
-//			evbuffer_read(buf, fd, -1);
-			syslog(LOG_NOTICE, "file size=%d, bufsize=%d", st.st_size, evbuffer_get_length(buf));
-			evhttp_send_reply(req, 200, "OK", buf);
-			close(fd);
-		} else {
-			syslog(LOG_WARNING, "Error opening %s", index_path);
-			evhttp_send_reply(req, 500, "Internal Error", buf);
-		}
-	} else {
-		json_t *js = json_object();
-		json_object_set_new(js, "mypath()", json_string(mypath()));
-		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
-		json_object_set_new(js, "rawXAxis", json_integer(raw.XAxis));
-		json_object_set_new(js, "rawYAxis", json_integer(raw.YAxis));
-		json_object_set_new(js, "rawZAxis", json_integer(raw.ZAxis));
-		json_object_set_new(js, "scaledXAxis", json_real(scaled.XAxis));
-		json_object_set_new(js, "scaledYAxis", json_real(scaled.YAxis));
-		json_object_set_new(js, "scaledZAxis", json_real(scaled.ZAxis));
-		json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
-		json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
-		char *jstr = json_dumps(js, JSON_INDENT(4));
-		if(jstr) {
-			syslog(LOG_DEBUG, "%s\n", jstr);
-			evbuffer_add(buf, jstr, strlen(jstr));
-			headers = evhttp_request_get_output_headers(req);
-			evhttp_add_header(headers, "Content-Type", "application/json");
-			evhttp_send_reply(req, 200, "OK", buf);
-			free(jstr);
-		} else {
-			syslog(LOG_ERR, "Can not encode JSON\n");
-			evhttp_send_reply(req, 500, "Internal Error", buf);
-		}
-		json_decref(js);
-	}
-	evbuffer_free(buf);
-	syslog(LOG_NOTICE, "URI:%s", req->uri);
-
-}
-
-

@@ -5,8 +5,6 @@
 #include <reservant.h>
 #include <I2CWire.h>
 
-#define REDIS_LIST_SIZE 10
-
 struct AccelerometerScaled
 {
 	AccelerometerScaled() { XAxis = YAxis = ZAxis = 0; }
@@ -32,20 +30,18 @@ class ADXL345:public ReServant
 		AccelerometerScaled scaled;
 		float xz_degrees;
 		float yz_degrees;
-		int port;
 	protected:
 		I2CWire i2cwire;
 		virtual void create_servant();
 		virtual void loop();
+		virtual void fill_json(json_t *js);
 	public:
-		ADXL345(int port=0);
+		ADXL345();
 		int setRange(int gNum, bool fullResolution);
 		void enableMeasurements();
 		float heading(float axis1, float axis2);
 		AccelerometerRaw readRawAxis();
 		AccelerometerScaled readScaledAxis();
-
-		virtual void http_request(struct evhttp_request *req);
 };
 
 #endif //__ADXL345_H
