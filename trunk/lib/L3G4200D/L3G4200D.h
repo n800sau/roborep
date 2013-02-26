@@ -57,24 +57,39 @@ class L3G4200D:public ReServant
 		virtual void loop();
 		virtual void fill_json(json_t *js);
 		void filter_kalman();
+		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
+		void stop_state(json_t *js);
 
 	public:
 		struct vector
 		{
 			float x, y, z;
 			inline vector() { x = y = z = 0; }
-		} g; // gyro angular velocity readings
+			void operator +=(vector val) {
+				x += val.x;
+				y += val.y;
+				z += val.z;
+			}
+			void operator /=(int val) {
+				x /= val;
+				y /= val;
+				z /= val;
+			}
+		} curr_g, stop_g; // gyro angular velocity readings
+		double stop_time;
 
 		L3G4200D(uint8_t address=DefaultL3G4200D_Address);
 
 		void enableDefault(int scale=1);
 		
-		bool read();
+		bool read(vector &g);
 		
 		// vector functions
 		static void vector_cross(const vector *a, const vector *b, vector *out);
 		static float vector_dot(const vector *a,const vector *b);
 		static void vector_normalize(vector *a);
+
+		typedef void (L3G4200D::*tFunction)(json_t *js);
 };
 
 #endif

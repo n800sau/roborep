@@ -2,7 +2,20 @@
 #include <math.h>
 #include <memory.h>
 #include <syslog.h>
+#include <unistd.h>
 #include "Kalman.h"
+
+struct L3G4200D_CMD_FUNC:public CMD_FUNC {
+	public:
+		L3G4200D_CMD_FUNC(const char *cmd, L3G4200D::tFunction ptr) {
+			this->cmd = cmd;
+			this->ptr = ptr;
+		}
+		L3G4200D::tFunction ptr;
+};
+
+typedef L3G4200D_CMD_FUNC *pL3G4200D_CMD_FUNC;
+
 
 static void L3G4200D_onADXL345(redisAsyncContext *c, void *reply, void *arg)
 {
@@ -17,27 +30,45 @@ static void L3G4200D_onADXL345(redisAsyncContext *c, void *reply, void *arg)
 	}
 }
 
-L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g(),k()
+L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),curr_g(),stop_g(),k(),stop_time(0)
 {
 	for(int i=0; i< sizeof(zeroValue)/sizeof(zeroValue[0]); i++) {
 		zeroValue[i] = 0;
 	}
 	m_Address = address;
+	const static pL3G4200D_CMD_FUNC cmdlist[] = {
+		new L3G4200D_CMD_FUNC("stop_state", &L3G4200D::stop_state),
+	};
+	this->setCmdList((pCMD_FUNC *)cmdlist, sizeof(cmdlist)/sizeof(cmdlist[0]));
+}
+
+void L3G4200D::call_cmd(const pCMD_FUNC cmd, json_t *js)
+{
+	pL3G4200D_CMD_FUNC ccmd = (pL3G4200D_CMD_FUNC)cmd;
+	syslog(LOG_NOTICE, "Executing %s", ccmd->cmd);
+	tFunction FunctionPointer = ccmd->ptr;
+	(this->*FunctionPointer)(js);
+	syslog(LOG_NOTICE, "%s finished", ccmd->cmd);
+}
+
+void L3G4200D::stop_state(json_t *js)
+{
+	// Calibrate all sensors when the y-axis is facing downward/upward (reading either 1g or -1g), then the x-axis and z-axis will both start at 0g
+	syslog(LOG_DEBUG, "stop state requested");
 	
 	// Calibrate all sensors when the y-axis is facing downward/upward (reading either 1g or -1g), then the x-axis and z-axis will both start at 0g
-	int count = 100;
-	for (int i = 0; i < count; i++) { // Take the average of 100 readings
-		zeroValue[0] += readAccX();
-    zeroValue[1] += readAccZ();
-    zeroValue[2] += readGyroX();
-    delay(10);
-  }  
-  zeroValue[0] /= 100;
-  zeroValue[1] /= 100;
-  zeroValue[2] /= 100;
-
-  timer = micros();
-  kX.setAngle(270); // The angle calculated by accelerometer starts at 270 degrees
+	vector g;
+	int count = 0;
+	for (int i = 0; i < 100; i++) { // Take the average of 100 readings
+		if(read(g)) {
+			stop_g += g;
+			count++;
+			usleep(10000);
+		}
+	}
+	stop_g /= count;
+	stop_time = dtime();
+	k.setAngle(270); // The angle calculated by accelerometer starts at 270 degrees
 }
 
 
@@ -79,7 +110,7 @@ void L3G4200D::enableDefault(int scale)
 }
 
 // Reads the 3 gyro channels and stores them in vector g
-bool L3G4200D::read()
+bool L3G4200D::read(vector &g)
 {
 	int16_t buf[3];
 	bool rs = false;
@@ -130,21 +161,31 @@ void L3G4200D::create_servant()
 
 void L3G4200D::fill_json(json_t *js)
 {
-	json_object_set_new(js, "x", json_real(g.x));
-	json_object_set_new(js, "y", json_real(g.y));
-	json_object_set_new(js, "z", json_real(g.z));
+	json_t *sjs;
+
+	sjs = json_object();
+	json_object_set_new(sjs, "x", json_real(curr_g.x));
+	json_object_set_new(sjs, "y", json_real(curr_g.y));
+	json_object_set_new(sjs, "z", json_real(curr_g.z));
+	json_object_set_new(js, "curr_g", sjs);
+
+	sjs = json_object();
+	json_object_set_new(sjs, "x", json_real(stop_g.x));
+	json_object_set_new(sjs, "y", json_real(stop_g.y));
+	json_object_set_new(sjs, "z", json_real(stop_g.z));
+	json_object_set_new(js, "stop_g", sjs);
 }
 
 void L3G4200D::loop()
 {
-	if(read()) {
+	if(read(curr_g)) {
 		json2redislist();
 		filter_kalman();
 	}
 
 	//kalman filter
 
-	syslog(LOG_NOTICE, "gyro:%g %g %g\n", g.x, g.y, g.z);
+	syslog(LOG_NOTICE, "gyro:%g %g %g\n", curr_g.x, curr_g.y, curr_g.z);
 
 	ReServant::loop();
 }
