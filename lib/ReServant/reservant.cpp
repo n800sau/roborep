@@ -11,17 +11,25 @@
 #include <libgen.h>
 
 
-const char *s_timestamp(const time_t *t)
+double dtime()
 {
-	time_t lt;
+	timeval rs;
+	gettimeofday(&rs, NULL);
+	return double(rs.tv_usec) / 1000000 + rs.tv_sec;
+}
+
+const char *s_timestamp(const double *dt)
+{
+	timeval tv;
 	static char rs[50];
-	if(t) {
-		lt = *t;
+	if(dt) {
+		tv.tv_sec = (time_t)*dt;
+		tv.tv_usec = (suseconds_t)(long(((*dt) * 1000000)) % 1000000);
 	} else {
-		time(&lt);
+		gettimeofday(&tv, NULL);
 	}
-	struct tm *st = localtime(&lt);
-	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
+	struct tm *st = localtime(&tv.tv_sec);
+	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d.%6.6d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec, tv.tv_usec);
 	return rs;
 }
 
@@ -274,9 +282,9 @@ void ReServant::fill_json(json_t *js)
 
 void ReServant::json2redislist()
 {
-	time_t t = time(NULL);
+	double t = dtime();
 	json_t *js = json_object();
-	json_object_set_new(js, "timestamp", json_integer(t));
+	json_object_set_new(js, "timestamp", json_real(t));
 	fill_json(js);
 	char *jstr = json_dumps(js, JSON_INDENT(4));
 	if(jstr) {

@@ -24,8 +24,45 @@
 #define ScaleFor8G 0.0156
 #define ScaleFor16G 0.0312
 
-ADXL345::ADXL345():ReServant("adxl345"),m_Scale(1),raw(),scaled(),xz_degrees(0),yz_degrees(0)
+struct ADXL345_CMD_FUNC:public CMD_FUNC {
+	public:
+		ADXL345_CMD_FUNC(const char *cmd, ADXL345::tFunction ptr) {
+			this->cmd = cmd;
+			this->ptr = ptr;
+		}
+		ADXL345::tFunction ptr;
+};
+
+typedef ADXL345_CMD_FUNC *pADXL345_CMD_FUNC;
+
+ADXL345::ADXL345():ReServant("adxl345"),m_Scale(1),raw(),scaled(),stop_scaled(),xz_degrees(0),yz_degrees(0)
 {
+	const static pADXL345_CMD_FUNC cmdlist[] = {
+		new ADXL345_CMD_FUNC("stop_state", &ADXL345::stop_state),
+	};
+	this->setCmdList((pCMD_FUNC *)cmdlist, sizeof(cmdlist)/sizeof(cmdlist[0]));
+}
+
+void ADXL345::call_cmd(const pCMD_FUNC cmd, json_t *js)
+{
+	pADXL345_CMD_FUNC ccmd = (pADXL345_CMD_FUNC)cmd;
+	syslog(LOG_NOTICE, "Executing %s", ccmd->cmd);
+	tFunction FunctionPointer = ccmd->ptr;
+	(this->*FunctionPointer)(js);
+	syslog(LOG_NOTICE, "%s finished", ccmd->cmd);
+}
+
+void ADXL345::stop_state(json_t *js)
+{
+	// Calibrate all sensors when the y-axis is facing downward/upward (reading either 1g or -1g), then the x-axis and z-axis will both start at 0g
+	syslog(LOG_DEBUG, "stop state requested");
+	stop_scaled = AccelerometerScaled();
+	int count = 100;
+	for (int i = 0; i < count; i++) { // Take the average of 100 readings
+		stop_scaled += readScaledAxis();
+		usleep(10000);
+	}
+	stop_scaled /= count;
 }
 
 void ADXL345::create_servant()
@@ -133,6 +170,7 @@ float ADXL345::heading(float axis1, float axis2)
 
 void ADXL345::fill_json(json_t *js)
 {
+	json_t *sjs;
 	raw = readRawAxis();
 	scaled = readScaledAxis();
 	xz_degrees = heading(scaled.XAxis, scaled.ZAxis);
@@ -141,13 +179,24 @@ void ADXL345::fill_json(json_t *js)
 	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
 	//syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
 	//syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
+	sjs = json_object();
+	json_object_set_new(sjs, "x", json_integer(raw.XAxis));
+	json_object_set_new(sjs, "y", json_integer(raw.YAxis));
+	json_object_set_new(sjs, "z", json_integer(raw.ZAxis));
+	json_object_set_new(js, "raw", sjs);
 
-	json_object_set_new(js, "rawX", json_integer(raw.XAxis));
-	json_object_set_new(js, "rawY", json_integer(raw.YAxis));
-	json_object_set_new(js, "rawZ", json_integer(raw.ZAxis));
-	json_object_set_new(js, "scaledX", json_real(scaled.XAxis));
-	json_object_set_new(js, "scaledY", json_real(scaled.YAxis));
-	json_object_set_new(js, "scaledZ", json_real(scaled.ZAxis));
+	sjs = json_object();
+	json_object_set_new(sjs, "x", json_real(scaled.XAxis));
+	json_object_set_new(sjs, "y", json_real(scaled.YAxis));
+	json_object_set_new(sjs, "z", json_real(scaled.ZAxis));
+	json_object_set_new(js, "scaled", sjs);
+
+	sjs = json_object();
+	json_object_set_new(sjs, "x", json_real(stop_scaled.XAxis));
+	json_object_set_new(sjs, "y", json_real(stop_scaled.YAxis));
+	json_object_set_new(sjs, "z", json_real(stop_scaled.ZAxis));
+	json_object_set_new(js, "stop_scaled", sjs);
+
 	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
 	json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
 }
