@@ -67,6 +67,7 @@ void L3G4200D::stop_state(json_t *js)
 		}
 	}
 	stop_g /= count;
+	stop_g.timestamp = dtime();
 	stop_time = dtime();
 	k.setAngle(270); // The angle calculated by accelerometer starts at 270 degrees
 }
@@ -123,6 +124,7 @@ bool L3G4200D::read(vector &g)
 	g.x = buf[0];
 	g.y = buf[1];
 	g.z = buf[2];
+	g.timestamp = dtime();
 
 	return rs;
 }
@@ -167,12 +169,14 @@ void L3G4200D::fill_json(json_t *js)
 	json_object_set_new(sjs, "x", json_real(curr_g.x));
 	json_object_set_new(sjs, "y", json_real(curr_g.y));
 	json_object_set_new(sjs, "z", json_real(curr_g.z));
+	json_object_set_new(sjs, "timestamp", json_real(curr_g.timestamp));
 	json_object_set_new(js, "curr_g", sjs);
 
 	sjs = json_object();
 	json_object_set_new(sjs, "x", json_real(stop_g.x));
 	json_object_set_new(sjs, "y", json_real(stop_g.y));
 	json_object_set_new(sjs, "z", json_real(stop_g.z));
+	json_object_set_new(sjs, "timestamp", json_real(stop_g.timestamp));
 	json_object_set_new(js, "stop_g", sjs);
 }
 

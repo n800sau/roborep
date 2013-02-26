@@ -63,6 +63,7 @@ void ADXL345::stop_state(json_t *js)
 		usleep(10000);
 	}
 	stop_scaled /= count;
+	stop_scaled.timestamp = dtime();
 }
 
 void ADXL345::create_servant()
@@ -130,6 +131,7 @@ AccelerometerRaw ADXL345::readRawAxis()
 //	raw.XAxis = (buf[1] << 8) | buf[0];
 //	raw.YAxis = (buf[3] << 8) | buf[2];
 //	raw.ZAxis = (buf[5] << 8) | buf[4];
+	raw.timestamp = dtime();
 	raw.XAxis = buf[0];
 	raw.YAxis = buf[1];
 	raw.ZAxis = buf[2];
@@ -140,6 +142,7 @@ AccelerometerScaled ADXL345::readScaledAxis()
 {
 	AccelerometerRaw raw = readRawAxis();
 	AccelerometerScaled scaled = AccelerometerScaled();
+	scaled.timestamp = dtime();
 	scaled.XAxis = raw.XAxis * m_Scale;
 	scaled.YAxis = raw.YAxis * m_Scale;
 	scaled.ZAxis = raw.ZAxis * m_Scale;
@@ -183,18 +186,21 @@ void ADXL345::fill_json(json_t *js)
 	json_object_set_new(sjs, "x", json_integer(raw.XAxis));
 	json_object_set_new(sjs, "y", json_integer(raw.YAxis));
 	json_object_set_new(sjs, "z", json_integer(raw.ZAxis));
+	json_object_set_new(sjs, "timestamp", json_real(raw.timestamp));
 	json_object_set_new(js, "raw", sjs);
 
 	sjs = json_object();
 	json_object_set_new(sjs, "x", json_real(scaled.XAxis));
 	json_object_set_new(sjs, "y", json_real(scaled.YAxis));
 	json_object_set_new(sjs, "z", json_real(scaled.ZAxis));
+	json_object_set_new(sjs, "timestamp", json_real(scaled.timestamp));
 	json_object_set_new(js, "scaled", sjs);
 
 	sjs = json_object();
 	json_object_set_new(sjs, "x", json_real(stop_scaled.XAxis));
 	json_object_set_new(sjs, "y", json_real(stop_scaled.YAxis));
 	json_object_set_new(sjs, "z", json_real(stop_scaled.ZAxis));
+	json_object_set_new(sjs, "timestamp", json_real(stop_scaled.timestamp));
 	json_object_set_new(js, "stop_scaled", sjs);
 
 	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
