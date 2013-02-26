@@ -368,7 +368,7 @@ void camTr::loop()
 		if(length > 0) {
 			char *buf = (char *)calloc(sizeof(char), length * 3 + 50);
 			if(buf) {
-				time(&t);
+				time_t t = time(NULL);
 				struct tm *st = localtime(&t);
 				sprintf(buf, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
 				for(int i = 0; i< length; i++) {

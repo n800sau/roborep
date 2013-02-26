@@ -69,6 +69,7 @@ class ReServant
 		virtual void http_request(struct evhttp_request *req);
 };
 
-const char *s_timestamp(const time_t *t=NULL);
+double dtime();
+const char *s_timestamp(const double *dt=NULL);
 
 #endif //__RESERVANT_H

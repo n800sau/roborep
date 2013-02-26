@@ -4,12 +4,40 @@
 #include <syslog.h>
 #include "Kalman.h"
 
-L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g()
+static void L3G4200D_onADXL345(redisAsyncContext *c, void *reply, void *arg)
+{
+	L3G4200D *ths = (L3G4200D *)arg;
+	redisReply *r = (redisReply *)reply;
+	if (reply != NULL) {
+		if (r->type == REDIS_REPLY_ARRAY) {
+			for (int j = 0; j < r->elements; j++) {
+				syslog(LOG_NOTICE, "%u) %s\n", j, r->element[j]->str);
+			}
+		}
+	}
+}
+
+L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),g(),k()
 {
 	for(int i=0; i< sizeof(zeroValue)/sizeof(zeroValue[0]); i++) {
 		zeroValue[i] = 0;
 	}
 	m_Address = address;
+	
+	// Calibrate all sensors when the y-axis is facing downward/upward (reading either 1g or -1g), then the x-axis and z-axis will both start at 0g
+	int count = 100;
+	for (int i = 0; i < count; i++) { // Take the average of 100 readings
+		zeroValue[0] += readAccX();
+    zeroValue[1] += readAccZ();
+    zeroValue[2] += readGyroX();
+    delay(10);
+  }  
+  zeroValue[0] /= 100;
+  zeroValue[1] /= 100;
+  zeroValue[2] /= 100;
+
+  timer = micros();
+  kX.setAngle(270); // The angle calculated by accelerometer starts at 270 degrees
 }
 
 
@@ -68,6 +96,10 @@ bool L3G4200D::read()
 	return rs;
 }
 
+void L3G4200D::filter_kalman()
+{
+}
+
 void L3G4200D::vector_cross(const vector *a,const vector *b, vector *out)
 {
   out->x = a->y*b->z - a->z*b->y;
@@ -92,6 +124,8 @@ void L3G4200D::create_servant()
 {
 	ReServant::create_servant();
 	enableDefault();
+// subscribe is buggy
+//	redisAsyncCommand(aredis, L3G4200D_onADXL345, NULL, "SUBSCRIBE adxl345");
 }
 
 void L3G4200D::fill_json(json_t *js)
@@ -105,6 +139,7 @@ void L3G4200D::loop()
 {
 	if(read()) {
 		json2redislist();
+		filter_kalman();
 	}
 
 	//kalman filter
