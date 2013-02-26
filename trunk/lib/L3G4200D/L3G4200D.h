@@ -64,7 +64,8 @@ class L3G4200D:public ReServant
 		struct vector
 		{
 			float x, y, z;
-			inline vector() { x = y = z = 0; }
+			double timestamp;
+			inline vector() { x = y = z = 0; timestamp = 0; }
 			void operator +=(vector val) {
 				x += val.x;
 				y += val.y;

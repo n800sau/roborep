@@ -7,10 +7,11 @@
 
 struct AccelerometerScaled
 {
-	AccelerometerScaled() { XAxis = YAxis = ZAxis = 0; }
+	AccelerometerScaled() { XAxis = YAxis = ZAxis = 0; timestamp = 0; }
 	float XAxis;
 	float YAxis;
 	float ZAxis;
+	double timestamp;
 	void operator +=(AccelerometerScaled val) {
 		XAxis += val.XAxis;
 		YAxis += val.YAxis;
@@ -25,10 +26,11 @@ struct AccelerometerScaled
 
 struct AccelerometerRaw
 {
-	AccelerometerRaw() { XAxis = YAxis = ZAxis = 0; }
+	AccelerometerRaw() { XAxis = YAxis = ZAxis = 0; timestamp = 0; }
 	int XAxis;
 	int YAxis;
 	int ZAxis;
+	double timestamp;
 	void operator +=(AccelerometerRaw val) {
 		XAxis += val.XAxis;
 		YAxis += val.YAxis;
