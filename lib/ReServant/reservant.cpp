@@ -288,7 +288,7 @@ void ReServant::json2redislist()
 	fill_json(js);
 	char *jstr = json_dumps(js, JSON_INDENT(4));
 	if(jstr) {
-		syslog(LOG_DEBUG, "%s\n", jstr);
+//		syslog(LOG_DEBUG, "%s\n", jstr);
 		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
 		redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
 		free(jstr);
@@ -298,3 +298,4 @@ void ReServant::json2redislist()
 	json_decref(js);
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.timestamp %s", myid(), s_timestamp(&t));
 }
+
