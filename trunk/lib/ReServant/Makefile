@@ -1,12 +1,11 @@
 CC=g++ -I/usr/include/hiredis
 CCOPTS=-L.
 STRIP=-strip
-SRCS=reservant.cpp
-OBJECTS=reservant.o
-HEADERS=reservant.h
+SRCS=reservant.cpp hiredis_ext.cpp
+OBJECTS=reservant.o hiredis_ext.o
 NAME=libreservant.a
 
-.cpp.o: $(HEADERS) %.cpp %.h
+.cpp.o:
 		$(CC) $(CCOPTS) -c $<
 
 all: $(NAME)
@@ -27,7 +26,13 @@ reservant.o: reservant.h /usr/include/jansson.h /usr/include/stdio.h
 reservant.o: /usr/include/features.h /usr/include/libio.h
 reservant.o: /usr/include/_G_config.h /usr/include/wchar.h
 reservant.o: /usr/include/stdlib.h /usr/include/alloca.h
-reservant.o: /usr/include/jansson_config.h /usr/include/math.h
-reservant.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/time.h
-reservant.o: /usr/include/malloc.h /usr/include/string.h
-reservant.o: /usr/include/xlocale.h
+reservant.o: /usr/include/jansson_config.h /usr/include/event2/http.h
+reservant.o: /usr/include/event2/util.h /usr/include/event2/event-config.h
+reservant.o: /usr/include/stdint.h /usr/include/netdb.h
+reservant.o: /usr/include/netinet/in.h /usr/include/endian.h
+reservant.o: /usr/include/rpc/netdb.h /usr/include/time.h
+reservant.o: /usr/include/xlocale.h /usr/include/math.h /usr/include/syslog.h
+reservant.o: /usr/include/signal.h /usr/include/malloc.h
+reservant.o: /usr/include/string.h /usr/include/unistd.h
+reservant.o: /usr/include/getopt.h /usr/include/libgen.h
+hiredis_ext.o: hiredis_ext.h
