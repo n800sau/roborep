@@ -3,7 +3,6 @@
 #include <memory.h>
 #include <syslog.h>
 #include <unistd.h>
-#include "Kalman.h"
 
 struct L3G4200D_CMD_FUNC:public CMD_FUNC {
 	public:
@@ -30,7 +29,7 @@ static void L3G4200D_onADXL345(redisAsyncContext *c, void *reply, void *arg)
 	}
 }
 
-L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),curr_g(),stop_g(),k(),stop_time(0)
+L3G4200D::L3G4200D(uint8_t address):ReServant("l3g4200d"),curr_g(),stop_g()
 {
 	for(int i=0; i< sizeof(zeroValue)/sizeof(zeroValue[0]); i++) {
 		zeroValue[i] = 0;
@@ -68,8 +67,14 @@ void L3G4200D::stop_state(json_t *js)
 	}
 	stop_g /= count;
 	stop_g.timestamp = dtime();
-	stop_time = dtime();
-	k.setAngle(270); // The angle calculated by accelerometer starts at 270 degrees
+	const char *reply_key = json_string_value(json_object_get(js, "reply_key"));
+	if(reply_key) {
+		syslog(LOG_NOTICE, "replied to %s", reply_key);
+		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s OK", reply_key);
+		redisAsyncCommand(aredis, NULL, NULL, "EXPIRE %s 30", reply_key);
+	} else {
+		syslog(LOG_NOTICE, "no reply_key");
+	}
 }
 
 
@@ -129,10 +134,6 @@ bool L3G4200D::read(vector &g)
 	return rs;
 }
 
-void L3G4200D::filter_kalman()
-{
-}
-
 void L3G4200D::vector_cross(const vector *a,const vector *b, vector *out)
 {
   out->x = a->y*b->z - a->z*b->y;
@@ -184,12 +185,9 @@ void L3G4200D::loop()
 {
 	if(read(curr_g)) {
 		json2redislist();
-		filter_kalman();
 	}
 
-	//kalman filter
-
-	syslog(LOG_NOTICE, "gyro:%g %g %g\n", curr_g.x, curr_g.y, curr_g.z);
+//	syslog(LOG_NOTICE, "gyro:%g %g %g\n", curr_g.x, curr_g.y, curr_g.z);
 
 	ReServant::loop();
 }

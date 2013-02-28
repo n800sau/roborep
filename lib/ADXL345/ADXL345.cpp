@@ -64,6 +64,14 @@ void ADXL345::stop_state(json_t *js)
 	}
 	stop_scaled /= count;
 	stop_scaled.timestamp = dtime();
+	const char *reply_key = json_string_value(json_object_get(js, "reply_key"));
+	if(reply_key) {
+		syslog(LOG_NOTICE, "replied to %s", reply_key);
+		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s OK", reply_key);
+		redisAsyncCommand(aredis, NULL, NULL, "EXPIRE %s 30", reply_key);
+	} else {
+		syslog(LOG_NOTICE, "no reply_key");
+	}
 }
 
 void ADXL345::create_servant()
