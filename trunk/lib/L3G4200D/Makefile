@@ -1,9 +1,8 @@
 CC=g++
-CCOPTS=-L. -I/usr/include/hiredis -I../ReServant -I../I2CWire
+CCOPTS=-I/usr/include/hiredis -I../ReServant -I../I2CWire
 STRIP=-strip
-SRCS=l3g4200dd.cpp L3G4200D.cpp Kalman.cpp
-OBJECTS=l3g4200dd.o L3G4200D.o Kalman.o
-HEADERS=../ReServant/reservant.h ../I2CWire/I2CWire.h L3G4200D.h
+SRCS=l3g4200dd.cpp L3G4200D.cpp
+OBJECTS=l3g4200dd.o L3G4200D.o
 LIBS=../I2CWire/libi2cwire.a ../ReServant/libreservant.a
 NAME=l3g4200dd
 
@@ -47,5 +46,4 @@ L3G4200D.o: /usr/include/netinet/in.h /usr/include/endian.h
 L3G4200D.o: /usr/include/rpc/netdb.h /usr/include/time.h
 L3G4200D.o: /usr/include/xlocale.h ../I2CWire/I2CWire.h /usr/include/math.h
 L3G4200D.o: /usr/include/memory.h /usr/include/string.h /usr/include/syslog.h
-L3G4200D.o: Kalman.h
-Kalman.o: Kalman.h
+L3G4200D.o: /usr/include/unistd.h /usr/include/getopt.h

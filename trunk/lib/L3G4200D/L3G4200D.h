@@ -4,8 +4,6 @@
 #include <reservant.h>
 #include <I2CWire.h>
 
-#include "Kalman.h"
-
 // The Arduino two-wire interface uses a 7-bit number for the address, 
 // and sets the last bit correctly based on reads and writes
 //#define GYR_ADDRESS (0xD2 >> 1)
@@ -49,14 +47,12 @@ class L3G4200D:public ReServant
 	private:
 		int m_Address;
 		double zeroValue[3];
-		Kalman k;
 
 	protected:
 		I2CWire i2cwire;
 		virtual void create_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
-		void filter_kalman();
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 		void stop_state(json_t *js);
 
@@ -77,7 +73,6 @@ class L3G4200D:public ReServant
 				z /= val;
 			}
 		} curr_g, stop_g; // gyro angular velocity readings
-		double stop_time;
 
 		L3G4200D(uint8_t address=DefaultL3G4200D_Address);
 
