@@ -178,6 +178,8 @@
 			gauge(ctx, 100, data['adxl345.js.obj']['yz_degrees'], img_back);
 			var ctx = document.getElementById('kx_canvas').getContext('2d');
 			gauge(ctx, 100, data['kalman.js.obj']['pitch'], img_top);
+			var ctx = document.getElementById('m_canvas').getContext('2d');
+			gauge(ctx, 100, data['hmc5883l.js.obj']['heading_degrees'], img_top);
 		};
 	</script>
 </head>
@@ -189,7 +191,7 @@
 	<td><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td><td><canvas id="yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
 	</tr>
 	<tr>
-	<td><canvas id="kx_canvas" width="100" height="100" style="background-color:green;"/></td><td><canvas id="other_canvas" width="100" height="100" style="background-color:gray;"/></td>
+	<td><canvas id="kx_canvas" width="100" height="100" style="background-color:green;"/></td><td><canvas id="m_canvas" width="100" height="100" style="background-color:gray;"/></td>
 	</tr>
 	</table>
 	<div style="overflow:auto;height:100%;width:100%;"><div id="params"></div></div>
