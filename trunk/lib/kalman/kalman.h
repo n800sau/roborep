@@ -7,11 +7,14 @@
 class Kalman:public ReServant
 {
 	private:
-		KalmanFilter kX;
-		double timerX;
-		double angleX;
-		double rateX;
-		double pitchX;
+		struct KFilter {
+			KalmanFilter k;
+			double timer;
+			double angle;
+			double rate;
+			double pitch;
+			KFilter():timer(dtime()),angle(0),rate(0),pitch(0),k() {}
+		} x,y,z;
 
 		void stop_state(json_t *js);
 
@@ -20,8 +23,8 @@ class Kalman:public ReServant
 		virtual void loop();
 		virtual void fill_json(json_t *js);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
-		double getAngleX(json_t *acc_js, json_t *stop_acc_js);
-		double getRateX(json_t *gyro_js, json_t *stop_gyro_js);
+		double getAngleX(json_t *acc_js, json_t *stop_acc_js, const char *X, const char *Z);
+		double getRateX(json_t *gyro_js, json_t *stop_gyro_js, const char *X);
 
 	public:
 		double stop_time;

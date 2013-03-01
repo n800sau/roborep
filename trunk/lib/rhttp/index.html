@@ -119,6 +119,8 @@
 		img_side.src = 'car_side';
 		var img_back = new Image();
 		img_back.src = 'car_back';
+		var img_top = new Image();
+		img_top.src = 'car_top';
 		var gauge = function(context, diameter, angle, imgObj)
 		{
 			var radius = diameter/2;
@@ -174,6 +176,8 @@
 			gauge(ctx, 100, data['adxl345.js.obj']['xz_degrees'], img_side);
 			var ctx = document.getElementById('yz_canvas').getContext('2d');
 			gauge(ctx, 100, data['adxl345.js.obj']['yz_degrees'], img_back);
+			var ctx = document.getElementById('kx_canvas').getContext('2d');
+			gauge(ctx, 100, data['kalman.js.obj']['pitch'], img_top);
 		};
 	</script>
 </head>
@@ -183,6 +187,9 @@
 	<table>
 	<tr>
 	<td><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td><td><canvas id="yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
+	</tr>
+	<tr>
+	<td><canvas id="kx_canvas" width="100" height="100" style="background-color:green;"/></td><td><canvas id="other_canvas" width="100" height="100" style="background-color:gray;"/></td>
 	</tr>
 	</table>
 	<div style="overflow:auto;height:100%;width:100%;"><div id="params"></div></div>
