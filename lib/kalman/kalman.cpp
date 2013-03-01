@@ -19,9 +19,9 @@ struct KALMAN_CMD_FUNC:public CMD_FUNC {
 
 typedef KALMAN_CMD_FUNC *pKALMAN_CMD_FUNC;
 
-Kalman::Kalman():ReServant("kalman"),timerX(dtime()),pitchX(0),rateX(0),angleX(0),kX()
+Kalman::Kalman():ReServant("kalman"),x(),y(),z()
 {
-	kX.setAngle(270); // The angle calculated by accelerometer starts at 270 degrees
+	x.k.setAngle(270); // The angle calculated by accelerometer starts at 270 degrees
 	const static pKALMAN_CMD_FUNC cmdlist[] = {
 		new KALMAN_CMD_FUNC("stop_state", &Kalman::stop_state),
 	};
@@ -78,10 +78,12 @@ void Kalman::create_servant()
 
 void Kalman::fill_json(json_t *js)
 {
-	json_object_set_new(js, "angleX", json_real(angleX));
-	json_object_set_new(js, "rateX", json_real(rateX));
-	json_object_set_new(js, "pitchX", json_real(pitchX));
-	json_object_set_new(js, "timerX", json_real(timerX));
+	json_t *sjs = json_object();
+	json_object_set_new(sjs, "angle", json_real(x.angle));
+	json_object_set_new(sjs, "rate", json_real(x.rate));
+	json_object_set_new(sjs, "pitch", json_real(x.pitch));
+	json_object_set_new(sjs, "timer", json_real(x.timer));
+	json_object_set_new(js, "x", sjs);
 }
 
 void Kalman::loop()
@@ -93,15 +95,15 @@ void Kalman::loop()
 	json_t *js = json_loads(reply->str, JSON_DISABLE_EOF_CHECK, &jserror);
 	freeReplyObject(reply);
 	if(js) {
-		angleX = getAngleX(json_object_get(js, "scaled"), json_object_get(js, "stop_scaled"));
+		x.angle = getAngleX(json_object_get(js, "scaled"), json_object_get(js, "stop_scaled"), "x", "z");
 		reply = (redisReply*)redisCommand(redis, "LINDEX %s.js.obj -1", "l3g4200d");
 //		syslog(LOG_NOTICE, reply->str);
 		js = json_loads(reply->str, JSON_DISABLE_EOF_CHECK, &jserror);
 		freeReplyObject(reply);
 		if(js) {
-			rateX = getRateX(json_object_get(js, "curr_g"), json_object_get(js, "stop_g"));
-			pitchX = kX.getAngle(angleX, rateX, double(dtime() - timerX)/1000000);  // Calculate the angle using the Kalman filter
-			timerX = dtime();
+			x.rate = getRateX(json_object_get(js, "curr_g"), json_object_get(js, "stop_g"), "x");
+			x.pitch = x.k.getAngle(x.angle, x.rate, double(dtime() - x.timer)/1000000);  // Calculate the angle using the Kalman filter
+			x.timer = dtime();
 			json2redislist();
 		} else {
 			syslog(LOG_NOTICE, "Error while reading l3g4200d list: %s", jserror.text);
@@ -113,14 +115,13 @@ void Kalman::loop()
 	ReServant::loop();
 }
 
-double Kalman::getAngleX(json_t *acc_js, json_t *stop_acc_js) {
-  double accXval = json_real_value(json_object_get(acc_js, "x")) - json_real_value(json_object_get(stop_acc_js, "x"));
-  double accZval = (double)json_real_value(json_object_get(acc_js, "z")) - json_real_value(json_object_get(stop_acc_js, "z"));
+double Kalman::getAngleX(json_t *acc_js, json_t *stop_acc_js, const char *X, const char *Z) {
+  double accXval = json_real_value(json_object_get(acc_js, X)) - json_real_value(json_object_get(stop_acc_js, X));
+  double accZval = (double)json_real_value(json_object_get(acc_js, Z)) - json_real_value(json_object_get(stop_acc_js, Z));
   double angle = (atan2(accXval,accZval)+PI)*RAD_TO_DEG;
   return angle;
 }
 
-double Kalman::getRateX(json_t *gyro_js, json_t *stop_gyro_js) {
-  double rate = -((json_real_value(json_object_get(gyro_js, "x")) - json_real_value(json_object_get(stop_gyro_js, "x")))/14.375);
-  return rate;
+double Kalman::getRateX(json_t *gyro_js, json_t *stop_gyro_js, const char *X) {
+  return -((json_real_value(json_object_get(gyro_js, X)) - json_real_value(json_object_get(stop_gyro_js, X)))/14.375);
 }

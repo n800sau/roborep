@@ -150,6 +150,8 @@ void Rhttp::http_request(struct evhttp_request *req)
 		send_file(req, "car_back.png", "image/png");
 	} else if(strcmp(req->uri, "/car_side") == 0) {
 		send_file(req, "car_side.png", "image/png");
+	} else if(strcmp(req->uri, "/car_top") == 0) {
+		send_file(req, "car_top.png", "image/png");
 	} else {
 		struct evbuffer *buf = evbuffer_new();
 		headers = evhttp_request_get_output_headers(req);
