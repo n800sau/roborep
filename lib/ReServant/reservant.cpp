@@ -91,7 +91,7 @@ void ReServant_connectCallback(const redisAsyncContext *c)
 
 void ReServant_disconnectCallback(const redisAsyncContext *c, int status) {
     if (status != REDIS_OK) {
-        syslog(LOG_ERR, c->errstr);
+        syslog(LOG_ERR, "%s while disconnecting", c->errstr);
     }
     syslog(LOG_NOTICE, "disconnected...\n");
 }
