@@ -2,7 +2,7 @@ CC=g++
 CCOPTS=-I/usr/include/hiredis -I../ReServant -I../I2CWire
 STRIP=-strip
 SRCS=bmp085d.cpp BMP085.cpp
-OBJECTS=bmp085d.o BMP345.o
+OBJECTS=bmp085d.o BMP085.o
 LIBS=../I2CWire/libi2cwire.a ../ReServant/libreservant.a
 NAME=bmp085d
 

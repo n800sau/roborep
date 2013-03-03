@@ -47,10 +47,10 @@ class BMP085:public ReServant
 		BMP085();
 		void init_mode(uint8_t mode = BMP085_ULTRAHIGHRES);  // by default go highres
 		float readTemperature();
-		int readPressure();
+		float readPressure();
 		float readAltitude(float sealevelPressure = 101325); // std atmosphere
-		int readRawTemperature();
-		int readRawPressure();
+		uint16_t readRawTemperature();
+		uint32_t readRawPressure();
 };
 
 #endif
