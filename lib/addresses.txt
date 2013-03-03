@@ -1,0 +1,29 @@
+BB
+
+LSM303 - 0x18 ;Tilt Compensated Compass
+MAG3110 - 0x0e ;Triple Axis Magnetometer
+MPU6050 - 0x68 (0x69) ;MEMS accelerometer and a MEMS gyro in a chip
+ADXL345 - 0x53 ;3-axis accelerometer
+
+ADXL345 - 0x1d ;3-axis accelerometer
+BMP085 - 0x77 ;barometric pressure sensor
+HMC5883Ld -0x1e ;3-Axis Digital Compass
+L3G4200D - 0x69 (0x68) ;three-axis angular rate gyro sensor
+
+LSM303 - int1 - 40 GPIO2_13
+		 int2 - 39 GPIO2_12
+
+MAG3110 - int 29 GPIO2_23
+
+MPU6050 - int 30 GPIO2_25
+
+SENSOR	-	S2 27 GPIO2_22 
+			S1 28 GPIO2_24
+
+ADXL345	-	int1 21 GPIO1_30
+			int2 22 GPIO1_5
+
+ADXL345+L3G4200D	23 GPIO1_4
+					24 GPIO1_1
+					25 GPIO1_0
+					26 GPIO1_29
