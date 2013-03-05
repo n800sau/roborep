@@ -9,13 +9,14 @@ HMC5883L::HMC5883L():ReServant("hmc5883l"),m_Scale(1)
 
 MagnetometerRaw HMC5883L::ReadRawAxis()
 {
-  MagnetometerRaw raw = MagnetometerRaw();
-  uint8_t buffer[10];
-  Read(DataRegisterBegin, buffer, 6);
-  raw.XAxis = (buffer[0] << 8) | buffer[1];
-  raw.ZAxis = (buffer[2] << 8) | buffer[3];
-  raw.YAxis = (buffer[4] << 8) | buffer[5];
-  return raw;
+	MagnetometerRaw raw = MagnetometerRaw();
+	uint16_t buffer[3];
+	i2cwire.selectDevice(HMC5883L_Address, myid());
+	i2cwire.requestFromDeviceHL(DataRegisterBegin, 3, buffer);
+	raw.XAxis = buffer[0];
+	raw.ZAxis = buffer[1];
+	raw.YAxis = buffer[2];
+	return raw;
 }
 
 MagnetometerScaled HMC5883L::ReadScaledAxis()
@@ -85,17 +86,10 @@ int HMC5883L::SetMeasurementMode(uint8_t mode)
 	Write(ModeRegister, mode);
 }
 
-void HMC5883L::Write(int address, int data)
+void HMC5883L::Write(int address, uint8_t data)
 {
-	i2cwire.selectDevice(HMC5883L_Address, "HMC5883L");
+	i2cwire.selectDevice(HMC5883L_Address, myid());
 	i2cwire.writeToDevice(address, data);
-}
-
-uint8_t* HMC5883L::Read(int address, uint8_t *buf, int length)
-{
-	i2cwire.selectDevice(HMC5883L_Address, "HMC5883L");
-	i2cwire.requestFromDevice(address, length, buf);
-	return buf;
 }
 
 const char* HMC5883L::GetErrorText(int errorCode)
@@ -109,6 +103,8 @@ const char* HMC5883L::GetErrorText(int errorCode)
 void HMC5883L::create_servant()
 {
 	ReServant::create_servant();
+	SetScale();
+	SetMeasurementMode(Measurement_Continuous);
 }
 
 void HMC5883L::fill_json(json_t *js)
