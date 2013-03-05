@@ -1,6 +1,7 @@
 #include "BMP085.h"
 #include <unistd.h>
 #include <math.h>
+#include <syslog.h>
 
 BMP085::BMP085():ReServant("bmp085") {
 }
@@ -18,17 +19,17 @@ void BMP085::init_mode(uint8_t mode)
 
 	// read calibration data
 	i2cwire.selectDevice(BMP085_I2CADDR, "BMP085");
-	i2cwire.requestFromDevice(BMP085_CAL_AC1, 2, (uint8_t*)&ac1);
-	i2cwire.requestFromDevice(BMP085_CAL_AC2, 2, (uint8_t*)&ac2);
-	i2cwire.requestFromDevice(BMP085_CAL_AC3, 2, (uint8_t*)&ac3);
-	i2cwire.requestFromDevice(BMP085_CAL_AC4, 2, (uint8_t*)&ac4);
-	i2cwire.requestFromDevice(BMP085_CAL_AC5, 2, (uint8_t*)&ac5);
-	i2cwire.requestFromDevice(BMP085_CAL_AC6, 2, (uint8_t*)&ac6);
-	i2cwire.requestFromDevice(BMP085_CAL_B1, 2, (uint8_t*)&b1);
-	i2cwire.requestFromDevice(BMP085_CAL_B2, 2, (uint8_t*)&b2);
-	i2cwire.requestFromDevice(BMP085_CAL_MB, 2, (uint8_t*)&mb);
-	i2cwire.requestFromDevice(BMP085_CAL_MC, 2, (uint8_t*)&mc);
-	i2cwire.requestFromDevice(BMP085_CAL_MD, 2, (uint8_t*)&md);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_AC1, 1, (uint16_t*)&ac1);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_AC2, 1, (uint16_t*)&ac2);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_AC3, 1, (uint16_t*)&ac3);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_AC4, 1, (uint16_t*)&ac4);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_AC5, 1, (uint16_t*)&ac5);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_AC6, 1, (uint16_t*)&ac6);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_B1, 1, (uint16_t*)&b1);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_B2, 1, (uint16_t*)&b2);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_MB, 1, (uint16_t*)&mb);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_MC, 1, (uint16_t*)&mc);
+	i2cwire.requestFromDeviceHL(BMP085_CAL_MD, 1, (uint16_t*)&md);
 }
 
 uint16_t BMP085::readRawTemperature(void)
@@ -37,7 +38,7 @@ uint16_t BMP085::readRawTemperature(void)
 	i2cwire.writeToDevice(BMP085_CONTROL, BMP085_READTEMPCMD);
 	usleep(5000);
 	uint16_t rs;
-	i2cwire.requestFromDevice(BMP085_TEMPDATA, 2, (uint8_t*)&rs);
+	i2cwire.requestFromDeviceHL(BMP085_TEMPDATA, 1, &rs);
 	return rs;
 }
 
@@ -46,6 +47,7 @@ uint32_t BMP085::readRawPressure(void)
 	i2cwire.selectDevice(BMP085_I2CADDR, "BMP085");
 	i2cwire.writeToDevice(BMP085_CONTROL, BMP085_READPRESSURECMD + (oversampling << 6));
 
+	// Wait for conversion, delay time dependent on oversampling setting
 	if (oversampling == BMP085_ULTRALOWPOWER) {
 		usleep(5000);
 	} else if (oversampling == BMP085_STANDARD) {
@@ -55,11 +57,19 @@ uint32_t BMP085::readRawPressure(void)
 	} else {
 		usleep(26000);
 	}
-	uint32_t raw = 0;
-	i2cwire.requestFromDevice(BMP085_PRESSUREDATA, 2, ((uint8_t*)&raw)+1);
-	i2cwire.requestFromDevice(BMP085_PRESSUREDATA+2, 1, ((uint8_t*)&raw));
-	raw >>= (8 - oversampling);
-	return raw;
+
+	union {
+		uint32_t v;
+		uint8_t bytes[sizeof(uint32_t)];
+	} rs;
+	uint8_t buf[3];
+	i2cwire.requestFromDevice(BMP085_PRESSUREDATA, 3, buf);
+	rs.v = 0;
+	rs.bytes[2] = buf[0];
+	rs.bytes[1] = buf[1];
+	rs.bytes[0] = buf[2] >> (8 - oversampling);
+	syslog(LOG_NOTICE, "Raw pressure: %8.8X", rs.v);
+	return rs.v;
 }
 
 
@@ -159,6 +169,8 @@ void BMP085::fill_json(json_t *js)
 	float t = readTemperature();
 	float p = readPressure();
 	float a = readAltitude();
+
+	syslog(LOG_NOTICE, "t=%g, p=%g, a=%g", t, p, a);
 
 	json_object_set_new(js, "temperature", json_real(t));
 
