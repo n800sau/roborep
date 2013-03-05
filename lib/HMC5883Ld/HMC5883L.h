@@ -64,8 +64,7 @@ class HMC5883L:public ReServant
 
 	protected:
 		I2CWire i2cwire;
-		void Write(int address, int byte);
-		uint8_t *Read(int address, uint8_t *buf, int length);
+		void Write(int address, uint8_t byte);
 		virtual void create_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
@@ -77,7 +76,7 @@ class HMC5883L:public ReServant
 	  MagnetometerScaled ReadScaledAxis();
   
 	  int SetMeasurementMode(uint8_t mode);
-	  int SetScale(GAUSS gauss);
+	  int SetScale(GAUSS gauss=GAUSS_1_3);
 
 	  const char* GetErrorText(int errorCode);
 
