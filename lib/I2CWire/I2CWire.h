@@ -14,7 +14,7 @@ class I2CWire
 		int requestFromDevice(uint8_t addr, int length, uint8_t buf[]);
 		int requestFromDeviceLH(uint8_t addr, int length, uint16_t buf[]);
 		int requestFromDeviceHL(uint8_t addr, int length, uint16_t buf[]);
-		void writeToDevice(uint8_t reg, uint8_t val);
+		bool writeToDevice(uint8_t reg, uint8_t val);
 };
 
 #endif //I2CWire
