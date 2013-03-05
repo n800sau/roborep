@@ -63,14 +63,15 @@ int I2CWire::requestFromDeviceLH(uint8_t addr, int length, uint16_t buf[])
 	return requestFromDevice(addr, length * 2, (uint8_t *)buf);
 }
 
-void I2CWire::writeToDevice(uint8_t reg, uint8_t val)
+bool I2CWire::writeToDevice(uint8_t reg, uint8_t val)
 {
-   uint8_t buf[2];
-   buf[0]=reg; buf[1]=val;
-   if (write(fd, buf, 2) != 2)
-   {
-      fprintf(stderr, "Can't write to i2c slave\n");
-      //exit(1);
-   }
+	uint8_t buf[2];
+	buf[0]=reg; buf[1]=val;
+	bool rs = write(fd, buf, 2) == 2;
+	if (!rs)
+	{
+		fprintf(stderr, "Can't write to i2c slave\n");
+	}
+	return rs;
 }
 
