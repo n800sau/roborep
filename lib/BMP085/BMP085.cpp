@@ -67,8 +67,9 @@ uint32_t BMP085::readRawPressure(void)
 	rs.v = 0;
 	rs.bytes[2] = buf[0];
 	rs.bytes[1] = buf[1];
-	rs.bytes[0] = buf[2] >> (8 - oversampling);
-	syslog(LOG_NOTICE, "Raw pressure: %8.8X", rs.v);
+	rs.bytes[0] = buf[2];
+	rs.v = rs.v >> (8 - oversampling);
+//	syslog(LOG_NOTICE, "Oversampling: %d, Raw pressure: %8.8X", oversampling, rs.v);
 	return rs.v;
 }
 
@@ -127,7 +128,7 @@ float BMP085::readPressure(void)
 	X2 = (-7357 * p) >> 16;
 
 	p = p + ((X1 + X2 + (int32_t)3791)>>4);
-	return p;
+	return p/100.;
 }
 
 
@@ -159,8 +160,9 @@ float BMP085::readTemperature(void)
 
 float BMP085::readAltitude(float sealevelPressure)
 {
-	float pressure = readPressure();
-	float altitude = 44330 * (1.0 - pow(pressure /sealevelPressure,0.1903));
+	float pressure = readPressure() * 100;
+	float altitude = 44330 * (1.0 - pow(pressure /sealevelPressure, 0.1903));
+
 	return altitude;
 }
 
@@ -170,7 +172,7 @@ void BMP085::fill_json(json_t *js)
 	float p = readPressure();
 	float a = readAltitude();
 
-	syslog(LOG_NOTICE, "t=%g, p=%g, a=%g", t, p, a);
+//	syslog(LOG_NOTICE, "t=%g, p=%g, a=%g", t, p, a);
 
 	json_object_set_new(js, "temperature", json_real(t));
 
