@@ -13,7 +13,7 @@
 
 I2CWire::I2CWire()
 {
-   if ((fd = open("/dev/i2c-0", O_RDWR)) < 0)
+   if ((fd = open("/dev/i2c-3", O_RDWR)) < 0)
    {
       // Open port for reading and writing
       fprintf(stderr, "Failed to open i2c bus\n");

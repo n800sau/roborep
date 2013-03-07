@@ -56,4 +56,3 @@ MAG3110.o: /usr/include/event2/bufferevent_compat.h /usr/include/event2/tag.h
 MAG3110.o: /usr/include/event2/tag_compat.h /usr/include/event2/http_struct.h
 MAG3110.o: /usr/include/event2/http_compat.h /usr/include/string.h
 MAG3110.o: /usr/include/unistd.h /usr/include/getopt.h /usr/include/libgen.h
-MAG3110.o: /usr/include/fcntl.h

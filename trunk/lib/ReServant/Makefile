@@ -35,4 +35,6 @@ reservant.o: /usr/include/xlocale.h /usr/include/math.h /usr/include/syslog.h
 reservant.o: /usr/include/signal.h /usr/include/malloc.h
 reservant.o: /usr/include/string.h /usr/include/unistd.h
 reservant.o: /usr/include/getopt.h /usr/include/libgen.h
-hiredis_ext.o: hiredis_ext.h
+hiredis_ext.o: /usr/include/stdlib.h /usr/include/features.h
+hiredis_ext.o: /usr/include/alloca.h /usr/include/string.h
+hiredis_ext.o: /usr/include/xlocale.h /usr/include/syslog.h hiredis_ext.h
