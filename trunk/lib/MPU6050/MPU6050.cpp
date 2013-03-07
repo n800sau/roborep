@@ -101,9 +101,9 @@ accel_t_gyro_union *MPU6050::readRaw(accel_t_gyro_union &data)
 			uint8_t tmp = buf.reg8[i];
 			buf.reg8[i] = buf.reg8[i+1];
 			buf.reg8[i+1] = tmp;
-			printf("%4.4X ", buf.reg16[i]);
+//			printf("%4.4X ", buf.reg16[i]);
 		}
-		printf("\n");
+//		printf("\n");
 		data.transfer(buf.reg16);
 		data.val.timestamp = dtime();
 	}
