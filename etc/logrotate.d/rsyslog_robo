@@ -6,6 +6,7 @@
 /var/log/l3g4200d.log
 /var/log/lsm303.log
 /var/log/mpu6050.log
+/var/log/mag3110.log
 /var/log/rhttp.log
 {
 	rotate 2
