@@ -165,11 +165,3 @@ void MPU6050::loop()
 	json2redislist();
 	ReServant::loop();
 }
-
-int fsize(FILE *fp){
-    int prev=ftell(fp);
-    fseek(fp, 0L, SEEK_END);
-    int sz=ftell(fp);
-    fseek(fp,prev,SEEK_SET); //go back to where we were
-    return sz;
-}

@@ -137,5 +137,8 @@ piNes.o: wiringPi.h piNes.h
 lcd.o: wiringPi.h lcd.h
 piHiPri.o: wiringPi.h
 piThread.o: wiringPi.h
-softPwm.o: wiringPi.h softPwm.h
 wiringPiSPI.o: wiringPiSPI.h
+wiringPiI2C.o: wiringPi.h wiringPiI2C.h
+softPwm.o: wiringPi.h softPwm.h
+softServo.o: wiringPi.h softServo.h
+softTone.o: wiringPi.h softTone.h

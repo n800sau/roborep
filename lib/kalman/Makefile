@@ -33,7 +33,7 @@ kalmand.o: /usr/include/event2/util.h /usr/include/event2/event-config.h
 kalmand.o: /usr/include/stdint.h /usr/include/netdb.h
 kalmand.o: /usr/include/netinet/in.h /usr/include/endian.h
 kalmand.o: /usr/include/rpc/netdb.h /usr/include/time.h
-kalmand.o: /usr/include/xlocale.h
+kalmand.o: /usr/include/xlocale.h KalmanFilter.h
 kalman.o: kalman.h ../ReServant/reservant.h /usr/include/jansson.h
 kalman.o: /usr/include/stdio.h /usr/include/features.h /usr/include/libio.h
 kalman.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
@@ -43,6 +43,7 @@ kalman.o: /usr/include/event2/http.h /usr/include/event2/util.h
 kalman.o: /usr/include/event2/event-config.h /usr/include/stdint.h
 kalman.o: /usr/include/netdb.h /usr/include/netinet/in.h
 kalman.o: /usr/include/endian.h /usr/include/rpc/netdb.h /usr/include/time.h
-kalman.o: /usr/include/xlocale.h /usr/include/math.h /usr/include/syslog.h
-kalman.o: /usr/include/unistd.h /usr/include/getopt.h
+kalman.o: /usr/include/xlocale.h KalmanFilter.h /usr/include/math.h
+kalman.o: /usr/include/syslog.h /usr/include/string.h /usr/include/unistd.h
+kalman.o: /usr/include/getopt.h ../ReServant/hiredis_ext.h
 KalmanFilter.o: KalmanFilter.h
