@@ -1,0 +1,21 @@
+/var/log/adxl345.log
+/var/log/bmp085.log
+/var/log/cam.log
+/var/log/hmc5883l.log
+/var/log/kalman.log
+/var/log/l3g4200d.log
+/var/log/lsm303.log
+/var/log/mpu6050.log
+/var/log/rhttp.log
+{
+	rotate 2
+	daily
+	missingok
+	notifempty
+	compress
+	delaycompress
+	sharedscripts
+	postrotate
+		reload rsyslog >/dev/null 2>&1 || true
+	endscript
+}
