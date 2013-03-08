@@ -95,7 +95,7 @@ void Rhttp::send_file(struct evhttp_request *req, const char *fname, const char 
 		struct stat st;
 		fstat(fd, &st);
 		evbuffer_add_file(buf, fd, 0, st.st_size);
-		syslog(LOG_NOTICE, "file size=%d, bufsize=%d", st.st_size, evbuffer_get_length(buf));
+		syslog(LOG_NOTICE, "file size=%lu, bufsize=%d", st.st_size, evbuffer_get_length(buf));
 		evhttp_add_header(headers, "Content-Type", mime);
 		evhttp_send_reply(req, 200, "OK", buf);
 		close(fd);
