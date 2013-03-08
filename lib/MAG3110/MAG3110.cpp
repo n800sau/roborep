@@ -74,6 +74,28 @@ void MAG3110::fill_json(json_t *js)
 	json_t *sjs;
 	MAG3110::vector v = readVector();
 
+	// Calculate heading when the magnetometer is level, then correct for signs of axis.
+	float heading = atan2(v.y, v.x);
+
+	// Once you have your heading, you must then add your 'Declination Angle', which is the 'Error' of the magnetic field in your location.
+	// Find yours here: http://www.magnetic-declination.com/
+	// Mine is: 2� 37' W, which is 2.617 Degrees, or (which we need) 0.0456752665 radians, I will use 0.0457
+	// If you cannot find your Declination, comment out these two lines, your compass will be slightly off.
+		//12 + 34/60E = 12.56667 / 180 * pi() = 0.2193297
+	float declinationAngle = 0.2193297;
+	heading += declinationAngle;
+
+	// Correct for when signs are reversed.
+	if(heading < 0)
+		heading += 2 * M_PI;
+  
+	// Check for wrap due to addition of declination.
+	if(heading > 2 * M_PI)
+		heading -= 2*M_PI;
+
+	// Convert radians to degrees for readability.
+	float headingDegrees = heading * 180/M_PI; 
+
 	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
 	//syslog(LOG_NOTICE, "Scaled:%g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
 	//syslog(LOG_NOTICE, "XZ:%g YZ:%g\n", xz_degrees, yz_degrees);
@@ -91,6 +113,8 @@ void MAG3110::fill_json(json_t *js)
 	json_object_set_new(sjs, "timestamp", json_real(stop_v.timestamp));
 	json_object_set_new(js, "stop_raw", sjs);
 
+	json_object_set_new(js, "heading_radians", json_real(heading));
+	json_object_set_new(js, "heading_degrees", json_real(headingDegrees));
 }
 
 void MAG3110::loop()

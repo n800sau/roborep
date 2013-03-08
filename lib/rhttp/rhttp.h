@@ -10,7 +10,11 @@ static const char *rgroups[] = {
 	"l3g4200d",
 	"hmc5883l",
 	"cmucam4",
-	"kalman"
+	"kalman",
+	"lsm303",
+	"mag3110",
+	"bmp085",
+	"mpu6050",
 };
 
 static const int rgroups_count = sizeof(rgroups) / sizeof(*rgroups);

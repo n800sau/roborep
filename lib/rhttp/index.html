@@ -176,10 +176,16 @@
 			gauge(ctx, 100, data['adxl345.js.obj']['xz_degrees'], img_side);
 			var ctx = document.getElementById('yz_canvas').getContext('2d');
 			gauge(ctx, 100, data['adxl345.js.obj']['yz_degrees'], img_back);
+			var ctx = document.getElementById('mpu_xz_canvas').getContext('2d');
+			gauge(ctx, 100, data['mpu6050.js.obj']['xz_degrees'], img_side);
+			var ctx = document.getElementById('mpu_yz_canvas').getContext('2d');
+			gauge(ctx, 100, data['mpu6050.js.obj']['yz_degrees'], img_back);
 			var ctx = document.getElementById('kx_canvas').getContext('2d');
 			gauge(ctx, 100, data['kalman.js.obj']['pitch'], img_top);
 			var ctx = document.getElementById('m_canvas').getContext('2d');
 			gauge(ctx, 100, data['hmc5883l.js.obj']['heading_degrees'], img_top);
+			var ctx = document.getElementById('m3110_canvas').getContext('2d');
+			gauge(ctx, 100, data['mag3110.js.obj']['heading_degrees'], img_top);
 		};
 	</script>
 </head>
@@ -188,10 +194,20 @@
 	<div id="curtime"></div>
 	<table>
 	<tr>
-	<td><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td><td><canvas id="yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
+		<td><label for="xz_canvas">XZ adxl345</label><br/><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td>
+		<td><label for="yz_canvas">YZ adxl345</label><br/><canvas id="yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
 	</tr>
 	<tr>
-	<td><canvas id="kx_canvas" width="100" height="100" style="background-color:green;"/></td><td><canvas id="m_canvas" width="100" height="100" style="background-color:gray;"/></td>
+		<td><label for="mpu_xz_canvas">XZ mpu6050</label><br/><canvas id="mpu_xz_canvas" width="100" height="100" style="background-color:blue;"/></td>
+		<td><label for="mpu_yz_canvas">YZ mpu6050</label><br/><canvas id="mpu_yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
+	</tr>
+	<tr>
+		<td><label for="kx_canvas">Kalman</label><br/><canvas id="kx_canvas" width="100" height="100" style="background-color:green;"/></td>
+		<td><label for="m_canvas">Compass hmc5883l</label><br/><canvas id="m_canvas" width="100" height="100" style="background-color:gray;"/></td>
+	</tr>
+	<tr>
+		<td>></td>
+		<td><label for="m3110_canvas">Compass mag3110</label><br/><canvas id="m3110_canvas" width="100" height="100" style="background-color:gray;"/></td>
 	</tr>
 	</table>
 	<div style="overflow:auto;height:100%;width:100%;"><div id="params"></div></div>
