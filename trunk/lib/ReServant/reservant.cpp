@@ -29,7 +29,7 @@ const char *s_timestamp(const double *dt)
 		gettimeofday(&tv, NULL);
 	}
 	struct tm *st = localtime(&tv.tv_sec);
-	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d.%6.6d", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec, tv.tv_usec);
+	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d.%6.6ld", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec, tv.tv_usec);
 	return rs;
 }
 
@@ -110,7 +110,7 @@ void ReServant_cmdCallback(redisAsyncContext *c, void *r, void *privdata)
 //###############
 
 
-ReServant::ReServant(const char *s_id):exiting(0),n_calls(0),cmdlist_size(0)
+ReServant::ReServant(const char *s_id):exiting(0),n_calls(0),cmdlist_size(0),timer_ev(NULL),servant_created(false)
 {
 	this->s_id = s_id;
 	_mypath[readlink("/proc/self/exe", _mypath, sizeof(_mypath))] = 0;
@@ -121,8 +121,40 @@ ReServant::~ReServant()
 {
 }
 
-void ReServant::create_servant()
+bool ReServant::create_servant()
 {
+	bool rs = false;
+	if(!servant_created) {
+		setlogmask (LOG_UPTO (LOG_DEBUG));
+		static char logname[256];
+		strncpy(logname, myid(), sizeof(logname));
+		openlog(logname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+		syslog(LOG_NOTICE, "Hello from %s\n", logname);
+		signal(SIGPIPE, SIG_IGN);
+		base = event_base_new();
+
+		struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+		redis = redisConnectWithTimeout((char*)"localhost", 6379, timeout);
+		if (redis->err) {
+			syslog(LOG_ERR, "Connection error: %s\n", redis->errstr);
+			exit(1);
+		}
+		aredis = redisAsyncConnect("localhost", 6379);
+		if (aredis->err) {
+			/* Let *aredis leak for now... */
+			syslog(LOG_ERR, "Error: %s\n", aredis->errstr);
+			exit(1);
+		}
+
+		setLoopInterval();
+		redisLibeventAttach(aredis,base);
+		redisAsyncSetConnectCallback(aredis, ReServant_connectCallback);
+		redisAsyncSetDisconnectCallback(aredis, ReServant_disconnectCallback);
+		redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP cmd.%s", myid());
+		servant_created = rs = true;
+	}
+	return rs;
 }
 
 void ReServant::setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size)
@@ -131,42 +163,25 @@ void ReServant::setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size)
 	this->cmdlist_size = cmdlist_size;
 }
 
+void ReServant::setLoopInterval(float interval)
+{
+	struct timeval loop_timeout = { long(interval), long(interval * 1000000)%1000000  }; // 1.5 seconds
+	syslog(LOG_NOTICE, "Loop interval set to %ld.%6.6ld", loop_timeout.tv_sec, loop_timeout.tv_usec);
+	if(timer_ev) {
+		event_del(timer_ev);
+	} else {
+		timer_ev = event_new(base, -1, EV_PERSIST, ReServant_timer_cb_func, this);
+	}
+	event_add(timer_ev, &loop_timeout);
+}
+
 void ReServant::run()
 {
-	setlogmask (LOG_UPTO (LOG_DEBUG));
-	char logname[256];
-	sprintf(logname, "%s", myid());
-	openlog(logname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-	syslog(LOG_NOTICE, "Hello from %s\n", logname);
-    signal(SIGPIPE, SIG_IGN);
-    base = event_base_new();
-
-	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-	redis = redisConnectWithTimeout((char*)"localhost", 6379, timeout);
-	if (redis->err) {
-        syslog(LOG_ERR, "Connection error: %s\n", redis->errstr);
-        exit(1);
-    }
-    aredis = redisAsyncConnect("localhost", 6379);
-    if (aredis->err) {
-        /* Let *aredis leak for now... */
-        syslog(LOG_ERR, "Error: %s\n", aredis->errstr);
-        exit(1);
-    }
-
 	create_servant();
-
-    redisLibeventAttach(aredis,base);
-    redisAsyncSetConnectCallback(aredis, ReServant_connectCallback);
-    redisAsyncSetDisconnectCallback(aredis, ReServant_disconnectCallback);
-    redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP cmd.%s", myid());
-	timer_ev = event_new(base, -1, EV_PERSIST, ReServant_timer_cb_func, this);
-	struct timeval one_sec = { 0, 500000 };
-	event_add(timer_ev, &one_sec);
 	do {
     	event_base_loop(base, EVLOOP_NONBLOCK);
     } while(!exiting);
+	event_free(timer_ev);
     event_base_dispatch(base);
 	closelog();
 }
@@ -288,7 +303,7 @@ void ReServant::json2redislist()
 	fill_json(js);
 	char *jstr = json_dumps(js, JSON_INDENT(4));
 	if(jstr) {
-//		syslog(LOG_DEBUG, "%s\n", jstr);
+		syslog(LOG_DEBUG, "%s\n", jstr);
 		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
 		redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
 		free(jstr);

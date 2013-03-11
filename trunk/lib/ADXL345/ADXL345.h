@@ -57,12 +57,12 @@ class ADXL345:public ReServant
 
 	protected:
 		I2CWire i2cwire;
-		virtual void create_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 	public:
 		ADXL345();
+		virtual bool create_servant();
 		int setRange(int gNum, bool fullResolution);
 		void enableMeasurements();
 		float heading(float axis1, float axis2);

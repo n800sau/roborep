@@ -74,14 +74,17 @@ void ADXL345::stop_state(json_t *js)
 	}
 }
 
-void ADXL345::create_servant()
+bool ADXL345::create_servant()
 {
-	ReServant::create_servant();
-	/* initialise ADXL345 */
-//	i2cwire.selectDevice(ADXL345_I2C_ADDR, "ADXL345");
-	setRange(2, true);
-//	i2cwire.writeToDevice(Register_DataFormat, 0);
-//	i2cwire.writeToDevice(Register_DataFormat, 11);
+	bool rs = ReServant::create_servant();
+	if(rs) {
+		/* initialise ADXL345 */
+	//	i2cwire.selectDevice(ADXL345_I2C_ADDR, "ADXL345");
+		setRange(2, true);
+	//	i2cwire.writeToDevice(Register_DataFormat, 0);
+	//	i2cwire.writeToDevice(Register_DataFormat, 11);
+	}
+	return rs;
 }
 
 

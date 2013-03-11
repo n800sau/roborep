@@ -45,11 +45,11 @@ class Rhttp:public ReServant
 		RVAL *rvals[MAX_RVALS_COUNT];
 		int rvals_count;
 	protected:
-		virtual void create_servant();
 		virtual void loop();
 	public:
 		Rhttp(int port=0);
 		~Rhttp();
+		virtual bool create_servant();
 
 		virtual void http_request(struct evhttp_request *req);
 		void send_file(struct evhttp_request *req,  const char *fname, const char *mime="text/html");

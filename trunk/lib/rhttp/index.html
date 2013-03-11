@@ -73,7 +73,6 @@
 			page_request.onreadystatechange = function() {
 				if (page_request.responseText) {
 
-
 					var rdata = JSON.parse(page_request.responseText);
 					var params_e = document.getElementById("params");
 					params_e.innerHTML = '';
@@ -81,13 +80,16 @@
 					update_image(rdata);
 
 				}
-				try {
-					loadpage(page_request, containerid)
-				} catch (err) {
-					loadpage(err.message, containerid)
+//				try {
+//					loadpage(page_request, containerid)
+//				} catch (err) {
+//					loadpage(err.message, containerid)
+//				}
+				if(nextTime) {
+					clearTimeout(nextTime)
+					nextTime = null;
 				}
-				clearTimeout(nextTime)
-				nextTime = setTimeout(reload_info , 2000)
+				nextTime = setTimeout(reload_info , 5000)
 			}
 			if (bustcachevar) {
 				//if bust caching of external page
@@ -112,8 +114,9 @@
 			//} else {
 			//	/*WebSockets are not supported. Try a fallback method like long-polling etc*/
 			//}
+			nextTime = null;
 			ajaxpage("/values", 'cam_values');
-			nextTime = setTimeout(reload_info , 10000);
+			nextTime = setTimeout(reload_info , 5000);
 		};
 		var img_side = new Image();
 		img_side.src = 'car_side';
@@ -184,6 +187,16 @@
 			gauge(ctx, 100, data['kalman.js.obj']['pitch'], img_top);
 			var ctx = document.getElementById('m_canvas').getContext('2d');
 			gauge(ctx, 100, data['hmc5883l.js.obj']['heading_degrees'], img_top);
+			var l = document.getElementById('m_canvas_label');
+			while (l.firstChild) {
+				l.removeChild(l.firstChild);
+			}
+			var dt = new Date(data['hmc5883l.js.obj']['timestamp'] * 1000);
+			l.appendChild(document.createTextNode('hmc5883l'));
+			l.appendChild(document.createElement('BR'));
+			l.appendChild(document.createTextNode(dt.toLocaleTimeString()));
+			l.appendChild(document.createElement('BR'));
+			l.appendChild(document.createTextNode(data['hmc5883l.js.obj']['heading_degrees']));
 			var ctx = document.getElementById('m3110_canvas').getContext('2d');
 			gauge(ctx, 100, data['mag3110.js.obj']['heading_degrees'], img_top);
 		};
@@ -194,7 +207,7 @@
 	<div id="curtime"></div>
 	<table>
 	<tr>
-		<td><label for="xz_canvas">XZ adxl345</label><br/><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td>
+		<td><label id="xz_canvas_label" for="xz_canvas">XZ adxl345</label><br/><canvas id="xz_canvas" width="100" height="100" style="background-color:blue;"/></td>
 		<td><label for="yz_canvas">YZ adxl345</label><br/><canvas id="yz_canvas" width="100" height="100" style="background-color:yellow;"/></td>
 	</tr>
 	<tr>
@@ -203,7 +216,7 @@
 	</tr>
 	<tr>
 		<td><label for="kx_canvas">Kalman</label><br/><canvas id="kx_canvas" width="100" height="100" style="background-color:green;"/></td>
-		<td><label for="m_canvas">Compass hmc5883l</label><br/><canvas id="m_canvas" width="100" height="100" style="background-color:gray;"/></td>
+		<td><label id="m_canvas_label" for="m_canvas">Compass hmc5883l</label><br/><canvas id="m_canvas" width="100" height="100" style="background-color:gray;"/></td>
 	</tr>
 	<tr>
 		<td>></td>

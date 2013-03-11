@@ -28,13 +28,16 @@ LSM303::LSM303(void):ReServant("lsm303")
 
 void LSM303::create_servant()
 {
-	ReServant::create_servant();
-	init();
-	enableDefault();
-	// Calibration values. Use the Calibrate example program to get the values for
-	// your compass.
-	m_min.x = -520; m_min.y = -570; m_min.z = -770;
-	m_max.x = +540; m_max.y = +500; m_max.z = 180;
+	bool rs = ReServant::create_servant();
+	if (rs) {
+		init();
+		enableDefault();
+		// Calibration values. Use the Calibrate example program to get the values for
+		// your compass.
+		m_min.x = -520; m_min.y = -570; m_min.z = -770;
+		m_max.x = +540; m_max.y = +500; m_max.z = 180;
+	}
+	return rs;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////

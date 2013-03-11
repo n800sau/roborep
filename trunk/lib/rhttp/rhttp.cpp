@@ -57,11 +57,14 @@ Rhttp::~Rhttp()
 	}
 }
 
-void Rhttp::create_servant()
+bool Rhttp::create_servant()
 {
-	ReServant::create_servant();
-//	redisAsyncCommand(aredis, Rhttp_keyCallBacke, NULL, "SUBSCRIBE ");
-	runHttpd("0.0.0.0", port);
+	bool rs = ReServant::create_servant();
+	if(rs) {
+	//	redisAsyncCommand(aredis, Rhttp_keyCallBacke, NULL, "SUBSCRIBE ");
+		runHttpd("0.0.0.0", port);
+	}
+	return rs;
 }
 
 void Rhttp::loop()

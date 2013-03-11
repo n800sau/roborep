@@ -102,7 +102,6 @@ class LSM303:public ReServant
 
 	protected:
 		I2CWire i2cwire;
-		virtual void create_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
 
@@ -130,6 +129,7 @@ class LSM303:public ReServant
 									 magGain_47 = 0xA0, magGain_56 = 0xC0, magGain_81 = 0xE0 };
 
 		LSM303(void);
+		virtual bool create_servant();
 
 		void init(uint8_t device = LSM303_DEVICE_AUTO, uint8_t sa0_a = LSM303_SA0_A_AUTO);
 		uint8_t getDeviceType(void) { return _device; }

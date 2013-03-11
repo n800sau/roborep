@@ -6,10 +6,13 @@
 BMP085::BMP085():ReServant("bmp085") {
 }
 
-void BMP085::create_servant()
+bool BMP085::create_servant()
 {
-	ReServant::create_servant();
-	init_mode();
+	bool rs = ReServant::create_servant();
+	if(rs) {
+		init_mode();
+	}
+	return rs;
 }
 
 
@@ -18,7 +21,7 @@ void BMP085::init_mode(uint8_t mode)
 	oversampling = (mode > BMP085_ULTRAHIGHRES) ? BMP085_ULTRAHIGHRES : mode;
 
 	// read calibration data
-	i2cwire.selectDevice(BMP085_I2CADDR, "BMP085");
+	i2cwire.selectDevice(BMP085_I2CADDR, myid());
 	i2cwire.requestFromDeviceHL(BMP085_CAL_AC1, 1, (uint16_t*)&ac1);
 	i2cwire.requestFromDeviceHL(BMP085_CAL_AC2, 1, (uint16_t*)&ac2);
 	i2cwire.requestFromDeviceHL(BMP085_CAL_AC3, 1, (uint16_t*)&ac3);
@@ -34,7 +37,7 @@ void BMP085::init_mode(uint8_t mode)
 
 uint16_t BMP085::readRawTemperature(void)
 {
-	i2cwire.selectDevice(BMP085_I2CADDR, "BMP085");
+	i2cwire.selectDevice(BMP085_I2CADDR, myid());
 	i2cwire.writeToDevice(BMP085_CONTROL, BMP085_READTEMPCMD);
 	usleep(5000);
 	uint16_t rs;

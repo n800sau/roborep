@@ -100,19 +100,20 @@ const char* HMC5883L::GetErrorText(int errorCode)
 	return "Error not defined.";
 }
 
-void HMC5883L::create_servant()
+bool HMC5883L::create_servant()
 {
-	ReServant::create_servant();
-	SetScale();
-	SetMeasurementMode(Measurement_Continuous);
+	if(ReServant::create_servant()) {
+		SetScale();
+		SetMeasurementMode(Measurement_Continuous);
+	}
 }
 
 void HMC5883L::fill_json(json_t *js)
 {
-	syslog(LOG_NOTICE, "Setting scale to +/- 1.3 Ga\n");
+//	syslog(LOG_NOTICE, "Setting scale to +/- 1.3 Ga\n");
 	int error = SetScale(GAUSS_1_3); // Set the scale of the compass->
 	if(error != 0) // If there is an error, print it out.
-	  syslog(LOG_ERR, "%d:%s\n", error, GetErrorText(error));
+		syslog(LOG_ERR, "%d:%s\n", error, GetErrorText(error));
 	// Retrive the raw values from the compass (not scaled).
 	MagnetometerRaw raw = ReadRawAxis();
 	// Retrived the scaled values from the compass (scaled to the configured scale).
@@ -143,17 +144,17 @@ void HMC5883L::fill_json(json_t *js)
 	// Convert radians to degrees for readability.
 	float headingDegrees = heading * 180/M_PI; 
 
-	syslog(LOG_NOTICE, "Raw: %d %d %d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
+//	syslog(LOG_NOTICE, "Raw: %d %d %d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
 	json_object_set_new(js, "rawX", json_integer(raw.XAxis));
 	json_object_set_new(js, "rawY", json_integer(raw.YAxis));
 	json_object_set_new(js, "rawZ", json_integer(raw.ZAxis));
 
-	syslog(LOG_NOTICE, "Scaled: %g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
+//	syslog(LOG_NOTICE, "Scaled: %g %g %g\n", scaled.XAxis, scaled.YAxis, scaled.ZAxis);
 	json_object_set_new(js, "scaledX", json_real(scaled.XAxis));
 	json_object_set_new(js, "scaledY", json_real(scaled.YAxis));
 	json_object_set_new(js, "scaledZ", json_real(scaled.ZAxis));
 
-	syslog(LOG_NOTICE, "Heading: %g radians, %g degrees\n", heading, headingDegrees);
+//	syslog(LOG_NOTICE, "Heading: %g radians, %g degrees\n", heading, headingDegrees);
 	json_object_set_new(js, "heading_radians", json_real(heading));
 	json_object_set_new(js, "heading_degrees", json_real(headingDegrees));
 }

@@ -128,7 +128,7 @@ void MPU6050::fill_json(json_t *js)
 	json_t *sjs;
 	readRaw(raw);
 
-	float xz_degrees = heading(raw.val.x_accel, raw.val.z_accel);
+	float xz_degrees = -heading(raw.val.x_accel, raw.val.z_accel);
 	float yz_degrees = heading(raw.val.y_accel, raw.val.z_accel);
 
 	//syslog(LOG_NOTICE, "Raw:%d %4d %4d\n", raw.XAxis, raw.YAxis, raw.ZAxis);
