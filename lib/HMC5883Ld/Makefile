@@ -1,5 +1,5 @@
 CC=g++
-CCOPTS=-L. -I/usr/include/hiredis -I../ReServant -I../I2CWire
+CCOPTS=-L. -I/usr/include/hiredis -I../ReServant -I../I2CWire -g
 STRIP=-strip
 SRCS=HMC5883L.cpp hmc5883ld.cpp
 OBJECTS=HMC5883L.o hmc5883ld.o

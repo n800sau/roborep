@@ -39,12 +39,12 @@ class BMP085:public ReServant
 
 	protected:
 		I2CWire i2cwire;
-		virtual void create_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
 
 	public:
 		BMP085();
+		virtual bool create_servant();
 		void init_mode(uint8_t mode = BMP085_ULTRAHIGHRES);  // by default go highres
 		float readTemperature();
 		float readPressure();

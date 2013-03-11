@@ -1,5 +1,5 @@
 CC=g++
-CCOPTS=-L. -I/usr/include/hiredis -I../ReServant
+CCOPTS=-L. -I/usr/include/hiredis -I../ReServant -g
 STRIP=-strip
 SRCS=rhttpd.cpp rhttp.cpp
 OBJECTS=rhttpd.o rhttp.o

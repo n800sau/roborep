@@ -50,7 +50,6 @@ class L3G4200D:public ReServant
 
 	protected:
 		I2CWire i2cwire;
-		virtual void create_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
@@ -75,6 +74,7 @@ class L3G4200D:public ReServant
 		} curr_g, stop_g; // gyro angular velocity readings
 
 		L3G4200D(uint8_t address=DefaultL3G4200D_Address);
+		virtual bool create_servant();
 
 		void enableDefault(int scale=1);
 		

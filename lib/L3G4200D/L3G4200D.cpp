@@ -154,12 +154,15 @@ void L3G4200D::vector_normalize(vector *a)
   a->z /= mag;
 }
 
-void L3G4200D::create_servant()
+bool L3G4200D::create_servant()
 {
-	ReServant::create_servant();
-	enableDefault();
-// subscribe is buggy
-//	redisAsyncCommand(aredis, L3G4200D_onADXL345, NULL, "SUBSCRIBE adxl345");
+	bool rs = ReServant::create_servant();
+	if(rs) {
+		enableDefault();
+	// subscribe is buggy
+	//	redisAsyncCommand(aredis, L3G4200D_onADXL345, NULL, "SUBSCRIBE adxl345");
+	}
+	return rs;
 }
 
 void L3G4200D::fill_json(json_t *js)

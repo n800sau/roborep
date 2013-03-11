@@ -93,6 +93,9 @@ void MAG3110::fill_json(json_t *js)
 	if(heading > 2 * M_PI)
 		heading -= 2*M_PI;
 
+	//adjustment
+	heading -= M_PI / 2;
+
 	// Convert radians to degrees for readability.
 	float headingDegrees = heading * 180/M_PI; 
 

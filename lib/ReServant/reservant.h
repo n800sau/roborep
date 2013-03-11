@@ -35,12 +35,14 @@ class ReServant
 		struct evhttp_bound_socket *sock;
 
 		char _mypath[256];
+
+		bool servant_created;
+
 	protected:
 
 		redisAsyncContext *aredis;
 		redisContext *redis;
 
-		virtual void create_servant();
 		virtual void loop();
 
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
@@ -67,6 +69,9 @@ class ReServant
 		void timer_cb_func(short what);
 
 		virtual void http_request(struct evhttp_request *req);
+		virtual bool create_servant();
+
+		void setLoopInterval(float interval=0.5);
 };
 
 double dtime();

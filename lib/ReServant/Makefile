@@ -1,5 +1,5 @@
 CC=g++ -I/usr/include/hiredis
-CCOPTS=-L.
+CCOPTS=-L. -g
 STRIP=-strip
 SRCS=reservant.cpp hiredis_ext.cpp
 OBJECTS=reservant.o hiredis_ext.o
