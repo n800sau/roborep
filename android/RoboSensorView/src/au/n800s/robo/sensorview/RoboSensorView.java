@@ -2,6 +2,7 @@ package au.n800s.robo.sensorview;
 
 import android.app.Activity;
 import android.os.Bundle;
+
 import android.util.Log;
 
 import android.hardware.Sensor;
@@ -9,29 +10,76 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import android.widget.TableLayout;
+import android.widget.TableRow;
+
+import android.graphics.Color;
+
+import com.nullwire.trace.ExceptionHandler;
+
 public class RoboSensorView extends Activity implements SensorEventListener
 {
 
-	GaugeView gauge;
-  private SensorManager mSensorManager;
-  Sensor accelerometer;
-  Sensor magnetometer;
+	GaugeView gauge1, gauge2, gauge3, gauge4, gauge5;
+	private SensorManager mSensorManager;
+	Sensor accelerometer;
+	Sensor magnetometer;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+		ExceptionHandler.register(this);
+		ExceptionHandler.register(this, "http://n800s.dyndns.org/android/server.php");
+		Log.d("RoboSensorView", "Hello");
+		TableLayout table = new TableLayout(this);
+		table.setStretchAllColumns(true);
+		table.setShrinkAllColumns(true);
+//		table.setColumnStretchable(0, true);
+
+		TableRow row1 = new TableRow(this);
+		TableRow row2 = new TableRow(this);
+		TableRow row3 = new TableRow(this);
+
+		gauge1 = new GaugeView(this);
+//		gauge1.setBackgroundColor(Color.RED);
+//		gauge1.invalidate();
+
+		gauge2 = new GaugeView(this);
+//		gauge2.setBackgroundColor(Color.MAGENTA);
+//		gauge2.invalidate();
+
+		gauge3 = new GaugeView(this);
+//		gauge3.setBackgroundColor(Color.YELLOW);
+//		gauge3.invalidate();
+//		gauge.requestFocus();
+//		gauge.setAngle(Float.valueOf(45));
+
+		gauge4 = new GaugeView(this);
+		gauge4.setBackgroundColor(Color.CYAN);
+		gauge4.invalidate();
+
+		gauge5 = new GaugeView(this);
+		gauge5.setBackgroundColor(Color.GREEN);
+		gauge5.invalidate();
+
+		row1.addView(gauge1);
+		row1.addView(gauge2);
+		row2.addView(gauge3);
+		row3.addView(gauge4);
+		row3.addView(gauge5);
+		table.addView(row1);
+		table.addView(row2);
+		table.addView(row3);
+//		setContentView(table);
 //		try {
-//			setContentView(R.layout.main);
+			setContentView(R.layout.main);
 //		} catch (Exception e) {
 //			Log.e("ERROR", "ERROR IN CODE:"+e.toString());
 //		}
 
-		gauge = new GaugeView(this);
-        setContentView(gauge);
-        gauge.requestFocus();
-//		gauge.setAngle(Float.valueOf(45));
+//        setContentView(gauge);
 		mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
 		accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -64,7 +112,9 @@ public class RoboSensorView extends Activity implements SensorEventListener
       if (success) {
         float orientation[] = new float[3];
         SensorManager.getOrientation(R, orientation);
-        gauge.setAngle(orientation[0]); // orientation contains: azimut, pitch and roll
+//        gauge1.setAngle(orientation[0]); // orientation contains: azimut, pitch and roll
+  //      gauge2.setAngle(orientation[1]); // orientation contains: azimut, pitch and roll
+    //    gauge3.setAngle(orientation[2]); // orientation contains: azimut, pitch and roll
       }
     }
   }
