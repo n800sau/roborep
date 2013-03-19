@@ -51,8 +51,7 @@ class UServer:public ReServant
 		~UServer();
 		virtual bool create_servant();
 
-		virtual void http_request(struct evhttp_request *req);
-		void send_file(struct evhttp_request *req,  const char *fname, const char *mime="text/html");
+		virtual void udp_request(sockaddr_in stFromAddr, const char *aReqBuffer);
 
 		void keyCallback(redisAsyncContext *c, const char *rgroup, const char *rtype, redisReply *reply);
 		void paramCallback(redisAsyncContext *c, const char *rkey, const char *rgroup, const char *rtype, redisReply *reply);

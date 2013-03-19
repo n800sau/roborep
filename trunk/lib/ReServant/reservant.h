@@ -72,6 +72,7 @@ class ReServant
 		void timer_cb_func(short what);
 
 		virtual void http_request(struct evhttp_request *req);
+		virtual void udp_request(sockaddr_in stFromAddr, const char *aReqBuffer);
 		virtual bool create_servant();
 
 		void setLoopInterval(float interval=0.5);
