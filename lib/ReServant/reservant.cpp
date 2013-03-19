@@ -37,7 +37,7 @@ const char *s_timestamp(const double *dt)
 
 
 //#################
-static void ReServant_on_udp_event(int fd, short int fields, void *pargs)
+static void ReServant_on_udp_event(int fd, short int fields, void *arg)
 {
 	unsigned int unFromAddrLen;
 	int nByte = 0;
@@ -47,10 +47,13 @@ static void ReServant_on_udp_event(int fd, short int fields, void *pargs)
 	unFromAddrLen = sizeof(stFromAddr);
 
 	if ((nByte = recvfrom(fd, aReqBuffer, sizeof(aReqBuffer), 0, (struct sockaddr *)&stFromAddr, &unFromAddrLen)) == -1) {
-		printf("error occured while receiving\n");
+		syslog(LOG_ERR, "error occured while receiving");
 	}
 
-	printf("Function called buffer is %s\n",aReqBuffer);
+	syslog(LOG_NOTICE, "Function called buffer is %s",aReqBuffer);
+
+	ReServant *ths = (ReServant *)arg;
+	ths->udp_request(stFromAddr, aReqBuffer);
 }
 
 static void ReServant_cmd_request_cb(struct evhttp_request *req, void *arg)
@@ -251,31 +254,25 @@ void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 	redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP cmd.%s", myid());
 }
 
-void ReServant::http_request(struct evhttp_request *req)
-{
-}
-
 void ReServant::runUDPserver(const char *host, int port)
 {
 	int udpsock_fd;
 	if ((udpsock_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		printf("ERROR - unable to create socket\n");
+		syslog(LOG_ERR, "ERROR - unable to create socket");
 		exit(1);
-	} else {
-		printf("Socket = %d\n", udpsock_fd);
 	}
 
 	//Start : Set flags in non-blocking mode
 	int nReqFlags = fcntl(udpsock_fd, F_GETFL, 0);
 	if (nReqFlags< 0)
 	{
-		printf("ERROR - cannot set socket options\n");
+		syslog(LOG_ERR, "ERROR - cannot set socket options");
 	}
 
 	if (fcntl(udpsock_fd, F_SETFL, nReqFlags | O_NONBLOCK) < 0)
 	{
-		printf("ERROR - cannot set socket options\n");
+		syslog(LOG_ERR, "ERROR - cannot set socket options");
 	}
 
 	struct sockaddr_in stAddr;
@@ -291,19 +288,23 @@ void ReServant::runUDPserver(const char *host, int port)
 
 	int nOptVal = 1;
 	if (setsockopt(udpsock_fd, SOL_SOCKET, SO_REUSEADDR, (const void *)&nOptVal, sizeof(nOptVal))) {
-		printf("ERROR - socketOptions: Error at Setsockopt\n");
+		syslog(LOG_ERR, "ERROR - socketOptions: Error at Setsockopt");
 	}
 
 	if (bind(udpsock_fd, (struct sockaddr *)&stAddr, sizeof(stAddr)) != 0)
 	{
-		printf("Error: Unable to bind the default IP\n");
+		syslog(LOG_ERR, "Error: Unable to bind the default IP");
 		exit(-1);
 	}
 
-	printf("Listening UDP at port %d\n",  port);
+	syslog(LOG_NOTICE, "Listening UDP at port %d",  port);
 	udp_ev = event_new(base, udpsock_fd, EV_READ | EV_PERSIST, ReServant_on_udp_event, this);
 	event_add(udp_ev, NULL);
 
+}
+
+void ReServant::udp_request(sockaddr_in stFromAddr, const char *aReqBuffer)
+{
 }
 
 void ReServant::runHttpd(const char *host, int port)
@@ -311,7 +312,7 @@ void ReServant::runHttpd(const char *host, int port)
 	/* Create a new evhttp object to handle requests. */
 	http = evhttp_new(base);
 	if (!http) {
-		syslog(LOG_ERR, "couldn't create evhttp. Exiting.\n");
+		syslog(LOG_ERR, "couldn't create evhttp. Exiting.");
 		exit(1);
 	}
 
@@ -324,7 +325,7 @@ void ReServant::runHttpd(const char *host, int port)
 	/* Now we tell the evhttp what port to listen on */
 	sock = evhttp_bind_socket_with_handle(http, host, port);
 	if (!sock) {
-		syslog(LOG_ERR, "couldn't bind to port %d. Exiting.\n", (int)port);
+		syslog(LOG_ERR, "couldn't bind to port %d. Exiting.", (int)port);
 		exit(1);
 	}
 	/* Extract and display the address we're listening on. */
@@ -348,16 +349,20 @@ void ReServant::runHttpd(const char *host, int port)
 		got_port = ntohs(((struct sockaddr_in6*)&ss)->sin6_port);
 		inaddr = &((struct sockaddr_in6*)&ss)->sin6_addr;
 	} else {
-		syslog(LOG_ERR, "Weird address family %d\n", ss.ss_family);
+		syslog(LOG_ERR, "Weird address family %d", ss.ss_family);
 		exit(1);
 	}
 	addr = evutil_inet_ntop(ss.ss_family, inaddr, addrbuf, sizeof(addrbuf));
 	if (addr) {
-		syslog(LOG_NOTICE, "Listening on %s:%d\n", addr, got_port);
+		syslog(LOG_NOTICE, "Listening on %s:%d", addr, got_port);
 	} else {
-		syslog(LOG_ERR, "evutil_inet_ntop failed\n");
+		syslog(LOG_ERR, "evutil_inet_ntop failed");
 		exit(1);
 	}
+}
+
+void ReServant::http_request(struct evhttp_request *req)
+{
 }
 
 void ReServant::fill_json(json_t *js)
