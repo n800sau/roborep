@@ -30,6 +30,7 @@ class ReServant
 
 		struct event_base *base;
 		struct event *timer_ev;
+		struct event *udp_ev;
 
 		struct evhttp *http;
 		struct evhttp_bound_socket *sock;
@@ -64,6 +65,8 @@ class ReServant
 		void run();
 		//can be run after run() only
 		void runHttpd(const char *host, int port);
+		//can be run after run() only
+		void runUDPserver(const char *host, int port);
 
 		void cmdCallback(redisAsyncContext *c, redisReply *reply);
 		void timer_cb_func(short what);

@@ -9,6 +9,8 @@
 #include <adapters/libevent.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <fcntl.h>
+#include <arpa/inet.h>
 
 
 double dtime()
@@ -35,6 +37,22 @@ const char *s_timestamp(const double *dt)
 
 
 //#################
+static void ReServant_on_udp_event(int fd, short int fields, void *pargs)
+{
+	unsigned int unFromAddrLen;
+	int nByte = 0;
+	char aReqBuffer[512];
+	struct sockaddr_in stFromAddr;
+
+	unFromAddrLen = sizeof(stFromAddr);
+
+	if ((nByte = recvfrom(fd, aReqBuffer, sizeof(aReqBuffer), 0, (struct sockaddr *)&stFromAddr, &unFromAddrLen)) == -1) {
+		printf("error occured while receiving\n");
+	}
+
+	printf("Function called buffer is %s\n",aReqBuffer);
+}
+
 static void ReServant_cmd_request_cb(struct evhttp_request *req, void *arg)
 {
 	ReServant *ths = (ReServant *)arg;
@@ -235,6 +253,57 @@ void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 
 void ReServant::http_request(struct evhttp_request *req)
 {
+}
+
+void ReServant::runUDPserver(const char *host, int port)
+{
+	int udpsock_fd;
+	if ((udpsock_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		printf("ERROR - unable to create socket\n");
+		exit(1);
+	} else {
+		printf("Socket = %d\n", udpsock_fd);
+	}
+
+	//Start : Set flags in non-blocking mode
+	int nReqFlags = fcntl(udpsock_fd, F_GETFL, 0);
+	if (nReqFlags< 0)
+	{
+		printf("ERROR - cannot set socket options\n");
+	}
+
+	if (fcntl(udpsock_fd, F_SETFL, nReqFlags | O_NONBLOCK) < 0)
+	{
+		printf("ERROR - cannot set socket options\n");
+	}
+
+	struct sockaddr_in stAddr;
+	// End: Set flags in non-blocking mode
+	memset(&stAddr, 0, sizeof(stAddr));
+	if( host ) {
+		stAddr.sin_addr.s_addr = inet_addr(host);
+	} else {
+		stAddr.sin_addr.s_addr = INADDR_ANY; //listening on local ip
+	}
+	stAddr.sin_port = htons(port);
+	stAddr.sin_family = AF_INET;
+
+	int nOptVal = 1;
+	if (setsockopt(udpsock_fd, SOL_SOCKET, SO_REUSEADDR, (const void *)&nOptVal, sizeof(nOptVal))) {
+		printf("ERROR - socketOptions: Error at Setsockopt\n");
+	}
+
+	if (bind(udpsock_fd, (struct sockaddr *)&stAddr, sizeof(stAddr)) != 0)
+	{
+		printf("Error: Unable to bind the default IP\n");
+		exit(-1);
+	}
+
+	printf("Listening UDP at port %d\n",  port);
+	udp_ev = event_new(base, udpsock_fd, EV_READ | EV_PERSIST, ReServant_on_udp_event, this);
+	event_add(udp_ev, NULL);
+
 }
 
 void ReServant::runHttpd(const char *host, int port)
