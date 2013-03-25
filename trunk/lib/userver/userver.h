@@ -44,8 +44,14 @@ class UServer:public ReServant
 		int port;
 		RVAL *rvals[MAX_RVALS_COUNT];
 		int rvals_count;
+		void send_full_data(json_t *js);
+		int send_full_count;
+		struct event *send_full_timer_ev;
+		char send_to_host[128];
+		int send_to_port;
 	protected:
 		virtual void loop();
+		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 	public:
 		UServer(int port=0);
 		~UServer();
@@ -55,6 +61,10 @@ class UServer:public ReServant
 
 		void keyCallback(redisAsyncContext *c, const char *rgroup, const char *rtype, redisReply *reply);
 		void paramCallback(redisAsyncContext *c, const char *rkey, const char *rgroup, const char *rtype, redisReply *reply);
+		typedef void (UServer::*tFunction)(json_t *js);
+
+		void send_full_cb_func();
+
 };
 
 struct userver_redisReply {
