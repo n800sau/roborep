@@ -28,7 +28,6 @@ class ReServant
 		int exiting;
 		int n_calls;
 
-		struct event_base *base;
 		struct event *timer_ev;
 		struct event *udp_ev;
 
@@ -40,6 +39,8 @@ class ReServant
 		bool servant_created;
 
 	protected:
+
+		struct event_base *base;
 
 		redisAsyncContext *aredis;
 		redisContext *redis;
@@ -55,6 +56,8 @@ class ReServant
 		virtual void fill_json(json_t *js);
 
 		void json2redislist();
+
+		int processJsonCmd(json_t *js);
 
 	public:
 

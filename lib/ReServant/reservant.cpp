@@ -48,12 +48,13 @@ static void ReServant_on_udp_event(int fd, short int fields, void *arg)
 
 	if ((nByte = recvfrom(fd, aReqBuffer, sizeof(aReqBuffer), 0, (struct sockaddr *)&stFromAddr, &unFromAddrLen)) == -1) {
 		syslog(LOG_ERR, "error occured while receiving");
+	} else {
+		aReqBuffer[nByte] = 0;
+		syslog(LOG_NOTICE, "Function called buffer is %s",aReqBuffer);
+		ReServant *ths = (ReServant *)arg;
+		ths->udp_request(stFromAddr, aReqBuffer);
 	}
 
-	syslog(LOG_NOTICE, "Function called buffer is %s",aReqBuffer);
-
-	ReServant *ths = (ReServant *)arg;
-	ths->udp_request(stFromAddr, aReqBuffer);
 }
 
 static void ReServant_cmd_request_cb(struct evhttp_request *req, void *arg)
@@ -221,6 +222,29 @@ void ReServant::call_cmd(const pCMD_FUNC cmd, json_t *js)
 {
 }
 
+int ReServant::processJsonCmd(json_t *js)
+{
+	int rs = -1;
+	json_t *cmd = json_object_get(js, "cmd");
+	for(int i=0; i< cmdlist_size; i++) {
+		const pCMD_FUNC cf = cmdlist[i];
+		if(strcmp(cf->cmd, json_string_value(cmd)) == 0) {
+			rs = 0;
+			call_cmd(cf, js);
+			break;
+		}
+	}
+	char *jstr = json_dumps(js, JSON_INDENT(4));
+	if(jstr) {
+		syslog(LOG_DEBUG, "%s\n", jstr);
+		free(jstr);
+	} else {
+		syslog(LOG_ERR, "Can not encode JSON\n");
+		rs = -2;
+	}
+	return rs;
+}
+
 void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 {
 	if (reply == NULL) {
@@ -232,21 +256,7 @@ void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 			if (js == NULL) {
 				syslog(LOG_ERR, "Error JSON decoding:%s", error.text);
 			} else {
-				json_t *cmd = json_object_get(js, "cmd");
-				for(int i=0; i< cmdlist_size; i++) {
-					const pCMD_FUNC cf = cmdlist[i];
-					if(strcmp(cf->cmd, json_string_value(cmd)) == 0) {
-						call_cmd(cf, js);
-						break;
-					}
-				}
-				char *jstr = json_dumps(js, JSON_INDENT(4));
-				if(jstr) {
-					syslog(LOG_DEBUG, "%s\n", jstr);
-					free(jstr);
-				} else {
-					syslog(LOG_ERR, "Can not decode JSON\n");
-				}
+				processJsonCmd(js);
 				json_decref(js);
 			}
 		}
