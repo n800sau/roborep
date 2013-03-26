@@ -7,6 +7,7 @@
 #include <libgen.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
 
 struct USERVER_CMD_FUNC:public CMD_FUNC {
 	public:
@@ -50,14 +51,34 @@ void UServer_paramCallBack(redisAsyncContext *c, void *r, void *privdata)
 	delete rr;
 }
 
+struct SEND_FULL_DATA {
+	UServer *ths;
+	json_t *js;
+	int count;
+	struct event *timer_ev;
+	inline SEND_FULL_DATA(UServer *ths, json_t *js, int count)
+	{
+		this->js = js;
+		this->ths = ths;
+		this->count = count;
+	}
+};
+
 void UServer_send_full_cb_func(evutil_socket_t fd, short what, void *privdata)
 {
-	UServer *ths = (UServer *)privdata;
-	ths->send_full_cb_func();
+	SEND_FULL_DATA *d = (SEND_FULL_DATA *)privdata;
+	if(d->count > 0) {
+		syslog(LOG_NOTICE, "Sending time %d", d->count);
+		d->ths->send_full_cb_func(d->js);
+		d->count--;
+	} else {
+		event_del(d->timer_ev);
+		delete d;
+	}
 }
 
 
-UServer::UServer(int port):ReServant("userver"),port(port),rvals_count(0),send_full_count(0)
+UServer::UServer(int port):ReServant("userver"),port(port),rvals_count(0)
 {
 	const static pUSERVER_CMD_FUNC cmdlist[] = {
 		new USERVER_CMD_FUNC("send_full_data", &UServer::send_full_data),
@@ -197,50 +218,68 @@ void UServer::send_full_data(json_t *js)
 	long interval = json_integer_value(json_object_get(js, "interval"));
 	if(interval <= 0)
 		interval = 1000;
-	send_full_count = json_integer_value(json_object_get(js, "count"));
-	if(send_full_count <= 0)
-		send_full_count = 1;
+	int count = json_integer_value(json_object_get(js, "count"));
+	if(count <= 0)
+		count = 1;
 	struct timeval loop_timeout = { interval/1000, (interval%1000)*1000  };
-	send_full_timer_ev = event_new(base, -1, EV_PERSIST, UServer_send_full_cb_func, this);
-	event_add(send_full_timer_ev, &loop_timeout);
+	SEND_FULL_DATA *data = new SEND_FULL_DATA(this, js, count);
+	data->timer_ev = event_new(base, -1, EV_PERSIST, UServer_send_full_cb_func, data);
+	event_add(data->timer_ev, &loop_timeout);
 }
 
-void UServer::send_full_cb_func()
+void UServer::send_full_cb_func(json_t *js_in)
 {
-	if(send_full_count > 0) {
-		printf("Sending full %d time\n", send_full_count);
-		json_t *js = json_object();
-		json_object_set_new(js, "mypath", json_string(mypath()));
-		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
-		for(int i=0; i<rvals_count; i++) {
-			switch(rvals[i]->rtype) {
-				case R_INT:
-					json_object_set_new(js, rvals[i]->key, json_integer(rvals[i]->u.ival));
-					break;
-				case R_REAL:
-					json_object_set_new(js, rvals[i]->key, json_real(rvals[i]->u.rval));
-					break;
-				case R_STR:
-					json_object_set_new(js, rvals[i]->key, json_string(rvals[i]->u.sval));
-					break;
-				case R_JSON:
-					json_error_t error;
-					json_t *jsv = json_loads(rvals[i]->u.sval, JSON_DISABLE_EOF_CHECK, &error);
-					json_object_set_new(js, rvals[i]->key, jsv);
-					break;
-			}
-		}
-		char *jstr = json_dumps(js, JSON_INDENT(4));
-		if(jstr) {
-			syslog(LOG_NOTICE, "%s\n", jstr);
-			free(jstr);
-		} else {
-			syslog(LOG_ERR, "Can not decode JSON\n");
-		}
-		json_decref(js);
-		send_full_count--;
-		if(send_full_count == 0) {
-			event_del(send_full_timer_ev);
+	json_t *js = json_object();
+	json_object_set_new(js, "mypath", json_string(mypath()));
+	json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
+	for(int i=0; i<rvals_count; i++) {
+		switch(rvals[i]->rtype) {
+			case R_INT:
+				json_object_set_new(js, rvals[i]->key, json_integer(rvals[i]->u.ival));
+				break;
+			case R_REAL:
+				json_object_set_new(js, rvals[i]->key, json_real(rvals[i]->u.rval));
+				break;
+			case R_STR:
+				json_object_set_new(js, rvals[i]->key, json_string(rvals[i]->u.sval));
+				break;
+			case R_JSON:
+				json_error_t error;
+				json_t *jsv = json_loads(rvals[i]->u.sval, JSON_DISABLE_EOF_CHECK, &error);
+				json_object_set_new(js, rvals[i]->key, jsv);
+				break;
 		}
 	}
+	char *jstr = json_dumps(js, JSON_INDENT(4));
+	if(jstr) {
+		syslog(LOG_NOTICE, "Sending ...");
+		send2(json_string_value(json_object_get(js_in, "src_host")), json_integer_value(json_object_get(js_in, "src_port")), jstr);
+		free(jstr);
+	} else {
+		syslog(LOG_ERR, "Can not decode JSON");
+	}
+	json_decref(js);
 }
+
+void UServer::send2(const char *host, int port, const char *msg)
+{
+	struct sockaddr_in si_other;
+	int s, slen=sizeof(si_other);
+	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
+		syslog(LOG_ERR, "Can not create UDP socket");
+	} else {
+		memset((char *) &si_other, 0, sizeof(si_other));
+		si_other.sin_family = AF_INET;
+		si_other.sin_port = htons(port);
+		if(inet_aton(host, &si_other.sin_addr)==0) {
+			syslog(LOG_ERR, "inet_aton() for %s failed", host);
+		} else {
+			syslog(LOG_NOTICE, "Sending %d bytes to %s:%d ...", strlen(msg), host, port);
+			if(sendto(s, msg, strlen(msg), 0, (const sockaddr*)&si_other, slen)==-1) {
+				syslog(LOG_ERR, "sendto() failed");
+			}
+		}
+	}
+	close(s);
+}
+
