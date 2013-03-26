@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
     /* get a message from the user */
     bzero(buf, BUFSIZE);
-    printf("Please enter msg: ");
+    printf("Please enter msg: \n");
     fgets(buf, BUFSIZE, stdin);
 
     /* send the message to the server */
@@ -68,9 +68,9 @@ int main(int argc, char **argv) {
       error("ERROR in sendto");
     
     /* print the server's reply */
-    n = recvfrom(sockfd, buf, strlen(buf), 0, (struct sockaddr *)&serveraddr, &serverlen);
+    n = recvfrom(sockfd, buf, sizeof(buf)-1, 0, (struct sockaddr *)&serveraddr, &serverlen);
     if (n < 0) 
       error("ERROR in recvfrom");
-    printf("Echo from server: %s", buf);
+    printf("Echo from server:\n %s", buf);
     return 0;
 }
