@@ -30,7 +30,7 @@ int main(int argc, char**argv)
       sendto(sockfd,sendline,strlen(sendline),0, (struct sockaddr *)&servaddr,sizeof(servaddr));
 		printf("Sent\n");
 		printf("Reading...\n");
-      n=recvfrom(sockfd,recvline,100,0,NULL,NULL);
+      n=recvfrom(sockfd,recvline,sizeof(recvline)-1,0,NULL,NULL);
 		printf("Read %d bytes\n", n);
       recvline[n]=0;
       fputs(recvline,stdout);
