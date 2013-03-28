@@ -28,6 +28,7 @@ public class UDPServer implements Runnable {
 		try {
 			updatetrack("\nServer: Start connecting\n");
 			DatagramSocket socket = new DatagramSocket(local_port);
+			socket.setReuseAddress(true);
 			byte[] buf = new byte[2000];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			updatetrack("Server: Receiving\n");

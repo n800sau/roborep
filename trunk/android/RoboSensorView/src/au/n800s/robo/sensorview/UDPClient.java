@@ -43,20 +43,13 @@ public class UDPClient implements Runnable {
 				InetAddress serverAddr = InetAddress.getByName(ip);
 				updatetrack("Client: Start connecting\n");
 				DatagramSocket socket = new DatagramSocket(local_port);
+				socket.setReuseAddress(true);
 				byte[] buf;
 				buf = ("{\"cmd\": \"send_full_data\", \"interval\": 100, \"count\": 20}").getBytes();
 				DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, port);
 				updatetrack("Client: Sending '" + new String(buf) + "'\n");
 				socket.send(packet);
 				updatetrack("Client: Message sent\n");
-
-				byte[] messageBytes = new byte[1500];
-				DatagramPacket p = new DatagramPacket(messageBytes, messageBytes.length);
-				updatetrack("Client: Receiving ...\n");
-				socket.receive(p);
-				Integer msg_length = p.getLength();
-				String message = new String(messageBytes, 0, msg_length);
-				updatetrack(message + " (" + msg_length + ")");
 			} catch (Exception e) {
 				updatetrack("Client: Error!\n");
 			}
