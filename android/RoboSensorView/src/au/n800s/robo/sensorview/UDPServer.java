@@ -10,15 +10,13 @@ import android.os.Handler;
 public class UDPServer implements Runnable {
 
 	protected Handler Handler;
-	protected String ip;
-	protected Integer port;
+	protected Integer local_port;
 	public boolean start;
 
-	public UDPServer(Handler handler, String ip, Integer port)
+	public UDPServer(Handler handler, Integer local_port)
 	{
 		this.Handler = handler;
-		this.ip = ip;
-		this.port = port;
+		this.local_port = local_port;
 		this.start = false;
 	}
 
@@ -28,10 +26,9 @@ public class UDPServer implements Runnable {
 		{
 		}
 		try {
-			InetAddress serverAddr = InetAddress.getByName(ip);
 			updatetrack("\nServer: Start connecting\n");
-			DatagramSocket socket = new DatagramSocket(port, serverAddr);
-			byte[] buf = new byte[17];
+			DatagramSocket socket = new DatagramSocket(local_port);
+			byte[] buf = new byte[2000];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			updatetrack("Server: Receiving\n");
 			socket.receive(packet);

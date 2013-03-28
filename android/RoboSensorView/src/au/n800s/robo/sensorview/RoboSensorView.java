@@ -28,6 +28,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 {
 	public static final String SERVERIP = "115.70.59.149";
 	public static final Integer SERVERPORT = 7980;
+	public static final Integer LOCALPORT = 7980;
 	protected GaugeView gauge1, gauge2, gauge3, gauge4, gauge5;
 	private SensorManager mSensorManager;
 	protected Sensor accelerometer;
@@ -36,8 +37,8 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 	public TextView text1;
 	public Button btn;
 
-	private UDPServer srv;
 	private UDPClient cln;
+	private UDPServer srv;
 
     /** Called when the activity is first created. */
     @Override
@@ -110,12 +111,12 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			}
 		};
 
-		srv = new UDPServer(Handler, SERVERIP, SERVERPORT);
+		srv = new UDPServer(Handler, LOCALPORT);
 		new Thread(srv).start();
 		try {
 			Thread.sleep(500);
 		} catch (InterruptedException e) { }
-		cln = new UDPClient(Handler, SERVERIP, SERVERPORT);
+		cln = new UDPClient(Handler, LOCALPORT, SERVERIP, SERVERPORT);
 		new Thread(cln).start();
 		btn = (Button)findViewById(R.id.button1);
 		btn.setOnClickListener(this);
@@ -167,7 +168,6 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 	public void onClick(View v)
 	{
 		cln.start=true;
-		srv.start=true;
 	}
 
 }
