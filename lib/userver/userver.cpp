@@ -278,6 +278,7 @@ void UServer::send2(const char *host, int port, const char *msg)
 			if(sendto(s, msg, strlen(msg), 0, (const sockaddr*)&si_other, slen)==-1) {
 				syslog(LOG_ERR, "sendto() failed");
 			}
+			syslog(LOG_NOTICE, "%d bytes to %s:%d has been sent", strlen(msg), host, port);
 		}
 	}
 	close(s);
