@@ -1,6 +1,7 @@
 #include "reservant.h"
 
 #include <stdio.h>
+#include <linux/limits.h>
 #include <math.h>
 #include <syslog.h>
 #include <signal.h>
@@ -151,8 +152,9 @@ bool ReServant::create_servant()
 		static char logname[256];
 		strncpy(logname, myid(), sizeof(logname));
 		openlog(logname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-		syslog(LOG_NOTICE, "Hello from %s\n", logname);
+		char curpath[PATH_MAX+1], abscurpath[PATH_MAX+1];
+		realpath(getcwd(curpath, sizeof(curpath)), curpath);
+		syslog(LOG_NOTICE, "Hello from %s, path:%s\n", logname, curpath);
 		signal(SIGPIPE, SIG_IGN);
 		base = event_base_new();
 
@@ -188,7 +190,7 @@ void ReServant::setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size)
 void ReServant::setLoopInterval(float interval)
 {
 	struct timeval loop_timeout = { long(interval), long(interval * 1000000)%1000000  }; // 1.5 seconds
-	syslog(LOG_NOTICE, "Loop interval set to %ld.%6.6ld", loop_timeout.tv_sec, loop_timeout.tv_usec);
+	syslog(LOG_NOTICE, "Loop interval set to %ld.%6.6ld seconds", loop_timeout.tv_sec, loop_timeout.tv_usec);
 	if(timer_ev) {
 		event_del(timer_ev);
 	} else {
