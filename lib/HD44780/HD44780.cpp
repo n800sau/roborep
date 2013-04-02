@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
+const int HD44780::selectedPins[]={P8_14,P8_12,P8_11,P8_5,P8_4,P8_3};
+
 struct HD44780_CMD_FUNC:public CMD_FUNC {
 	public:
 		HD44780_CMD_FUNC(const char *cmd, HD44780::tFunction ptr) {
@@ -33,6 +35,8 @@ HD44780::HD44780():ReServant("hd44780"),listpath(NULL)
 HD44780::~HD44780()
 {
 	setListPath(NULL);
+	//don't forget to terminate the screen... or you may get
+    terminate_Screen(enabled_gpio,selectedPins);
 }
 
 void HD44780::setListPath(const char *listpath)
@@ -71,8 +75,6 @@ bool HD44780::create_servant()
 			syslog(LOG_INFO, "Listfile=%s", listpath);
 		}
 		/* initialise HD44780 */
-		//specifies the pins that will be used
-		int selectedPins[]={P8_14,P8_12,P8_11,P8_5,P8_4,P8_3};
 
 	    initialize_Screen(enabled_gpio,selectedPins);	
 
@@ -125,7 +127,7 @@ void HD44780::loop()
 							tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
 							char addressBuffer[INET_ADDRSTRLEN];
 							inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
-							syslog(LOG_INFO, "%s IP Address %s\n", ifa->ifa_name, addressBuffer);
+//							syslog(LOG_INFO, "%s IP Address %s\n", ifa->ifa_name, addressBuffer);
 							//go to the the line
 							goto_ScreenLine(pos,enabled_gpio);
 							stringToScreen(addressBuffer,enabled_gpio);

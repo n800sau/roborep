@@ -63,7 +63,7 @@ void charToScreen(char characterToWrite, struct gpioID enabled_gpio[])
  * @param enabled_gpio[] An initialized array of gpioID. 
  * @param selectedPins[] The user defined pins.
  **/
-void initialize_Screen(struct gpioID enabled_gpio[],int selectedPins[])
+void initialize_Screen(struct gpioID enabled_gpio[],const int selectedPins[])
 {
 	int delay=0;
 	int nbr_selectedPins=6;
@@ -183,7 +183,7 @@ void clear_Screen(struct gpioID enabled_gpio[])
  * @param enabled_gpio[] initialized array of gpioID. 
  * @param selectedPins[] list of the pins that we are using
  **/
-void terminate_Screen(struct gpioID enabled_gpio[],int selectedPins[])
+void terminate_Screen(struct gpioID enabled_gpio[],const int selectedPins[])
 {
 	int nbr_selectedPins=6;
 	unsigned int data_to_write;

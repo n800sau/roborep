@@ -71,7 +71,7 @@ void digitalWrite_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins,
 
 }
 
-void pinMode_multiple(struct gpioID selected_GPIOs[],int selectedPins[], int nbr_selectedPins, const char *direction)
+void pinMode_multiple(struct gpioID selected_GPIOs[],const int selectedPins[], int nbr_selectedPins, const char *direction)
 {	
 	int i;
 	//You are not allowed to use more than 32 active pins. This is not a 

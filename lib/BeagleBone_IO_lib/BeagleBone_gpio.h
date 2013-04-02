@@ -41,7 +41,7 @@ void digitalWrite(struct gpioID singlePin,unsigned int data_to_write);
 void digitalWrite_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins, unsigned int data_to_write);
 void write_GPIO_value(int GPIONUMBER, int value);
 
-void pinMode_multiple(struct gpioID selected_GPIOs[],int selectedPins[], int nbr_selectedPins, const char *direction);
+void pinMode_multiple(struct gpioID selected_GPIOs[],const int selectedPins[], int nbr_selectedPins, const char *direction);
 void pinMode(struct gpioID *singlePin,int pinID, const char *direction);
 
 void cleanup(struct gpioID singlePin);
