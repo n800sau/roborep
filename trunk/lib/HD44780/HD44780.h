@@ -15,6 +15,8 @@ class HD44780:public ReServant
 		void stop_state(json_t *js);
 		struct gpioID enabled_gpio[6];
 		const char *listpath;
+		//specifies the pins that will be used
+		static const int selectedPins[];
 
 	protected:
 		virtual void loop();
