@@ -78,6 +78,7 @@ class ReServant
 		virtual void udp_request(sockaddr_in stFromAddr, const char *aReqBuffer);
 		virtual bool create_servant();
 
+		//loop interval in seconds
 		void setLoopInterval(float interval=0.5);
 };
 
