@@ -11,8 +11,11 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <arpa/inet.h>
-
+#include <event2/listener.h>
+#include <event2/bufferevent.h>
+#include <event2/buffer.h>
 
 double dtime()
 {
@@ -56,6 +59,39 @@ static void ReServant_on_udp_event(int fd, short int fields, void *arg)
 		ths->udp_request(stFromAddr, aReqBuffer);
 	}
 
+}
+
+static void ReServant_echo_read_cb(struct bufferevent *bev, void *ctx)
+{
+	ReServant *ths = (ReServant*)ctx;
+	ths->tcp_request(bev);
+}
+
+static void ReServant_echo_event_cb(struct bufferevent *bev, short events, void *ctx)
+{
+	if (events & BEV_EVENT_ERROR) {
+		syslog(LOG_ERR, "Error from bufferevent");
+	}
+	if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
+		bufferevent_free(bev);
+	}
+}
+
+static void ReServant_accept_tcp_conn_cb(struct evconnlistener *listener, evutil_socket_t fd, struct sockaddr *address, int socklen, void *ctx)
+{
+	/* We got a new connection! Set up a bufferevent for it. */
+	struct event_base *base = evconnlistener_get_base(listener);
+	struct bufferevent *bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
+	bufferevent_setcb(bev, ReServant_echo_read_cb, NULL, ReServant_echo_event_cb, ctx);
+	bufferevent_enable(bev, EV_READ|EV_WRITE);
+}
+
+static void ReServant_accept_tcp_error_cb(struct evconnlistener *listener, void *ctx)
+{
+	struct event_base *base = evconnlistener_get_base(listener);
+	int err = EVUTIL_SOCKET_ERROR();
+	syslog(LOG_ERR, "Got an error %d (%s) on the listener.", err, evutil_socket_error_to_string(err));
+	event_base_loopexit(base, NULL);
 }
 
 static void ReServant_cmd_request_cb(struct evhttp_request *req, void *arg)
@@ -317,6 +353,41 @@ void ReServant::runUDPserver(const char *host, int port)
 
 void ReServant::udp_request(sockaddr_in stFromAddr, const char *aReqBuffer)
 {
+}
+
+void ReServant::runTCPserver(const char *host, int port)
+{
+	struct evconnlistener *listener;
+	struct sockaddr_in stAddr;
+	/* Clear the sockaddr before using it, in case there are extra
+	/* platform-specific fields that can mess us up. */
+	memset(&stAddr, 0, sizeof(stAddr));
+	/* This is an INET address */
+	stAddr.sin_family = AF_INET;
+	/* Listen on 0.0.0.0 */
+	if( host ) {
+		stAddr.sin_addr.s_addr = inet_addr(host);
+	} else {
+		stAddr.sin_addr.s_addr = INADDR_ANY; //listening on local ip
+	}
+	/* Listen on the given port. */
+	stAddr.sin_port = htons(port);
+	listener = evconnlistener_new_bind(base, ReServant_accept_tcp_conn_cb, this, LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE, -1, (struct sockaddr*)&stAddr, sizeof(stAddr));
+	if (!listener) {
+		syslog(LOG_ERR, "Couldn't create listener");
+	}
+	evconnlistener_set_error_cb(listener, ReServant_accept_tcp_error_cb);
+	syslog(LOG_NOTICE, "Listening TCP at %s:%d",  (host) ? host : "", port);
+}
+
+void ReServant::tcp_request(struct bufferevent *bev)
+{
+	/* This callback is invoked when there is data to read on bev. */
+	struct evbuffer *input = bufferevent_get_input(bev);
+	struct evbuffer *output = bufferevent_get_output(bev);
+
+	/* Copy all the data from the input buffer to the output buffer. */
+	evbuffer_add_buffer(output, input);
 }
 
 void ReServant::runHttpd(const char *host, int port)
