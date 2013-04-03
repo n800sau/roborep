@@ -76,7 +76,8 @@ bool HD44780::create_servant()
 		}
 		/* initialise HD44780 */
 
-	    initialize_Screen(enabled_gpio,selectedPins);	
+		initialize_Screen(enabled_gpio,selectedPins);
+		disableBlinkingCursor(enabled_gpio);
 
 		//clear screen
 		clear_Screen(enabled_gpio);
@@ -125,11 +126,13 @@ void HD44780::loop()
 							// is a valid IP4 Address
 							struct in_addr *tmpAddrPtr;
 							tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
-							char addressBuffer[INET_ADDRSTRLEN];
-							inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+							char addressBuffer[INET_ADDRSTRLEN+50];
+							sprintf(addressBuffer,"%c", ifa->ifa_name[0]);
+							inet_ntop(AF_INET, tmpAddrPtr, addressBuffer+strlen(addressBuffer), INET_ADDRSTRLEN);
 //							syslog(LOG_INFO, "%s IP Address %s\n", ifa->ifa_name, addressBuffer);
 							//go to the the line
 							goto_ScreenLine(pos,enabled_gpio);
+//							printf(">>>%s\n", addressBuffer);
 							stringToScreen(addressBuffer,enabled_gpio);
 						}
 /*					} else if (ifa->ifa_addr->sa_family==AF_INET6) { // check it is IP6

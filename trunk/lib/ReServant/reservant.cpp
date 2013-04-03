@@ -61,13 +61,13 @@ static void ReServant_on_udp_event(int fd, short int fields, void *arg)
 
 }
 
-static void ReServant_echo_read_cb(struct bufferevent *bev, void *ctx)
+static void ReServant_tcp_read_cb(struct bufferevent *bev, void *ctx)
 {
 	ReServant *ths = (ReServant*)ctx;
 	ths->tcp_request(bev);
 }
 
-static void ReServant_echo_event_cb(struct bufferevent *bev, short events, void *ctx)
+static void ReServant_tcp_event_cb(struct bufferevent *bev, short events, void *ctx)
 {
 	if (events & BEV_EVENT_ERROR) {
 		syslog(LOG_ERR, "Error from bufferevent");
@@ -82,7 +82,7 @@ static void ReServant_accept_tcp_conn_cb(struct evconnlistener *listener, evutil
 	/* We got a new connection! Set up a bufferevent for it. */
 	struct event_base *base = evconnlistener_get_base(listener);
 	struct bufferevent *bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-	bufferevent_setcb(bev, ReServant_echo_read_cb, NULL, ReServant_echo_event_cb, ctx);
+	bufferevent_setcb(bev, ReServant_tcp_read_cb, NULL, ReServant_tcp_event_cb, ctx);
 	bufferevent_enable(bev, EV_READ|EV_WRITE);
 }
 
@@ -382,12 +382,6 @@ void ReServant::runTCPserver(const char *host, int port)
 
 void ReServant::tcp_request(struct bufferevent *bev)
 {
-	/* This callback is invoked when there is data to read on bev. */
-	struct evbuffer *input = bufferevent_get_input(bev);
-	struct evbuffer *output = bufferevent_get_output(bev);
-
-	/* Copy all the data from the input buffer to the output buffer. */
-	evbuffer_add_buffer(output, input);
 }
 
 void ReServant::runHttpd(const char *host, int port)
