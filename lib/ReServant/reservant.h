@@ -7,6 +7,7 @@
 #include <async.h>
 #include <event2/http.h>
 #include <time.h>
+#include <event2/bufferevent.h>
 
 #define REDIS_LIST_SIZE 10
 
@@ -70,12 +71,15 @@ class ReServant
 		void runHttpd(const char *host, int port);
 		//can be run after run() only
 		void runUDPserver(const char *host, int port);
+		//can be run after run() only
+		void runTCPserver(const char *host, int port);
 
 		void cmdCallback(redisAsyncContext *c, redisReply *reply);
 		void timer_cb_func(short what);
 
 		virtual void http_request(struct evhttp_request *req);
 		virtual void udp_request(sockaddr_in stFromAddr, const char *aReqBuffer);
+		virtual void tcp_request(struct bufferevent *bev);
 		virtual bool create_servant();
 
 		//loop interval in seconds
