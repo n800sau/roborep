@@ -10,6 +10,7 @@
 /var/log/mpu6050.log
 /var/log/rhttp.log
 /var/log/userver.log
+/var/log/tcpserver.log
 {
 	rotate 2
 	daily
