@@ -69,12 +69,13 @@ static void ReServant_tcp_read_cb(struct bufferevent *bev, void *ctx)
 
 static void ReServant_tcp_event_cb(struct bufferevent *bev, short events, void *ctx)
 {
+//	printf("Event:0x%2.2x\n", events);
 	if (events & BEV_EVENT_ERROR) {
 		syslog(LOG_ERR, "Error from bufferevent");
 	}
-	if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
-		bufferevent_free(bev);
-	}
+//	if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
+//		bufferevent_free(bev);
+//	}
 }
 
 static void ReServant_accept_tcp_conn_cb(struct evconnlistener *listener, evutil_socket_t fd, struct sockaddr *address, int socklen, void *ctx)

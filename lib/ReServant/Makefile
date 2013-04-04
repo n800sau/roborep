@@ -31,10 +31,14 @@ reservant.o: /usr/include/event2/util.h /usr/include/event2/event-config.h
 reservant.o: /usr/include/stdint.h /usr/include/netdb.h
 reservant.o: /usr/include/netinet/in.h /usr/include/endian.h
 reservant.o: /usr/include/rpc/netdb.h /usr/include/time.h
-reservant.o: /usr/include/xlocale.h /usr/include/math.h /usr/include/syslog.h
-reservant.o: /usr/include/signal.h /usr/include/malloc.h
-reservant.o: /usr/include/string.h /usr/include/unistd.h
-reservant.o: /usr/include/getopt.h /usr/include/libgen.h
+reservant.o: /usr/include/xlocale.h /usr/include/event2/bufferevent.h
+reservant.o: /usr/include/linux/limits.h /usr/include/math.h
+reservant.o: /usr/include/syslog.h /usr/include/signal.h
+reservant.o: /usr/include/malloc.h /usr/include/string.h
+reservant.o: /usr/include/unistd.h /usr/include/getopt.h
+reservant.o: /usr/include/libgen.h /usr/include/fcntl.h /usr/include/errno.h
+reservant.o: /usr/include/arpa/inet.h /usr/include/event2/listener.h
+reservant.o: /usr/include/event2/event.h /usr/include/event2/buffer.h
 hiredis_ext.o: /usr/include/stdlib.h /usr/include/features.h
 hiredis_ext.o: /usr/include/alloca.h /usr/include/string.h
 hiredis_ext.o: /usr/include/xlocale.h /usr/include/syslog.h hiredis_ext.h

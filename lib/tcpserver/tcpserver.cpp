@@ -51,30 +51,10 @@ void TCPServer_paramCallBack(redisAsyncContext *c, void *r, void *privdata)
 	delete rr;
 }
 
-struct SEND_FULL_DATA {
-	TCPServer *ths;
-	json_t *js;
-	int count;
-	struct event *timer_ev;
-	inline SEND_FULL_DATA(TCPServer *ths, json_t *js, int count)
-	{
-		this->js = js;
-		this->ths = ths;
-		this->count = count;
-	}
-};
-
 void TCPServer_send_full_cb_func(evutil_socket_t fd, short what, void *privdata)
 {
 	SEND_FULL_DATA *d = (SEND_FULL_DATA *)privdata;
-	if(d->count > 0) {
-		syslog(LOG_NOTICE, "Sending time %d", d->count);
-		d->ths->send_full_cb_func(d->js);
-		d->count--;
-	} else {
-		event_del(d->timer_ev);
-		delete d;
-	}
+	d->ths->send_full_cb_func(d);
 }
 
 
@@ -156,7 +136,6 @@ void TCPServer::tcp_request(struct bufferevent *bev)
 	char *buf = (char*)malloc(ilen+1);
 	ilen = evbuffer_copyout(input, buf, ilen+1);
 	buf[ilen] = 0;
-	printf("%s\n", buf);
 	json_error_t error;
 	json_t *js = json_loads(buf, JSON_DECODE_ANY, &error);
 	if(add_bev(bev, js)) {
@@ -169,9 +148,6 @@ void TCPServer::tcp_request(struct bufferevent *bev)
 				do_free = false;
 			}
 		}
-		struct evbuffer *output = bufferevent_get_output(bev);
-		/* Copy all the data from the input buffer to the output buffer. */
-		evbuffer_add_buffer(output, input);
 		if(do_free) {
 			remove_bev(bev);
 		}
@@ -267,60 +243,45 @@ void TCPServer::send_full_data(json_t *js)
 	event_add(data->timer_ev, &loop_timeout);
 }
 
-void TCPServer::send_full_cb_func(json_t *js_in)
+void TCPServer::send_full_cb_func(SEND_FULL_DATA *d)
 {
-	json_t *js = json_object();
-	json_object_set_new(js, "mypath", json_string(mypath()));
-	json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
-	for(int i=0; i<rvals_count; i++) {
-		switch(rvals[i]->rtype) {
-			case R_INT:
-				json_object_set_new(js, rvals[i]->key, json_integer(rvals[i]->u.ival));
-				break;
-			case R_REAL:
-				json_object_set_new(js, rvals[i]->key, json_real(rvals[i]->u.rval));
-				break;
-			case R_STR:
-				json_object_set_new(js, rvals[i]->key, json_string(rvals[i]->u.sval));
-				break;
-			case R_JSON:
-				json_error_t error;
-				json_t *jsv = json_loads(rvals[i]->u.sval, JSON_DISABLE_EOF_CHECK, &error);
-				json_object_set_new(js, rvals[i]->key, jsv);
-				break;
-		}
-	}
-	char *jstr = json_dumps(js, JSON_INDENT(4));
-	if(jstr) {
-		syslog(LOG_NOTICE, "Sending ...");
-		send2(json_string_value(json_object_get(js_in, "src_host")), json_integer_value(json_object_get(js_in, "src_port")), jstr);
-		free(jstr);
-	} else {
-		syslog(LOG_ERR, "Can not decode JSON");
-	}
-	json_decref(js);
-}
-
-void TCPServer::send2(const char *host, int port, const char *msg)
-{
-	struct sockaddr_in si_other;
-	int s, slen=sizeof(si_other);
-	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		syslog(LOG_ERR, "Can not create UDP socket");
-	} else {
-		memset((char *) &si_other, 0, sizeof(si_other));
-		si_other.sin_family = AF_INET;
-		si_other.sin_port = htons(port);
-		if(inet_aton(host, &si_other.sin_addr)==0) {
-			syslog(LOG_ERR, "inet_aton() for %s failed", host);
-		} else {
-			syslog(LOG_NOTICE, "Sending %d bytes to %s:%d ...", strlen(msg), host, port);
-			if(sendto(s, msg, strlen(msg), 0, (const sockaddr*)&si_other, slen)==-1) {
-				syslog(LOG_ERR, "sendto() failed");
+	struct bufferevent *bev = bevs[json_integer_value(json_object_get(d->js, "bev_index"))];
+	if(d->count > 0) {
+		syslog(LOG_NOTICE, "Sending time %d", d->count);
+		d->count--;
+		json_t *js = json_object();
+		json_object_set_new(js, "mypath", json_string(mypath()));
+		json_object_set_new(js, "s_timestamp", json_string(s_timestamp()));
+		for(int i=0; i<rvals_count; i++) {
+			switch(rvals[i]->rtype) {
+				case R_INT:
+					json_object_set_new(js, rvals[i]->key, json_integer(rvals[i]->u.ival));
+					break;
+				case R_REAL:
+					json_object_set_new(js, rvals[i]->key, json_real(rvals[i]->u.rval));
+					break;
+				case R_STR:
+					json_object_set_new(js, rvals[i]->key, json_string(rvals[i]->u.sval));
+					break;
+				case R_JSON:
+					json_error_t error;
+					json_t *jsv = json_loads(rvals[i]->u.sval, JSON_DISABLE_EOF_CHECK, &error);
+					json_object_set_new(js, rvals[i]->key, jsv);
+					break;
 			}
-			syslog(LOG_NOTICE, "%d bytes to %s:%d has been sent", strlen(msg), host, port);
 		}
+		char *jstr = json_dumps(js, JSON_INDENT(4));
+		if(jstr) {
+			syslog(LOG_NOTICE, "Sending using %p ...", bevs[json_integer_value(json_object_get(d->js, "bev_index"))]);
+			bufferevent_write(bev, jstr, strlen(jstr));
+			free(jstr);
+		} else {
+			syslog(LOG_ERR, "Can not decode JSON");
+		}
+		json_decref(js);
+	} else {
+		remove_bev(bev);
+		event_del(d->timer_ev);
+		delete d;
 	}
-	close(s);
 }
-

@@ -36,6 +36,21 @@ struct RVAL {
 	~RVAL() { free((void*) key); if (rtype == R_STR) free((void*) u.sval); }
 };
 
+class TCPServer;
+
+struct SEND_FULL_DATA {
+	TCPServer *ths;
+	json_t *js;
+	int count;
+	struct event *timer_ev;
+	inline SEND_FULL_DATA(TCPServer *ths, json_t *js, int count)
+	{
+		this->js = js;
+		this->ths = ths;
+		this->count = count;
+	}
+};
+
 #define MAX_RVALS_COUNT 100
 #define MAX_BUFEV_COUNT 100
 
@@ -47,7 +62,6 @@ class TCPServer:public ReServant
 		struct bufferevent *bevs[MAX_BUFEV_COUNT];
 		int rvals_count;
 		void send_full_data(json_t *js);
-		void send2(const char *host, int port, const char *msg);
 		bool add_bev(struct bufferevent *bev, json_t *js);
 		void remove_bev(struct bufferevent *bev);
 	protected:
@@ -64,7 +78,7 @@ class TCPServer:public ReServant
 		void paramCallback(redisAsyncContext *c, const char *rkey, const char *rgroup, const char *rtype, redisReply *reply);
 		typedef void (TCPServer::*tFunction)(json_t *js);
 
-		void send_full_cb_func(json_t *js_in);
+		void send_full_cb_func(SEND_FULL_DATA *d);
 
 };
 
