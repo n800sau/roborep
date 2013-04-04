@@ -140,7 +140,7 @@ void TCPServer::tcp_request(struct bufferevent *bev)
 	json_t *js = json_loads(buf, JSON_DECODE_ANY, &error);
 	if(add_bev(bev, js)) {
 		if(js == NULL) {
-			syslog(LOG_ERR, "Error decoding json %s", error.text);
+			syslog(LOG_ERR, "Error decoding json %s\n%s", buf, error.text);
 		} else {
 			if(processJsonCmd(js) < 0) {
 				syslog(LOG_ERR, "Error processing json command");
@@ -270,10 +270,13 @@ void TCPServer::send_full_cb_func(SEND_FULL_DATA *d)
 					break;
 			}
 		}
-		char *jstr = json_dumps(js, JSON_INDENT(4));
+		char *jstr = json_dumps(js, JSON_COMPACT);
+//		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
 			syslog(LOG_NOTICE, "Sending using %p ...", bevs[json_integer_value(json_object_get(d->js, "bev_index"))]);
 			bufferevent_write(bev, jstr, strlen(jstr));
+//			const char eof[] = "\nEOF\n";
+//			bufferevent_write(bev, eof, strlen(eof));
 			free(jstr);
 		} else {
 			syslog(LOG_ERR, "Can not decode JSON");
