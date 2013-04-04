@@ -24,11 +24,22 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.view.View;
 
+import java.net.Socket;
+import org.json.JSONObject;
+import android.os.AsyncTask;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.io.InputStreamReader;
+import java.io.IOException;
+
+import java.util.Arrays;
+import java.util.List;
+
+
 public class RoboSensorView extends Activity implements SensorEventListener, OnClickListener
 {
 	public static final String SERVERIP = "115.70.59.149";
 	public static final Integer SERVERPORT = 7980;
-	public static final Integer LOCALPORT = 7980;
 	protected GaugeView gauge1, gauge2, gauge3, gauge4, gauge5;
 	private SensorManager mSensorManager;
 	protected Sensor accelerometer;
@@ -36,9 +47,79 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 	public Handler Handler;
 	public TextView text1;
 	public Button btn;
+	private DataReceiverTask task;
 
-	private UDPClient cln;
-	private UDPServer srv;
+	public static final String logid = "RoboSensorView";
+
+	private class DataReceiverTask extends AsyncTask<Socket, JSONObject, Boolean> {
+
+		/** The system calls this to perform work in a worker thread and
+		* delivers it the parameters given to AsyncTask.execute() */
+		protected Boolean doInBackground(Socket... socketargs) {
+			List<Socket> sockets = Arrays.asList(socketargs);
+			Socket socket;
+			int count = sockets.size();
+			for (int i = 0; i < count; i++) {
+				socket = sockets.get(i);
+				if(socket.isConnected()) {
+					try {
+						PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+						out.println("{\"cmd\": \"send_full_data\", \"interval\": 100, \"count\": 20}");
+						out.flush();
+					} catch(IOException e) {
+						Log.e(logid, e.toString());
+					}
+				}
+			}
+			while(!isCancelled() && sockets.size() > 0) {
+				count = sockets.size();
+				for (int i = 0; i < count; i++) {
+					socket = sockets.get(i);
+					if(socket.isConnected()) {
+						try {
+							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//							StringBuilder jsin = new StringBuilder();
+							while(socket.isConnected() && !isCancelled()) {
+								String line = in.readLine();
+//								if(line != "EOF") {
+//									jsin.append(line + " ");
+//								} else {
+//									jsin = new StringBuilder();
+									try {
+										JSONObject jsobj = new JSONObject(line);
+//										JSONObject jsobj = new JSONObject(jsin.toString());
+										Log.i(logid, line);
+										publishProgress(jsobj);
+									} catch(Exception e) {
+										Log.e(logid, e.toString());
+									}
+//									break;
+//								}
+							}
+						} catch(IOException e) {
+							Log.e(logid, e.toString());
+						}
+					} else {
+						sockets.remove(i);
+					}
+				}
+			}
+			return !isCancelled();
+		}
+
+		/** The system calls this to perform work in the UI thread and delivers
+		* the result from doInBackground() */
+		protected void onPostExecute(Boolean success) {
+		}
+
+		protected void onProgressUpdate(JSONObject... jsobjlist) {
+			int count = jsobjlist.length;
+			for (int i = 0; i < count; i++) {
+				updatetrack(jsobjlist[i].toString());
+			}
+		}
+
+	}
 
     /** Called when the activity is first created. */
     @Override
@@ -111,15 +192,14 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			}
 		};
 
-		srv = new UDPServer(Handler, LOCALPORT);
-		new Thread(srv).start();
 		try {
-			Thread.sleep(500);
-		} catch (InterruptedException e) { }
-		cln = new UDPClient(Handler, LOCALPORT, SERVERIP, SERVERPORT);
-		new Thread(cln).start();
-		btn = (Button)findViewById(R.id.button1);
-		btn.setOnClickListener(this);
+			Socket socket = new Socket(SERVERIP, SERVERPORT);
+			task = new DataReceiverTask();
+			task.execute(socket);
+			btn = (Button)findViewById(R.id.button1);
+			btn.setOnClickListener(this);
+		} catch(Exception e) {
+		}
 
     }
 
@@ -167,7 +247,6 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 	@Override
 	public void onClick(View v)
 	{
-		cln.start=true;
 	}
 
 }
