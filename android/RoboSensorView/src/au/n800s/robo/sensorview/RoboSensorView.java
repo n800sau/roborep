@@ -26,6 +26,7 @@ import android.view.View;
 
 import java.net.Socket;
 import org.json.JSONObject;
+import org.json.JSONException;
 import android.os.AsyncTask;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
@@ -40,7 +41,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 {
 	public static final String SERVERIP = "115.70.59.149";
 	public static final Integer SERVERPORT = 7980;
-	protected GaugeView gauge1, gauge2, gauge3, gauge4, gauge5;
+	protected GaugeView gauge1, gauge2, gauge3, gauge4, gauge5, gauge6;
 	private SensorManager mSensorManager;
 	protected Sensor accelerometer;
 	protected Sensor magnetometer;
@@ -115,7 +116,17 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 		protected void onProgressUpdate(JSONObject... jsobjlist) {
 			int count = jsobjlist.length;
 			for (int i = 0; i < count; i++) {
-				updatetrack(jsobjlist[i].toString());
+				try {
+					updatetrack(jsobjlist[i].getString("s_timestamp"));
+					Double v0 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("yz_degrees");
+					gauge4.setDegrees(v0.floatValue());
+					Double v1 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees");
+					gauge5.setDegrees(v1.floatValue());
+					Double v2 = jsobjlist[i].getJSONObject("hmc5883l.js.obj").getDouble("heading_degrees");
+					gauge6.setDegrees(v2.floatValue());
+				} catch(JSONException e) {
+					updatetrack(e.toString());
+				}
 			}
 		}
 
@@ -128,7 +139,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
         super.onCreate(savedInstanceState);
 		ExceptionHandler.register(this);
 		ExceptionHandler.register(this, "http://n800s.dyndns.org/android/server.php");
-		Log.d("RoboSensorView", "Hello");
+		Log.d(logid, "Hello");
 		setContentView(R.layout.main);
 /*		TableLayout table = new TableLayout(this);
 		table.setStretchAllColumns(true);
@@ -143,27 +154,34 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 
 //		gauge1 = new GaugeView(this);
 		gauge1 = (GaugeView)findViewById(R.id.g1);
-		gauge1.setBackgroundColor(Color.RED);
+//		gauge1.setBackgroundColor(Color.RED);
 		gauge1.invalidate();
 
 		gauge2 = (GaugeView)findViewById(R.id.g2);
-		gauge2.setBackgroundColor(Color.MAGENTA);
+//		gauge2.setBackgroundColor(Color.MAGENTA);
 		gauge2.invalidate();
 
 //		gauge3 = new GaugeView(this);
 		gauge3 = (GaugeView)findViewById(R.id.g3);
-		gauge3.setBackgroundColor(Color.YELLOW);
+//		gauge3.setBackgroundColor(Color.YELLOW);
 		gauge3.invalidate();
 //		gauge.requestFocus();
 //		gauge.setAngle(Float.valueOf(45));
 
 //		gauge4 = new GaugeView(this);
-//		gauge4.setBackgroundColor(Color.CYAN);
-//		gauge4.invalidate();
+		gauge4 = (GaugeView)findViewById(R.id.g4);
+		gauge4.setBackgroundColor(Color.CYAN);
+		gauge4.invalidate();
 
 //		gauge5 = new GaugeView(this);
-//		gauge5.setBackgroundColor(Color.GREEN);
-//		gauge5.invalidate();
+		gauge5 = (GaugeView)findViewById(R.id.g5);
+		gauge5.setBackgroundColor(Color.GREEN);
+		gauge5.invalidate();
+
+//		gauge6 = new GaugeView(this);
+		gauge6 = (GaugeView)findViewById(R.id.g6);
+		gauge6.setBackgroundColor(Color.GREEN);
+		gauge6.invalidate();
 
 /*		row1.addView(gauge1);
 		row1.addView(gauge2);
@@ -188,7 +206,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			@Override public void handleMessage(Message msg)
 			{
 				String text = (String)msg.obj;
-				text1.append(text);
+				text1.setText(text);
 			}
 		};
 
