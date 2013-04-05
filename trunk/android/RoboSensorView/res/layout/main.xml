@@ -7,20 +7,36 @@
 	>
 
     <TableRow
+	 android:layout_height="wrap_content"          android:layout_width="match_parent"
+	>
+        <Button
+			android:id="@+id/button1"
+	 android:layout_height="wrap_content"          
+            android:padding="3dip" 
+		/>
+        <TextView
+			android:id="@+id/textView1"
+	 android:layout_height="wrap_content"          
+       />
+    </TableRow>
+    <TableRow
 	 android:layout_height="wrap_content"          
 		android:layout_width="match_parent"
 	>
         <au.n800s.robo.sensorview.GaugeView
 	 android:layout_height="wrap_content"          
 			android:id="@+id/g1"
+			android:background="@color/red"
             android:padding="3dip" />
         <au.n800s.robo.sensorview.GaugeView
 	 android:layout_height="wrap_content"          
 			android:id="@+id/g2"
+			android:background="@color/blue"
             android:padding="3dip" />
         <au.n800s.robo.sensorview.GaugeView
 	 android:layout_height="wrap_content"          
 			android:id="@+id/g3"
+			android:background="@color/SandyBrown"
             android:padding="3dip" />
     </TableRow>
 
@@ -46,16 +62,16 @@
 	>
         <au.n800s.robo.sensorview.GaugeView
 	 android:layout_height="wrap_content"          
+			android:id="@+id/g7"
             android:padding="3dip" />
-        <Button
-			android:id="@+id/button1"
+        <au.n800s.robo.sensorview.GaugeView
 	 android:layout_height="wrap_content"          
-            android:padding="3dip" 
-		/>
-        <TextView
-			android:id="@+id/textView1"
+			android:id="@+id/g8"
+             android:padding="3dip" />
+        <au.n800s.robo.sensorview.GaugeView
 	 android:layout_height="wrap_content"          
-       />
+			android:id="@+id/g9"
+             android:padding="3dip" />
     </TableRow>
 </TableLayout>
 

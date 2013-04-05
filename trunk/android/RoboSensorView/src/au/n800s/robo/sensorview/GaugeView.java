@@ -21,7 +21,8 @@ import android.view.View.OnTouchListener;
 public class GaugeView extends View {
 
 	private Paint paint = new Paint();
-	private Float angle;  // View to draw a compass
+	private Float angle;  // View to draw a compass in radians
+	private Float degrees;  // View to draw a compass in degrees
 	private int	 bgcolor;
 
 	public GaugeView(Context context, AttributeSet attrs, int defStyle)
@@ -74,8 +75,11 @@ public class GaugeView extends View {
 //		canvas.drawLine(centerx, 0, centerx, height, paint);
 //		canvas.drawLine(0, centery, width, centery, paint);
 		// Rotate the canvas with the azimut     
-		if (angle != null)
+		if (angle != null) {
 			canvas.rotate(-angle * 360 / (2 * 3.14159f), centerx, centery);
+		} else if (degrees != null) {
+			canvas.rotate(degrees, centerx, centery);
+		}
 		paint.setColor(0xff0000ff);
 		canvas.drawLine(centerx, centery, centerx, centery - radius, paint);
 		paint.setColor(0xff00ff00);
@@ -90,7 +94,15 @@ public class GaugeView extends View {
 
 	public void setAngle(Float angle)
 	{
+		this.degrees = null;
 		this.angle = angle;
+		invalidate();
+	}
+
+	public void setDegrees(Float degrees)
+	{
+		this.angle = null;
+		this.degrees = degrees;
 		invalidate();
 	}
 
