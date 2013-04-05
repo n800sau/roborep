@@ -1,78 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-	android:shrinkColumns="*"      
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:shrinkColumns="*"
 	android:stretchColumns="*"
 	>
 
-    <TableRow
-	 android:layout_height="wrap_content"          android:layout_width="match_parent"
-	>
-        <Button
-			android:id="@+id/button1"
-	 android:layout_height="wrap_content"          
-            android:padding="3dip" 
-		/>
-        <TextView
-			android:id="@+id/textView1"
-	 android:layout_height="wrap_content"          
-       />
-    </TableRow>
-    <TableRow
-	 android:layout_height="wrap_content"          
+	<TableRow 
+		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
-	>
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g1"
-			android:background="@color/red"
-            android:padding="3dip" />
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g2"
-			android:background="@color/blue"
-            android:padding="3dip" />
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g3"
+		>
+		<Button
+			android:id="@+id/b_restart"
+			android:layout_height="wrap_content"
+			android:padding="3dip"
+		/>
+		<TextView
+			android:id="@+id/s_timestamp"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
+
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="ADXL345"
+		 	android:layout_height="wrap_content"
+		/>
+		<TextView
+			android:id="@+id/adxl345_timestamp"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
+	<TableRow
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"
+			android:id="@+id/adxl345_xz_heading"
 			android:background="@color/SandyBrown"
-            android:padding="3dip" />
-    </TableRow>
+			android:padding="3dip" 
+		/>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"          
+			android:id="@+id/adxl345_yz_heading"
+			android:background="@color/SandyBrown"
+			android:padding="3dip"
+		/>
+	</TableRow>
 
-    <TableRow
-	 android:layout_height="wrap_content"          android:layout_width="match_parent"
-	>
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g4"
-            android:padding="3dip" />
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g5"
-             android:padding="3dip" />
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g6"
-             android:padding="3dip" />
-    </TableRow>
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="HMC5883L"
+		 	android:layout_height="wrap_content"
+		/>
+		<TextView
+			android:id="@+id/hmc5883l_timestamp"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
+	<TableRow
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"
+			android:id="@+id/hmc5883l_heading"
+			android:background="@color/Sienna"
+			android:padding="3dip" 
+		/>
+	</TableRow>
 
-    <TableRow
-	 android:layout_height="wrap_content"          android:layout_width="match_parent"
-	>
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g7"
-            android:padding="3dip" />
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g8"
-             android:padding="3dip" />
-        <au.n800s.robo.sensorview.GaugeView
-	 android:layout_height="wrap_content"          
-			android:id="@+id/g9"
-             android:padding="3dip" />
-    </TableRow>
 </TableLayout>
 
 <!--

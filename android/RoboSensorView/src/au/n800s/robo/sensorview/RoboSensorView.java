@@ -36,18 +36,20 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import android.text.format.Time;
+
 
 public class RoboSensorView extends Activity implements SensorEventListener, OnClickListener
 {
 	public static final String SERVERIP = "115.70.59.149";
 	public static final Integer SERVERPORT = 7980;
-	protected GaugeView gauge1, gauge2, gauge3, gauge4, gauge5, gauge6;
+	protected GaugeView g_adxl345_xz_heading, g_adxl345_yz_heading, g_hmc5883l_heading;
 	private SensorManager mSensorManager;
 	protected Sensor accelerometer;
 	protected Sensor magnetometer;
 	public Handler Handler;
-	public TextView text1;
-	public Button btn;
+	public TextView s_timestamp, s_adxl345_timestamp, s_hmc5883l_timestamp;
+	public Button b_restart;
 	private DataReceiverTask task;
 
 	public static final String logid = "RoboSensorView";
@@ -65,7 +67,15 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 				if(socket.isConnected()) {
 					try {
 						PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-						out.println("{\"cmd\": \"send_full_data\", \"interval\": 100, \"count\": 20}");
+						JSONObject cmd = new JSONObject();
+						try {
+							cmd.put("cmd", "send_full_data");
+							cmd.put("interval", 100);
+							cmd.put("count", 100);
+							out.println(cmd.toString());
+						} catch(JSONException e) {
+							updatetrack(e.toString());
+						}
 						out.flush();
 					} catch(IOException e) {
 						Log.e(logid, e.toString());
@@ -118,12 +128,20 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			for (int i = 0; i < count; i++) {
 				try {
 					updatetrack(jsobjlist[i].getString("s_timestamp"));
-					Double v0 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("yz_degrees");
-					gauge4.setDegrees(v0.floatValue());
-					Double v1 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees");
-					gauge5.setDegrees(v1.floatValue());
+
+					Time t = new Time();
+
+					t.set(jsobjlist[i].getJSONObject("adxl345.js.obj").getLong("timestamp") * 1000);
+					s_adxl345_timestamp.setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
+					Double v0 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees");
+					g_adxl345_xz_heading.setDegrees(v0.floatValue());
+					Double v1 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("yz_degrees");
+					g_adxl345_yz_heading.setDegrees(v1.floatValue());
+
+					t.set(jsobjlist[i].getJSONObject("hmc5883l.js.obj").getLong("timestamp") * 1000);
+					s_hmc5883l_timestamp.setText(t.format("%Y.%m.%d %H:%M:%S.%SS"));
 					Double v2 = jsobjlist[i].getJSONObject("hmc5883l.js.obj").getDouble("heading_degrees");
-					gauge6.setDegrees(v2.floatValue());
+					g_hmc5883l_heading.setDegrees(v2.floatValue());
 				} catch(JSONException e) {
 					updatetrack(e.toString());
 				}
@@ -141,63 +159,16 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 		ExceptionHandler.register(this, "http://n800s.dyndns.org/android/server.php");
 		Log.d(logid, "Hello");
 		setContentView(R.layout.main);
-/*		TableLayout table = new TableLayout(this);
-		table.setStretchAllColumns(true);
-		table.setShrinkAllColumns(true);
-		table.setColumnStretchable(0, true);
 
-		TableRow row1 = new TableRow(this);
-		TableRow row2 = new TableRow(this);
-		TableRow row3 = new TableRow(this);
-*/
-		text1=(TextView)findViewById(R.id.textView1);
+		s_timestamp=(TextView)findViewById(R.id.s_timestamp);
 
-//		gauge1 = new GaugeView(this);
-		gauge1 = (GaugeView)findViewById(R.id.g1);
-//		gauge1.setBackgroundColor(Color.RED);
-		gauge1.invalidate();
+		s_adxl345_timestamp = (TextView)findViewById(R.id.adxl345_timestamp);
+		g_adxl345_xz_heading = (GaugeView)findViewById(R.id.adxl345_xz_heading);
+		g_adxl345_yz_heading = (GaugeView)findViewById(R.id.adxl345_yz_heading);
 
-		gauge2 = (GaugeView)findViewById(R.id.g2);
-//		gauge2.setBackgroundColor(Color.MAGENTA);
-		gauge2.invalidate();
+		s_hmc5883l_timestamp = (TextView)findViewById(R.id.hmc5883l_timestamp);
+		g_hmc5883l_heading = (GaugeView)findViewById(R.id.hmc5883l_heading);
 
-//		gauge3 = new GaugeView(this);
-		gauge3 = (GaugeView)findViewById(R.id.g3);
-//		gauge3.setBackgroundColor(Color.YELLOW);
-		gauge3.invalidate();
-//		gauge.requestFocus();
-//		gauge.setAngle(Float.valueOf(45));
-
-//		gauge4 = new GaugeView(this);
-		gauge4 = (GaugeView)findViewById(R.id.g4);
-		gauge4.setBackgroundColor(Color.CYAN);
-		gauge4.invalidate();
-
-//		gauge5 = new GaugeView(this);
-		gauge5 = (GaugeView)findViewById(R.id.g5);
-		gauge5.setBackgroundColor(Color.GREEN);
-		gauge5.invalidate();
-
-//		gauge6 = new GaugeView(this);
-		gauge6 = (GaugeView)findViewById(R.id.g6);
-		gauge6.setBackgroundColor(Color.GREEN);
-		gauge6.invalidate();
-
-/*		row1.addView(gauge1);
-		row1.addView(gauge2);
-		row2.addView(gauge3);
-		row3.addView(gauge4);
-		row3.addView(gauge5);
-		table.addView(row1);
-		table.addView(row2);
-		table.addView(row3);
-*///		setContentView(table);
-//		try {
-//		} catch (Exception e) {
-//			Log.e("ERROR", "ERROR IN CODE:"+e.toString());
-//		}
-
-//        setContentView(gauge);
 		mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
 		accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -206,7 +177,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			@Override public void handleMessage(Message msg)
 			{
 				String text = (String)msg.obj;
-				text1.setText(text);
+				s_timestamp.setText(text);
 			}
 		};
 
@@ -214,8 +185,8 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			Socket socket = new Socket(SERVERIP, SERVERPORT);
 			task = new DataReceiverTask();
 			task.execute(socket);
-			btn = (Button)findViewById(R.id.button1);
-			btn.setOnClickListener(this);
+			b_restart = (Button)findViewById(R.id.b_restart);
+			b_restart.setOnClickListener(this);
 		} catch(Exception e) {
 		}
 
@@ -248,9 +219,9 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
       if (success) {
         float orientation[] = new float[3];
         SensorManager.getOrientation(R, orientation);
-        gauge1.setAngle(orientation[0]); // orientation contains: azimut, pitch and roll
-        gauge2.setAngle(orientation[1]); // orientation contains: azimut, pitch and roll
-        gauge3.setAngle(orientation[2]); // orientation contains: azimut, pitch and roll
+//        gauge1.setAngle(orientation[0]); // orientation contains: azimut, pitch and roll
+//        gauge2.setAngle(orientation[1]); // orientation contains: azimut, pitch and roll
+//        gauge3.setAngle(orientation[2]); // orientation contains: azimut, pitch and roll
       }
     }
   }
