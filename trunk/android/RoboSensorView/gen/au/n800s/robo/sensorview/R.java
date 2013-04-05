@@ -172,17 +172,13 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int button1=0x7f060000;
-        public static final int g1=0x7f060002;
-        public static final int g2=0x7f060003;
-        public static final int g3=0x7f060004;
-        public static final int g4=0x7f060005;
-        public static final int g5=0x7f060006;
-        public static final int g6=0x7f060007;
-        public static final int g7=0x7f060008;
-        public static final int g8=0x7f060009;
-        public static final int g9=0x7f06000a;
-        public static final int textView1=0x7f060001;
+        public static final int adxl345_timestamp=0x7f060002;
+        public static final int adxl345_xz_heading=0x7f060003;
+        public static final int adxl345_yz_heading=0x7f060004;
+        public static final int b_restart=0x7f060000;
+        public static final int hmc5883l_heading=0x7f060006;
+        public static final int hmc5883l_timestamp=0x7f060005;
+        public static final int s_timestamp=0x7f060001;
     }
     public static final class layout {
         public static final int main=0x7f030000;
