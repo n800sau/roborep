@@ -2,8 +2,6 @@
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:shrinkColumns="*"
-	android:stretchColumns="*"
 	>
 
 	<TableRow 
@@ -34,19 +32,32 @@
 		 	android:layout_height="wrap_content"
 		/>
 	</TableRow>
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="xz_heading"
+		 	android:layout_height="wrap_content"
+		/>
+		<TextView
+			android:text="yz_heading"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
 	<TableRow
 		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
 		>
 		<au.n800s.robo.sensorview.GaugeView
 			android:layout_height="wrap_content"
-			android:id="@+id/adxl345_xz_heading"
+			android:id="@+id/adxl345.xz_heading"
 			android:background="@color/SandyBrown"
-			android:padding="3dip" 
+			android:padding="3dip"
 		/>
 		<au.n800s.robo.sensorview.GaugeView
 			android:layout_height="wrap_content"          
-			android:id="@+id/adxl345_yz_heading"
+			android:id="@+id/adxl345.yz_heading"
 			android:background="@color/SandyBrown"
 			android:padding="3dip"
 		/>
@@ -76,35 +87,17 @@
 			android:padding="3dip" 
 		/>
 	</TableRow>
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:id="@+id/errormsg"
+			android:maxLines="4"
+			android:gravity="left"
+			android:layout_height="wrap_content"
+		/>
+	</TableRow>
 
 </TableLayout>
 
-<!--
-<LinearLayout 
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:tools="http://schemas.android.com/tools"
-	xmlns:custom="http://schemas.android.com/apk/res/au.n800s.robo.sensorview"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-	tools:context=".DrawView"
-    >
-<TextView
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:text="Hello World, RoboSensorView"
-    />
-<Button
-      android:id="@+id/run_compass"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:text="Yes"
-	/>
-	<au.n800s.robo.sensorview.DrawView
-		android:id="@+id/custView"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-	/>
-</LinearLayout>
-
--->
