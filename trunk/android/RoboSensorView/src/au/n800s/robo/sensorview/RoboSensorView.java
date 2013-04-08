@@ -37,7 +37,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import android.text.format.Time;
+import android.preference.PreferenceManager;
+import android.content.SharedPreferences;
 
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.content.Intent;
 
 public class RoboSensorView extends Activity implements SensorEventListener, OnClickListener
 {
@@ -124,6 +130,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 		}
 
 		protected void onProgressUpdate(JSONObject... jsobjlist) {
+			TextView tv;
 			int count = jsobjlist.length;
 			for (int i = 0; i < count; i++) {
 				try {
@@ -131,6 +138,11 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 
 					Time t = new Time();
 
+//					int resId = getResources().getIdentifier("adxl345_xz_degrees_timestamp", "id", getPackageName());
+//					if(resId > 0) {
+//						tv = (TextView)findViewById(resId);
+//						tv.set(jsobjlist[i].getJSONObject("adxl345.js.obj").getLong("timestamp") * 1000);
+//					}
 					t.set(jsobjlist[i].getJSONObject("adxl345.js.obj").getLong("timestamp") * 1000);
 					s_adxl345_timestamp.setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
 					Double v0 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees");
@@ -154,7 +166,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
-        super.onCreate(savedInstanceState);
+		super.onCreate(savedInstanceState);
 		ExceptionHandler.register(this);
 		ExceptionHandler.register(this, "http://n800s.dyndns.org/android/server.php");
 		Log.d(logid, "Hello");
@@ -177,18 +189,14 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			@Override public void handleMessage(Message msg)
 			{
 				String text = (String)msg.obj;
-				s_timestamp.setText(text);
+				TextView tv = (TextView)findViewById(R.id.errormsg);
+				tv.setText(text);
 			}
 		};
 
-		try {
-			Socket socket = new Socket(SERVERIP, SERVERPORT);
-			task = new DataReceiverTask();
-			task.execute(socket);
-			b_restart = (Button)findViewById(R.id.b_restart);
-			b_restart.setOnClickListener(this);
-		} catch(Exception e) {
-		}
+		b_restart = (Button)findViewById(R.id.b_restart);
+		b_restart.setOnClickListener(this);
+		onClick(b_restart);
 
     }
 
@@ -236,6 +244,39 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 	@Override
 	public void onClick(View v)
 	{
+		try {
+			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+			String server = sharedPref.getString("server", SERVERIP);
+			Integer port = sharedPref.getInt("port", SERVERPORT);
+			Socket socket = new Socket(server, port);
+			DataReceiverTask task;
+			task = new DataReceiverTask();
+			task.execute(socket);
+		} catch(Exception e) {
+			updatetrack(e.toString());
+		}
+	}
+
+	public boolean onCreateOptionsMenu(Menu menu)
+	{
+		super.onCreateOptionsMenu(menu);
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.options, menu);
+		return true;
+	}
+
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		switch (item.getItemId())
+		{
+			case R.id.settings_title:
+				startActivity(new Intent(this, SettingsActivity.class));
+				return true;
+			case R.id.exit_title:
+				finish();
+				return true;
+		}
+		return false;
 	}
 
 }
