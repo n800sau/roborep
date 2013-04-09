@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	>
+	<!-- ADXL345 timestamp row -->
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="ADXL345"
+		 	android:layout_height="wrap_content"
+		/>
+		<TextView
+			android:id="@+id/adxl345_timestamp"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
+	<!-- ADXL345 heading title row -->
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="xz_heading"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip"
+		/>
+		<TextView
+			android:text="yz_heading"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip"
+		/>
+	</TableRow>
+
+	<!-- ADXL345 heading row -->
+	<TableRow
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"
+			android:id="@+id/adxl345.xz_heading"
+			android:background="@color/SandyBrown"
+			android:padding="3dip"
+		/>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"          
+			android:id="@+id/adxl345.yz_heading"
+			android:background="@color/SandyBrown"
+			android:padding="3dip"
+		/>
+	</TableRow>
+</TableLayout>
