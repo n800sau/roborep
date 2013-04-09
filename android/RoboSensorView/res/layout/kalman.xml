@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	>
+	<!-- KALMAN timestamp row -->
+	<TableRow 
+			android:layout_height="wrap_content"
+			android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="KALMAN"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip" 
+		/>
+		<TextView
+			android:id="@+id/kalman_timestamp"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip" 
+		/>
+	</TableRow>
+	<!-- KALMAN heading row -->
+	<TableRow
+			android:layout_height="wrap_content"
+			android:layout_width="match_parent"
+		>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"
+			android:id="@+id/kalman_heading"
+			android:background="@color/Sienna"
+			android:padding="3dip" 
+		/>
+	</TableRow>
+</TableLayout>
