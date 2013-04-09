@@ -11,10 +11,12 @@
 		<TextView
 			android:text="MPU6050"
 		 	android:layout_height="wrap_content"
+			android:padding="3dip"
 		/>
 		<TextView
 			android:id="@+id/mpu6050_timestamp"
 		 	android:layout_height="wrap_content"
+			android:padding="3dip"
 		/>
 	</TableRow>
 	<!-- MPU6050 heading title row -->
