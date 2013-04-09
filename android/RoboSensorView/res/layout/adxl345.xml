@@ -23,12 +23,12 @@
 		android:layout_width="match_parent"
 		>
 		<TextView
-			android:text="xz_heading"
+			android:text="xz"
 		 	android:layout_height="wrap_content"
 			android:padding="3dip"
 		/>
 		<TextView
-			android:text="yz_heading"
+			android:text="yz"
 		 	android:layout_height="wrap_content"
 			android:padding="3dip"
 		/>

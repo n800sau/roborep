@@ -3,30 +3,30 @@
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	>
-	<!-- HMC5883L timestamp row -->
+	<!-- MAG3110 timestamp row -->
 	<TableRow 
 			android:layout_height="wrap_content"
 			android:layout_width="match_parent"
 		>
 		<TextView
-			android:text="HMC5883L"
+			android:text="MAG3110"
 		 	android:layout_height="wrap_content"
 			android:padding="3dip" 
 		/>
 		<TextView
-			android:id="@+id/hmc5883l_timestamp"
+			android:id="@+id/mag3110_timestamp"
 		 	android:layout_height="wrap_content"
 			android:padding="3dip" 
 		/>
 	</TableRow>
-	<!-- HMC5883L heading row -->
+	<!-- MAG3110 heading row -->
 	<TableRow
 			android:layout_height="wrap_content"
 			android:layout_width="match_parent"
 		>
 		<au.n800s.robo.sensorview.GaugeView
 			android:layout_height="wrap_content"
-			android:id="@+id/hmc5883l_heading"
+			android:id="@+id/mag3110_heading"
 			android:background="@color/Sienna"
 			android:padding="3dip" 
 		/>
