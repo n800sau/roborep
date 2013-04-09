@@ -142,6 +142,10 @@ public class RoboSensorView extends Activity implements OnClickListener
 					((GaugeView)findViewById(R.id.mpu6050_xz_degrees)).setDegrees((float)jsobjlist[i].getJSONObject("mpu6050.js.obj").getDouble("xz_degrees"));
 					((GaugeView)findViewById(R.id.mpu6050_yz_degrees)).setDegrees((float)jsobjlist[i].getJSONObject("mpu6050.js.obj").getDouble("yz_degrees"));
 
+					t.set(jsobjlist[i].getJSONObject("mag3110.js.obj").getLong("timestamp") * 1000);
+					((TextView)findViewById(R.id.mag3110_timestamp)).setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
+					((GaugeView)findViewById(R.id.mag3110_heading)).setDegrees((float)jsobjlist[i].getJSONObject("mag3110.js.obj").getDouble("heading_degrees"));
+
 //					int resId = getResources().getIdentifier("adxl345_xz_degrees_timestamp", "id", getPackageName());
 //					if(resId > 0) {
 //						tv = (TextView)findViewById(resId);
