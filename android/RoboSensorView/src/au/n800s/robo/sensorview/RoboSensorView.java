@@ -48,13 +48,13 @@ import android.content.Intent;
 public class RoboSensorView extends Activity implements SensorEventListener, OnClickListener
 {
 	public static final String SERVERIP = "115.70.59.149";
-	public static final Integer SERVERPORT = 7980;
+	public static final String SERVERPORT = "7980";
 	protected GaugeView g_adxl345_xz_heading, g_adxl345_yz_heading, g_hmc5883l_heading;
 	private SensorManager mSensorManager;
 	protected Sensor accelerometer;
 	protected Sensor magnetometer;
 	public Handler Handler;
-	public TextView s_timestamp, s_adxl345_timestamp, s_hmc5883l_timestamp;
+	public TextView s_adxl345_timestamp, s_hmc5883l_timestamp;
 	public Button b_restart;
 	private DataReceiverTask task;
 
@@ -134,7 +134,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 			int count = jsobjlist.length;
 			for (int i = 0; i < count; i++) {
 				try {
-					updatetrack(jsobjlist[i].getString("s_timestamp"));
+					((TextView)findViewById(R.id.s_timestamp)).setText(jsobjlist[i].getString("s_timestamp"));
 
 					Time t = new Time();
 
@@ -171,8 +171,6 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 		ExceptionHandler.register(this, "http://n800s.dyndns.org/android/server.php");
 		Log.d(logid, "Hello");
 		setContentView(R.layout.main);
-
-		s_timestamp=(TextView)findViewById(R.id.s_timestamp);
 
 		s_adxl345_timestamp = (TextView)findViewById(R.id.adxl345_timestamp);
 		g_adxl345_xz_heading = (GaugeView)findViewById(R.id.adxl345_xz_heading);
@@ -247,7 +245,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 		try {
 			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 			String server = sharedPref.getString("server", SERVERIP);
-			Integer port = sharedPref.getInt("port", SERVERPORT);
+			Integer port = Integer.valueOf(sharedPref.getString("port", SERVERPORT));
 			Socket socket = new Socket(server, port);
 			DataReceiverTask task;
 			task = new DataReceiverTask();
