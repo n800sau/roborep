@@ -3,51 +3,57 @@
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	>
-	<!-- HOST row -->
+	<!-- HMC5883L timestamp row -->
 	<TableRow 
 			android:layout_height="wrap_content"
 			android:layout_width="match_parent"
 		>
 		<TextView
-			android:id="@+id/server"
-			android:layout_span="2"
+			android:text="HMC5883L"
 		 	android:layout_height="wrap_content"
-		/>
-	</TableRow>
-
-	<!-- button with timestamp row -->
-	<TableRow
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<Button
-			android:id="@+id/b_restart"
-			android:layout_height="wrap_content"
-			android:padding="3dip"
-			android:text="Restart"
 		/>
 		<TextView
-			android:id="@+id/s_timestamp"
+			android:id="@+id/hmc5883l_timestamp"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
+	<!-- HMC5883L heading title row -->
+	<TableRow 
+			android:layout_height="wrap_content"
+			android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="heading"
 		 	android:layout_height="wrap_content"
 			android:padding="3dip"
 		/>
 	</TableRow>
-
+	<!-- HMC5883L heading row -->
 	<TableRow
 			android:layout_height="wrap_content"
 			android:layout_width="match_parent"
 		>
-		<include layout="@layout/adxl345"
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"
+			android:id="@+id/hmc5883l_heading"
+			android:background="@color/Sienna"
+			android:padding="3dip" 
 		/>
 	</TableRow>
-
-	<TableRow
+	<!-- ERROR message row -->
+	<TableRow 
 			android:layout_height="wrap_content"
 			android:layout_width="match_parent"
 		>
-		<include layout="@layout/hmc5883l"
+		<TextView
+			android:id="@+id/errormsg"
+			android:gravity="left"
+			android:layout_span="2"
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content"
+			android:ellipsize="none"  
+			android:maxLines="100"  
+			android:scrollHorizontally="false"
 		/>
 	</TableRow>
-
 </TableLayout>
-
