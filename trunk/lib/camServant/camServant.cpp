@@ -72,7 +72,7 @@ class camTr:public ReServant
 
 		int h_chan;
 		int h_bins;
-		virtual void create_servant();
+		virtual bool create_servant();
 		virtual void loop();
 
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
@@ -125,7 +125,7 @@ long camTr::_E(long func, unsigned long line)
   if(func < CMUCAM4_RETURN_SUCCESS)
   {
 	char s_err[256];
-	sprintf(s_err, "Caught error %d on line %d", func, line);
+	sprintf(s_err, "Caught error %lu on line %lu", func, line);
 	syslog(LOG_ERR, "\n%s\n", s_err);
     redisAsyncCommand(aredis, NULL, NULL, "SET %s.s.error.timestamp %s", myid(), s_timestamp());
     redisAsyncCommand(aredis, NULL, NULL, "SET %s.i.error_code %d", myid(), func);
@@ -491,10 +491,13 @@ void camTr::set_window(json_t *js)
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.l.cur_window %s,%d,%d,%d,%d", myid(), s_timestamp(), tw.topLeftX, tw.topLeftY, tw.bottomRightX, tw.bottomRightY);
 }
 
-void camTr::create_servant()
+bool camTr::create_servant()
 {
-	ReServant::create_servant();
-	setup();
+	bool rs = ReServant::create_servant();
+	if(rs) {
+		setup();
+	}
+	return rs;
 }
 
 

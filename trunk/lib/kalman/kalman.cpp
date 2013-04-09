@@ -70,10 +70,13 @@ void Kalman::stop_state(json_t *js)
 	}
 }
 
-void Kalman::create_servant()
+bool Kalman::create_servant()
 {
-	ReServant::create_servant();
-	redisCommandN(redis, 3, "LPUSH", "cmd.kalman", "{\"cmd\": \"stop_state\"}");
+	bool rs = ReServant::create_servant();
+	if(rs) {
+		redisCommandN(redis, 3, "LPUSH", "cmd.kalman", "{\"cmd\": \"stop_state\"}");
+	}
+	return rs;
 }
 
 void Kalman::fill_json(json_t *js)

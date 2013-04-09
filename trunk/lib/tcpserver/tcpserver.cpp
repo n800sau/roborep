@@ -273,8 +273,9 @@ void TCPServer::send_full_cb_func(SEND_FULL_DATA *d)
 		char *jstr = json_dumps(js, JSON_COMPACT);
 //		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
-			syslog(LOG_NOTICE, "Sending using %p ...", bevs[json_integer_value(json_object_get(d->js, "bev_index"))]);
+//			syslog(LOG_NOTICE, "Sending using %p ...", bevs[json_integer_value(json_object_get(d->js, "bev_index"))]);
 			bufferevent_write(bev, jstr, strlen(jstr));
+			bufferevent_write(bev, "\n", strlen("\n"));
 //			const char eof[] = "\nEOF\n";
 //			bufferevent_write(bev, eof, strlen(eof));
 			free(jstr);
