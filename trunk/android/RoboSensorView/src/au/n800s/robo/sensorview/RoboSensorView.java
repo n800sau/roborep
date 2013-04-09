@@ -169,6 +169,17 @@ public class RoboSensorView extends Activity implements OnClickListener
 		Log.d(logid, "Hello");
 		setContentView(R.layout.main);
 
+
+View v = ((LayoutInflater)   getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.zoomableview, null, false);
+v.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+
+zoomView = new ZoomView(this);
+zoomView.addView(v);
+
+main_container = (LinearLayout) findViewById(R.id.main_container);
+main_container.addView(zoomView);     
+
+
 /*		mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
 		accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
