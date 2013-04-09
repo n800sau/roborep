@@ -3,7 +3,18 @@
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	>
+	<!-- HOST row -->
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		<TextView
+			android:id="@+id/server"
+			android:layout_span="2"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
 
+	<!-- button with timestamp row -->
 	<TableRow 
 		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
@@ -25,46 +36,11 @@
 		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
 		>
-		<TextView
-			android:text="ADXL345"
-		 	android:layout_height="wrap_content"
-		/>
-		<TextView
-			android:id="@+id/adxl345_timestamp"
-		 	android:layout_height="wrap_content"
-		/>
-	</TableRow>
-	<TableRow 
-		android:layout_height="wrap_content"
-		android:layout_width="match_parent"
-		>
-		<TextView
-			android:text="xz_heading"
-		 	android:layout_height="wrap_content"
-		/>
-		<TextView
-			android:text="yz_heading"
-		 	android:layout_height="wrap_content"
-		/>
-	</TableRow>
-	<TableRow
-		android:layout_height="wrap_content"
-		android:layout_width="match_parent"
-		>
-		<au.n800s.robo.sensorview.GaugeView
-			android:layout_height="wrap_content"
-			android:id="@+id/adxl345.xz_heading"
-			android:background="@color/SandyBrown"
-			android:padding="3dip"
-		/>
-		<au.n800s.robo.sensorview.GaugeView
-			android:layout_height="wrap_content"          
-			android:id="@+id/adxl345.yz_heading"
-			android:background="@color/SandyBrown"
-			android:padding="3dip"
+		<include layout="@layout/adxl345"
 		/>
 	</TableRow>
 
+	<!-- HMC5883L timestamp row -->
 	<TableRow 
 		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
@@ -78,6 +54,18 @@
 		 	android:layout_height="wrap_content"
 		/>
 	</TableRow>
+	<!-- HMC5883L heading title row -->
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="heading"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip"
+		/>
+	</TableRow>
+	<!-- HMC5883L heading row -->
 	<TableRow
 		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
@@ -89,6 +77,7 @@
 			android:padding="3dip" 
 		/>
 	</TableRow>
+	<!-- ERROR message row -->
 	<TableRow 
 		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
