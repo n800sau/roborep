@@ -72,6 +72,8 @@ public class GaugeView extends View {
 		canvas.drawText("N", centerx, centery - radius - 10, paint);
 		paint.setTextAlign(Align.CENTER);
 		canvas.drawText("S", centerx, centery + radius + 10, paint);
+		paint.setTextAlign(Align.LEFT);
+		canvas.drawText(String.valueOf((int)angle), 1, 1, paint);
 //		canvas.drawLine(centerx, 0, centerx, height, paint);
 //		canvas.drawLine(0, centery, width, centery, paint);
 		// Rotate the canvas with the azimut     
