@@ -5,11 +5,6 @@ import android.os.Bundle;
 
 import android.util.Log;
 
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-
 import android.widget.TableLayout;
 import android.widget.TableRow;
 
@@ -45,13 +40,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.content.Intent;
 
-public class RoboSensorView extends Activity implements SensorEventListener, OnClickListener
+public class RoboSensorView extends Activity implements OnClickListener
 {
 	public static final String SERVERIP = "115.70.59.149";
 	public static final String SERVERPORT = "7980";
-	private SensorManager mSensorManager;
-	protected Sensor accelerometer;
-	protected Sensor magnetometer;
 	public Handler Handler;
 	public Button b_restart;
 	private DataReceiverTask task;
@@ -138,12 +130,17 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 
 					t.set(jsobjlist[i].getJSONObject("adxl345.js.obj").getLong("timestamp") * 1000);
 					((TextView)findViewById(R.id.adxl345_timestamp)).setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
-					((GaugeView)findViewById(R.id.adxl345_xz_heading)).setDegrees(jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees").floatValue())
-					((GaugeView)findViewById(R.id.adxl345_yz_heading)).setDegrees(jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("yz_degrees").floatValue())
+					((GaugeView)findViewById(R.id.adxl345_xz_heading)).setDegrees((float)jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees"));
+					((GaugeView)findViewById(R.id.adxl345_yz_heading)).setDegrees((float)jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("yz_degrees"));
 
 					t.set(jsobjlist[i].getJSONObject("hmc5883l.js.obj").getLong("timestamp") * 1000);
 					((TextView)findViewById(R.id.hmc5883l_timestamp)).setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
-					((GaugeView)findViewById(R.id.hmc5883l_heading)).setDegrees(jsobjlist[i].getJSONObject("hmc5883l.js.obj").getDouble("heading_degrees").floatValue())
+					((GaugeView)findViewById(R.id.hmc5883l_heading)).setDegrees((float)jsobjlist[i].getJSONObject("hmc5883l.js.obj").getDouble("heading_degrees"));
+
+					t.set(jsobjlist[i].getJSONObject("mpu6050.js.obj").getLong("timestamp") * 1000);
+					((TextView)findViewById(R.id.mpu6050_timestamp)).setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
+					((GaugeView)findViewById(R.id.mpu6050_xz_degrees)).setDegrees((float)jsobjlist[i].getJSONObject("mpu6050.js.obj").getDouble("xz_degrees"));
+					((GaugeView)findViewById(R.id.mpu6050_yz_degrees)).setDegrees((float)jsobjlist[i].getJSONObject("mpu6050.js.obj").getDouble("yz_degrees"));
 
 //					int resId = getResources().getIdentifier("adxl345_xz_degrees_timestamp", "id", getPackageName());
 //					if(resId > 0) {
@@ -165,16 +162,13 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
     {
 		super.onCreate(savedInstanceState);
 		ExceptionHandler.register(this);
-		ExceptionHandler.register(this, "http://n800s.dyndns.org/android/server.php");
 		Log.d(logid, "Hello");
 		setContentView(R.layout.main);
 
-		g_hmc5883l_heading = (GaugeView)findViewById(R.id.hmc5883l_heading);
-
-		mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+/*		mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
 		accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-
+*/
 		Handler = new Handler() {
 			@Override public void handleMessage(Message msg)
 			{
@@ -192,37 +186,12 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 
   protected void onResume() {
     super.onResume();
-    mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
-    mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI);
   }
  
   protected void onPause() {
     super.onPause();
-    mSensorManager.unregisterListener(this);
   }
  
-  public void onAccuracyChanged(Sensor sensor, int accuracy) {  }
- 
-  float[] mGravity;
-  float[] mGeomagnetic;
-  public void onSensorChanged(SensorEvent event) {
-    if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-      mGravity = event.values;
-    if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-      mGeomagnetic = event.values;
-    if (mGravity != null && mGeomagnetic != null) {
-      float R[] = new float[9];
-      float I[] = new float[9];
-      boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-      if (success) {
-        float orientation[] = new float[3];
-        SensorManager.getOrientation(R, orientation);
-//        gauge1.setAngle(orientation[0]); // orientation contains: azimut, pitch and roll
-//        gauge2.setAngle(orientation[1]); // orientation contains: azimut, pitch and roll
-//        gauge3.setAngle(orientation[2]); // orientation contains: azimut, pitch and roll
-      }
-    }
-  }
 
 	public void updatetrack(String s){
 		Message msg = new Message();
