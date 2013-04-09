@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	>
+	<!-- LSM303 timestamp row -->
+	<TableRow 
+			android:layout_height="wrap_content"
+			android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="LSM303"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip" 
+		/>
+		<TextView
+			android:id="@+id/lsm303_timestamp"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip" 
+		/>
+	</TableRow>
+	<!-- LSM303 heading row -->
+	<TableRow
+			android:layout_height="wrap_content"
+			android:layout_width="match_parent"
+		>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"
+			android:id="@+id/lsm303_heading"
+			android:background="@color/Sienna"
+			android:padding="3dip" 
+		/>
+	</TableRow>
+</TableLayout>
