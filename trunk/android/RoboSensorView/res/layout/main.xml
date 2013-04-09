@@ -77,6 +77,14 @@
 			/>
 		</TableRow>
 
+		<TableRow
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<include layout="@layout/kalman"
+			/>
+		</TableRow>
+
 		<!-- ERROR message row -->
 		<TableRow 
 				android:layout_height="wrap_content"
