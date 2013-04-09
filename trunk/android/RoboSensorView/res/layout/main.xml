@@ -49,5 +49,13 @@
 		/>
 	</TableRow>
 
+	<TableRow
+			android:layout_height="wrap_content"
+			android:layout_width="match_parent"
+		>
+		<include layout="@layout/mpu6050"
+		/>
+	</TableRow>
+
 </TableLayout>
 
