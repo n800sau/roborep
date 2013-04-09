@@ -175,24 +175,33 @@ public final class R {
         public static final int adxl345_xz_heading=0x7f080001;
         public static final int adxl345_yz_heading=0x7f080002;
         public static final int adxl345_timestamp=0x7f080000;
-        public static final int b_restart=0x7f080007;
-        public static final int back_title=0x7f08000d;
-        public static final int errormsg=0x7f080005;
-        public static final int exit_title=0x7f08000e;
+        public static final int b_restart=0x7f08000c;
+        public static final int back_title=0x7f080013;
+        public static final int errormsg=0x7f08000e;
+        public static final int exit_title=0x7f080014;
         public static final int hmc5883l_heading=0x7f080004;
         public static final int hmc5883l_timestamp=0x7f080003;
-        public static final int mpu6050_xz_degrees=0x7f08000a;
-        public static final int mpu6050_yz_degrees=0x7f08000b;
-        public static final int mpu6050_timestamp=0x7f080009;
-        public static final int s_timestamp=0x7f080008;
-        public static final int server=0x7f080006;
-        public static final int settings_title=0x7f08000c;
+        public static final int kalman_heading=0x7f080006;
+        public static final int kalman_timestamp=0x7f080005;
+        public static final int lsm303_heading=0x7f080008;
+        public static final int lsm303_timestamp=0x7f080007;
+        public static final int mag3110_heading=0x7f08000a;
+        public static final int mag3110_timestamp=0x7f080009;
+        public static final int mpu6050_xz_degrees=0x7f080010;
+        public static final int mpu6050_yz_degrees=0x7f080011;
+        public static final int mpu6050_timestamp=0x7f08000f;
+        public static final int s_timestamp=0x7f08000d;
+        public static final int server=0x7f08000b;
+        public static final int settings_title=0x7f080012;
     }
     public static final class layout {
         public static final int adxl345=0x7f030000;
         public static final int hmc5883l=0x7f030001;
-        public static final int main=0x7f030002;
-        public static final int mpu6050=0x7f030003;
+        public static final int kalman=0x7f030002;
+        public static final int lsm303=0x7f030003;
+        public static final int mag3110=0x7f030004;
+        public static final int main=0x7f030005;
+        public static final int mpu6050=0x7f030006;
     }
     public static final class menu {
         public static final int options=0x7f070000;
