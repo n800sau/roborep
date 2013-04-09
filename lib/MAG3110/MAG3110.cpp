@@ -56,16 +56,19 @@ void MAG3110::stop_state(json_t *js)
 	}
 }
 
-void MAG3110::create_servant()
+bool MAG3110::create_servant()
 {
-	ReServant::create_servant();
-	/* initialise MAG3110 */
-	i2cwire.selectDevice(MAG_ADDR, myid());
-	// cntrl register2, send 0x80, enable auto resets
-	i2cwire.writeToDevice(0x11, 0x80);
-	usleep(15000);
-	// cntrl register1, send 0x01, active mode
-	i2cwire.writeToDevice(0x10, 1);
+	bool rs = ReServant::create_servant();
+	if(rs) {
+		/* initialise MAG3110 */
+		i2cwire.selectDevice(MAG_ADDR, myid());
+		// cntrl register2, send 0x80, enable auto resets
+		i2cwire.writeToDevice(0x11, 0x80);
+		usleep(15000);
+		// cntrl register1, send 0x01, active mode
+		i2cwire.writeToDevice(0x10, 1);
+	}
+	return rs;
 }
 
 

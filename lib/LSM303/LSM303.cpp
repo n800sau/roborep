@@ -26,7 +26,7 @@ LSM303::LSM303(void):ReServant("lsm303")
   did_timeout = false;
 }
 
-void LSM303::create_servant()
+bool LSM303::create_servant()
 {
 	bool rs = ReServant::create_servant();
 	if (rs) {

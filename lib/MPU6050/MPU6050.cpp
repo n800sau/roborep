@@ -60,28 +60,31 @@ void MPU6050::stop_state(json_t *js)
 	}
 }
 
-void MPU6050::create_servant()
+bool MPU6050::create_servant()
 {
 	uint8_t c;
-	ReServant::create_servant();
-	/* initialise MPU6050 */
-	i2cwire.selectDevice(MPU6050_I2C_ADDRESS, myid());
-	int error = i2cwire.requestFromDevice(MPU6050_WHO_AM_I, 1, &c) != 1;
-	if(error) {
-		printf("Error\n");
-	} else {
-		printf("WHO_AM_I : %2.2X\n", c);
+	bool rs = ReServant::create_servant();
+	if(rs) {
+		/* initialise MPU6050 */
+		i2cwire.selectDevice(MPU6050_I2C_ADDRESS, myid());
+		int error = i2cwire.requestFromDevice(MPU6050_WHO_AM_I, 1, &c) != 1;
+		if(error) {
+			printf("Error\n");
+		} else {
+			printf("WHO_AM_I : %2.2X\n", c);
+		}
+		// According to the datasheet, the 'sleep' bit
+		// should read a '1'. But I read a '0'.
+		// That bit has to be cleared, since the sensor
+		// is in sleep mode at power-up. Even if the
+		// bit reads '0'.
+		if(i2cwire.requestFromDevice(MPU6050_PWR_MGMT_2, 1, &c) != 1) {
+			printf("PWR_MGMT_2 : %2.2X", c);
+		}
+		// Clear the 'sleep' bit to start the sensor
+		i2cwire.writeToDevice(MPU6050_PWR_MGMT_1, 0);
 	}
-  // According to the datasheet, the 'sleep' bit
-  // should read a '1'. But I read a '0'.
-  // That bit has to be cleared, since the sensor
-  // is in sleep mode at power-up. Even if the
-  // bit reads '0'.
-	if(i2cwire.requestFromDevice(MPU6050_PWR_MGMT_2, 1, &c) != 1) {
-		printf("PWR_MGMT_2 : %2.2X", c);
-	}
-	// Clear the 'sleep' bit to start the sensor
-	i2cwire.writeToDevice(MPU6050_PWR_MGMT_1, 0);
+	return rs;
 }
 
 #define AG_REG16_COUNT AG_VAL_COUNT
