@@ -1,86 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
 	>
-	<!-- HOST row -->
-	<TableRow 
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
+	<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
 		>
-		<TextView
-			android:id="@+id/server"
-			android:layout_span="2"
-		 	android:layout_height="wrap_content"
-		/>
-	</TableRow>
-
-	<!-- button with timestamp row -->
-	<TableRow
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<Button
-			android:id="@+id/b_restart"
-			android:layout_height="wrap_content"
-			android:padding="3dip"
-			android:text="Restart"
-		/>
-		<TextView
-			android:id="@+id/s_timestamp"
-		 	android:layout_height="wrap_content"
-			android:padding="3dip"
-		/>
-	</TableRow>
-
-	<TableRow
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<include layout="@layout/adxl345"
-		/>
-	</TableRow>
-
-	<TableRow
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<include layout="@layout/hmc5883l"
-		/>
-	</TableRow>
-
-	<TableRow
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<include layout="@layout/mpu6050"
-		/>
-	</TableRow>
-
-	<TableRow
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<include layout="@layout/mag3110"
-		/>
-	</TableRow>
-
-	<!-- ERROR message row -->
-	<TableRow 
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<TextView
-			android:id="@+id/errormsg"
-			android:gravity="left"
-			android:layout_span="2"
-			android:layout_height="wrap_content"
-			android:layout_width="wrap_content"
-			android:ellipsize="none"  
-			android:maxLines="100"  
-			android:scrollHorizontally="false"
-		/>
-	</TableRow>
-
-</TableLayout>
-
+		<!-- HOST row -->
+		<TableRow 
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<TextView
+				android:id="@+id/server"
+				android:layout_span="2"
+			 	android:layout_height="wrap_content"
+			/>
+		</TableRow>
+    
+		<!-- button with timestamp row -->
+		<TableRow
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<Button
+				android:id="@+id/b_restart"
+				android:layout_height="wrap_content"
+				android:padding="3dip"
+				android:text="Restart"
+			/>
+			<TextView
+				android:id="@+id/s_timestamp"
+			 	android:layout_height="wrap_content"
+				android:padding="3dip"
+			/>
+		</TableRow>
+    
+		<TableRow
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<include layout="@layout/adxl345"
+			/>
+		</TableRow>
+    
+		<TableRow
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<include layout="@layout/hmc5883l"
+			/>
+		</TableRow>
+    
+		<TableRow
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<include layout="@layout/mpu6050"
+			/>
+		</TableRow>
+    
+		<TableRow
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<include layout="@layout/mag3110"
+			/>
+		</TableRow>
+    
+		<!-- ERROR message row -->
+		<TableRow 
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+			>
+			<TextView
+				android:id="@+id/errormsg"
+				android:gravity="left"
+				android:layout_span="2"
+				android:layout_height="wrap_content"
+				android:layout_width="wrap_content"
+				android:ellipsize="none"  
+				android:maxLines="100"  
+				android:scrollHorizontally="false"
+			/>
+		</TableRow>
+	</TableLayout>
+</ScrollView>
