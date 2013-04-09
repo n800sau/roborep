@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	>
+	<!-- MPU6050 timestamp row -->
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="MPU6050"
+		 	android:layout_height="wrap_content"
+		/>
+		<TextView
+			android:id="@+id/mpu6050_timestamp"
+		 	android:layout_height="wrap_content"
+		/>
+	</TableRow>
+	<!-- MPU6050 heading title row -->
+	<TableRow 
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<TextView
+			android:text="xz"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip"
+		/>
+		<TextView
+			android:text="yz"
+		 	android:layout_height="wrap_content"
+			android:padding="3dip"
+		/>
+	</TableRow>
+
+	<!-- MPU6050 heading row -->
+	<TableRow
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"
+			android:id="@+id/mpu6050.xz_degrees"
+			android:background="@color/SandyBrown"
+			android:padding="3dip"
+		/>
+		<au.n800s.robo.sensorview.GaugeView
+			android:layout_height="wrap_content"          
+			android:id="@+id/mpu6050.yz_degrees"
+			android:background="@color/SandyBrown"
+			android:padding="3dip"
+		/>
+	</TableRow>
+</TableLayout>

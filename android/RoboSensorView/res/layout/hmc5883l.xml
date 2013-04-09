@@ -17,17 +17,6 @@
 		 	android:layout_height="wrap_content"
 		/>
 	</TableRow>
-	<!-- HMC5883L heading title row -->
-	<TableRow 
-			android:layout_height="wrap_content"
-			android:layout_width="match_parent"
-		>
-		<TextView
-			android:text="heading"
-		 	android:layout_height="wrap_content"
-			android:padding="3dip"
-		/>
-	</TableRow>
 	<!-- HMC5883L heading row -->
 	<TableRow
 			android:layout_height="wrap_content"
