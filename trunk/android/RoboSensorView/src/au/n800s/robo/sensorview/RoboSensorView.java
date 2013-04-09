@@ -49,12 +49,10 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 {
 	public static final String SERVERIP = "115.70.59.149";
 	public static final String SERVERPORT = "7980";
-	protected GaugeView g_adxl345_xz_heading, g_adxl345_yz_heading, g_hmc5883l_heading;
 	private SensorManager mSensorManager;
 	protected Sensor accelerometer;
 	protected Sensor magnetometer;
 	public Handler Handler;
-	public TextView s_adxl345_timestamp, s_hmc5883l_timestamp;
 	public Button b_restart;
 	private DataReceiverTask task;
 
@@ -76,7 +74,7 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 						JSONObject cmd = new JSONObject();
 						try {
 							cmd.put("cmd", "send_full_data");
-							cmd.put("interval", 100);
+							cmd.put("interval", 300);
 							cmd.put("count", 100);
 							out.println(cmd.toString());
 						} catch(JSONException e) {
@@ -138,22 +136,21 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 
 					Time t = new Time();
 
+					t.set(jsobjlist[i].getJSONObject("adxl345.js.obj").getLong("timestamp") * 1000);
+					((TextView)findViewById(R.id.adxl345_timestamp)).setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
+					((GaugeView)findViewById(R.id.adxl345_xz_heading)).setDegrees(jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees").floatValue())
+					((GaugeView)findViewById(R.id.adxl345_yz_heading)).setDegrees(jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("yz_degrees").floatValue())
+
+					t.set(jsobjlist[i].getJSONObject("hmc5883l.js.obj").getLong("timestamp") * 1000);
+					((TextView)findViewById(R.id.hmc5883l_timestamp)).setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
+					((GaugeView)findViewById(R.id.hmc5883l_heading)).setDegrees(jsobjlist[i].getJSONObject("hmc5883l.js.obj").getDouble("heading_degrees").floatValue())
+
 //					int resId = getResources().getIdentifier("adxl345_xz_degrees_timestamp", "id", getPackageName());
 //					if(resId > 0) {
 //						tv = (TextView)findViewById(resId);
 //						tv.set(jsobjlist[i].getJSONObject("adxl345.js.obj").getLong("timestamp") * 1000);
 //					}
-					t.set(jsobjlist[i].getJSONObject("adxl345.js.obj").getLong("timestamp") * 1000);
-					s_adxl345_timestamp.setText(t.format("%Y.%m.%d %H:%M:%S.%u"));
-					Double v0 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("xz_degrees");
-					g_adxl345_xz_heading.setDegrees(v0.floatValue());
-					Double v1 = jsobjlist[i].getJSONObject("adxl345.js.obj").getDouble("yz_degrees");
-					g_adxl345_yz_heading.setDegrees(v1.floatValue());
 
-					t.set(jsobjlist[i].getJSONObject("hmc5883l.js.obj").getLong("timestamp") * 1000);
-					s_hmc5883l_timestamp.setText(t.format("%Y.%m.%d %H:%M:%S.%SS"));
-					Double v2 = jsobjlist[i].getJSONObject("hmc5883l.js.obj").getDouble("heading_degrees");
-					g_hmc5883l_heading.setDegrees(v2.floatValue());
 				} catch(JSONException e) {
 					updatetrack(e.toString());
 				}
@@ -172,11 +169,6 @@ public class RoboSensorView extends Activity implements SensorEventListener, OnC
 		Log.d(logid, "Hello");
 		setContentView(R.layout.main);
 
-		s_adxl345_timestamp = (TextView)findViewById(R.id.adxl345_timestamp);
-		g_adxl345_xz_heading = (GaugeView)findViewById(R.id.adxl345_xz_heading);
-		g_adxl345_yz_heading = (GaugeView)findViewById(R.id.adxl345_yz_heading);
-
-		s_hmc5883l_timestamp = (TextView)findViewById(R.id.hmc5883l_timestamp);
 		g_hmc5883l_heading = (GaugeView)findViewById(R.id.hmc5883l_heading);
 
 		mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
