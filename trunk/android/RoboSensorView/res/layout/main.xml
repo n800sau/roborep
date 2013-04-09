@@ -3,103 +3,57 @@
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
 	>
-	<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+			android:orientation="vertical"
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
 		>
 		<!-- HOST row -->
-		<TableRow 
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
+		<TextView
+			android:id="@+id/server"
+			android:layout_span="2"
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content"
+		/>
+
+		<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+				android:orientation="horizontal"
+				android:layout_width="fill_parent"
+				android:layout_height="fill_parent"
 			>
-			<TextView
-				android:id="@+id/server"
-				android:layout_span="2"
-			 	android:layout_height="wrap_content"
-			/>
-		</TableRow>
-    
-		<!-- button with timestamp row -->
-		<TableRow
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
+			<!-- button with timestamp row -->
 			<Button
 				android:id="@+id/b_restart"
 				android:layout_height="wrap_content"
+				android:layout_width="wrap_content"
 				android:padding="3dip"
 				android:text="Restart"
 			/>
 			<TextView
 				android:id="@+id/s_timestamp"
-			 	android:layout_height="wrap_content"
-				android:padding="3dip"
-			/>
-		</TableRow>
-    
-		<TableRow
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
-			<include layout="@layout/adxl345"
-			/>
-		</TableRow>
-    
-		<TableRow
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
-			<include layout="@layout/hmc5883l"
-			/>
-		</TableRow>
-    
-		<TableRow
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
-			<include layout="@layout/mpu6050"
-			/>
-		</TableRow>
-
-		<TableRow
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
-			<include layout="@layout/mag3110"
-			/>
-		</TableRow>
-
-		<TableRow
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
-			<include layout="@layout/lsm303"
-			/>
-		</TableRow>
-
-		<TableRow
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
-			<include layout="@layout/kalman"
-			/>
-		</TableRow>
-
-		<!-- ERROR message row -->
-		<TableRow 
-				android:layout_height="wrap_content"
-				android:layout_width="match_parent"
-			>
-			<TextView
-				android:id="@+id/errormsg"
-				android:gravity="left"
-				android:layout_span="2"
 				android:layout_height="wrap_content"
 				android:layout_width="wrap_content"
-				android:ellipsize="none"  
-				android:maxLines="100"  
-				android:scrollHorizontally="false"
+				android:padding="3dip"
 			/>
-		</TableRow>
-	</TableLayout>
+		</LinearLayout>
+
+		<include layout="@layout/adxl345"/>
+		<include layout="@layout/hmc5883l"/>
+		<include layout="@layout/mpu6050"/>
+		<include layout="@layout/mag3110"/>
+		<include layout="@layout/lsm303"/>
+		<include layout="@layout/kalman"/>
+
+		<!-- ERROR message row -->
+		<TextView
+			android:id="@+id/errormsg"
+			android:gravity="left"
+			android:layout_span="2"
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content"
+			android:ellipsize="none"  
+			android:maxLines="100"  
+			android:scrollHorizontally="false"
+		/>
+	</LinearLayout>
 </ScrollView>
