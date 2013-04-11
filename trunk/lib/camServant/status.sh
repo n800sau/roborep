@@ -1,7 +1,9 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/camd.pid
-PPID=`pidof -o %PPID camTr`
+PIDFILE=/home/n800s/run/camServant.pid
+DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/camServant/camServant
+
+PPID=`pidof -o %PPID ${DAEMON}`
 if [ -z "$PPID" ]; then
                      echo "Not running"
                      exit 1
