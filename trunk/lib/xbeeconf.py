@@ -53,6 +53,7 @@ class XBee:
 
 if __name__ == '__main__':
 	import sys
+	print ("*" * 20) + "\nConfiguring xbee..."
 
 #pi SH,SL =  13 A2 00  40 92 D7 A0
 #HP SH,SL =  13 A2 00  40 92 D7 19
@@ -62,7 +63,9 @@ if __name__ == '__main__':
 	for port,dh,dl in (
 			('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EONT-if00-port0', '13A200', '4092D7A0'), 
 			('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A601EM1A-if00-port0', '13A200', '4092D719')):
+		print "\n"
 		if os.path.exists(port):
+			print 'Path %s:' % port
 
 			cmdlist = ['ID', 'DH', 'DL', 'MY', 'SH', 'SL']
 #			cmdlist = ['ID3332', 'DL1234', 'MY5678', 'D02', 'D12', 'IR14', 'IT5',]
@@ -71,11 +74,12 @@ if __name__ == '__main__':
 			xbee = XBee(port, 115200);
 
 			if not xbee.startCommandMode():
-				print("Could not enter command mode")
+				print "\tCould not enter command mode"
 				sys.exit(1)
 			for cmd in cmdlist:
-				print cmd + ': ' + str(xbee.sendCommand(cmd))
+				print "\t" + cmd + ': ' + str(xbee.sendCommand(cmd))
 			xbee.close()
-			break
+		else:
+			print 'Path %s does not exist' % port
 
-
+	print "Configuring xbee finished\n" + ("*" * 20)
