@@ -2,18 +2,24 @@
 
 import socket, json, time, pprint
 
+host = '115.70.59.149'
+port = 7980
+
+#host = 'beaglebone'
+#port = 7880
 
 keylist = [
 #'l3g4200d.js.obj',
 #'hmc5883l.js.obj',
 'bmp085.js.obj',
 #'lsm303.js.obj',
-'adxl345.js.obj',
+#'adxl345.js.obj',
 #'mpu6050.js.obj',
 #'kalman.js.obj',
 #'mag3110.js.obj',
 ]
-s = socket.create_connection(('115.70.59.149', 7980))
+
+s = socket.create_connection((host, port))
 s.sendall(json.dumps({'cmd': 'send_full_data', 'interval': 100, 'count': 100}))
 f = s.makefile()
 for line in f:
