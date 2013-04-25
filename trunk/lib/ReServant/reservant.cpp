@@ -291,7 +291,11 @@ void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 	} else {
 		if(reply->str) {
 			json_error_t error;
+#ifdef JSON_DECODE_ANY
 			json_t *js = json_loads(reply->str, JSON_DECODE_ANY, &error);
+#else
+			json_t *js = json_loads(reply->str, 0, &error);
+#endif
 			if (js == NULL) {
 				syslog(LOG_ERR, "Error JSON decoding:%s", error.text);
 			} else {
