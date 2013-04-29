@@ -67,11 +67,11 @@ if __name__ == '__main__':
 		if os.path.exists(port):
 			print 'Path %s:' % port
 
-			cmdlist = ['ID', 'DH', 'DL', 'MY', 'SH', 'SL']
+			cmdlist = ['ID', 'DH', 'DL', 'MY', 'SH', 'SL', 'D6', 'D7', 'P1', '%V', 'AI']
 #			cmdlist = ['ID3332', 'DL1234', 'MY5678', 'D02', 'D12', 'IR14', 'IT5',]
 #			cmdlist = ['BD', 'CH', 'MY', 'ID', 'ID1111', 'SH', 'SL', 'DH', 'DL', 'DH%s' % dh, 'DL%s' % dl, 'NI', 'ND', 'WR', 'AS']
 #			cmdlist = ['RE']
-			xbee = XBee(port, 115200);
+			xbee = XBee(port, 9600);
 
 			if not xbee.startCommandMode():
 				print "\tCould not enter command mode"
