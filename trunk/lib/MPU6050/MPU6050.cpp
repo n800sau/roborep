@@ -3,6 +3,7 @@
 #include <math.h>
 #include <evhttp.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <fcntl.h>
@@ -19,14 +20,31 @@ struct MPU6050_CMD_FUNC:public CMD_FUNC {
 
 typedef MPU6050_CMD_FUNC *pMPU6050_CMD_FUNC;
 
-MPU6050::MPU6050():ReServant("mpu6050")
+MPU6050::MPU6050(const char datafname[]):ReServant("mpu6050")
 {
+	if(datafname) {
+		dfile = fopen(datafname, "at");
+		if(dfile) {
+			fprintf(dfile, "timestamp\txz_degrees\tyz_degrees\n");
+		} else {
+			syslog(LOG_ERR, "Error opening data file %s: %s", datafname, strerror(errno));
+			exit(1);
+		}
+	} else {
+		dfile = NULL;
+	}
 	memset(&raw, 0, sizeof(raw));
 	memset(&stop_raw, 0, sizeof(stop_raw));
 	const static pMPU6050_CMD_FUNC cmdlist[] = {
 		new MPU6050_CMD_FUNC("stop_state", &MPU6050::stop_state),
 	};
 	this->setCmdList((pCMD_FUNC *)cmdlist, sizeof(cmdlist)/sizeof(cmdlist[0]));
+}
+
+MPU6050::~MPU6050() {
+	if(dfile) {
+		fclose(dfile);
+	}
 }
 
 void MPU6050::call_cmd(const pCMD_FUNC cmd, json_t *js)
@@ -161,6 +179,22 @@ void MPU6050::fill_json(json_t *js)
 
 	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
 	json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
+}
+
+#define JSONSTR(key) (json_string_value(json_object_get(js, key)))
+#define JSONREAL(key) (json_real_value(json_object_get(js, key)))
+
+void MPU6050::push_json(json_t *js)
+{
+	if(dfile) {
+		char buf[30];
+		struct tm *timeinfo;
+		time_t rawtime = JSONREAL("timestamp");
+		timeinfo = localtime (&rawtime);
+		strftime(buf, sizeof(buf), "%d/%m/%Y %H:%M:%S", timeinfo);
+		fprintf(dfile, "%s\t%f\t%f\n", buf, JSONREAL("xz_degrees"), JSONREAL("yz_degrees"));
+		fflush(dfile);
+	}
 }
 
 void MPU6050::loop()
