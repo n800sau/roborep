@@ -4,6 +4,7 @@
 
 #include <reservant.h>
 #include <I2CWire.h>
+#include <limits.h>
 
 // The name of the sensor is "MPU-6050".
 // For program code, I omit the '-', 
@@ -640,17 +641,20 @@ class MPU6050:public ReServant
 	private:
 		accel_t_gyro_union raw, stop_raw;
 		void stop_state(json_t *js);
+		FILE *dfile;
 
 	protected:
 		I2CWire i2cwire;
 		virtual bool create_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
+		virtual void push_json(json_t *js);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 		accel_t_gyro_union *readRaw(accel_t_gyro_union &buf);
 		float heading(float axis1, float axis2);
 	public:
-		MPU6050();
+		MPU6050(const char datafname[]=NULL);
+		virtual ~MPU6050();
 		typedef void (MPU6050::*tFunction)(json_t *js);
 };
 
