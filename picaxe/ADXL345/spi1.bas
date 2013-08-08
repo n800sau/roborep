@@ -51,7 +51,7 @@ for i = 0 to 5 step 2
 	inc reg
 	gosub readRegister
 	let val16.1 = var_in
-	sertxd("The register ", #i, " value is ",#val16,13,10)
+	sertxd(#i, ":",#val16,13,10)
 '	nap 1
 next i
 'nap 5
