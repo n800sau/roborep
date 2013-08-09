@@ -8,7 +8,7 @@ ser = serial.Serial(
 
 ser.open()
 for line in ser:
-#	print line
+	print line
 	l = line.split(':')
 	if len(l) == 2:
 		r,v = [v.strip() for v in l]
@@ -17,8 +17,12 @@ for line in ser:
 			v = int(v)
 			if v > 0x8000:
 				v -= 0x10000
-			print t, '=', v
-		if t == 'Z':
+			print t, '=%4.4X' % v,
+		if t != 'Z':
+			print ',',
+		else:
 			print
+#	elif not l:
+#		print
 
 

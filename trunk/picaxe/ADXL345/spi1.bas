@@ -13,6 +13,8 @@ symbol val16.1 = b11			; 16 bit value byte 2
 symbol val16 = w5			; 16 bit value
 symbol i = b20				; loop var
 'symbol j = w11				; loop var
+Symbol Nref = w12			; Word variable for the calibadc10 reading
+Symbol Vpsu = w13			; Word variable for the supply voltage
 symbol bits = 8				; number of bits
 symbol MSBvalue = 128			; MSBvalue =128 for 8 bits, 512 for 10 bits, 2048 for 12 bits)
 symbol DATA_FORMAT = 0x31	;
@@ -27,8 +29,14 @@ let reg = DATA_FORMAT
 let regval = 0x05
 gosub writeRegister
 let reg = 0x1e
-let regval = 100
-gosub writeRegister
+let regval = -50
+'gosub writeRegister
+let reg = 0x1f
+let regval = -50
+'gosub writeRegister
+let reg = 0x20
+let regval = -50
+'gosub writeRegister
 'Put the ADXL345 into Measurement Mode by writing 0x08 to the POWER_CTL register
 let reg = POWER_CTL
 let regval = 0x08
@@ -43,6 +51,9 @@ gosub writeRegister
 
 
 main:
+	calibadc10 Nref			; Take the reference reading
+	Vpsu = 52378 / Nref * 2		; Work out supply voltage
+	sertxd("V:",#Vpsu,13,10)
 for i = 0 to 5 step 2
 	let val16 = 0
 	let reg = i + 0x32
