@@ -1,7 +1,8 @@
 symbol sclk = C.1				; clock (output pin)
 symbol sdata = C.2			; data (output pin for shiftout)
 symbol serdata = pinC.3		; data (input pin for shiftin, note input7)
-symbol cselect = C.4		; select output pin
+symbol cselect = C.4		; select adxl345
+symbol rfselect = C.0		; select nrf24l01+
 symbol counter = b0			; variable used during loop
 symbol mask = b1			; bit masking variable
 symbol var_in = b2			; data variable used durig shiftin
@@ -14,10 +15,10 @@ symbol regword.1 = b7		; register value byte
 symbol val16.0 = b10			; 16 bit value
 symbol val16.1 = b11			; 16 bit value
 symbol val16 = w5			; 16 bit value
+symbol vlabel = b12			; label for output
 symbol i = b20				; loop var
 'symbol j = w11				; loop var
 Symbol Nref = w12			; Word variable for the calibadc10 reading
-Symbol Vpsu = w13			; Word variable for the supply voltage
 symbol bits = 8				; number of bits
 symbol MSBvalue = 128			; MSBvalue =128 for 8 bits, 512 for 10 bits, 2048 for 12 bits)
 symbol DATA_FORMAT = 0x31	;
@@ -46,18 +47,11 @@ let reg = POWER_CTL
 let regval = 0x08
 gosub writeRegister
 
-'low cselect
-'for counter = 1 to 10000
-'	pulsin c.3,1,i
-'	sertxd("Pulse ", #i,13,10)
-'next counter
-'high cselect
-
-
 main:
 	calibadc10 Nref			; Take the reference reading
-	Vpsu = 52378 / Nref * 2		; Work out supply voltage
-	sertxd("V:",#Vpsu,13,10)
+	let regword = 52378 / Nref * 2		; Work out supply voltage
+	let vlabel = "V"
+	gosub sendOut
 for i = 0 to 5 step 2
 	let val16 = 0
 	let reg = i + 0x32
@@ -68,13 +62,20 @@ for i = 0 to 5 step 2
 '	inc reg
 '	gosub readRegister
 '	let val16.1 = regval
-	sertxd(#i, ":",#val16,13,10)
+	let vlabel = 0x30 + i
+	gosub sendOut
 '	nap 1
 next i
 'nap 5
-sertxd(13,10)
 goto main
 
+sendOut:
+'	low rfselect
+'	nap 1
+'	high rfselect
+'	nap 1
+	sertxd(b12, ":",#regword,13,10)
+	return
 
 readRegister:
 	low cselect
@@ -111,8 +112,6 @@ shiftin_MSB_Post:
 	let var_in = 0
 	for counter = 1 to bits		; number of bits
 		low sclk
-'		count c.3, 1, j
-'		sertxd("In bit = ", #j,13,10)
 		var_in = var_in * 2		; shift left as MSB first
 		if serdata <> 0 then 
 			var_in = var_in + 1		; set LSB if serdata = 1
