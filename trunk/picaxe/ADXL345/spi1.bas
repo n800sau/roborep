@@ -6,10 +6,13 @@ symbol counter = b0			; variable used during loop
 symbol mask = b1			; bit masking variable
 symbol var_in = b2			; data variable used durig shiftin
 symbol var_out = b3			; data variable used during shiftout
-symbol reg = b4				; register
-symbol regval = b5			; register value
-symbol val16.0 = b10			; 16 bit value byte 1
-symbol val16.1 = b11			; 16 bit value byte 2
+symbol reg = b5				; register address
+symbol regval = b6			; register value byte
+symbol regword = w3			; register value byte
+symbol regword.0 = b6		; register value byte
+symbol regword.1 = b7		; register value byte
+symbol val16.0 = b10			; 16 bit value
+symbol val16.1 = b11			; 16 bit value
 symbol val16 = w5			; 16 bit value
 symbol i = b20				; loop var
 'symbol j = w11				; loop var
@@ -26,7 +29,8 @@ high sclk
 
 'Put the ADXL345 into +/- 4G range by writing the value 0x01 to the DATA_FORMAT register
 let reg = DATA_FORMAT
-let regval = 0x05
+let regval = 0x08
+'let regval = 0x05
 gosub writeRegister
 let reg = 0x1e
 let regval = -50
@@ -57,11 +61,13 @@ main:
 for i = 0 to 5 step 2
 	let val16 = 0
 	let reg = i + 0x32
-	gosub readRegister
-	let val16.0 = var_in
-	inc reg
-	gosub readRegister
-	let val16.1 = var_in
+	gosub readRegisterWord
+	let val16 = regword
+'	gosub readRegister
+'	let val16.0 = regval
+'	inc reg
+'	gosub readRegister
+'	let val16.1 = regval
 	sertxd(#i, ":",#val16,13,10)
 '	nap 1
 next i
@@ -75,6 +81,18 @@ readRegister:
 	let var_out = reg | 0x80
 	gosub shiftout_MSBFirst
 	gosub shiftin_MSB_Post
+	let regval = var_in
+	high cselect
+	return
+
+readRegisterWord:
+	low cselect
+	let var_out = reg | 0xC0
+	gosub shiftout_MSBFirst
+	gosub shiftin_MSB_Post
+	let regword.0 = var_in
+	gosub shiftin_MSB_Post
+	let regword.1 = var_in
 	high cselect
 	return
 
