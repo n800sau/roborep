@@ -1,4 +1,4 @@
-#include "common.h"
+#include "../../include/common.h"
 #include "printf.h"
 #include <SPI.h>
 #include <RF24.h>
@@ -21,39 +21,59 @@ unsigned long packets_sent;
 
 void setup(void)
 {
-  Serial.begin(57600);
-  Serial.println("Commander");
+	Serial.begin(57600);
+	Serial.println("Commander");
  
-  SPI.begin();
-  radio.begin();
-  network.begin(CHANNEL, BASE_NODE);
+	SPI.begin();
+	radio.begin();
+	network.begin(CHANNEL, BASE_NODE);
 }
+
+bool has_reply = true;
 
 void loop(void)
 {
-  // Pump the network regularly
-  network.update();
+	// Pump the network regularly
+	network.update();
 
-  // If it's time to send a message, send it!
-  unsigned long now = millis();
-  if ( now - last_sent >= interval  )
-  {
-    last_sent = now;
+	if(has_reply) {
+		// If it's time to send a message, send it!
+		unsigned long now = millis();
+		if ( now - last_sent >= interval)
+		{
+			last_sent = now;
+	
+			payload_t payload = { PL_CMD, millis(), packets_sent++ };
+			payload.d.cmd.cmd = CMD_MPU;
 
-    payload_t payload = { PL_CMD, millis(), packets_sent++ };
-	payload.d.cmd.cmd = CMD_MPU;
-
-    Serial.print("Sending...");
-    Serial.print(payload.counter);
-    Serial.print(", ms=");
-    Serial.print(payload.ms);
-    Serial.print(", ");
-    RF24NetworkHeader header(STICK_NODE);
-    bool ok = network.write(header,&payload,sizeof(payload));
-    if (ok)
-      Serial.println("ok.");
-    else
-      Serial.println("failed.");
-  }
-	delay(100);
+			Serial.print("Sending...");
+			Serial.print(payload.counter);
+			Serial.print(", ms=");
+			Serial.print(payload.ms);
+			Serial.print(", ");
+			RF24NetworkHeader header(STICK_NODE);
+			bool ok = network.write(header,&payload,sizeof(payload));
+			if (ok)
+				Serial.println("ok.");
+			else
+				Serial.println("failed.");
+			has_reply = false;
+		}
+	} else {
+		if ( network.available() ) {
+			RF24NetworkHeader header;
+			payload_t payload;
+			network.read(header,&payload,sizeof(payload));
+			Serial.print("Received packet #");
+			Serial.print(payload.counter);
+			Serial.print(" at ");
+			Serial.println(payload.ms);
+			Serial.println(payload.d.mpu.quaternion[0]);
+			Serial.println(payload.d.mpu.quaternion[1]);
+			Serial.println(payload.d.mpu.quaternion[2]);
+			Serial.println(payload.d.mpu.quaternion[3]);
+			has_reply = true;
+		}
+	}
+	delay(10);
 }

@@ -17,7 +17,7 @@ struct cmd_t {
 };
 
 struct mpu_t {
-	uint16_t x,y,z;
+	int16_t quaternion[4];
 };
 
 // Structure of our payload
