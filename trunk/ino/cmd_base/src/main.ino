@@ -1,5 +1,5 @@
 #include "../../include/common.h"
-#include "printf.h"
+#include "../../include/printf.h"
 #include <SPI.h>
 #include <RF24.h>
 #include <RF24Network.h>
@@ -22,11 +22,13 @@ unsigned long packets_sent;
 void setup(void)
 {
 	Serial.begin(57600);
+	printf_begin();
 	Serial.println("Commander");
  
 	SPI.begin();
 	radio.begin();
 	network.begin(CHANNEL, BASE_NODE);
+
 }
 
 bool has_reply = true;
@@ -46,17 +48,17 @@ void loop(void)
 			payload_t payload = { PL_CMD, millis(), packets_sent++ };
 			payload.d.cmd.cmd = CMD_MPU;
 
-			Serial.print("Sending...");
-			Serial.print(payload.counter);
-			Serial.print(", ms=");
-			Serial.print(payload.ms);
-			Serial.print(", ");
-			RF24NetworkHeader header(STICK_NODE);
-			bool ok = network.write(header,&payload,sizeof(payload));
-			if (ok)
-				Serial.println("ok.");
-			else
-				Serial.println("failed.");
+//			Serial.print("Sending...");
+//			Serial.print(payload.counter);
+//			Serial.print(", ms=");
+//			Serial.print(payload.ms);
+//			Serial.print(", ");
+//			RF24NetworkHeader header(STICK_NODE);
+//			bool ok = network.write(header,&payload,sizeof(payload));
+//			if (ok)
+//				Serial.println("ok.");
+//			else
+//				Serial.println("failed.");
 			has_reply = false;
 		}
 	} else {
@@ -68,12 +70,16 @@ void loop(void)
 			Serial.print(payload.counter);
 			Serial.print(" at ");
 			Serial.println(payload.ms);
-			Serial.println(payload.d.mpu.quaternion[0]);
-			Serial.println(payload.d.mpu.quaternion[1]);
-			Serial.println(payload.d.mpu.quaternion[2]);
+			Serial.print("quat\t");
+			Serial.print(payload.d.mpu.quaternion[0]);
+			Serial.print("\t");
+			Serial.print(payload.d.mpu.quaternion[1]);
+			Serial.print("\t");
+			Serial.print(payload.d.mpu.quaternion[2]);
+			Serial.print("\t");
 			Serial.println(payload.d.mpu.quaternion[3]);
 			has_reply = true;
 		}
 	}
-	delay(10);
+	delay(100);
 }

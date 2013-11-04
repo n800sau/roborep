@@ -1,5 +1,6 @@
 #include "../../include/common.h"
-#include "printf.h"
+#include "../../include/printf.h"
+#include <Servo.h>
 #include <RF24.h>
 #include <RF24Network.h>
 #include <SPI.h>
@@ -22,6 +23,11 @@ RF24Network network(radio);
 MPU6050 mpu;
 //MPU6050 mpu(0x69); // <-- use for AD0 high
 
+Servo lowservo;
+Servo tiltservo;
+Servo panservo;
+
+
 // MPU control/status vars
 // ----------------------------------------------------------------------
 bool dmpReady = false;	// set true if DMP init was successful
@@ -37,14 +43,23 @@ void dmpDataReady() {
 }
 // ----------------------------------------------------------------------
 
-void setup(void)
+void setup()
 {
 	Serial.begin(57600);
-	Serial.println("Commander");
+	printf_begin();
+	Serial.println("Stick");
  
 	SPI.begin();
 	radio.begin();
 	network.begin(CHANNEL, STICK_NODE);
+
+	//init positions
+	lowservo.attach(9);
+	tiltservo.attach(6);
+	panservo.attach(5);
+	lowservo.write(90);
+	tiltservo.write(90);
+	panservo.write(90);
 
 	#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
 		Wire.begin();
@@ -53,10 +68,11 @@ void setup(void)
 		Fastwire::setup(400, true);
 	#endif
 
+	Serial.println(PSTR("Initializing MPU..."));
 	mpu.initialize();
 
 	// load and configure the DMP
-	Serial.println("Initializing DMP...");
+	Serial.println(PSTR("Initializing DMP..."));
 	devStatus = mpu.dmpInitialize();
 
 	// supply your own gyro offsets here, scaled for min sensitivity
@@ -93,11 +109,22 @@ void setup(void)
 	}
 }
 
-void loop(void)
+int tiltdir = 1;
+unsigned long ms = 0;
+unsigned long pcounter = 0;
+
+void loop()
 {
-	Quaternion q;
+	int pos = tiltservo.read() + tiltdir;
+	if(pos >= 180) {
+		tiltdir = -1;
+	}
+	if(pos <= 0) {
+		tiltdir = 1;
+	}
+	tiltservo.write(pos);
+//	Quaternion q;
 	unsigned long qms;
-	// if programming failed, don't try to do anything
 	while (!mpuInterrupt && fifoCount < packetSize) {
 		// Pump the network regularly
 		network.update();
@@ -112,6 +139,7 @@ void loop(void)
 			Serial.print(payload.counter);
 			Serial.print(" at ");
 			Serial.println(payload.ms);
+			Serial.print("CMD:");
 			Serial.println(payload.d.cmd.cmd);
 			switch(payload.d.cmd.cmd) {
 				case CMD_MPU:
@@ -120,7 +148,7 @@ void loop(void)
 		}
 	}
 	// reset interrupt flag and get INT_STATUS byte
-/*	mpuInterrupt = false;
+	mpuInterrupt = false;
 	mpuIntStatus = mpu.getIntStatus();
 
 	// get current FIFO count
@@ -146,28 +174,40 @@ void loop(void)
 		// (this lets us immediately read more without waiting for an interrupt)
 		fifoCount -= packetSize;
 
-		mpu.dmpGetQuaternion(&q, fifoBuffer);
-		qms = millis();
-//					payload_t reply;
-//					reply.pload_type = PL_MPU;
-//					reply.ms = qms;
-//					reply.counter = 1;
-///					reply.d.mpu.quaternion[0] = q.w;
-//					reply.d.mpu.quaternion[1] = q.x;
-//					reply.d.mpu.quaternion[2] = q.y;
-//					reply.d.mpu.quaternion[3] = q.z;
-//					Serial.println("Sending...");
-//					RF24NetworkHeader header(BASE_NODE);
-//					bool ok = network.write(header,&reply,sizeof(reply));
-//					if (ok)
-//						Serial.println("Replied ok.");
-//					else
-//						Serial.println("Reply failed.");
+		payload_t reply;
+		mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
+//		mpu.dmpGetQuaternion(&q, fifoBuffer);
+			// display quaternion values in easy matrix form: w x y z
+		RF24NetworkHeader header(BASE_NODE);
+		if(millis() - ms > 5000) {
+			qms = millis();
+			reply.pload_type = PL_MPU;
+			reply.ms = qms;
+			reply.counter = ++pcounter;
+			Serial.print("Sending...");
+			Serial.print(reply.counter);
+			Serial.print(", ms=");
+			Serial.println(reply.ms);
+			Serial.print("quat\t");
+			Serial.print(reply.d.mpu.quaternion[0]);
+			Serial.print("\t");
+			Serial.print(reply.d.mpu.quaternion[1]);
+			Serial.print("\t");
+			Serial.print(reply.d.mpu.quaternion[2]);
+			Serial.print("\t");
+			Serial.println(reply.d.mpu.quaternion[3]);
+			bool ok = network.write(header,&reply,sizeof(reply));
+			if (ok)
+				Serial.println("Replied ok.");
+			else
+				Serial.println("Reply failed.");
+			ms = millis();
+		}
 //		mpu.dmpGetEuler(data.euler, &data.q);
 //		mpu.dmpGetGravity(&data.gravity, &data.q);
 //		mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
 //		mpu.dmpGetAccel(&data.aa, fifoBuffer);
 ///		mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
 //		mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
-	}*/
+	}
 }
