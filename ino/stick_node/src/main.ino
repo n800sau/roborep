@@ -109,21 +109,35 @@ void setup()
 	}
 }
 
-int tiltdir = 1;
 unsigned long ms = 0;
 unsigned long pcounter = 0;
 
+void read_cmd()
+{
+	// If so, grab it and print it out
+	RF24NetworkHeader header;
+	payload_t payload;
+	network.read(header,&payload,sizeof(payload));
+	Serial.print("Received packet #");
+	Serial.print(payload.counter);
+	Serial.print(" at ");
+	Serial.println(payload.ms);
+	Serial.print("TYPE:");
+	Serial.println(payload.pload_type);
+	switch(payload.pload_type) {
+		case PL_SETSERVO:
+			if(payload.d.servo.low != NO_SET)
+				lowservo.write(payload.d.servo.low);
+			if(payload.d.servo.pan != NO_SET)
+				panservo.write(payload.d.servo.pan);
+			if(payload.d.servo.tilt != NO_SET)
+				tiltservo.write(payload.d.servo.tilt);
+			break;
+	}
+}
+
 void loop()
 {
-	int pos = tiltservo.read() + tiltdir;
-	if(pos >= 180) {
-		tiltdir = -1;
-	}
-	if(pos <= 0) {
-		tiltdir = 1;
-	}
-	tiltservo.write(pos);
-//	Quaternion q;
 	unsigned long qms;
 	while (!mpuInterrupt && fifoCount < packetSize) {
 		// Pump the network regularly
@@ -131,20 +145,21 @@ void loop()
 		// Is there anything ready for us?
 		while ( network.available() )
 		{
-			// If so, grab it and print it out
-			RF24NetworkHeader header;
-			payload_t payload;
-			network.read(header,&payload,sizeof(payload));
-			Serial.print("Received packet #");
+			read_cmd();
+			payload_t payload = { PL_SERVO_STATE, millis(), pcounter++ };
+			Serial.print("Sending...");
 			Serial.print(payload.counter);
-			Serial.print(" at ");
-			Serial.println(payload.ms);
-			Serial.print("CMD:");
-			Serial.println(payload.d.cmd.cmd);
-			switch(payload.d.cmd.cmd) {
-				case CMD_MPU:
-					break;
-			}
+			Serial.print(", ms=");
+			Serial.print(payload.ms);
+			Serial.print(", ");
+			payload.d.servo.low = lowservo.read();
+			payload.d.servo.pan = panservo.read();
+			payload.d.servo.tilt = tiltservo.read();
+			RF24NetworkHeader header(BASE_NODE);
+			if (network.write(header,&payload,sizeof(payload)))
+				Serial.println("ok.");
+			else
+				Serial.println("failed.");
 		}
 	}
 	// reset interrupt flag and get INT_STATUS byte
@@ -175,8 +190,14 @@ void loop()
 		fifoCount -= packetSize;
 
 		payload_t reply;
+		Quaternion q;
 		mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
-//		mpu.dmpGetQuaternion(&q, fifoBuffer);
+		mpu.dmpGetQuaternion(&q, fifoBuffer);
+		VectorFloat gravity;
+		mpu.dmpGetGravity(&gravity, &q);
+		reply.d.mpu.gravity[0] = gravity.x * 100;
+		reply.d.mpu.gravity[1] = gravity.y * 100;
+		reply.d.mpu.gravity[2] = gravity.z * 100;
 			// display quaternion values in easy matrix form: w x y z
 		RF24NetworkHeader header(BASE_NODE);
 		if(millis() - ms > 5000) {
@@ -196,6 +217,12 @@ void loop()
 			Serial.print(reply.d.mpu.quaternion[2]);
 			Serial.print("\t");
 			Serial.println(reply.d.mpu.quaternion[3]);
+			Serial.print("grav\t");
+			Serial.print(reply.d.mpu.gravity[0]);
+			Serial.print("\t");
+			Serial.print(reply.d.mpu.gravity[1]);
+			Serial.print("\t");
+			Serial.println(reply.d.mpu.gravity[2]);
 			bool ok = network.write(header,&reply,sizeof(reply));
 			if (ok)
 				Serial.println("Replied ok.");
