@@ -24,7 +24,7 @@ _libcommon_py.so: common_wrap.o
 	$(CC) -shared common_wrap.o -o _libcommon_py.so
 
 test: all
-	python -c "import libcommon_py; print 'Ok'"
+	python -c "import libcommon_py; print dir(libcommon_py); print 'Ok'"
 
 clean:
 	rm -f *.o _libcommon_py.so libcommon_py.py common_wrap.c *.pyc

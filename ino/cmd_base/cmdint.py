@@ -28,16 +28,16 @@ class StickShell(cmd.Cmd):
 				rs.append('*** timeout ***')
 				break
 			if reply_mode:
-				if reply == 'REPLYEND':
+				if reply == common.REPLY_END_MARKER:
 					reply_mode = False
 					break
 				else:
 					rs.append(reply)
 			else:
-				if reply.startswith('REPLY:'):
-					rs.append(reply[6:])
+				if reply.startswith(common.REPLY_MARKER):
+					rs.append(reply[len(common.REPLY_MARKER):])
 					break
-				elif reply == 'REPLYSTART':
+				elif reply == common.REPLY_START_MARKER:
 					reply_mode = True
 		return '\n'.join(rs)
 
@@ -46,15 +46,15 @@ class StickShell(cmd.Cmd):
 	def do_low_pos(self, arg):
 		'Set/get low position (0-180):	 LOW_POS 30 or LOW_POS'
 		if len(arg) > 0:
-			self.s.write('STICK:low_set %d' % int(arg))
+			self.s.write('%slow_set %d' % (common.CMD_MARKER, int(arg)))
 		else:
-			self.s.write('STICK:low_get')
+			self.s.write('%slow_get' % common.CMD_MARKER)
 		reply = self.readreply()
 		print 'REPLY:', reply
 
 	def do_reset(self, arg):
 		'Reset positions to 90s:	RESET'
-		self.s.write('STICK:reset')
+		self.s.write('%sreset' % common.CMD_MARKER)
 		reply = self.readreply()
 		print 'REPLY:', reply
 
@@ -63,6 +63,9 @@ class StickShell(cmd.Cmd):
 		self.close()
 		sys.exit(0)
 		return True
+
+	def do_eof(self, arg):
+		self.do_quit(arg)
 
 	# ----- record and playback -----
 

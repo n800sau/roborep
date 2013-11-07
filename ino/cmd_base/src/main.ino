@@ -74,6 +74,9 @@ void loop(void)
 {
 	// Pump the network regularly
 	network.update();
+	if( Serial.available() ) {
+		Serial.find();
+	}
 	if ( network.available() ) {
 		RF24NetworkHeader header;
 		payload_t payload;
