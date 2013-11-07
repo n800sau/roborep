@@ -35,6 +35,11 @@ struct payload_t {
 	} d;
 };
 
+#define CMD_MARKER "STICK:"
+#define REPLY_MARKER "REPLY:"
+#define REPLY_START_MARKER "REPLYSTART"
+#define REPLY_END_MARKER "REPLYEND"
+
 //
 // Topology
 //
