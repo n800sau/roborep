@@ -139,9 +139,9 @@ void read_cmd()
 void loop()
 {
 	unsigned long qms;
+	// Pump the network regularly
+	network.update();
 	while (!mpuInterrupt && fifoCount < packetSize) {
-		// Pump the network regularly
-		network.update();
 		// Is there anything ready for us?
 		while ( network.available() )
 		{
