@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import cmd, sys, os, serial, io, atexit, readline
+import cmd, sys, os, serial, atexit, readline
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
 
@@ -15,15 +15,22 @@ class StickShell(cmd.Cmd):
 
 	def __init__(self):
 		cmd.Cmd.__init__(self)
-		self.s = serial.Serial(SERIAL, BAUD, timeout=1, interCharTimeout=1)
-		self.sio = io.TextIOWrapper(io.BufferedRWPair(self.s, self.s))
+		self.s = serial.Serial(SERIAL, BAUD, timeout=5, interCharTimeout=1)
 		self.file = None
+		self.logfile = None
+
+	def write_log(self, line):
+		if not self.logfile:
+			self.logfile = file('cmd_base.log', 'a+')
+		self.logfile.write('%s\n' % line.rstrip())
+		self.logfile.flush()
 
 	def readreply(self):
 		rs = []
 		reply_mode = False
 		while True:
 			reply = self.s.readline()
+			self.write_log(reply)
 			if not reply:
 				rs.append('*** timeout ***')
 				break
@@ -65,6 +72,7 @@ class StickShell(cmd.Cmd):
 		return True
 
 	def do_eof(self, arg):
+		print
 		self.do_quit(arg)
 
 	# ----- record and playback -----
@@ -89,6 +97,9 @@ class StickShell(cmd.Cmd):
 		if self.file:
 			self.file.close()
 			self.file = None
+		if self.logfile:
+			self.logfile.close()
+			self.logfile = None
 
 def parse(arg):
 	'Convert a series of zero or more numbers to an argument tuple'

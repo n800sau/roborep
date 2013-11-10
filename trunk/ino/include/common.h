@@ -26,10 +26,10 @@ typedef struct __mpu_t {
 // Structure of our payload
 struct payload_t {
 	uint8_t pload_type; //PLOAD_TYPE
-	uint64_t ms;
-	uint64_t counter;
+	uint32_t ms;
+	uint32_t counter;
 	union {
-		uint8_t buf[32 - sizeof(uint8_t) - sizeof(uint64_t) - sizeof(uint64_t)];
+		uint8_t buf[32 - sizeof(uint8_t) - sizeof(uint32_t) - sizeof(uint32_t)];
 		stickservo_t servo;
 		mpu_t mpu;
 	} d;
@@ -45,10 +45,13 @@ struct payload_t {
 //
 
 // Address of base node
-#define BASE_NODE 0
+#define BASE_NODE 00
 
 // Address of the stick node
-#define STICK_NODE 1
+#define STICK_NODE 01
+
+// Address of the acc node
+#define ACC_NODE 011
 
 #define CHANNEL 90
 

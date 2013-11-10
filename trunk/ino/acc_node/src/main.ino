@@ -3,6 +3,8 @@
 #include <SPI.h>
 #include <RF24.h>
 #include <RF24Network.h>
+#include <Wire.h>
+#include <ADXL345.h>
 
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(8,10);
@@ -10,7 +12,13 @@ RF24 radio(8,10);
 // Network uses that radio
 RF24Network network(radio);
 
-// How often to send 'hello world to the other unit
+#define ACC_ADDRESS (0xA7>>1)
+ADXL345 accel;
+
+// Set up a pin we are going to use to indicate our status using an LED.
+int accStatusPin = 7; // I'm using digital pin 2.
+
+// How often to send 'hello world' to the other unit
 const unsigned long interval = 2000; //ms
 
 // When did we last send?
@@ -23,11 +31,30 @@ void setup(void)
 {
 	Serial.begin(57600);
 	printf_begin();
-	Serial.println("Commander");
+	Serial.println("Gravity Sensor");
  
 	SPI.begin();
 	radio.begin();
-	network.begin(CHANNEL, BASE_NODE);
+	network.begin(CHANNEL, ACC_NODE);
+
+	// Start the I2C Wire library so we can use I2C to talk to the accelerometer.
+	Wire.begin();
+	// Ready an LED to indicate our status.
+	pinMode(accStatusPin, OUTPUT);
+	accel = ADXL345(ACC_ADDRESS);
+	// Check that the accelerometer is infact connected.
+	if(accel.EnsureConnected()) {
+		Serial.println("Connected to ADXL345.");
+		digitalWrite(accStatusPin, HIGH); // If we are connected, light our status LED.
+	} else {
+		Serial.println("Could not connect to ADXL345.");
+		digitalWrite(accStatusPin, LOW); // If we are not connected, turn our LED off.
+	}
+
+	// Set the range of the accelerometer to a maximum of 2G.
+	accel.SetRange(2, true);
+	// Tell the accelerometer to start taking measurements.
+	accel.EnableMeasurements();
 
 	set_servo(90, 90, 90);
 }
@@ -48,7 +75,7 @@ bool set_servo(uint8_t low, uint8_t pan, uint8_t tilt)
 	Serial.print(payload.d.servo.pan);
 	Serial.print("\t");
 	Serial.println(payload.d.servo.tilt);
-	RF24NetworkHeader header(STICK_NODE);
+	RF24NetworkHeader header(BASE_NODE);
 	bool rs = network.write(header,&payload,sizeof(payload));
 	Serial.println("Sent");
 	return rs;
@@ -148,7 +175,7 @@ void loop(void)
 		if ( now - last_sent >= interval)
 		{
 			last_sent = now;
-			move_servo();
+//			move_servo();
 		}
 	}
 	delay(10);
