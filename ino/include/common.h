@@ -7,7 +7,8 @@ enum PLOAD_TYPE
 {
 	PL_SETSERVO = 1,
 	PL_SERVO_STATE,
-	PL_MPU
+	PL_MPU,
+	PL_ACC
 };
 
 #define NO_SET 0xff
@@ -23,6 +24,11 @@ typedef struct __mpu_t {
 	int16_t gravity[3];
 } mpu_t;
 
+typedef struct __acc_t {
+	int16_t raw[3];
+	uint16_t uScale; //m_Scale * 10000
+} acc_t;
+
 // Structure of our payload
 struct payload_t {
 	uint8_t pload_type; //PLOAD_TYPE
@@ -32,6 +38,7 @@ struct payload_t {
 		uint8_t buf[32 - sizeof(uint8_t) - sizeof(uint32_t) - sizeof(uint32_t)];
 		stickservo_t servo;
 		mpu_t mpu;
+		acc_t acc;
 	} d;
 };
 
@@ -45,14 +52,17 @@ struct payload_t {
 //
 
 // Address of base node
-#define BASE_NODE 00
+#define BASE_NODE 0B0
 
 // Address of the stick node
-#define STICK_NODE 01
+#define STICK_NODE 0B1
 
 // Address of the acc node
-#define ACC_NODE 011
+#define ACC_NODE 0B21
 
 #define CHANNEL 90
+
+#define SERIAL_DEBUG
+
 
 #endif //__COMMON_H

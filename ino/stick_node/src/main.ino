@@ -160,6 +160,7 @@ void loop()
 				Serial.println("ok.");
 			else
 				Serial.println("failed.");
+			network.update();
 		}
 	}
 	// reset interrupt flag and get INT_STATUS byte
@@ -199,8 +200,8 @@ void loop()
 		reply.d.mpu.gravity[1] = gravity.y * 100;
 		reply.d.mpu.gravity[2] = gravity.z * 100;
 			// display quaternion values in easy matrix form: w x y z
-		RF24NetworkHeader header(BASE_NODE);
 		if(millis() - ms > 5000) {
+			RF24NetworkHeader header(BASE_NODE);
 			qms = millis();
 			reply.pload_type = PL_MPU;
 			reply.ms = qms;
