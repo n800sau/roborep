@@ -29,7 +29,7 @@ void setup(void)
 	radio.begin();
 	network.begin(CHANNEL, BASE_NODE);
 
-	set_servo(90, 90, 90);
+//	set_servo(90, 90, 90);
 }
 
 bool set_servo(uint8_t low, uint8_t pan, uint8_t tilt)
@@ -132,6 +132,14 @@ void loop(void)
 				Serial.print("\t");
 				Serial.println(payload.d.mpu.gravity[2]);
 				break;
+			case PL_ACC:
+				Serial.print("Accel\t");
+				Serial.print(payload.d.acc.raw[0]);
+				Serial.print("\t");
+				Serial.print(payload.d.acc.raw[1]);
+				Serial.print("\t");
+				Serial.println(payload.d.acc.raw[2]);
+				break;
 			case PL_SERVO_STATE:
 				Serial.print("received servo\t");
 				Serial.print(payload.d.servo.low);
@@ -148,8 +156,9 @@ void loop(void)
 		if ( now - last_sent >= interval)
 		{
 			last_sent = now;
-			move_servo();
+//			move_servo();
 		}
+//		Serial.println("Nothing");
 	}
 	delay(10);
 }
