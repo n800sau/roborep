@@ -133,11 +133,11 @@ void loop(void)
 				Serial.println(payload.d.mpu.gravity[2]);
 				break;
 			case PL_ACC:
-				Serial.print("Accel\t");
+				Serial.print("ACCEL: ");
 				Serial.print(payload.d.acc.raw[0]);
-				Serial.print("\t");
+				Serial.print(" ");
 				Serial.print(payload.d.acc.raw[1]);
-				Serial.print("\t");
+				Serial.print(" ");
 				Serial.println(payload.d.acc.raw[2]);
 				break;
 			case PL_SERVO_STATE:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import cmd, sys, os, serial, atexit, readline
+import cmd, sys, os, serial, atexit, readline, socket
+from forklift import run_process, terminate_all
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
 
@@ -9,15 +10,26 @@ import libcommon_py as common
 SERIAL = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0'
 BAUD = 57600
 
+class SerReader:
+
+	def __init__(self):
+		self.s = serial.Serial(SERIAL, BAUD, timeout=5, interCharTimeout=1)
+
+	def readline(self):
+		return self.s.readline()
+
+	def write(self, line):
+		self.s.write(line)
+
 class StickShell(cmd.Cmd):
 	intro = 'Welcome to the stick shell.	Type help or ? to list commands.\n'
 	prompt = '(stick) '
 
 	def __init__(self):
 		cmd.Cmd.__init__(self)
-		self.s = serial.Serial(SERIAL, BAUD, timeout=5, interCharTimeout=1)
 		self.file = None
 		self.logfile = None
+		self.subprocess = run_process(PollProcess(), robject=self)
 
 	def write_log(self, line):
 		if not self.logfile:
@@ -29,7 +41,7 @@ class StickShell(cmd.Cmd):
 		rs = []
 		reply_mode = False
 		while True:
-			reply = self.s.readline()
+			reply = self.subprocess.readline(wait=True)
 			self.write_log(reply)
 			if not reply:
 				rs.append('*** timeout ***')
@@ -53,15 +65,15 @@ class StickShell(cmd.Cmd):
 	def do_low_pos(self, arg):
 		'Set/get low position (0-180):	 LOW_POS 30 or LOW_POS'
 		if len(arg) > 0:
-			self.s.write('%slow_set %d' % (common.CMD_MARKER, int(arg)))
+			self.subprocess.write('%slow_set %d' % (common.CMD_MARKER, int(arg)))
 		else:
-			self.s.write('%slow_get' % common.CMD_MARKER)
+			self.subprocess.write('%slow_get' % common.CMD_MARKER)
 		reply = self.readreply()
 		print 'REPLY:', reply
 
 	def do_reset(self, arg):
 		'Reset positions to 90s:	RESET'
-		self.s.write('%sreset' % common.CMD_MARKER)
+		self.subprocess.write('%sreset' % common.CMD_MARKER)
 		reply = self.readreply()
 		print 'REPLY:', reply
 
