@@ -140,7 +140,8 @@ class SubProcessInterface(object):
 			callback = kwds.pop('callback', None)
 			if not callback is None:
 				self.callbackdict[self.nextid] = (callback, kwds.pop('callback_id', None), kwds.pop('callback_arg', None))
-		self.send_evdict({'method': methodname, 'args': args, 'kwds': kwds})
+		evdict = {'method': methodname, 'args': args, 'kwds': kwds}
+		self.send_evdict(evdict)
 		if wait:
 			rs = self.wait4reply(evdict['id'])
 		return rs
@@ -194,7 +195,7 @@ class SubProcessInterface(object):
 								kwds['interface'] = self
 							method(*event.get('args', []), **kwds)
 						else:
-							logmsg('No method %s found in the master' % event['method'])
+							print >>sys.stderr, 'No method %s found in the master' % event['method']
 		return rs
 
 class SubProcess:
@@ -235,34 +236,35 @@ class SubProcess:
 	def run(self):
 		while True:
 			self.processEvents()
-			self. ... idle()
+			if hasattr(self.subobj, 'idle'):
+				self.subobj.idle()
 
 	def processEvents(self):
+		try:
+			self.master_poll(0)
+			rs = bool(self.eventlist)
+			while self.eventlist:
+				event = self.eventlist.pop(0)
+				if 'method' in event:
+					if isinstance(getattr(self.subobj, event['method'], None), collections.Callable):
+						self.appeal_master_method('beginnotify', methodname=event['method'])
+						try:
+							rs = getattr(self.subobj, event['method'])(*event.get('args', []), **event.get('kwds', {}))
+							if 'id' in event:
+								self.send2master({'id': event['id'], 'return': rs})
+						finally:
+							self.appeal_master_method('endnotify', methodname=event['method'])
+					else:
+						raise Exception('Method %s not found' % event['method'])
+		except IOError, e:
+			print >>sys.stderr, e
+		except Exception, e:
 			try:
-				self.master_poll()
-				rs = bool(self.eventlist)
-				while self.eventlist:
-					event = self.eventlist.pop(0)
-					if 'method' in event:
-						if isinstance(getattr(self.subobj, event['method'], None), collections.Callable):
-							self.appeal_master_method('beginnotify', methodname=event['method'])
-							try:
-								rs = getattr(self.subobj, event['method'])(*event.get('args', []), **event.get('kwds', {}))
-								if 'id' in event:
-									self.send2master({'id': event['id'], 'return': rs})
-							finally:
-								self.appeal_master_method('endnotify', methodname=event['method'])
-						else:
-							raise Exception('Method %s not found' % event['method'])
-			except IOError, e:
-				logerrormsg()
-			except Exception, e:
-				try:
-					exc_type, exc_value, exc_traceback = sys.exc_info()
-					self.appeal_master_method('exception', exception=cPickle.dumps(e), etraceback=cPickle.dumps(traceback.extract_tb(exc_traceback)))
-				except:
-					#the loop has not ever be finished from inside
-					logerrormsg()
+				exc_type, exc_value, exc_traceback = sys.exc_info()
+				self.appeal_master_method('exception', exception=cPickle.dumps(e), etraceback=cPickle.dumps(traceback.extract_tb(exc_traceback)))
+			except:
+				#the loop has not ever be finished from inside
+				print >>sys.stderr, e
 		return rs
 
 def run_process(subprocess_obj, robject=None):
@@ -275,4 +277,3 @@ def run_process(subprocess_obj, robject=None):
 def terminate_all():
 	for p in active_children():
 		p.terminate()
-

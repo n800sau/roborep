@@ -14,12 +14,30 @@ class SerReader:
 
 	def __init__(self):
 		self.s = serial.Serial(SERIAL, BAUD, timeout=5, interCharTimeout=1)
+		self.reply_mode = False
+		self.reply = []
 
 	def readline(self):
 		return self.s.readline()
 
 	def write(self, line):
 		self.s.write(line)
+
+	def idle(self):
+		if self.s.inWaiting():
+			line = self.readline()
+			if self.reply_mode:
+				if line == common.REPLY_END_MARKER:
+					self.reply_mode = False
+				else:
+					print >>sys.stderr, line
+					self.reply.append(line)
+			else:
+				if line.startswith(common.REPLY_MARKER):
+					print >>sys.stderr, line
+					self.reply.append(line[len(common.REPLY_MARKER):])
+				elif line == common.REPLY_START_MARKER:
+					self.reply_mode = True
 
 class StickShell(cmd.Cmd):
 	intro = 'Welcome to the stick shell.	Type help or ? to list commands.\n'
@@ -29,7 +47,7 @@ class StickShell(cmd.Cmd):
 		cmd.Cmd.__init__(self)
 		self.file = None
 		self.logfile = None
-		self.subprocess = run_process(PollProcess(), robject=self)
+		self.subprocess = run_process(SerReader(), robject=self)
 
 	def write_log(self, line):
 		if not self.logfile:
@@ -113,10 +131,6 @@ class StickShell(cmd.Cmd):
 			self.logfile.close()
 			self.logfile = None
 
-def parse(arg):
-	'Convert a series of zero or more numbers to an argument tuple'
-	return tuple(map(int, arg.split()))
-
 if __name__ == '__main__':
 	histfile = os.path.join(os.environ["HOME"], ".stickhist")
 	try:
@@ -124,5 +138,6 @@ if __name__ == '__main__':
 	except IOError:
 		pass
 	atexit.register(readline.write_history_file, histfile)
+	atexit.register(terminate_all)
 	del histfile
 	StickShell().cmdloop()
