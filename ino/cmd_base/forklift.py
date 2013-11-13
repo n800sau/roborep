@@ -194,8 +194,8 @@ class SubProcessInterface(object):
 							if 'interface' in inspect.getargspec(method).args:
 								kwds['interface'] = self
 							method(*event.get('args', []), **kwds)
-						else:
-							print >>sys.stderr, 'No method %s found in the master' % event['method']
+#						else:
+#							print >>sys.stderr, 'No method %s found in the master' % event['method']
 		return rs
 
 class SubProcess:

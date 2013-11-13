@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import cmd, sys, os, serial, atexit, readline, socket
+import cmd, sys, os, serial, atexit, readline, socket, time
 from forklift import run_process, terminate_all
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
@@ -15,7 +15,12 @@ class SerReader:
 	def __init__(self):
 		self.s = serial.Serial(SERIAL, BAUD, timeout=5, interCharTimeout=1)
 		self.reply_mode = False
-		self.reply = []
+		self.replylist = []
+
+	def read_replylist(self):
+		rs = self.replylist
+		self.replylist = []
+		return rs
 
 	def readline(self):
 		return self.s.readline()
@@ -30,12 +35,12 @@ class SerReader:
 				if line == common.REPLY_END_MARKER:
 					self.reply_mode = False
 				else:
-					print >>sys.stderr, line
-					self.reply.append(line)
+					#print >>sys.stderr, line
+					self.replylist.append(line)
 			else:
 				if line.startswith(common.REPLY_MARKER):
-					print >>sys.stderr, line
-					self.reply.append(line[len(common.REPLY_MARKER):])
+					#print >>sys.stderr, line
+					self.replylist.append(line[len(common.REPLY_MARKER):])
 				elif line == common.REPLY_START_MARKER:
 					self.reply_mode = True
 
@@ -56,44 +61,41 @@ class StickShell(cmd.Cmd):
 		self.logfile.flush()
 
 	def readreply(self):
-		rs = []
-		reply_mode = False
+		i = 1
 		while True:
-			reply = self.subprocess.readline(wait=True)
-			self.write_log(reply)
-			if not reply:
-				rs.append('*** timeout ***')
+			sys.stdout.write("\x0d%s" % ('*' * i))
+			sys.stdout.flush()
+			rs = self.subprocess.read_replylist(wait=True)
+			if rs:
 				break
-			if reply_mode:
-				if reply == common.REPLY_END_MARKER:
-					reply_mode = False
-					break
-				else:
-					rs.append(reply)
-			else:
-				if reply.startswith(common.REPLY_MARKER):
-					rs.append(reply[len(common.REPLY_MARKER):])
-					break
-				elif reply == common.REPLY_START_MARKER:
-					reply_mode = True
+			time.sleep(1)
+			i += 1
+			if i > 10:
+				break
+		print "\x0d%s\n" % (' ' * i)
 		return '\n'.join(rs)
+
+	def print_reply(self):
+		reply = self.readreply()
+		if reply:
+			print 'REPLY:', reply
+		else:
+			print 'NO REPLY'
 
 	# ----- basic stick commands -----
 
 	def do_low_pos(self, arg):
 		'Set/get low position (0-180):	 LOW_POS 30 or LOW_POS'
 		if len(arg) > 0:
-			self.subprocess.write('%slow_set %d' % (common.CMD_MARKER, int(arg)))
+			self.subprocess.write('%slow_pos %d' % (common.CMD_MARKER, int(arg)))
 		else:
-			self.subprocess.write('%slow_get' % common.CMD_MARKER)
-		reply = self.readreply()
-		print 'REPLY:', reply
+			self.subprocess.write('%slow_pos' % common.CMD_MARKER)
+		self.print_reply()
 
 	def do_reset(self, arg):
 		'Reset positions to 90s:	RESET'
 		self.subprocess.write('%sreset' % common.CMD_MARKER)
-		reply = self.readreply()
-		print 'REPLY:', reply
+		self.print_reply()
 
 	def do_quit(self, arg):
 		'Exit the shell:	 QUIT'
