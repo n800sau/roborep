@@ -160,7 +160,6 @@ void loop()
 				Serial.println("ok.");
 			else
 				Serial.println("failed.");
-			network.update();
 		}
 	}
 	// reset interrupt flag and get INT_STATUS byte

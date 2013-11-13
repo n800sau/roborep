@@ -52,13 +52,13 @@ struct payload_t {
 //
 
 // Address of base node
-#define BASE_NODE 0B0
+#define BASE_NODE 00
 
 // Address of the stick node
-#define STICK_NODE 0B1
+#define STICK_NODE 01
 
 // Address of the acc node
-#define ACC_NODE 0B21
+#define ACC_NODE 021
 
 #define CHANNEL 90
 
