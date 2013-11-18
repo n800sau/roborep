@@ -36,6 +36,22 @@ void setup(void)
 	// Ready an LED to indicate our status.
 	pinMode(accStatusPin, OUTPUT);
 	accel = ADXL345(ACC_ADDRESS);
+	connect2();
+}
+
+void connect2()
+{
+		if(accel.EnsureConnected()) {
+			Serial.println("Connected to ADXL345.");
+			digitalWrite(accStatusPin, HIGH); // If we are connected, light our status LED.
+		} else {
+			Serial.println("Could not connect to ADXL345.");
+			digitalWrite(accStatusPin, LOW); // If we are not connected, turn our LED off.
+		}
+		// Set the range of the accelerometer to a maximum of 2G.
+		accel.SetRange(2, true);
+		// Tell the accelerometer to start taking measurements.
+		accel.EnableMeasurements();
 }
 
 // Output the data down the serial port.
@@ -101,17 +117,7 @@ void loop(void)
 		// We output our received data.
 		Output(raw, scaled);
 	} else {
-		if(accel.EnsureConnected()) {
-			Serial.println("Connected to ADXL345.");
-			digitalWrite(accStatusPin, HIGH); // If we are connected, light our status LED.
-		} else {
-			Serial.println("Could not connect to ADXL345.");
-			digitalWrite(accStatusPin, LOW); // If we are not connected, turn our LED off.
-		}
-		// Set the range of the accelerometer to a maximum of 2G.
-		accel.SetRange(2, true);
-		// Tell the accelerometer to start taking measurements.
-		accel.EnableMeasurements();
+		connect2();
 	}
 	delay(500);
 }

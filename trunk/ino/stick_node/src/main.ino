@@ -141,100 +141,102 @@ void loop()
 	unsigned long qms;
 	// Pump the network regularly
 	network.update();
-	while (!mpuInterrupt && fifoCount < packetSize) {
-		// Is there anything ready for us?
-		while ( network.available() )
-		{
-			read_cmd();
-			payload_t payload = { PL_SERVO_STATE, millis(), pcounter++ };
-			Serial.print("Sending...");
-			Serial.print(payload.counter);
-			Serial.print(", ms=");
-			Serial.print(payload.ms);
-			Serial.print(", ");
-			payload.d.servo.low = lowservo.read();
-			payload.d.servo.pan = panservo.read();
-			payload.d.servo.tilt = tiltservo.read();
-			RF24NetworkHeader header(BASE_NODE);
-			if (network.write(header,&payload,sizeof(payload)))
-				Serial.println("ok.");
-			else
-				Serial.println("failed.");
-		}
+	// Is there anything ready for us?
+	while ( network.available() )
+	{
+		Serial.println("read cmd");
+		read_cmd();
+		Serial.println("send servo data");
+		payload_t payload = { PL_SERVO_STATE, millis(), pcounter++ };
+		Serial.print("Sending...");
+		Serial.print(payload.counter);
+		Serial.print(", ms=");
+		Serial.print(payload.ms);
+		Serial.print(", ");
+		payload.d.servo.low = lowservo.read();
+		payload.d.servo.pan = panservo.read();
+		payload.d.servo.tilt = tiltservo.read();
+		RF24NetworkHeader header(BASE_NODE);
+		if (network.write(header,&payload,sizeof(payload)))
+			Serial.println("ok.");
+		else
+			Serial.println("failed.");
 	}
-	// reset interrupt flag and get INT_STATUS byte
-	mpuInterrupt = false;
-	mpuIntStatus = mpu.getIntStatus();
-
-	// get current FIFO count
-	fifoCount = mpu.getFIFOCount();
-
-	// check for overflow (this should never happen unless our code is too inefficient)
-	if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-		// reset so we can continue cleanly
-		mpu.resetFIFO();
-		Serial.println("FIFO overflow!");
-
-	// otherwise, check for DMP data ready interrupt (this should happen frequently)
-	} else if (mpuIntStatus & 0x02) {
-		// wait for correct available data length, should be a VERY short wait
-		while (fifoCount < packetSize) {
-			fifoCount = mpu.getFIFOCount();
-		}
-
-		// read a packet from FIFO
-		mpu.getFIFOBytes(fifoBuffer, packetSize);
-		
-		// track FIFO count here in case there is > 1 packet available
-		// (this lets us immediately read more without waiting for an interrupt)
-		fifoCount -= packetSize;
-
-		payload_t reply;
-		Quaternion q;
-		mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
-		mpu.dmpGetQuaternion(&q, fifoBuffer);
-		VectorFloat gravity;
-		mpu.dmpGetGravity(&gravity, &q);
-		reply.d.mpu.gravity[0] = gravity.x * 100;
-		reply.d.mpu.gravity[1] = gravity.y * 100;
-		reply.d.mpu.gravity[2] = gravity.z * 100;
+	if (mpuInterrupt || fifoCount >= packetSize) {
+		// reset interrupt flag and get INT_STATUS byte
+		mpuInterrupt = false;
+		mpuIntStatus = mpu.getIntStatus();
+    
+		// get current FIFO count
+		fifoCount = mpu.getFIFOCount();
+    
+		// check for overflow (this should never happen unless our code is too inefficient)
+		if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
+			// reset so we can continue cleanly
+			mpu.resetFIFO();
+			Serial.println("FIFO overflow!");
+    
+		// otherwise, check for DMP data ready interrupt (this should happen frequently)
+		} else if (mpuIntStatus & 0x02) {
+			// wait for correct available data length, should be a VERY short wait
+			while (fifoCount < packetSize) {
+				fifoCount = mpu.getFIFOCount();
+			}
+    
+			// read a packet from FIFO
+			mpu.getFIFOBytes(fifoBuffer, packetSize);
+			
+			// track FIFO count here in case there is > 1 packet available
+			// (this lets us immediately read more without waiting for an interrupt)
+			fifoCount -= packetSize;
+    
+			payload_t reply;
+			Quaternion q;
+			mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
+			mpu.dmpGetQuaternion(&q, fifoBuffer);
+			VectorFloat gravity;
+			mpu.dmpGetGravity(&gravity, &q);
+			reply.d.mpu.gravity[0] = gravity.x * 100;
+			reply.d.mpu.gravity[1] = gravity.y * 100;
+			reply.d.mpu.gravity[2] = gravity.z * 100;
 			// display quaternion values in easy matrix form: w x y z
-		if(millis() - ms > 5000) {
-			RF24NetworkHeader header(BASE_NODE);
-			qms = millis();
-			reply.pload_type = PL_MPU;
-			reply.ms = qms;
-			reply.counter = ++pcounter;
-			Serial.print("Sending...");
-			Serial.print(reply.counter);
-			Serial.print(", ms=");
-			Serial.println(reply.ms);
-			Serial.print("quat\t");
-			Serial.print(reply.d.mpu.quaternion[0]);
-			Serial.print("\t");
-			Serial.print(reply.d.mpu.quaternion[1]);
-			Serial.print("\t");
-			Serial.print(reply.d.mpu.quaternion[2]);
-			Serial.print("\t");
-			Serial.println(reply.d.mpu.quaternion[3]);
-			Serial.print("grav\t");
-			Serial.print(reply.d.mpu.gravity[0]);
-			Serial.print("\t");
-			Serial.print(reply.d.mpu.gravity[1]);
-			Serial.print("\t");
-			Serial.println(reply.d.mpu.gravity[2]);
-			bool ok = network.write(header,&reply,sizeof(reply));
-			if (ok)
-				Serial.println("Replied ok.");
-			else
-				Serial.println("Reply failed.");
-			ms = millis();
+			if(millis() - ms > 5000) {
+				RF24NetworkHeader header(BASE_NODE);
+				qms = millis();
+				reply.pload_type = PL_MPU;
+				reply.ms = qms;
+				reply.counter = ++pcounter;
+				Serial.print("Sending...");
+				Serial.print(reply.counter);
+				Serial.print(", ms=");
+				Serial.println(reply.ms);
+				Serial.print("quat\t");
+				Serial.print(reply.d.mpu.quaternion[0]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.quaternion[1]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.quaternion[2]);
+				Serial.print("\t");
+				Serial.println(reply.d.mpu.quaternion[3]);
+				Serial.print("grav\t");
+				Serial.print(reply.d.mpu.gravity[0]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.gravity[1]);
+				Serial.print("\t");
+				Serial.println(reply.d.mpu.gravity[2]);
+				bool ok = network.write(header,&reply,sizeof(reply));
+				if (ok)
+					Serial.println("Replied ok.");
+				else
+					Serial.println("Reply failed.");
+				ms = millis();
+			}
+//			mpu.dmpGetEuler(data.euler, &data.q);
+//			mpu.dmpGetGravity(&data.gravity, &data.q);
+//			mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
+//			mpu.dmpGetAccel(&data.aa, fifoBuffer);
+///			mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
+//			mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
 		}
-//		mpu.dmpGetEuler(data.euler, &data.q);
-//		mpu.dmpGetGravity(&data.gravity, &data.q);
-//		mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
-//		mpu.dmpGetAccel(&data.aa, fifoBuffer);
-///		mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
-//		mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
 	}
 }

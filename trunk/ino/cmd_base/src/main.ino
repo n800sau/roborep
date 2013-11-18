@@ -29,7 +29,7 @@ void setup(void)
 	radio.begin();
 	network.begin(CHANNEL, BASE_NODE);
 
-//	set_servo(90, 90, 90);
+	set_servo(NO_SET, NO_SET, NO_SET);
 }
 
 bool set_servo(uint8_t low, uint8_t pan, uint8_t tilt)
@@ -56,7 +56,7 @@ bool set_servo(uint8_t low, uint8_t pan, uint8_t tilt)
 
 #define STEP 1
 int tiltdir = STEP;
-stickservo_t servo = {90, 90, 90};
+stickservo_t servo = {-1, -1, -1};
 
 void move_servo()
 {
@@ -87,21 +87,28 @@ void loop(void)
 				if( String("reset").equalsIgnoreCase(String(buf)) ) {
 					stickservo_t ss = {90, 90, 90};
 					servo = ss;
-					Serial.print(REPLY_MARKER);
-					Serial.println("Reset to 90,90,90");
+					set_servo(servo.low, servo.pan, servo.tilt);
+//					Serial.print(REPLY_MARKER);
+//					Serial.println("Reset to 90,90,90");
 				} else if ( String("low_pos").equalsIgnoreCase(String(buf)) ) {
 					len = Serial.readBytesUntil(' ', buf, sizeof(buf)-1);
 					buf[len] = 0;
 					if(len > 0) {
+//						Serial.print(REPLY_MARKER);
+//						Serial.print("Len=");
+//						Serial.println(len);
+//						Serial.print(REPLY_MARKER);
+//						Serial.print("Buf=");
+//						Serial.println(buf);
 						int pos = atoi(buf);
 						if(pos > 0) {
 							servo.low = pos;
 							set_servo(servo.low, NO_SET, NO_SET);
 						}
 					}
-					Serial.print(REPLY_MARKER);
-					Serial.print("Low Servo at ");
-					Serial.println(servo.low);
+//					Serial.print(REPLY_MARKER);
+//					Serial.print("Low Servo at ");
+//					Serial.println(servo.low);
 				}
 			}
 			Serial.flush();
@@ -111,8 +118,9 @@ void loop(void)
 		RF24NetworkHeader header;
 		payload_t payload;
 		network.read(header,&payload,sizeof(payload));
+//		Serial.print(REPLY_MARKER);
 //		Serial.print("Received packet #");
-//		Serial.print(payload.counter);
+//		Serial.println(payload.counter);
 //		Serial.print(" at ");
 //		Serial.println(payload.ms);
 		switch(payload.pload_type) {
@@ -132,16 +140,17 @@ void loop(void)
 				Serial.print("\t");
 				Serial.println(payload.d.mpu.gravity[2]);
 				break;
-			case PL_ACC:
+/*			case PL_ACC:
 				Serial.print("ACCEL: ");
 				Serial.print(payload.d.acc.raw[0]);
 				Serial.print(" ");
 				Serial.print(payload.d.acc.raw[1]);
 				Serial.print(" ");
 				Serial.println(payload.d.acc.raw[2]);
-				break;
+				break;*/
 			case PL_SERVO_STATE:
-				Serial.print("received servo\t");
+//		Serial.print(REPLY_MARKER);
+				Serial.print(SERVO_STATE_MARKER);
 				Serial.print(payload.d.servo.low);
 				Serial.print("\t");
 				Serial.print(payload.d.servo.pan);
