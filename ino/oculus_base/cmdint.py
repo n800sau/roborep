@@ -7,8 +7,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig')
 
 import libcommon_py as common
 
-SERIAL = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0'
-BAUD = 57600
+SERIAL = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A4015M29-if00-port0'
+BAUD = 115200
 
 class SerReader:
 
@@ -47,9 +47,9 @@ class SerReader:
 				elif line.startswith(common.SERVO_STATE_MARKER):
 					self.replylist.append(line[len(common.SERVO_STATE_MARKER):])
 
-class StickShell(cmd.Cmd):
-	intro = 'Welcome to the stick shell.	Type help or ? to list commands.\n'
-	prompt = '(stick) '
+class OculusShell(cmd.Cmd):
+	intro = 'Welcome to the oculus shell.	Type help or ? to list commands.\n'
+	prompt = '(oculus) '
 
 	def __init__(self):
 		cmd.Cmd.__init__(self)
@@ -59,12 +59,12 @@ class StickShell(cmd.Cmd):
 
 	def write_log(self, line):
 		if not self.logfile:
-			self.logfile = file('cmd_base.log', 'a+')
+			self.logfile = file('oculus_base.log', 'a+')
 		self.logfile.write('%s\n' % line.rstrip())
 		self.logfile.flush()
 
 	def readreply(self):
-		i = 1
+		i = 0
 		while True:
 			sys.stdout.write("\x0d%s" % ('*' * i))
 			sys.stdout.flush()
@@ -87,17 +87,14 @@ class StickShell(cmd.Cmd):
 
 	# ----- basic stick commands -----
 
-	def do_low_pos(self, arg):
-		'Set/get low position (0-180):	 LOW_POS 30 or LOW_POS'
-		if len(arg) > 0:
-			self.subprocess.write('%slow_pos %d' % (common.CMD_MARKER, int(arg)))
-		else:
-			self.subprocess.write('%slow_pos' % common.CMD_MARKER)
+	def do_version(self, arg):
+		'Get firmware version'
+		self.subprocess.write('y\n')
 		self.print_reply()
 
-	def do_reset(self, arg):
-		'Reset positions to 90s:	RESET'
-		self.subprocess.write('%sreset' % common.CMD_MARKER)
+	def do_stop(self, arg):
+		'Stop motors'
+		self.subprocess.write('s\n')
 		self.print_reply()
 
 	def do_quit(self, arg):
@@ -137,7 +134,7 @@ class StickShell(cmd.Cmd):
 			self.logfile = None
 
 if __name__ == '__main__':
-	histfile = os.path.join(os.environ["HOME"], ".stickhist")
+	histfile = os.path.join(os.environ["HOME"], ".oculushist")
 	try:
 		readline.read_history_file(histfile)
 	except IOError:
@@ -145,4 +142,4 @@ if __name__ == '__main__':
 	atexit.register(readline.write_history_file, histfile)
 	atexit.register(terminate_all)
 	del histfile
-	StickShell().cmdloop()
+	OculusShell().cmdloop()

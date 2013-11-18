@@ -46,6 +46,7 @@ struct payload_t {
 #define REPLY_MARKER "REPLY:"
 #define REPLY_START_MARKER "REPLYSTART"
 #define REPLY_END_MARKER "REPLYEND"
+#define SERVO_STATE_MARKER "SERVOSTATE"
 
 //
 // Topology
