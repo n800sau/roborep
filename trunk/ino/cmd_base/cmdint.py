@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 import cmd, sys, os, serial, atexit, readline, socket, time
-from forklift import run_process, terminate_all
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 
+from forklift import run_process, terminate_all
 import libcommon_py as common
 
 SERIAL = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0'
