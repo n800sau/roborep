@@ -63,7 +63,7 @@ void setup()
 	OCR2A = 0;
 	OCR2B = 0;
 
-	Serial.begin(115200);
+	Serial.begin(57600);
 	Serial.println("<reset>");
 	lastcmd = millis();
 }
@@ -115,7 +115,6 @@ void manageCommand()
 
 void reply_status()
 {
-	Serial.print(REPLY_MARKER);
 	Serial.print(", l:");
 	Serial.print(OCR2A);
 	Serial.print(", r:");
@@ -127,51 +126,8 @@ void reply_status()
 // do multi byte
 void parseCommand()
 {
-
-	if (buffer[0] == 'm')
-	{
-		int mB = buffer[1]&255;
-		int mA = buffer[2]&255;
-
-		OCR2A =	 (mB&127)<<1;
-		OCR2B =	 (mA&127)<<1;
-
-		if (mB<128)
-		{
-			digitalWrite(motorB1Pin, LOW);
-			digitalWrite(motorB2Pin, HIGH);
-		}
-		else
-		{
-			digitalWrite(motorB1Pin, HIGH);
-			digitalWrite(motorB2Pin, LOW);
-		}
-
-		if (mA<128)
-		{
-			digitalWrite(motorA1Pin, LOW);
-			digitalWrite(motorA2Pin, HIGH);
-		}
-		else
-		{
-			digitalWrite(motorA1Pin, HIGH);
-			digitalWrite(motorA2Pin, LOW);
-		}
-
-		return;
-	}
-
-	if (buffer[0] == 'a'){
-	int n = buffer[2]&255;
-	analogWrite((int) buffer[1], n);
-	
-	}
-
-	if (buffer[0] == 'd'){
-		Serial.print(REPLY_MARKER);
-		Serial.println("<digital pin " + (String) buffer[1] + ": " + (String) digitalRead(buffer[1]) + ">");
-	}
-	
+	Serial.println(REPLY_START_MARKER);
+	int mB, mA, n;
 	// always set speed on each move command
 	if((buffer[0] == 'f') || (buffer[0] == 'b') || (buffer[0] == 'l') || (buffer[0] == 'r'))
 	{
@@ -180,65 +136,81 @@ void parseCommand()
 		// Serial.println("<speed " + (String)buffer[1] + ">");
 	}
 
-	if (buffer[0] == 'f')
-	{ // forward
-		digitalWrite(motorA1Pin, HIGH);
-		digitalWrite(motorA2Pin, LOW);
-		digitalWrite(motorB1Pin, HIGH);
-		digitalWrite(motorB2Pin, LOW);
-	}
-	else if (buffer[0] == 'b')
-	{ // backward
-		digitalWrite(motorA1Pin, LOW);
-		digitalWrite(motorA2Pin, HIGH);
-		digitalWrite(motorB1Pin, LOW);
-		digitalWrite(motorB2Pin, HIGH);
-	}
-	else if (buffer[0] == 'r')
-	{ // right
-		digitalWrite(motorA1Pin, HIGH);
-		digitalWrite(motorA2Pin, LOW);
-		digitalWrite(motorB1Pin, LOW);
-		digitalWrite(motorB2Pin, HIGH);
-	}
-	else if (buffer[0] == 'l')
-	{ // left
-		digitalWrite(motorA1Pin, LOW);
-		digitalWrite(motorA2Pin, HIGH);
-		digitalWrite(motorB1Pin, HIGH);
-		digitalWrite(motorB2Pin, LOW);
-	}
-	else
-		if(buffer[0] == 'x')
-		{
-			Serial.print(REPLY_MARKER);
-			Serial.println("<id:oculusDC>");
-		}
-		else
-			if(buffer[0] == 'y')
-		{
-			Serial.print(REPLY_MARKER);
-			Serial.println("<version:0.5.5>");
-		}
-		else if (buffer[0] == 's')
-		{ // stop
+	switch(buffer[0]) {
+		case 'm':
+			mB = buffer[1]&255;
+			mA = buffer[2]&255;
+
+			OCR2A =	 (mB&127)<<1;
+			OCR2B =	 (mA&127)<<1;
+
+			if (mB<128) {
+				digitalWrite(motorB1Pin, LOW);
+				digitalWrite(motorB2Pin, HIGH);
+			} else {
+				digitalWrite(motorB1Pin, HIGH);
+				digitalWrite(motorB2Pin, LOW);
+			}
+
+			if (mA<128) {
+				digitalWrite(motorA1Pin, LOW);
+				digitalWrite(motorA2Pin, HIGH);
+			} else {
+				digitalWrite(motorA1Pin, HIGH);
+				digitalWrite(motorA2Pin, LOW);
+			}
+			reply_status();
+			break;
+		case 'a':
+			n = buffer[2]&255;
+			analogWrite((int) buffer[1], n);
+			break;
+		case 'd':
+			Serial.println("<digital pin " + (String) buffer[1] + ": " + (String) digitalRead(buffer[1]) + ">");
+			break;
+		case 'f': // forward
+			digitalWrite(motorA1Pin, HIGH);
+			digitalWrite(motorA2Pin, LOW);
+			digitalWrite(motorB1Pin, HIGH);
+			digitalWrite(motorB2Pin, LOW);
+			reply_status();
+			break;
+		case 'b': // backward
+			digitalWrite(motorA1Pin, LOW);
+			digitalWrite(motorA2Pin, HIGH);
+			digitalWrite(motorB1Pin, LOW);
+			digitalWrite(motorB2Pin, HIGH);
+			reply_status();
+			break;
+		case 'r': // right
+			digitalWrite(motorA1Pin, HIGH);
+			digitalWrite(motorA2Pin, LOW);
+			digitalWrite(motorB1Pin, LOW);
+			digitalWrite(motorB2Pin, HIGH);
+			reply_status();
+			break;
+		case 'l': // left
+			digitalWrite(motorA1Pin, LOW);
+			digitalWrite(motorA2Pin, HIGH);
+			digitalWrite(motorB1Pin, HIGH);
+			digitalWrite(motorB2Pin, LOW);
+			reply_status();
+			break;
+		case 's': // stop
 			OCR2A = 0;
 			OCR2B = 0;
 			reply_status();
-		}
-		else
-			if(buffer[0] == 'v')
-		{ // camtilt
+			break;
+		case 'v': // camtilt
 			camservo.attach(camservopin);
 			camservo.write(buffer[1]);
-		}
-		else if(buffer[0]== 'w')
-		{ // camrelease
+			reply_status();
+			break;
+		case 'w': // camrelease
 			camservo.detach();
-		}
-		else
-			if(buffer[0] == 'c')
-		{
+			reply_status();
+			break;
+		case 'c':
 			// 128 = 0, > 128 = acomp, < 128 = bcomp
 			if (buffer[1] == 128)
 			{
@@ -255,20 +227,27 @@ void parseCommand()
 				acomp = 0;
 				bcomp = (128-buffer[1])*2;
 			}
-		}
-		else
-			if(buffer[0] == 'e')
-		{
+			reply_status();
+			break;
+		case 'e':
 			if(buffer[1] == '1')
 				echo = true;
 			if(buffer[1] == '0')
 				echo = false ;
-		}
+			Serial.print("echo ");
+			Serial.println((echo)?"on":"off");
+			break;
+		case 'x':
+			Serial.println("<id:oculusDC>");
+			break;
+		case 'y':
+			Serial.println("<version:0.5.5>");
+			break;
+	}
 
 	// echo the command back
 	if(echo)
 	{
-		Serial.print(REPLY_START_MARKER);
 		Serial.print("<");
 		Serial.print((char)buffer[0]);
 
@@ -282,6 +261,6 @@ void parseCommand()
 				Serial.print(',');
 		}
 		Serial.println(">");
-		Serial.print(REPLY_END_MARKER);
 	}
+	Serial.println(REPLY_END_MARKER);
 }
