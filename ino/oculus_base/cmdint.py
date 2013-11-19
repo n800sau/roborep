@@ -9,7 +9,7 @@ from forklift import run_process, terminate_all
 import libcommon_py as common
 
 SERIAL = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A4015M29-if00-port0'
-BAUD = 115200
+BAUD = 57600
 
 class SerReader:
 
@@ -17,10 +17,11 @@ class SerReader:
 		self.s = serial.Serial(SERIAL, BAUD, timeout=5, interCharTimeout=1)
 		self.reply_mode = False
 		self.replylist = []
+		self.final_replylist = []
 
 	def read_replylist(self):
-		rs = self.replylist
-		self.replylist = []
+		rs = self.final_replylist
+		self.final_replylist = []
 		return rs
 
 	def readline(self):
@@ -32,9 +33,12 @@ class SerReader:
 	def idle(self):
 		if self.s.inWaiting():
 			line = self.readline()
-#			print >>sys.stderr, line
+#			print >>sys.stderr, '%s, %s, %s' % (line, common.REPLY_START_MARKER, line == common.REPLY_START_MARKER)
+#			print >>sys.stderr, self.final_replylist
 			if self.reply_mode:
-				if line == common.REPLY_END_MARKER:
+				if line.strip() == common.REPLY_END_MARKER:
+					self.final_replylist += self.replylist
+					self.replylist = []
 					self.reply_mode = False
 				else:
 					#print >>sys.stderr, line
@@ -42,11 +46,11 @@ class SerReader:
 			else:
 				if line.startswith(common.REPLY_MARKER):
 					#print >>sys.stderr, line
-					self.replylist.append(line[len(common.REPLY_MARKER):])
-				elif line == common.REPLY_START_MARKER:
+					self.final_replylist.append(line[len(common.REPLY_MARKER):])
+				elif line.strip() == common.REPLY_START_MARKER:
 					self.reply_mode = True
 				elif line.startswith(common.SERVO_STATE_MARKER):
-					self.replylist.append(line[len(common.SERVO_STATE_MARKER):])
+					self.final_replylist.append(line[len(common.SERVO_STATE_MARKER):])
 
 class OculusShell(cmd.Cmd):
 	intro = 'Welcome to the oculus shell.	Type help or ? to list commands.\n'
@@ -64,7 +68,16 @@ class OculusShell(cmd.Cmd):
 		self.logfile.write('%s\n' % line.rstrip())
 		self.logfile.flush()
 
+	def batstat(self):
+		print 'Battery status: %d%%' % (float(file('/sys/class/power_supply/BAT0/charge_now').read())/float(file('/sys/class/power_supply/BAT0/charge_full').read())*100),
+		current = int(file('/sys/class/power_supply/BAT0/current_now').read())
+		if current == 0:
+			print ',charging...'
+		else:
+			print ',current=%s' % current
+
 	def readreply(self):
+		self.batstat()
 		i = 0
 		while True:
 			sys.stdout.write("\x0d%s" % ('*' * i))
@@ -77,7 +90,7 @@ class OculusShell(cmd.Cmd):
 			if i > 10:
 				break
 		print "\x0d%s\n" % (' ' * i)
-		return '\n'.join(rs)
+		return ''.join(rs)
 
 	def print_reply(self):
 		reply = self.readreply()
@@ -86,7 +99,41 @@ class OculusShell(cmd.Cmd):
 		else:
 			print 'NO REPLY'
 
-	# ----- basic stick commands -----
+	# ----- oculus commands -----
+
+	def do_step_fw(self, arg):
+		'Step forward'
+		self.subprocess.write('f%c\n' % 100)
+		time.sleep(0.1)
+		self.do_stop('')
+
+	def do_step_back(self, arg):
+		'Step back'
+		self.subprocess.write('b%c\n' % 100)
+		time.sleep(0.1)
+		self.do_stop('')
+
+	def do_step_left(self, arg):
+		'Step left'
+		self.subprocess.write('l%c\n' % 100)
+		time.sleep(0.1)
+		self.do_stop('')
+
+	def do_step_right(self, arg):
+		'Step right'
+		self.subprocess.write('r%c\n' % 100)
+		time.sleep(0.1)
+		self.do_stop('')
+
+	def do_setcam(self, arg):
+		'Set cam angle [0-255]'
+		self.subprocess.write('v%c\n' % int(arg))
+		self.print_reply()
+
+	def do_release_cam(self, arg):
+		'Release cam'
+		self.subprocess.write('w\n')
+		self.print_reply()
 
 	def do_version(self, arg):
 		'Get firmware version'
@@ -97,6 +144,17 @@ class OculusShell(cmd.Cmd):
 		'Stop motors'
 		self.subprocess.write('s\n')
 		self.print_reply()
+
+	def do_echo(self, arg):
+		'Echo on/off: ECHO <ON|OFF>'
+		if arg.lower() == 'on':
+			self.subprocess.write('e1\n')
+		elif arg.lower() == 'off':
+			self.subprocess.write('e0\n')
+		self.print_reply()
+
+
+	# ----- oculus commands end-----
 
 	def do_quit(self, arg):
 		'Exit the shell:	 QUIT'
@@ -125,6 +183,9 @@ class OculusShell(cmd.Cmd):
 		if self.file and 'playback' not in line:
 			print >>self.file, line
 		return line
+
+	def emptyline(self):
+		self.batstat()
 
 	def close(self):
 		if self.file:
