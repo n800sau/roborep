@@ -67,6 +67,8 @@ class ADXL345
 	  int SetRange(int range, bool fullResolution);
 	  int EnableMeasurements();
 
+	  inline uint16_t getUScale() { return uint16_t(m_Scale * 10000); }
+
 	  char* GetErrorText(int errorCode);
 
 	  uint8_t EnsureConnected();
