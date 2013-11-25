@@ -1,5 +1,6 @@
 #include "../../include/common.h"
 #include "../../include/printf.h"
+#include <voltage.h>
 #include <SPI.h>
 #include <RF24.h>
 #include <RF24Network.h>
@@ -119,5 +120,6 @@ void loop(void)
 	} else {
 		connect2();
 	}
+	Serial.println( readVcc(), DEC );
 	delay(500);
 }
