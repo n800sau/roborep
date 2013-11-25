@@ -3,6 +3,7 @@
 #include <SPI.h>
 #include <RF24.h>
 #include <RF24Network.h>
+#include <voltage.h>
 
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(8,10);
@@ -165,6 +166,8 @@ void loop(void)
 		if ( now - last_sent >= interval)
 		{
 			last_sent = now;
+			Serial.print("V:");
+			Serial.println(readVccMv(), DEC);
 //			move_servo();
 		}
 //		Serial.println("Nothing");
