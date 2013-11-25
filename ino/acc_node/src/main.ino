@@ -17,7 +17,9 @@ RF24Network network(radio);
 ADXL345 accel;
 
 // Set up a pin we are going to use to indicate our status using an LED.
-int accStatusPin = 7; // I'm using digital pin 2.
+int accStatusPin = 7; // I'm using digital pin 7
+
+int battStatusPin = 6; // I'm using digital pin 6
 
 // packet counter
 unsigned long pcounter = 0;
@@ -36,6 +38,7 @@ void setup(void)
 	Wire.begin();
 	// Ready an LED to indicate our status.
 	pinMode(accStatusPin, OUTPUT);
+	pinMode(battStatusPin, OUTPUT);
 	accel = ADXL345(ACC_ADDRESS);
 	connect2();
 }
@@ -90,12 +93,17 @@ void Output(AccelerometerRaw raw, AccelerometerScaled scaled)
 	Serial.println("");
 
 	bool ok = network.write(header,&reply,sizeof(reply));
+	radio.powerDown();
 	if (ok)
 		Serial.println("Replied ok.");
 	else
 		Serial.println("Reply failed.");
 }
 
+// How often to send 'hello world to the other unit
+const unsigned long battStatusInterval = 2000; //ms
+int battStatusCurrentState = 0;
+unsigned long last_battStatus = 0;
 
 void loop(void)
 {
@@ -120,6 +128,18 @@ void loop(void)
 	} else {
 		connect2();
 	}
-	Serial.println( readVcc(), DEC );
+	// Voltage blink
+	unsigned long now = millis();
+	if ( now - last_battStatus >= battStatusInterval)
+	{
+		int v = readVccMv();
+		if(v < 4000) {
+			battStatusCurrentState = !battStatusCurrentState;
+			digitalWrite(battStatusPin, battStatusCurrentState);
+		}
+		Serial.print("V:");
+		Serial.println(v, DEC);
+		last_battStatus = now;
+	}
 	delay(500);
 }
