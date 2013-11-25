@@ -38,7 +38,15 @@ long readVcc()
  */
 //const long scaleConst = 1071.4 * 1000 ; // internalRef * 1023 * 1000;
 //const long scaleConst = 1125.300 * 1000 ; // internalRef * 1023 * 1000;
-const long scaleConst = 1156.300 * 1000 ; // internalRef * 1023 * 1000;
+//const long scaleConst = 1156.300 * 1000 ; // internalRef * 1023 * 1000;
+
+#define INIT_CONST 1125300L
+long scaleConst = INIT_CONST; // internalRef * 1023 * 1000;
+
+void scaleConstInit(float measured, float calculated)
+{
+	scaleConst = long(measured / calculated * INIT_CONST);
+}
 
 int readVccMv()
 {
