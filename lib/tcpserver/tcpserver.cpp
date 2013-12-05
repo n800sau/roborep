@@ -137,7 +137,7 @@ void TCPServer::tcp_request(struct bufferevent *bev)
 	ilen = evbuffer_copyout(input, buf, ilen+1);
 	buf[ilen] = 0;
 	json_error_t error;
-	json_t *js = json_loads(buf, JSON_DECODE_ANY, &error);
+	json_t *js = json_loads(buf, 0, &error);
 	if(add_bev(bev, js)) {
 		if(js == NULL) {
 			syslog(LOG_ERR, "Error decoding json %s\n%s", buf, error.text);

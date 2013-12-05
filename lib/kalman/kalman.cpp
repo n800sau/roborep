@@ -79,7 +79,7 @@ bool Kalman::create_servant()
 	return rs;
 }
 
-void Kalman::fill_json(json_t *js)
+bool Kalman::fill_json(json_t *js)
 {
 	json_t *sjs = json_object();
 	json_object_set_new(sjs, "angle", json_real(x.angle));
@@ -87,6 +87,7 @@ void Kalman::fill_json(json_t *js)
 	json_object_set_new(sjs, "pitch", json_real(x.pitch));
 	json_object_set_new(sjs, "timer", json_real(x.timer));
 	json_object_set_new(js, "x", sjs);
+	return true;
 }
 
 void Kalman::loop()

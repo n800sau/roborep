@@ -13,7 +13,7 @@ class ROStf:public ReServant
 
 	protected:
 		virtual void loop();
-		virtual void fill_json(json_t *js);
+		virtual bool fill_json(json_t *js);
 
 	public:
 		ROStf(int argc, char **argv);

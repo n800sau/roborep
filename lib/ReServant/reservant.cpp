@@ -218,6 +218,13 @@ bool ReServant::create_servant()
 	return rs;
 }
 
+void ReServant::destroy_servant()
+{
+	event_free(timer_ev);
+	event_base_dispatch(base);
+	closelog();
+}
+
 void ReServant::setCmdList(const pCMD_FUNC *cmdlist, int cmdlist_size)
 {
 	this->cmdlist = cmdlist;
@@ -240,11 +247,9 @@ void ReServant::run()
 {
 	create_servant();
 	do {
-    	event_base_loop(base, EVLOOP_NONBLOCK);
-    } while(!exiting);
-	event_free(timer_ev);
-    event_base_dispatch(base);
-	closelog();
+		event_base_loop(base, EVLOOP_NONBLOCK);
+	} while(!exiting);
+	destroy_servant();
 }
 
 void ReServant::loop()
@@ -447,8 +452,9 @@ void ReServant::http_request(struct evhttp_request *req)
 {
 }
 
-void ReServant::fill_json(json_t *js)
+bool ReServant::fill_json(json_t *js)
 {
+	return false;
 }
 
 void ReServant::json2redislist()
@@ -456,15 +462,16 @@ void ReServant::json2redislist()
 	double t = dtime();
 	json_t *js = json_object();
 	json_object_set_new(js, "timestamp", json_real(t));
-	fill_json(js);
-	char *jstr = json_dumps(js, JSON_INDENT(4));
-	if(jstr) {
-		syslog(LOG_DEBUG, "%s\n", jstr);
-		redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
-		redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
-		free(jstr);
-	} else {
-		syslog(LOG_ERR, "Can not encode JSON\n");
+	if(fill_json(js)) {
+		char *jstr = json_dumps(js, JSON_INDENT(4));
+		if(jstr) {
+			syslog(LOG_DEBUG, "%s\n", jstr);
+			redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
+			redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
+			free(jstr);
+		} else {
+			syslog(LOG_ERR, "Can not encode JSON\n");
+		}
 	}
 	json_decref(js);
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.timestamp %s", myid(), s_timestamp(&t));

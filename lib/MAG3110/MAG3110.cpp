@@ -72,7 +72,7 @@ bool MAG3110::create_servant()
 }
 
 
-void MAG3110::fill_json(json_t *js)
+bool MAG3110::fill_json(json_t *js)
 {
 	json_t *sjs;
 	MAG3110::vector v = readVector();
@@ -121,6 +121,7 @@ void MAG3110::fill_json(json_t *js)
 
 	json_object_set_new(js, "heading_radians", json_real(heading));
 	json_object_set_new(js, "heading_degrees", json_real(headingDegrees));
+	return true;
 }
 
 void MAG3110::loop()

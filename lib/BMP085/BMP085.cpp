@@ -169,7 +169,7 @@ float BMP085::readAltitude(float sealevelPressure)
 	return altitude;
 }
 
-void BMP085::fill_json(json_t *js)
+bool BMP085::fill_json(json_t *js)
 {
 	float t = readTemperature();
 	float p = readPressure();
@@ -182,6 +182,8 @@ void BMP085::fill_json(json_t *js)
 	json_object_set_new(js, "pressure", json_real(p));
 
 	json_object_set_new(js, "altitude", json_real(a));
+
+	return true;
 }
 
 void BMP085::loop()

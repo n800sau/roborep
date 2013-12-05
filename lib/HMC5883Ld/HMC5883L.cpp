@@ -108,7 +108,7 @@ bool HMC5883L::create_servant()
 	}
 }
 
-void HMC5883L::fill_json(json_t *js)
+bool HMC5883L::fill_json(json_t *js)
 {
 //	syslog(LOG_NOTICE, "Setting scale to +/- 1.3 Ga\n");
 	int error = SetScale(GAUSS_1_3); // Set the scale of the compass->
@@ -157,6 +157,7 @@ void HMC5883L::fill_json(json_t *js)
 //	syslog(LOG_NOTICE, "Heading: %g radians, %g degrees\n", heading, headingDegrees);
 	json_object_set_new(js, "heading_radians", json_real(heading));
 	json_object_set_new(js, "heading_degrees", json_real(headingDegrees));
+	return true;
 }
 
 void HMC5883L::loop()

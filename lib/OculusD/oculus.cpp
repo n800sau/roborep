@@ -48,8 +48,9 @@ bool OCULUS::create_servant()
 	return rs;
 }
 
-void OCULUS::fill_json(json_t *js)
+bool OCULUS::fill_json(json_t *js)
 {
+	return false;
 }
 
 #define JSONSTR(key) (json_string_value(json_object_get(js, key)))
