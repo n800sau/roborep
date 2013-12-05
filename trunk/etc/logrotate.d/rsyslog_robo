@@ -11,6 +11,7 @@
 /var/log/rhttp.log
 /var/log/userver.log
 /var/log/tcpserver.log
+/var/log/nrf_basenode.log
 {
 	rotate 2
 	daily
@@ -20,6 +21,6 @@
 	delaycompress
 	sharedscripts
 	postrotate
-		reload rsyslog >/dev/null 2>&1 || true
+	reload rsyslog >/dev/null 2>&1 || true
 	endscript
 }
