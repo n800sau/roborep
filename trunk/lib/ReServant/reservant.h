@@ -9,7 +9,7 @@
 #include <time.h>
 #include <event2/bufferevent.h>
 
-#define REDIS_LIST_SIZE 10
+#define DEFAULT_REDIS_LIST_SIZE 10
 
 
 struct CMD_FUNC {
@@ -39,6 +39,8 @@ class ReServant
 
 		bool servant_created;
 
+		int redis_list_size;
+
 	protected:
 
 		struct event_base *base;
@@ -60,6 +62,8 @@ class ReServant
 
 		int processJsonCmd(json_t *js);
 
+		void update_redis_list_size();
+
 	public:
 
 		ReServant(const char *s_id);
@@ -76,6 +80,8 @@ class ReServant
 
 		void cmdCallback(redisAsyncContext *c, redisReply *reply);
 		void timer_cb_func(short what);
+
+		void set_redis_list_limit(int val);
 
 		virtual void http_request(struct evhttp_request *req);
 		virtual void udp_request(sockaddr_in stFromAddr, const char *aReqBuffer);

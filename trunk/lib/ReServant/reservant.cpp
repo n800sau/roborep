@@ -170,7 +170,7 @@ void ReServant_cmdCallback(redisAsyncContext *c, void *r, void *privdata)
 //###############
 
 
-ReServant::ReServant(const char *s_id):exiting(0),n_calls(0),cmdlist_size(0),timer_ev(NULL),servant_created(false)
+ReServant::ReServant(const char *s_id):exiting(0),n_calls(0),cmdlist_size(0),timer_ev(NULL),servant_created(false),redis_list_size(DEFAULT_REDIS_LIST_SIZE)
 {
 	this->s_id = s_id;
 	_mypath[readlink("/proc/self/exe", _mypath, sizeof(_mypath))] = 0;
@@ -457,6 +457,17 @@ bool ReServant::fill_json(json_t *js)
 	return false;
 }
 
+void ReServant::set_redis_list_limit(int val)
+{
+	redis_list_size = val;
+	update_redis_list_size();
+}
+
+void ReServant::update_redis_list_size()
+{
+	redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -redis_list_size);
+}
+
 void ReServant::json2redislist()
 {
 	double t = dtime();
@@ -467,7 +478,7 @@ void ReServant::json2redislist()
 		if(jstr) {
 			syslog(LOG_DEBUG, "%s\n", jstr);
 			redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
-			redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -REDIS_LIST_SIZE-1);
+			update_redis_list_size();
 			free(jstr);
 		} else {
 			syslog(LOG_ERR, "Can not encode JSON\n");
