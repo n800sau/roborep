@@ -1,9 +1,9 @@
 CC=g++
-CCOPTS=-I/usr/include/hiredis -I../ReServant
+CCOPTS=-I/usr/include/hiredis -I../serialCom -I../ReServant
 STRIP=-strip
 SRCS=nrf_basenoded.cpp nrf_basenode.cpp
 OBJECTS=nrf_basenoded.o nrf_basenode.o
-LIBS=../ReServant/libreservant.a
+LIBS=../ReServant/libreservant.a ../serialCom/libserialCom.a
 NAME=nrf_basenoded
 
 .cpp.o:
