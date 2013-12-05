@@ -61,6 +61,7 @@ bool NRF_BASENODE::create_servant()
 	bool rs = ReServant::create_servant();
 	if(rs) {
 //		setLoopInterval(5);
+		set_redis_list_limit(100);
 		/* Initialize the serial communication */
 		serd = serialConfiguration(serd_handler, SERDEV, BAUD, NO_PARITY_CHECK);
 	}
