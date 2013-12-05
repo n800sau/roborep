@@ -144,7 +144,7 @@ float MPU6050::heading(float axis1, float axis2)
 	return heading * 180 / M_PI;
 }
 
-void MPU6050::fill_json(json_t *js)
+bool MPU6050::fill_json(json_t *js)
 {
 	json_t *sjs;
 	readRaw(raw);
@@ -179,6 +179,7 @@ void MPU6050::fill_json(json_t *js)
 
 	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
 	json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
+	return true;
 }
 
 #define JSONSTR(key) (json_string_value(json_object_get(js, key)))

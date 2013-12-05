@@ -72,8 +72,9 @@ void NRF_BASENODE::destroy_servant()
 	ReServant::destroy_servant();
 }
 
-void NRF_BASENODE::fill_json(json_t *js)
+bool NRF_BASENODE::fill_json(json_t *js)
 {
+	bool rs = false;
 	if(NRF_BASENODE::serd_available) {
 		int count;
 		do {
@@ -102,10 +103,12 @@ void NRF_BASENODE::fill_json(json_t *js)
 					token = strtok(NULL, delimiters);
 				}
 				json_object_set_new(js, "accel", sjs);
+				rs = true;
 			}
 			line_len = 0;
 		}
 	}
+	return rs;
 }
 
 #define JSONSTR(key) (json_string_value(json_object_get(js, key)))

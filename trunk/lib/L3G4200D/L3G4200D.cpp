@@ -165,7 +165,7 @@ bool L3G4200D::create_servant()
 	return rs;
 }
 
-void L3G4200D::fill_json(json_t *js)
+bool L3G4200D::fill_json(json_t *js)
 {
 	json_t *sjs;
 
@@ -182,6 +182,7 @@ void L3G4200D::fill_json(json_t *js)
 	json_object_set_new(sjs, "z", json_real(stop_g.z));
 	json_object_set_new(sjs, "timestamp", json_real(stop_g.timestamp));
 	json_object_set_new(js, "stop_g", sjs);
+	return true;
 }
 
 void L3G4200D::loop()

@@ -182,7 +182,7 @@ float ADXL345::heading(float axis1, float axis2)
 	return heading * 180 / M_PI;
 }
 
-void ADXL345::fill_json(json_t *js)
+bool ADXL345::fill_json(json_t *js)
 {
 	json_t *sjs;
 	raw = readRawAxis();
@@ -216,6 +216,7 @@ void ADXL345::fill_json(json_t *js)
 
 	json_object_set_new(js, "xz_degrees", json_real(xz_degrees));
 	json_object_set_new(js, "yz_degrees", json_real(yz_degrees));
+	return true;
 }
 
 void ADXL345::loop()

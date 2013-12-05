@@ -54,7 +54,7 @@ class ReServant
 
 		inline const char *myid() { return s_id; }
 
-		virtual void fill_json(json_t *js);
+		virtual bool fill_json(json_t *js);
 
 		void json2redislist();
 
@@ -81,6 +81,7 @@ class ReServant
 		virtual void udp_request(sockaddr_in stFromAddr, const char *aReqBuffer);
 		virtual void tcp_request(struct bufferevent *bev);
 		virtual bool create_servant();
+		virtual void destroy_servant();
 
 		//loop interval in seconds
 		void setLoopInterval(float interval=0.5);

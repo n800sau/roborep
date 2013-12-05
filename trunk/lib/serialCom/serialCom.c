@@ -11,7 +11,7 @@ extern "C"
 #include <termios.h>
 #include "serialCom.h"
  
-  int
+int
   serialConfiguration(serial_handler handler, const char *device,
       tcflag_t baudrate, char parity)
   {

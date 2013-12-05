@@ -127,7 +127,7 @@ void UServer::udp_request(sockaddr_in stFromAddr, const char *aReqBuffer)
 	if (getnameinfo((sockaddr*)&stFromAddr, sizeof(stFromAddr), hbuf, sizeof(hbuf), sbuf, sizeof(sbuf), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
 		printf("%s came from %s:%s\n", aReqBuffer, hbuf, sbuf);
 		json_error_t error;
-		json_t *js = json_loads(aReqBuffer, JSON_DECODE_ANY, &error);
+		json_t *js = json_loads(aReqBuffer, 0, &error);
 		if(js == NULL) {
 			printf("Error decoding json %s\n", error.text);
 		} else {
@@ -274,11 +274,11 @@ void UServer::send2(const char *host, int port, const char *msg)
 		if(inet_aton(host, &si_other.sin_addr)==0) {
 			syslog(LOG_ERR, "inet_aton() for %s failed", host);
 		} else {
-			syslog(LOG_NOTICE, "Sending %d bytes to %s:%d ...", strlen(msg), host, port);
+			syslog(LOG_NOTICE, "Sending %d bytes to %s:%d ...", (int)strlen(msg), host, port);
 			if(sendto(s, msg, strlen(msg), 0, (const sockaddr*)&si_other, slen)==-1) {
 				syslog(LOG_ERR, "sendto() failed");
 			}
-			syslog(LOG_NOTICE, "%d bytes to %s:%d has been sent", strlen(msg), host, port);
+			syslog(LOG_NOTICE, "%d bytes to %s:%d has been sent", (int)strlen(msg), host, port);
 		}
 	}
 	close(s);
