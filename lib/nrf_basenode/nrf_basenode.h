@@ -6,8 +6,13 @@
 
 class NRF_BASENODE:public ReServant
 {
+	private:
+		int serd;
+		struct event *serd_event;
+
 	protected:
 		virtual bool create_servant();
+		virtual void destroy_servant();
 		virtual void loop();
 		virtual void fill_json(json_t *js);
 		virtual void push_json(json_t *js);
