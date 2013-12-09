@@ -4,12 +4,16 @@
 
 #include <reservant.h>
 
+struct MELEM;
+
 class NRF_BASENODE:public ReServant
 {
 	private:
 		int serd;
 		char line[256];
 		int line_len;
+		static const MELEM mlist[];
+		const MELEM *next_serial_marker();
 	protected:
 		virtual bool create_servant();
 		virtual void destroy_servant();
