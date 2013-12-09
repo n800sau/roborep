@@ -452,7 +452,7 @@ void ReServant::http_request(struct evhttp_request *req)
 {
 }
 
-bool ReServant::fill_json(json_t *js)
+bool ReServant::fill_json(json_t *js, int list_id)
 {
 	return false;
 }
@@ -468,16 +468,21 @@ void ReServant::update_redis_list_size()
 	redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -redis_list_size);
 }
 
-void ReServant::json2redislist()
+const char *ReServant::list_suffix(int list_id)
+{
+	return "";
+}
+
+void ReServant::json2redislist(int list_id)
 {
 	double t = dtime();
 	json_t *js = json_object();
 	json_object_set_new(js, "timestamp", json_real(t));
-	if(fill_json(js)) {
+	if(fill_json(js, list_id)) {
 		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
 			syslog(LOG_DEBUG, "%s\n", jstr);
-			redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s.js.obj %s", myid(), jstr);
+			redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s%s.js.obj %s", myid(), list_suffix(list_id), jstr);
 			update_redis_list_size();
 			free(jstr);
 		} else {
@@ -486,5 +491,26 @@ void ReServant::json2redislist()
 	}
 	json_decref(js);
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.timestamp %s", myid(), s_timestamp(&t));
+}
+
+json_t *ReServant::tabbed2json(const char *ptr)
+{
+	char *tokensbuf = strdup(ptr);
+	const char *delimiters = "\t:\xd";
+	char *token;
+	token = strtok(tokensbuf, delimiters);
+	json_t *sjs = json_object();
+	const char *key = NULL;
+	while(token) {
+		if(!key) {
+			key = token;
+		} else {
+			json_object_set_new(sjs, key, json_real(atof(token)));
+			key = NULL;
+		}
+		token = strtok(NULL, delimiters);
+	}
+	free(tokensbuf);
+	return sjs;
 }
 
