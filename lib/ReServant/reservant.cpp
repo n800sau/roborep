@@ -505,6 +505,7 @@ json_t *ReServant::tabbed2json(const char *ptr)
 		if(!key) {
 			key = token;
 		} else {
+//			printf("%s => %s\n", key, token);
 			json_object_set_new(sjs, key, json_real(atof(token)));
 			key = NULL;
 		}

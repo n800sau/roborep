@@ -18,6 +18,13 @@
 #define LIST_ID_ACCEL 1
 #define LIST_ID_MPU 2
 
+struct MELEM {
+	const char *marker;
+	int list_id;
+};
+
+const MELEM NRF_BASENODE::mlist[] = {{ACCEL_MARKER, LIST_ID_ACCEL}, {MPU_MARKER, LIST_ID_MPU}};
+
 /* Flag indicating datas are ready to be read */
 bool NRF_BASENODE::serd_available = false;
  
@@ -96,34 +103,16 @@ const char *NRF_BASENODE::list_suffix(int list_id)
 bool NRF_BASENODE::fill_json(json_t *js, int list_id)
 {
 	bool rs = false;
-	if(NRF_BASENODE::serd_available) {
-		int count;
-		do {
-			count = read(serd, &line[line_len], 1);
-			if(line[line_len] == '\xa') {
-				break;
-			}
-			line_len += count;
-		} while(count > 0 && line_len < sizeof(line)-1);
-		NRF_BASENODE::serd_available = false;
-		if(line[line_len] == '\xa' || line_len >= sizeof(line)-1) {
-			line[line_len] = 0;
-			switch(list_id) {
-				case LIST_ID_ACCEL:
-					if(strncmp(line, ACCEL_MARKER, sizeof(ACCEL_MARKER)-1) == 0 ) {
-						json_object_set_new(js, "accel", tabbed2json(line + sizeof(ACCEL_MARKER)-1));
-						rs = true;
-					}
-					break;
-				case LIST_ID_MPU:
-					if(strncmp(line, MPU_MARKER, sizeof(MPU_MARKER)-1) == 0 ) {
-						json_object_set_new(js, "mpu", tabbed2json(line + sizeof(MPU_MARKER)-1));
-						rs = true;
-					}
-					break;
-			}
-			line_len = 0;
-		}
+//	printf("%s\n", line);
+	switch(list_id) {
+		case LIST_ID_ACCEL:
+			json_object_set_new(js, "accel", tabbed2json(line));
+			rs = true;
+			break;
+		case LIST_ID_MPU:
+			json_object_set_new(js, "mpu", tabbed2json(line));
+			rs = true;
+			break;
 	}
 	return rs;
 }
@@ -135,9 +124,40 @@ void NRF_BASENODE::push_json(json_t *js)
 {
 }
 
+const MELEM *NRF_BASENODE::next_serial_marker()
+{
+	const MELEM *rs = NULL;
+	int i;
+	if(NRF_BASENODE::serd_available) {
+		int count;
+		do {
+			count = read(serd, &line[line_len], 1);
+			if(line[line_len] == '\xa') {
+				break;
+			}
+			line_len += count;
+		} while(count > 0 && line_len < sizeof(line)-2);
+		NRF_BASENODE::serd_available = false;
+		if(line[line_len] == '\xa' || line_len >= sizeof(line)-1) {
+			line[line_len] = 0;
+			line_len = 0;
+			for(i=0; i< sizeof(mlist)/sizeof(*mlist); i++) {
+				if(strncmp(line, mlist[i].marker, strlen(mlist[i].marker)) == 0 ) {
+					memmove(line, line + strlen(mlist[i].marker), sizeof(line)-strlen(mlist[i].marker));
+					rs = &mlist[i];
+					break;
+				}
+			}
+		}
+	}
+	return rs;
+}
+
 void NRF_BASENODE::loop()
 {
-	json2redislist(LIST_ID_ACCEL);
-	json2redislist(LIST_ID_MPU);
+	const MELEM *marker = next_serial_marker();
+	if(marker) {
+		json2redislist(marker->list_id);
+	}
 	ReServant::loop();
 }
