@@ -15,6 +15,9 @@
 #define SERDEV "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0"
 #define BAUD B57600
 
+#define LIST_ID_ACCEL 1
+#define LIST_ID_MPU 2
+
 /* Flag indicating datas are ready to be read */
 bool NRF_BASENODE::serd_available = false;
  
@@ -73,7 +76,24 @@ void NRF_BASENODE::destroy_servant()
 	ReServant::destroy_servant();
 }
 
-bool NRF_BASENODE::fill_json(json_t *js)
+const char *NRF_BASENODE::list_suffix(int list_id)
+{
+	const char *rs;
+	switch(list_id) {
+		case LIST_ID_ACCEL:
+			rs = ".accel";
+			break;
+		case LIST_ID_MPU:
+			rs = ".mpu";
+			break;
+		default:
+			rs = ReServant::list_suffix(list_id);
+			break;
+	}
+	return rs;
+}
+
+bool NRF_BASENODE::fill_json(json_t *js, int list_id)
 {
 	bool rs = false;
 	if(NRF_BASENODE::serd_available) {
@@ -88,23 +108,19 @@ bool NRF_BASENODE::fill_json(json_t *js)
 		NRF_BASENODE::serd_available = false;
 		if(line[line_len] == '\xa' || line_len >= sizeof(line)-1) {
 			line[line_len] = 0;
-			if(strncmp(line, ACCEL_MARKER, sizeof(ACCEL_MARKER)-1) == 0) {
-				const char *delimiters = "\t:\xd";
-				char *token;
-				token = strtok(line + sizeof(ACCEL_MARKER)-1, delimiters);
-				json_t *sjs = json_object();
-				const char *key = NULL;
-				while(token) {
-					if(!key) {
-						key = token;
-					} else {
-						json_object_set_new(sjs, key, json_real(atof(token)));
-						key = NULL;
+			switch(list_id) {
+				case LIST_ID_ACCEL:
+					if(strncmp(line, ACCEL_MARKER, sizeof(ACCEL_MARKER)-1) == 0 ) {
+						json_object_set_new(js, "accel", tabbed2json(line + sizeof(ACCEL_MARKER)-1));
+						rs = true;
 					}
-					token = strtok(NULL, delimiters);
-				}
-				json_object_set_new(js, "accel", sjs);
-				rs = true;
+					break;
+				case LIST_ID_MPU:
+					if(strncmp(line, MPU_MARKER, sizeof(MPU_MARKER)-1) == 0 ) {
+						json_object_set_new(js, "mpu", tabbed2json(line + sizeof(MPU_MARKER)-1));
+						rs = true;
+					}
+					break;
 			}
 			line_len = 0;
 		}
@@ -121,6 +137,7 @@ void NRF_BASENODE::push_json(json_t *js)
 
 void NRF_BASENODE::loop()
 {
-	json2redislist();
+	json2redislist(LIST_ID_ACCEL);
+	json2redislist(LIST_ID_MPU);
 	ReServant::loop();
 }

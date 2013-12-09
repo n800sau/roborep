@@ -60,7 +60,7 @@ class ReServant
 
 		virtual bool fill_json(json_t *js, int list_id);
 
-		const char *list_suffix(int list_id);
+		virtual const char *list_suffix(int list_id);
 		void json2redislist(int list_id=LIST_ID_DEFAULT);
 		json_t *tabbed2json(const char *ptr);
 

@@ -182,7 +182,7 @@ float ADXL345::heading(float axis1, float axis2)
 	return heading * 180 / M_PI;
 }
 
-bool ADXL345::fill_json(json_t *js)
+bool ADXL345::fill_json(json_t *js, int list_id)
 {
 	json_t *sjs;
 	raw = readRawAxis();

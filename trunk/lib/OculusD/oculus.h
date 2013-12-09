@@ -9,7 +9,7 @@ class OCULUS:public ReServant
 	protected:
 		virtual bool create_servant();
 		virtual void loop();
-		virtual bool fill_json(json_t *js);
+		virtual bool fill_json(json_t *js, int list_id);
 		virtual void push_json(json_t *js);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 	public:

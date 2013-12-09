@@ -21,7 +21,7 @@ class Kalman:public ReServant
 	protected:
 		virtual bool create_servant();
 		virtual void loop();
-		virtual bool fill_json(json_t *js);
+		virtual bool fill_json(json_t *js, int list_id);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 		double getAngleX(json_t *acc_js, json_t *stop_acc_js, const char *X, const char *Z);
 		double getRateX(json_t *gyro_js, json_t *stop_gyro_js, const char *X);

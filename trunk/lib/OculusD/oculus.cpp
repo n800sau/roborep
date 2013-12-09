@@ -48,7 +48,7 @@ bool OCULUS::create_servant()
 	return rs;
 }
 
-bool OCULUS::fill_json(json_t *js)
+bool OCULUS::fill_json(json_t *js, int list_id)
 {
 	return false;
 }

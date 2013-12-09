@@ -79,7 +79,7 @@ bool Kalman::create_servant()
 	return rs;
 }
 
-bool Kalman::fill_json(json_t *js)
+bool Kalman::fill_json(json_t *js, int list_id)
 {
 	json_t *sjs = json_object();
 	json_object_set_new(sjs, "angle", json_real(x.angle));
