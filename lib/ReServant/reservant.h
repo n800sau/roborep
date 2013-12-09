@@ -18,6 +18,8 @@ struct CMD_FUNC {
 
 typedef CMD_FUNC *pCMD_FUNC;
 
+#define LIST_ID_DEFAULT 0
+
 class ReServant
 {
 
@@ -56,9 +58,11 @@ class ReServant
 
 		inline const char *myid() { return s_id; }
 
-		virtual bool fill_json(json_t *js);
+		virtual bool fill_json(json_t *js, int list_id);
 
-		void json2redislist();
+		const char *list_suffix(int list_id);
+		void json2redislist(int list_id=LIST_ID_DEFAULT);
+		json_t *tabbed2json(const char *ptr);
 
 		int processJsonCmd(json_t *js);
 
