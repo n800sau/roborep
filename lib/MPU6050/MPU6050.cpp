@@ -144,7 +144,7 @@ float MPU6050::heading(float axis1, float axis2)
 	return heading * 180 / M_PI;
 }
 
-bool MPU6050::fill_json(json_t *js)
+bool MPU6050::fill_json(json_t *js, int list_id)
 {
 	json_t *sjs;
 	readRaw(raw);

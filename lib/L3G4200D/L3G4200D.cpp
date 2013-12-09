@@ -165,7 +165,7 @@ bool L3G4200D::create_servant()
 	return rs;
 }
 
-bool L3G4200D::fill_json(json_t *js)
+bool L3G4200D::fill_json(json_t *js, int list_id)
 {
 	json_t *sjs;
 

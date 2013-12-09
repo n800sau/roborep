@@ -57,7 +57,7 @@ void ROStf::tf_message_received(const tf::tfMessageConstPtr &msg)
 	}
 }
 
-bool ROStf::fill_json(json_t *js)
+bool ROStf::fill_json(json_t *js, int list_id)
 {
 	return false;
 }

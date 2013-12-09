@@ -51,7 +51,7 @@ class L3G4200D:public ReServant
 	protected:
 		I2CWire i2cwire;
 		virtual void loop();
-		virtual bool fill_json(json_t *js);
+		virtual bool fill_json(json_t *js, int list_id);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 		void stop_state(json_t *js);
 

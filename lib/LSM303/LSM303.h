@@ -103,7 +103,7 @@ class LSM303:public ReServant
 	protected:
 		I2CWire i2cwire;
 		virtual void loop();
-		virtual bool fill_json(json_t *js);
+		virtual bool fill_json(json_t *js, int list_id);
 
 	public:
 		typedef struct vector

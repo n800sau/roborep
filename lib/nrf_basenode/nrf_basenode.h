@@ -14,7 +14,8 @@ class NRF_BASENODE:public ReServant
 		virtual bool create_servant();
 		virtual void destroy_servant();
 		virtual void loop();
-		virtual bool fill_json(json_t *js);
+		virtual const char *list_suffix(int list_id);
+		virtual bool fill_json(json_t *js, int list_id);
 		virtual void push_json(json_t *js);
 		virtual void call_cmd(const pCMD_FUNC cmd, json_t *js);
 	public:

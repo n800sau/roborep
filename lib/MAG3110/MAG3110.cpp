@@ -72,7 +72,7 @@ bool MAG3110::create_servant()
 }
 
 
-bool MAG3110::fill_json(json_t *js)
+bool MAG3110::fill_json(json_t *js, int list_id)
 {
 	json_t *sjs;
 	MAG3110::vector v = readVector();

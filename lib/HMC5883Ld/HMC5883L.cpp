@@ -108,7 +108,7 @@ bool HMC5883L::create_servant()
 	}
 }
 
-bool HMC5883L::fill_json(json_t *js)
+bool HMC5883L::fill_json(json_t *js, int list_id)
 {
 //	syslog(LOG_NOTICE, "Setting scale to +/- 1.3 Ga\n");
 	int error = SetScale(GAUSS_1_3); // Set the scale of the compass->

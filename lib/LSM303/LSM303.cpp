@@ -277,7 +277,7 @@ uint8_t LSM303::detectSA0_A(void)
 	return (i2cwire.requestFromDevice(LSM303_CTRL_REG1_A, 1, &rs)) ? LSM303_SA0_A_LOW : LSM303_SA0_A_HIGH;
 }
 
-bool LSM303::fill_json(json_t *js)
+bool LSM303::fill_json(json_t *js, int list_id)
 {
 	read();
 	int heading = this->heading((LSM303::vector){0,-1,0});
