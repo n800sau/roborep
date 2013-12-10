@@ -103,30 +103,38 @@ class OculusShell(cmd.Cmd):
 
 	def do_step_fw(self, arg):
 		'Step forward'
-		self.subprocess.write('f%c\n' % 100)
-		time.sleep(0.1)
+		self.subprocess.write('f%c\n' % 255)
+		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_step_back(self, arg):
 		'Step back'
-		self.subprocess.write('b%c\n' % 100)
-		time.sleep(0.1)
+		self.subprocess.write('b%c\n' % 255)
+		time.sleep(min(1,float(arg)))
 		self.do_stop('')
+
+	def do_forward(self, arg):
+		'Forward (0-255)'
+		self.subprocess.write('f%c\n' % int(arg))
+
+	def do_back(self, arg):
+		'Back (0-255)'
+		self.subprocess.write('b%c\n' % int(arg))
 
 	def do_step_left(self, arg):
 		'Step left'
-		self.subprocess.write('l%c\n' % 100)
-		time.sleep(0.1)
+		self.subprocess.write('l%c\n' % 255)
+		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_step_right(self, arg):
 		'Step right'
-		self.subprocess.write('r%c\n' % 100)
-		time.sleep(0.1)
+		self.subprocess.write('r%c\n' % 255)
+		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_setcam(self, arg):
-		'Set cam angle [0-255]'
+		'Set cam angle [75-100]'
 		self.subprocess.write('v%c\n' % int(arg))
 		self.print_reply()
 
