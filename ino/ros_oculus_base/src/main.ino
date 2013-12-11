@@ -15,14 +15,12 @@
  BACKWARD = 'b', [0-255] (speed)
  LEFT = 'l', [0-255] (speed)
  RIGHT = 'r', [0-255] (speed)
- COMP = 'c', [0 - 255] (DC motor comp: <128 is left, 128 is none, >128 is right)
  CAM = 'v', [0-255] (servo angle)
  ECHO_ON = 'e', '1' (echo command back TRUE)
  ECHO_OFF = 'e', '0' (echo command back FALSE)
  STOP = 's' (DC motors stop)
  GET_VERSION = 'y'
  CAMRELEASE = 'w'
- DIRECT DIFFERENTIAL STEERING = 'm', [0-255][0-255] (speed motor L&R, <128 is back, 128 is stop, >128 is fwd)
 */
 
 // pins
@@ -45,46 +43,23 @@ boolean echo = false;
 ros::NodeHandle	 nh;
 
 std_msgs::String str_msg;
+
+char buf[128];
+
 ros::Publisher reply("oculus_base_reply", &str_msg);
 
 // do multi byte
-void parseCommand(char cmd, int l_power, int r_power, int secs)
+void parseCommand(char cmd, int power, int secs)
 {
-	char buf[256];
-	const char *ptr;
 	int mB, mA, n;
 	// always set speed on each move command
 	if((cmd == 'f') || (cmd == 'b') || (cmd == 'l') || (cmd == 'r'))
 	{
-		OCR2A =	 l_power - acomp*( (float) l_power / 254.0);
-		OCR2B =	 r_power - bcomp*( (float) r_power / 254.0);
+		OCR2A =	 power - acomp*( (float) power / 254.0);
+		OCR2B =	 power - bcomp*( (float) power / 254.0);
 	}
 
 	switch(cmd) {
-		case 'm':
-			mB = l_power&255;
-			mA = r_power&255;
-
-			OCR2A =	 (mB&127)<<1;
-			OCR2B =	 (mA&127)<<1;
-
-			if (mB<128) {
-				digitalWrite(motorB1Pin, LOW);
-				digitalWrite(motorB2Pin, HIGH);
-			} else {
-				digitalWrite(motorB1Pin, HIGH);
-				digitalWrite(motorB2Pin, LOW);
-			}
-
-			if (mA<128) {
-				digitalWrite(motorA1Pin, LOW);
-				digitalWrite(motorA2Pin, HIGH);
-			} else {
-				digitalWrite(motorA1Pin, HIGH);
-				digitalWrite(motorA2Pin, LOW);
-			}
-			reply_status();
-			break;
 		case 'f': // forward
 			digitalWrite(motorA1Pin, HIGH);
 			digitalWrite(motorA2Pin, LOW);
@@ -120,34 +95,15 @@ void parseCommand(char cmd, int l_power, int r_power, int secs)
 			break;
 		case 'v': // camtilt
 			camservo.attach(camservopin);
-			camservo.write(l_power);
+			camservo.write(power);
 			reply_status();
 			break;
 		case 'w': // camrelease
 			camservo.detach();
 			reply_status();
 			break;
-		case 'c':
-			// 128 = 0, > 128 = acomp, < 128 = bcomp
-			if (l_power == 128)
-			{
-				acomp = 0;
-				bcomp = 0;
-			}
-			if (l_power > 128)
-			{
-				bcomp = 0;
-				acomp = (l_power-128)*2;
-			}
-			if (l_power < 128)
-			{
-				acomp = 0;
-				bcomp = (128-l_power)*2;
-			}
-			reply_status();
-			break;
 		case 'e':
-			echo = l_power != 0;
+			echo = power != 0;
 			snprintf(buf, sizeof(buf),"%s", (echo)?"echo on":"echo off");
 			str_msg.data = buf;
 			reply.publish( &str_msg );
@@ -165,14 +121,14 @@ void parseCommand(char cmd, int l_power, int r_power, int secs)
 	// echo the command back
 	if(echo)
 	{
-		snprintf(buf, sizeof(buf), "received %c %d %d (%d)", cmd, l_power, r_power, secs);
+		snprintf(buf, sizeof(buf), "received %c %d (%d)", cmd, power, secs);
 		str_msg.data = buf;
 		reply.publish( &str_msg );
 	}
 }
 
 void messageCb(const oculus2wd::drive& command_msg){
-	parseCommand(command_msg.command, command_msg.l_power, command_msg.r_power, command_msg.secs);
+	parseCommand(command_msg.command, command_msg.power, command_msg.secs);
 }
 
 ros::Subscriber<oculus2wd::drive> request("oculus_base_command", messageCb );
@@ -208,12 +164,11 @@ void loop()
 		OCR2B = 0;
 		camservo.detach();
 	}
-	delay(100);
+	delay(10);
 }
 
 void reply_status()
 {
-	char buf[256];
 	snprintf(buf, sizeof(buf), "l: %d, r: %d, servo: %d", OCR2A, OCR2B, camservo.read());
 	str_msg.data = buf;
 	reply.publish( &str_msg );
