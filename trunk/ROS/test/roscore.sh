@@ -1,0 +1,1 @@
+roscore &> roscore.log &
