@@ -39,23 +39,21 @@ class OculusShell(cmd.Cmd):
 		self.logfile.flush()
 
 	def batstat(self):
-		power_on = False
+		status = 'Unknown'
 		energy_full = None
 		energy_now = None
 		for line in file('/sys/class/power_supply/BAT0/uevent'):
 			line = line.strip()
 			if line:
 				n,v = line.split('=')
-				if n == 'POWER_SUPPLY_PRESENT':
-					power_on = int(v)
+				if n in ('POWER_SUPPLY_STATUS',):
+					status = v
 				elif n in ('POWER_SUPPLY_CHARGE_FULL', 'POWER_SUPPLY_ENERGY_FULL'):
 					energy_full = int(v)
 				elif n in ('POWER_SUPPLY_CHARGE_NOW', 'POWER_SUPPLY_ENERGY_NOW'):
 					energy_now = int(v)
 		if energy_full and energy_now:
-			print 'Status %g%%' % (float(energy_now) /energy_full * 100)
-		if power_on:
-			print 'Charging...'
+			print 'Status %g%%, %s' % (float(energy_now) /energy_full * 100, status)
 
 	def on_reply(self, reply):
 		print reply
