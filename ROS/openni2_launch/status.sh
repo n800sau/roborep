@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/freenect_server.pid
+PIDFILE=/home/n800s/run/openni2_launch.pid
 DAEMON="roslaunch"
 
 PPID=`pidof -x -o %PPID ${DAEMON}`
