@@ -1,7 +1,7 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/openni2_launch.pid
-DAEMON="roslaunch"
+PIDFILE=/home/n800s/run/sound_node.pid
+DAEMON="python soundplay_node.py"
 
 PPID=`pidof -x -o %PPID ${DAEMON}`
 if [ ! -z "$PPID" ]; then
