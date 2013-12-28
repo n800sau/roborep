@@ -48,6 +48,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    drive.msg
+   battery.msg
 )
 
 ## Generate services in the 'srv' folder
