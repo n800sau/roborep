@@ -1,2 +1,3 @@
 <launch>
+<node name="$(anon status)" pkg="oculus2wd" type="status.py" />
 </launch>
