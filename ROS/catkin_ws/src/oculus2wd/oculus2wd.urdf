@@ -1,25 +1,63 @@
 <?xml version="1.0"?>
 <robot name="multipleshapes">
-  <link name="base_link">
-    <visual>
-      <geometry>
-        <cylinder length="0.6" radius="0.2"/>
-      </geometry>
-    </visual>
-  </link>
+	<link name="base_link">
+		<visual>
+			<geometry>
+				<box size=".26 .28 .06"/>
+			</geometry>
+			<material name="blue">
+				<color rgba="0 0 .8 1"/>
+			</material>
+		</visual>
+	</link>
 
-  <link name="right_leg">
-    <visual>
-      <geometry>
-        <box size="0.6 .2 .1"/>
-      </geometry>
-    </visual>
-  </link>
+	<link name="stand_link">
+		<visual>
+			<geometry>
+				<box size="0.045 .095 .23"/>
+			</geometry>
+			<origin rpy="0 0 0" xyz="-0.10 0 0.115"/>
+		</visual>
+	</link>
 
-  <joint name="base_to_right_leg" type="fixed">
-    <parent link="base_link"/>
-    <child link="right_leg"/>
-  </joint>
+	<link name="left_motor">
+		<visual>
+			<geometry>
+				 <cylinder length="0.008" radius="0.066"/>
+			</geometry>
+			<origin xyz="0 -0.14 0" rpy="1.57 0 0"/>
+			<material name="motor">
+				<color rgba="0.25 0.25 0.25 1"/>
+			</material>
+		</visual>
+	</link>
+
+	<link name="right_motor">
+		<visual>
+			<geometry>
+				 <cylinder length="0.008" radius="0.066"/>
+			</geometry>
+			<origin xyz="0 0.14 0" rpy="1.57 0 0"/>
+			<material name="motor">
+				<color rgba="0.25 0.25 0.25 1"/>
+			</material>
+		</visual>
+	</link>
+
+	<joint name="base_to_stand" type="fixed">
+		<parent link="base_link"/>
+		<child link="stand_link"/>
+	</joint>
+
+	<joint name="base_to_left_motor" type="fixed">
+		<parent link="base_link"/>
+		<child link="left_motor"/>
+	</joint>
+
+	<joint name="base_to_right_motor" type="fixed">
+		<parent link="base_link"/>
+		<child link="right_motor"/>
+	</joint>
 
 </robot>
 
