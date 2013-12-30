@@ -49,6 +49,7 @@ add_message_files(
    FILES
    drive.msg
    battery.msg
+   mpu6050.msg
 )
 
 ## Generate services in the 'srv' folder
