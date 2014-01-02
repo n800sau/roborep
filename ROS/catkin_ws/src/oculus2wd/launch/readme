@@ -1,0 +1,12 @@
+robot_upstart does not work correctly
+
+use instead line in rc.local:
+su -l -c "roslaunch oculus2wd minimal.launch" n800s &
+
+with 
+source ${HOME}/work/roborep/ROS/catkin_ws/devel/setup.bash
+export ROS_MASTER_URI=http://192.168.1.9:11311
+
+in .profile
+
+NOT in .bashrc
