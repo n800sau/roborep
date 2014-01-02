@@ -27,8 +27,8 @@ class image_converter:
 		if cols > 60 and rows > 60 :
 			cv.Circle(cv_image, (50,50), 10, 255)
 
-#		 cv.ShowImage("Image window", cv_image)
-#		 cv.WaitKey(3)
+		cv.ShowImage("Image window", cv_image)
+		cv.WaitKey(3)
 
 		try:
 			self.image_pub.publish(self.bridge.cv_to_imgmsg(cv_image, "bgr8"))
