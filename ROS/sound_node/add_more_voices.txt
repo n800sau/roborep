@@ -1,0 +1,14 @@
+cd /usr/share/festival/voices/english/
+sudo wget -c http://www.speech.cs.cmu.edu/cmu_arctic/packed/cmu_us_clb_arctic-0.95-release.tar.bz2
+sudo tar jxf cmu_us_clb_arctic-0.95-release.tar.bz2
+sudo ln -s cmu_us_clb_arctic cmu_us_clb_arctic_clunits
+sudo cp /etc/festival.scm /etc/festival.scm.backup
+sudo echo "(set! voice_default 'voice_cmu_us_clb_arctic_clunits)" >> /etc/festival.scm
+
+test:
+
+echo "This is a test." | festival --tts
+
+
+If you install another one comment out the first voice_default line in /etc/festival.scm with 2 semi-colons.
+;;(set! voice_default 'voice_cmu_us_clb_arctic_clunits)
