@@ -1,0 +1,11 @@
+packages:
+does not work correctly!!!
+robot_upstart to install start-on-boot-script 
+
+launch file reference:
+http://wiki.ros.org/roslaunch/XML
+
+ros units:
+http://www.ros.org/reps/rep-0103.html
+
+length - meters
