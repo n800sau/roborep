@@ -1,6 +1,11 @@
 <launch>
-<node name="$(anon status)" pkg="oculus2wd" type="status.py" />
-<node name="$(anon soundplay_node)" pkg="sound_play" type="soundplay_node.py" />
-<node name="$(anon powerhelp)" pkg="oculus2wd" type="powerhelp.py" />
+<node name="status" pkg="oculus2wd" type="status.py" />
+<node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" />
+<node name="powerhelp" pkg="oculus2wd" type="powerhelp.py" />
 <node name="$(anon base_serial_node)" pkg="rosserial_python" type="serial_node.py" args="/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A4015M29-if00-port0"/>
+<include file="$(find openni2_launch)/launch/openni2.launch" />
+<node name="recognizer" pkg="pocketsphinx" type="recognizer.py">
+	<param name="lm" value="$(find oculus2wd)/sphinx/base.lm"/>
+	<param name="dict" value="$(find oculus2wd)/sphinx/base.dic"/>
+</node>
 </launch>
