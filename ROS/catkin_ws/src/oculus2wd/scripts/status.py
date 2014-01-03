@@ -15,7 +15,7 @@ def status():
 			level = int(level.groups()[0])
 		else:
 			level = -1
-		pub.publish(battery(level, output))
+		pub.publish(battery(level, output.find('Discharging') != -1, output))
 		rospy.sleep(TIMEOUT)
 
 
