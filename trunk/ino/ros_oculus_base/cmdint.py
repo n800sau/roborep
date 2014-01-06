@@ -9,16 +9,8 @@ from forklift import run_process, terminate_all
 import libcommon_py as common
 
 import rospy
-from std_msgs.msg import String
+from oculus2wd.msg import drive_status
 from oculus2wd.msg import drive
-
-def talker():
-	while not rospy.is_shutdown():
-		self.pub.publish(drive(ord('b'), 10, 10, 1))
-		print 'published'
-		rospy.sleep(1.0)
-
-
 
 class OculusShell(cmd.Cmd):
 	intro = 'Welcome to the oculus shell.	Type help or ? to list commands.\n'
@@ -28,7 +20,8 @@ class OculusShell(cmd.Cmd):
 		cmd.Cmd.__init__(self)
 		rospy.init_node('drive_node')
 		self.pub = rospy.Publisher('/oculus_base_command', drive)
-		rospy.Subscriber("/oculus_base_reply", String, self.on_reply)
+		rospy.Subscriber("/oculus_base_status", drive_status, self.on_reply)
+		print dir(drive_status)
 		self.file = None
 		self.logfile = None
 
@@ -55,8 +48,8 @@ class OculusShell(cmd.Cmd):
 		if energy_full and energy_now:
 			print 'Status %g%%, %s' % (float(energy_now) /energy_full * 100, status)
 
-	def on_reply(self, reply):
-		print reply
+	def on_reply(self, *args):
+		print '\n%s' % args
 
 	# ----- oculus commands -----
 
@@ -93,27 +86,22 @@ class OculusShell(cmd.Cmd):
 		self.do_stop('')
 
 	def do_setcam(self, arg):
-		'Set cam angle [75-100]'
-		self.pub.publish(drive(ord('v'), int(arg), 1))
+		'Set cam angle [55-80]'
+		pos = int(arg)
+		pos = 80 - pos * (80-55) / 100.
+		self.pub.publish(drive(ord('v'), pos, 1))
 
 	def do_release_cam(self, arg):
 		'Release cam'
 		self.pub.publish(drive(ord('w'), 0, 1))
 
-	def do_version(self, arg):
-		'Get firmware version'
-		self.pub.publish(drive(ord('y'), 0, 1))
-
 	def do_stop(self, arg):
 		'Stop motors'
 		self.pub.publish(drive(ord('s'), 0, 1))
 
-	def do_echo(self, arg):
-		'Echo on/off: ECHO <ON|OFF>'
-		if arg.lower() == 'on':
-			self.pub.publish(drive(ord('e'), 1, 1))
-		elif arg.lower() == 'off':
-			self.pub.publish(drive(ord('e'), 0, 1))
+	def do_eof(self, arg):
+		print
+		self.do_quit(arg)
 
 
 	# ----- oculus commands end-----
@@ -123,10 +111,6 @@ class OculusShell(cmd.Cmd):
 		self.close()
 		sys.exit(0)
 		return True
-
-	def do_eof(self, arg):
-		print
-		self.do_quit(arg)
 
 	# ----- record and playback -----
 
