@@ -92,8 +92,3 @@ soundhandle = SoundClient()
 
 rospy.Subscriber("/oculus2wd/battery", battery, callback)
 rospy.spin()
-
-
-
-
-
