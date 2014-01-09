@@ -133,7 +133,7 @@ class image_converter:
 			print 'unknown feature:', feature_name
 			sys.exit(1)
 
-		self.eyeimg = cv2.imread('eye.jpg', cv.CV_LOAD_IMAGE_COLOR)
+		self.eyeimg = cv2.imread('eye1.jpg', cv.CV_LOAD_IMAGE_COLOR)
 		self.eye_kp, self.eye_desc = self.detector.detectAndCompute(self.eyeimg, None)
 
 	def callback(self,data):
