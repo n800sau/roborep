@@ -13,13 +13,6 @@ IRrecv irrecv(RECV_PIN);
 
 decode_results results;
 
-#define CODE_FWD 0x40BF906F
-#define CODE_BACK 0x40BF807F
-#define CODE_LEFT 0x40BF50AF
-#define CODE_RIGHT 0x40BF10EF
-#define CODE_OK 0x40BFD02F
-#define CODE_REPEAT 0xFFFFFFFF
-
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -82,7 +75,7 @@ MPU6050 mpu;
 // components with gravity removed and adjusted for the world frame of
 // reference (yaw is relative to initial orientation, since no magnetometer
 // is present in this case). Could be quite handy in some cases.
-//#define OUTPUT_READABLE_WORLDACCEL
+#define OUTPUT_READABLE_WORLDACCEL
 
 // uncomment "OUTPUT_TEAPOT" if you want output that matches the
 // format used for the InvenSense teapot demo
@@ -109,10 +102,6 @@ VectorInt16 aaWorld;	// [x, y, z]			world-frame accel sensor measurements
 VectorFloat gravity;	// [x, y, z]			gravity vector
 float euler[3];			// [psi, theta, phi]	Euler angle container
 float ypr[3];			// [yaw, pitch, roll]	yaw/pitch/roll container and gravity vector
-
-// packet structure for InvenSense teapot demo
-uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
-
 
 
 // ================================================================
@@ -260,17 +249,49 @@ void dump(decode_results *results)
   }
 }
 
+long readVcc() {
+  // Read 1.1V reference against AVcc
+  // set the reference to Vcc and the measurement to the internal 1.1V reference
+  #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+     ADMUX = _BV(MUX5) | _BV(MUX0) ;
+  #else
+    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #endif  
+ 
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Start conversion
+  while (bit_is_set(ADCSRA,ADSC)); // measuring
+ 
+  uint8_t low  = ADCL; // must read ADCL first - it then locks ADCH  
+  uint8_t high = ADCH; // unlocks both
+ 
+  long result = (high<<8) | low;
+ 
+  result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000
+  return result; // Vcc in millivolts
+}
+
+int send_power_millis = 0;
 
 // ================================================================
 // ===					  MAIN PROGRAM LOOP						===
 // ================================================================
 
 void loop() {
+
+	if(send_power_millis + 1000 < millis()) {
+		Serial.print("vcc\t");
+		Serial.println(readVcc());
+		send_power_millis = millis();
+	}
+
 	if (irrecv.decode(&results)) {
 		dump(&results);
-		if(results->decode_type == NEC) {
+		if(results.decode_type == NEC) {
 			Serial.print("ir\t");
-			Serial.print(results->value);
+			Serial.print(results.value);
 			Serial.println();
 		}
 		irrecv.resume(); // Receive the next value
@@ -278,135 +299,114 @@ void loop() {
 
 
 	// if programming failed, don't try to do anything
-	if (!dmpReady) return;
+	if (dmpReady) {
 
-	// wait for MPU interrupt or extra packet(s) available
-	while (!mpuInterrupt && fifoCount < packetSize) {
-		// other program behavior stuff here
-		// .
-		// .
-		// .
-		// if you are really paranoid you can frequently test in between other
-		// stuff to see if mpuInterrupt is true, and if so, "break;" from the
-		// while() loop to immediately process the MPU data
-		// .
-		// .
-		// .
+		// wait for MPU interrupt
+		if (mpuInterrupt) {
+
+			// reset interrupt flag and get INT_STATUS byte
+			mpuInterrupt = false;
+			mpuIntStatus = mpu.getIntStatus();
+
+			// check for overflow (this should never happen unless our code is too inefficient)
+			if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
+				// reset so we can continue cleanly
+				mpu.resetFIFO();
+				Serial.println(F("error\tFIFO overflow!"));
+
+			// otherwise, check for DMP data ready interrupt (this should happen frequently)
+			} else if (mpuIntStatus & 0x02) {
+
+				// get current FIFO count
+				fifoCount = mpu.getFIFOCount();
+
+				while(fifoCount >= packetSize) {
+    
+					// read a packet from FIFO
+					mpu.getFIFOBytes(fifoBuffer, packetSize);
+    
+					// track FIFO count here in case there is > 1 packet available
+					// (this lets us immediately read more without waiting for an interrupt)
+					fifoCount -= packetSize;
+ 
+					Serial.println(F("START"));
+
+					#ifdef OUTPUT_READABLE_QUATERNION
+						// display quaternion values in easy matrix form: w x y z
+						mpu.dmpGetQuaternion(&q, fifoBuffer);
+						Serial.print("quat\t");
+						Serial.print(q.w);
+						Serial.print("\t");
+						Serial.print(q.x);
+						Serial.print("\t");
+						Serial.print(q.y);
+						Serial.print("\t");
+						Serial.println(q.z);
+					#endif
+        
+					#ifdef OUTPUT_READABLE_EULER
+						// display Euler angles in radians
+						mpu.dmpGetQuaternion(&q, fifoBuffer);
+						mpu.dmpGetEuler(euler, &q);
+						Serial.print("euler\t");
+						Serial.print(euler[0]);
+						Serial.print("\t");
+						Serial.print(euler[1]);
+						Serial.print("\t");
+						Serial.println(euler[2]);
+					#endif
+        
+					#ifdef OUTPUT_READABLE_YAWPITCHROLL
+						// display Euler angles in radians
+						mpu.dmpGetQuaternion(&q, fifoBuffer);
+						mpu.dmpGetGravity(&gravity, &q);
+						mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+						Serial.print("ypr\t");
+						Serial.print(ypr[0]);
+						Serial.print("\t");
+						Serial.print(ypr[1]);
+						Serial.print("\t");
+						Serial.println(ypr[2]);
+					#endif
+        
+					#ifdef OUTPUT_READABLE_REALACCEL
+						// display real acceleration, adjusted to remove gravity
+						mpu.dmpGetQuaternion(&q, fifoBuffer);
+						mpu.dmpGetAccel(&aa, fifoBuffer);
+						mpu.dmpGetGravity(&gravity, &q);
+						mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+						Serial.print("areal\t");
+						Serial.print(aaReal.x);
+						Serial.print("\t");
+						Serial.print(aaReal.y);
+						Serial.print("\t");
+						Serial.println(aaReal.z);
+					#endif
+        
+					#ifdef OUTPUT_READABLE_WORLDACCEL
+						// display initial world-frame acceleration, adjusted to remove gravity
+						// and rotated based on known orientation from quaternion
+						mpu.dmpGetQuaternion(&q, fifoBuffer);
+						mpu.dmpGetAccel(&aa, fifoBuffer);
+						mpu.dmpGetGravity(&gravity, &q);
+						mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+						mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
+						Serial.print("aworld\t");
+						Serial.print(aaWorld.x);
+						Serial.print("\t");
+						Serial.print(aaWorld.y);
+						Serial.print("\t");
+						Serial.println(aaWorld.z);
+					#endif
+					Serial.println(F("END"));
+					// blink LED to indicate mpu activity
+					blinkState = !blinkState;
+					digitalWrite(LED_PIN, blinkState);
+				}
+			}
+		}
+
 	}
-
-	// reset interrupt flag and get INT_STATUS byte
-	mpuInterrupt = false;
-	mpuIntStatus = mpu.getIntStatus();
-
-	// get current FIFO count
-	fifoCount = mpu.getFIFOCount();
-
-	// check for overflow (this should never happen unless our code is too inefficient)
-	if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-		// reset so we can continue cleanly
-		mpu.resetFIFO();
-		Serial.println(F("FIFO overflow!"));
-
-	// otherwise, check for DMP data ready interrupt (this should happen frequently)
-	} else if (mpuIntStatus & 0x02) {
-		// wait for correct available data length, should be a VERY short wait
-		while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-
-		// read a packet from FIFO
-		mpu.getFIFOBytes(fifoBuffer, packetSize);
-		
-		// track FIFO count here in case there is > 1 packet available
-		// (this lets us immediately read more without waiting for an interrupt)
-		fifoCount -= packetSize;
-
-		Serial.println("START");
-
-		#ifdef OUTPUT_READABLE_QUATERNION
-			// display quaternion values in easy matrix form: w x y z
-			mpu.dmpGetQuaternion(&q, fifoBuffer);
-			Serial.print("quat\t");
-			Serial.print(q.w);
-			Serial.print("\t");
-			Serial.print(q.x);
-			Serial.print("\t");
-			Serial.print(q.y);
-			Serial.print("\t");
-			Serial.println(q.z);
-		#endif
-
-		#ifdef OUTPUT_READABLE_EULER
-			// display Euler angles in radians
-			mpu.dmpGetQuaternion(&q, fifoBuffer);
-			mpu.dmpGetEuler(euler, &q);
-			Serial.print("euler\t");
-			Serial.print(euler[0]);
-			Serial.print("\t");
-			Serial.print(euler[1]);
-			Serial.print("\t");
-			Serial.println(euler[2]);
-		#endif
-
-		#ifdef OUTPUT_READABLE_YAWPITCHROLL
-			// display Euler angles in radians
-			mpu.dmpGetQuaternion(&q, fifoBuffer);
-			mpu.dmpGetGravity(&gravity, &q);
-			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-			Serial.print("ypr\t");
-			Serial.print(ypr[0]);
-			Serial.print("\t");
-			Serial.print(ypr[1]);
-			Serial.print("\t");
-			Serial.println(ypr[2]);
-		#endif
-
-		#ifdef OUTPUT_READABLE_REALACCEL
-			// display real acceleration, adjusted to remove gravity
-			mpu.dmpGetQuaternion(&q, fifoBuffer);
-			mpu.dmpGetAccel(&aa, fifoBuffer);
-			mpu.dmpGetGravity(&gravity, &q);
-			mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-			Serial.print("areal\t");
-			Serial.print(aaReal.x);
-			Serial.print("\t");
-			Serial.print(aaReal.y);
-			Serial.print("\t");
-			Serial.println(aaReal.z);
-		#endif
-
-		#ifdef OUTPUT_READABLE_WORLDACCEL
-			// display initial world-frame acceleration, adjusted to remove gravity
-			// and rotated based on known orientation from quaternion
-			mpu.dmpGetQuaternion(&q, fifoBuffer);
-			mpu.dmpGetAccel(&aa, fifoBuffer);
-			mpu.dmpGetGravity(&gravity, &q);
-			mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-			mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-			Serial.print("aworld\t");
-			Serial.print(aaWorld.x);
-			Serial.print("\t");
-			Serial.print(aaWorld.y);
-			Serial.print("\t");
-			Serial.println(aaWorld.z);
-		#endif
-	
-		#ifdef OUTPUT_TEAPOT
-			// display quaternion values in InvenSense Teapot demo format:
-			teapotPacket[2] = fifoBuffer[0];
-			teapotPacket[3] = fifoBuffer[1];
-			teapotPacket[4] = fifoBuffer[4];
-			teapotPacket[5] = fifoBuffer[5];
-			teapotPacket[6] = fifoBuffer[8];
-			teapotPacket[7] = fifoBuffer[9];
-			teapotPacket[8] = fifoBuffer[12];
-			teapotPacket[9] = fifoBuffer[13];
-			Serial.write(teapotPacket, 14);
-			teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
-		#endif
-		Serial.println("END");
-
-		// blink LED to indicate activity
-		blinkState = !blinkState;
-		digitalWrite(LED_PIN, blinkState);
-	}
+	delay(10);
 }
 
