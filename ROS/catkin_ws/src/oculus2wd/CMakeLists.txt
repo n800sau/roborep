@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  tf
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -48,8 +50,10 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    drive.msg
+   drive_status.msg
    battery.msg
    mpu6050.msg
+   arduino_power.msg
 )
 
 ## Generate services in the 'srv' folder

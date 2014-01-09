@@ -7,8 +7,7 @@ from time import time, sleep
 from sound_play.msg import SoundRequest
 from sound_play.libsoundplay import SoundClient
 from sensor_msgs.msg import Imu
-from oculus2wd.msg import drive_status
-from oculus2wd.msg import drive
+from oculus2wd.msg import drive_status, drive, arduino_power
 
 from twisted.internet import reactor, defer
 from twisted.internet.serialport import SerialPort
@@ -18,7 +17,7 @@ from twisted.internet.task import LoopingCall
 DEVICE = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0'
 BAUD = 57600
 
-
+ARDUINO_ID = 'imu_ir'
 
 
 # Ordered this way to minimize wait time.
@@ -36,12 +35,13 @@ class Processor(basic.LineReceiver):
 			0x40BFD02F: {'code': 'OK', 'proc': self.do_stop},
 			0xFFFFFFFF: {'code': 'REPEAT', 'proc': self.do_repeat},
 		}
-
-	def connectionMade(self):
 		self.pub = rospy.Publisher('/oculus2wd/imu', Imu)
 		self.cmdpub = rospy.Publisher('/oculus_base_command', drive)
-		rospy.loginfo("Serial port connected")
+		self.pwrpub = rospy.Publisher('/oculus2wd/arduino_power', arduino_power)
 		self.imu = None
+
+	def connectionMade(self):
+		rospy.loginfo("Serial port connected")
 #		self.transport.write('>>> ')
 
 	def lineReceived(self, line):
@@ -77,8 +77,15 @@ class Processor(basic.LineReceiver):
 			if line[0] == 'ir':
 				cmd = self.commands.get(int(line[1]), None)
 				if cmd:
-					rospy.loginfo(cmd['code'])
+					rospy.loginfo('COMMAND=%s' % cmd['code'])
 					cmd['proc']()
+			elif line[0] == 'vcc':
+#				print line[1]
+				pwr = arduino_power()
+				pwr.arduino_id = ARDUINO_ID
+				pwr.vcc = int(line[1])
+				rospy.loginfo('VCC=%sV' % (pwr.vcc / 1000.))
+				self.pwrpub.publish(pwr)
 #		print line
 #		self.sendLine('Echo: ' + line)
 #		self.transport.write('>>> ')
