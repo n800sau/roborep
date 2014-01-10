@@ -33,12 +33,17 @@ class Processor(basic.LineReceiver):
 			0x40BF50AF: {'code': 'LEFT', 'proc': self.do_left},
 			0x40BF10EF: {'code': 'RIGHT', 'proc': self.do_right},
 			0x40BFD02F: {'code': 'OK', 'proc': self.do_stop},
+			0x40BF18E7: {'code': 'CAM_UP', 'proc': self.do_camup},
+			0x40BFD827: {'code': 'CAM_DOWN', 'proc': self.do_camdown},
+			0x40BFB04F: {'code': 'CAM_RELEASE', 'proc': self.do_release_cam},
 			0xFFFFFFFF: {'code': 'REPEAT', 'proc': self.do_repeat},
 		}
 		self.pub = rospy.Publisher('/oculus2wd/imu', Imu)
 		self.cmdpub = rospy.Publisher('/oculus_base_command', drive)
 		self.pwrpub = rospy.Publisher('/oculus2wd/arduino_power', arduino_power)
 		self.imu = None
+		self.last_cmd = None
+		self.campos = 50
 
 	def connectionMade(self):
 		rospy.loginfo("Serial port connected")
@@ -75,16 +80,24 @@ class Processor(basic.LineReceiver):
 		else:
 			line = line.split('\t')
 			if line[0] == 'ir':
+				rospy.logdebug('HEX=%X' % int(line[1]))
 				cmd = self.commands.get(int(line[1]), None)
 				if cmd:
-					rospy.loginfo('COMMAND=%s' % cmd['code'])
-					cmd['proc']()
+					if cmd['code'] == 'REPEAT':
+						cmd = self.last_cmd
+					else:
+						self.last_cmd = cmd
+					if cmd:
+#						rospy.loginfo('COMMAND=%s' % cmd['code'])
+						cmd['proc']()
+				else:
+					self.last_cmd = None
 			elif line[0] == 'vcc':
 #				print line[1]
 				pwr = arduino_power()
 				pwr.arduino_id = ARDUINO_ID
 				pwr.vcc = int(line[1])
-				rospy.loginfo('VCC=%sV' % (pwr.vcc / 1000.))
+#				rospy.loginfo('VCC=%sV' % (pwr.vcc / 1000.))
 				self.pwrpub.publish(pwr)
 #		print line
 #		self.sendLine('Echo: ' + line)
@@ -112,6 +125,27 @@ class Processor(basic.LineReceiver):
 
 	def do_repeat(self):
 		pass
+
+	def do_camup(self):
+		self.campos += 5
+		if self.campos > 100:
+			self.campos = 100
+		self.do_setcam()
+
+	def do_camdown(self):
+		self.campos -= 5
+		if self.campos < 0:
+			self.campos = 0
+		self.do_setcam()
+
+	def do_setcam(self):
+		'Set cam angle [55-80]'
+		pos = 80 - self.campos * (80-55) / 100.
+		self.cmdpub.publish(drive(ord('v'), pos, 1))
+
+	def do_release_cam(self):
+		'Release cam'
+		self.cmdpub.publish(drive(ord('w'), 0, 1))
 
 def sayBye():
 	print "bye bye."
