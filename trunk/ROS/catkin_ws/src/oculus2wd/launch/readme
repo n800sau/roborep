@@ -9,6 +9,6 @@ export ROS_MASTER_URI=http://192.168.1.9:11311
 
 in .profile
 
-NOT in .bashrc
+NOT just in .bashrc
 
 for voice commands it needs ros-*-pocketsphinx 

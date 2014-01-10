@@ -4,5 +4,5 @@
 	<node name="powerhelp" pkg="oculus2wd" type="powerhelp.py" />
 	<node name="imu_ir" pkg="oculus2wd" type="imu_ir.py" />
 	<node name="$(anon base_serial_node)" pkg="rosserial_python" type="serial_node.py" args="/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A4015M29-if00-port0"/>
-	<include file="$(find openni2_launch)/launch/openni2.launch" />
+	<include file="$(find openni_launch)/launch/openni.launch" />
 </launch>
