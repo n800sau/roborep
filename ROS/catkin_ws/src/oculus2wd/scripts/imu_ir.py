@@ -28,15 +28,25 @@ class Processor(basic.LineReceiver):
 
 	def __init__(self, *args, **kwds):
 		self.commands = {
-			0x40BF906F: {'code': 'FORWARD', 'proc': self.do_forward},
-			0x40BF807F: {'code': 'BACK', 'proc': self.do_back},
-			0x40BF50AF: {'code': 'LEFT', 'proc': self.do_left},
-			0x40BF10EF: {'code': 'RIGHT', 'proc': self.do_right},
-			0x40BFD02F: {'code': 'OK', 'proc': self.do_stop},
-			0x40BF18E7: {'code': 'CAM_UP', 'proc': self.do_camup},
-			0x40BFD827: {'code': 'CAM_DOWN', 'proc': self.do_camdown},
-			0x40BFB04F: {'code': 'CAM_RELEASE', 'proc': self.do_release_cam},
-			0xFFFFFFFF: {'code': 'REPEAT', 'proc': self.do_repeat},
+			0x40BF906F: 'FORWARD',
+			0x40BF807F: 'BACK',
+			0x40BF50AF: 'LEFT',
+			0x40BF10EF: 'RIGHT',
+			0x40BFD02F: 'OK',
+			0x40BF18E7: 'CAM_UP',
+			0x40BFD827: 'CAM_DOWN',
+			0x40BFB04F: 'CAM_RELEASE',
+			0xFFFFFFFF: 'REPEAT',
+		}
+		self.actions = {
+			'FORWARD': self.do_forward,
+			'BACK': self.do_back,
+			'LEFT': self.do_left,
+			'RIGHT': self.do_right,
+			'OK': self.do_stop,
+			'CAM_UP': self.do_camup,
+			'CAM_DOWN': self.do_camdown,
+			'CAM_RELEASE': self.do_release_cam,
 		}
 		self.pub = rospy.Publisher('/oculus2wd/imu', Imu)
 		self.cmdpub = rospy.Publisher('/oculus_base_command', drive)
@@ -81,14 +91,16 @@ class Processor(basic.LineReceiver):
 			line = line.split('\t')
 			if line[0] == 'ir':
 				rospy.logdebug('HEX=%X' % int(line[1]))
-				cmd = self.commands.get(int(line[1]), None)
-				if cmd:
-					if cmd['code'] == 'REPEAT':
+				print 'HEX=%X' % int(line[1])
+				code = self.commands.get(int(line[1]), None)
+				if code:
+					rospy.loginfo('COMMAND=%s' % code)
+					if code == 'REPEAT':
 						cmd = self.last_cmd
 					else:
+						cmd = self.actions[code]
 						self.last_cmd = cmd
 					if cmd:
-#						rospy.loginfo('COMMAND=%s' % cmd['code'])
 						cmd['proc']()
 				else:
 					self.last_cmd = None
@@ -122,9 +134,6 @@ class Processor(basic.LineReceiver):
 	def do_right(self):
 		'Step right'
 		self.cmdpub.publish(drive(ord('r'), 255, 1))
-
-	def do_repeat(self):
-		pass
 
 	def do_camup(self):
 		self.campos += 5
