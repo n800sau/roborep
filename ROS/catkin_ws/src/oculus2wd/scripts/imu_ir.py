@@ -29,13 +29,21 @@ class Processor(basic.LineReceiver):
 	def __init__(self, *args, **kwds):
 		self.commands = {
 			0x40BF906F: 'FORWARD',
+			0xFD609F: 'FORWARD',
 			0x40BF807F: 'BACK',
+			0xFD6897: 'BACK',
 			0x40BF50AF: 'LEFT',
+			0xFD5AA5: 'LEFT',
 			0x40BF10EF: 'RIGHT',
+			0xFDD827: 'RIGHT',
 			0x40BFD02F: 'OK',
+			0xFD58A7: 'OK',
 			0x40BF18E7: 'CAM_UP',
+			0xFDB04F: 'CAM_UP',
 			0x40BFD827: 'CAM_DOWN',
+			0xFD8877: 'CAM_DOWN',
 			0x40BFB04F: 'CAM_RELEASE',
+			0xFDA05F: 'CAM_RELEASE',
 			0xFFFFFFFF: 'REPEAT',
 		}
 		self.actions = {
@@ -63,6 +71,7 @@ class Processor(basic.LineReceiver):
 		line = line.strip()
 		if line == 'START':
 			self.imu = Imu()
+			self.imu.header.stamp = rospy.Time.now()
 		elif not self.imu is None:
 			if line == 'END':
 #				print 'IMU=', self.imu
@@ -84,6 +93,7 @@ class Processor(basic.LineReceiver):
 					self.imu.angular_velocity.y = float(line[2])
 					self.imu.angular_velocity.z = float(line[3])
 				elif line[0] == 'areal':
+#				elif line[0] == 'acc':
 					self.imu.linear_acceleration.x = float(line[1])
 					self.imu.linear_acceleration.y = float(line[2])
 					self.imu.linear_acceleration.z = float(line[3])
@@ -91,7 +101,7 @@ class Processor(basic.LineReceiver):
 			line = line.split('\t')
 			if line[0] == 'ir':
 				rospy.logdebug('HEX=%X' % int(line[1]))
-				print 'HEX=%X' % int(line[1])
+#				print 'HEX=%X' % int(line[1])
 				code = self.commands.get(int(line[1]), None)
 				if code:
 					rospy.loginfo('COMMAND=%s' % code)
@@ -101,7 +111,7 @@ class Processor(basic.LineReceiver):
 						cmd = self.actions[code]
 						self.last_cmd = cmd
 					if cmd:
-						cmd['proc']()
+						cmd()
 				else:
 					self.last_cmd = None
 			elif line[0] == 'vcc':
@@ -129,11 +139,11 @@ class Processor(basic.LineReceiver):
 
 	def do_left(self):
 		'Step left'
-		self.cmdpub.publish(drive(ord('l'), 255, 1))
+		self.cmdpub.publish(drive(ord('l'), 150, 1))
 
 	def do_right(self):
 		'Step right'
-		self.cmdpub.publish(drive(ord('r'), 255, 1))
+		self.cmdpub.publish(drive(ord('r'), 150, 1))
 
 	def do_camup(self):
 		self.campos += 5
