@@ -71,6 +71,8 @@ MPU6050 mpu;
 // compensated for orientation, us OUTPUT_READABLE_WORLDACCEL instead.
 #define OUTPUT_READABLE_REALACCEL
 
+#define OUTPUT_RAW_ACCEL
+
 // uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
 // components with gravity removed and adjusted for the world frame of
 // reference (yaw is relative to initial orientation, since no magnetometer
@@ -167,6 +169,12 @@ void setup() {
 	mpu.setXGyroOffset(corrs[GX]);
 	mpu.setYGyroOffset(corrs[GY]);
 	mpu.setZGyroOffset(corrs[GZ]);
+
+    // supply your own gyro offsets here, scaled for min sensitivity
+//    mpu.setXGyroOffset(220);
+//    mpu.setYGyroOffset(76);
+//    mpu.setZGyroOffset(-85);
+//    mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
 
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
@@ -369,6 +377,17 @@ void loop() {
 						Serial.println(ypr[2]);
 					#endif
         
+					#ifdef OUTPUT_RAW_ACCEL
+						// display real acceleration, adjusted to remove gravity
+						mpu.dmpGetAccel(&aa, fifoBuffer);
+						Serial.print("acc\t");
+						Serial.print(aa.x);
+						Serial.print("\t");
+						Serial.print(aa.y);
+						Serial.print("\t");
+						Serial.println(aa.z);
+					#endif
+        
 					#ifdef OUTPUT_READABLE_REALACCEL
 						// display real acceleration, adjusted to remove gravity
 						mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -407,6 +426,6 @@ void loop() {
 		}
 
 	}
-	delay(10);
+//	delay(10);
 }
 
