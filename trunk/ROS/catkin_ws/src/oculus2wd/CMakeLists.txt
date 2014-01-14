@@ -52,7 +52,6 @@ add_message_files(
    drive.msg
    drive_status.msg
    battery.msg
-   mpu6050.msg
    arduino_power.msg
 )
 
