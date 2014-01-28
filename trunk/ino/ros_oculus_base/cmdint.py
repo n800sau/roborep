@@ -19,8 +19,8 @@ class OculusShell(cmd.Cmd):
 	def __init__(self):
 		cmd.Cmd.__init__(self)
 		rospy.init_node('drive_node')
-		self.pub = rospy.Publisher('/oculus_base_command', drive)
-		rospy.Subscriber("/oculus_base_status", drive_status, self.on_reply)
+		self.pub = rospy.Publisher('/oculus2wd/base_command', drive)
+		rospy.Subscriber("/oculus2wd/base_status", drive_status, self.on_reply)
 		print dir(drive_status)
 		self.file = None
 		self.logfile = None
