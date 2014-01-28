@@ -111,7 +111,7 @@ void messageCb(const oculus2wd::drive& command_msg){
 	parseCommand(command_msg.command, command_msg.power, command_msg.secs);
 }
 
-ros::Subscriber<oculus2wd::drive> request("oculus_base_command", messageCb );
+ros::Subscriber<oculus2wd::drive> request("/oculus2wd/base_command", messageCb );
 
 void setup()
 {
