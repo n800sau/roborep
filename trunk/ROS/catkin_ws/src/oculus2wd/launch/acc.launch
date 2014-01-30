@@ -1,0 +1,4 @@
+<launch>
+	<node name="acc_ser2tcp" pkg="oculus2wd" type="acc2tcp.sh" />
+	<node name="imu_ir_tcp" pkg="oculus2wd" type="imu_ir_tcp.py" />
+</launch>
