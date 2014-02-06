@@ -46,7 +46,7 @@ ros::NodeHandle	 nh;
 
 oculus2wd::drive_status status_msg;
 
-ros::Publisher reply("oculus_base_status", &status_msg);
+ros::Publisher reply("/oculus2wd/base_status", &status_msg);
 
 void reply_status()
 {
@@ -93,6 +93,10 @@ void parseCommand(char cmd, int power, int secs)
 			digitalWrite(motorB2Pin, LOW);
 			break;
 		case 's': // stop
+			digitalWrite(motorA1Pin, HIGH);
+			digitalWrite(motorA2Pin, HIGH);
+			digitalWrite(motorB1Pin, HIGH);
+			digitalWrite(motorB2Pin, HIGH);
 			OCR2A = 0;
 			OCR2B = 0;
 			break;
