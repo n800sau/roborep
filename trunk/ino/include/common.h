@@ -61,6 +61,9 @@ struct payload_t {
 // Address of the acc node
 #define ACC_NODE 021
 
+// Address of the stick node
+#define NRF_MPU6050_NODE 02
+
 #define CHANNEL 90
 
 #define SERIAL_DEBUG
