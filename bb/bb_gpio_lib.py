@@ -277,6 +277,9 @@ if __name__ == '__main__':
 	import time
 	reset_pin = 'P9_15'
 	pinMode(reset_pin, OUT)
-	digitalWrite(reset_pin, 0)
-	time.sleep(0.1)
-	digitalWrite(reset_pin, 1)
+	try:
+		digitalWrite(reset_pin, 0)
+		time.sleep(0.1)
+		digitalWrite(reset_pin, 1)
+	finally:
+		releasePin(reset_pin)
