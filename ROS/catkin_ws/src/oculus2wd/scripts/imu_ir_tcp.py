@@ -58,7 +58,7 @@ class Processor(basic.LineReceiver):
 		}
 		self.pub = rospy.Publisher('/oculus2wd/imu_raw', Imu)
 		self.cmdpub = rospy.Publisher('/oculus2wd/base_command', drive)
-		self.pwrpub = rospy.Publisher('/oculus2wd/battery', arduino_power)
+		self.pwrpub = rospy.Publisher('/oculus2wd/power', arduino_power)
 		self.imu = None
 		self.last_cmd = None
 		self.campos = 50

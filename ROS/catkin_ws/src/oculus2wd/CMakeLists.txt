@@ -11,6 +11,12 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   tf
   geometry_msgs
+  sensor_msgs
+  pcl_ros
+  opencv_candidate
+  cv_bridge
+  image_transport
+  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
@@ -77,6 +83,7 @@ generate_messages(
    geometry_msgs
 )
 
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -86,10 +93,20 @@ generate_messages(
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+#add dynamic reconfigure api
+#find_package(catkin REQUIRED dynamic_reconfigure)
+generate_dynamic_reconfigure_options(
+  cfg/extract_line.cfg
+  #...
+)
+
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES oculus2wd
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+  CATKIN_DEPENDS
+  roscpp
+  rospy
+  std_msgs
 #  DEPENDS system_lib
 )
 
@@ -120,6 +137,25 @@ include_directories(
 # target_link_libraries(oculus2wd_node
 #   ${catkin_LIBRARIES}
 # )
+
+add_executable(points2_processor src/points2.cpp)
+target_link_libraries(points2_processor ${catkin_LIBRARIES})
+
+add_executable(extract_line src/extract_line.cpp)
+target_link_libraries(extract_line ${catkin_LIBRARIES})
+
+add_executable(image_signal src/image_signal.cpp)
+target_link_libraries(image_signal ${catkin_LIBRARIES})
+
+# make sure configure headers are built before any node using them
+add_dependencies(extract_line ${PROJECT_NAME}_gencfg)
+
+
+#add_executable(nurbs_surface src/nurbs_surface.cpp)
+#target_link_libraries(nurbs_surface ${catkin_LIBRARIES})
+
+add_executable(poisson_surface src/poisson_surface.cpp)
+target_link_libraries(poisson_surface ${catkin_LIBRARIES})
 
 #############
 ## Install ##

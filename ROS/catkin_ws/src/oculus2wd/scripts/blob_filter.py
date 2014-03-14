@@ -4,7 +4,7 @@ from cmvision.msg import Blobs
 
 
 def callback(msg, pub):
-#	print 'Count=%d' % msg.blob_count
+	print 'Count=%d' % msg.blob_count
 	if msg.blob_count > 0:
 		pub.publish(msg)
 
