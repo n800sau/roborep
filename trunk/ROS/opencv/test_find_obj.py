@@ -48,7 +48,8 @@ def filter_matches(kp1, kp2, matches, ratio = 0.75):
 	kp_pairs = zip(mkp1, mkp2)
 	return p1, p2, kp_pairs
 
-def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
+def explore_match(img1, img2, kp_pairs, status = None, H = None):
+#def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
 	h1, w1 = img1.shape[:2]
 	h2, w2 = img2.shape[:2]
 #	print '###########', img1.shape, img2.shape
@@ -90,7 +91,7 @@ def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
 		if inlier:
 			cv2.line(vis, (x1, y1), (x2, y2), green)
 
-	cv2.imshow(win, vis)
+#	cv2.imshow(win, vis)
 #	def onmouse(event, x, y, flags, param):
 #		cur_vis = vis
 #		if flags & cv2.EVENT_FLAG_LBUTTON:
@@ -119,10 +120,10 @@ class image_converter:
 	def __init__(self):
 		self.image_pub = rospy.Publisher('/image_circle',Image)
 
-		self.win = "Image window"
-		cv.NamedWindow(self.win, 1)
-		cv.MoveWindow(self.win, 25, 800)
-		cv.ResizeWindow(self.win, 160, 120)
+#		self.win = "Image window"
+#		cv.NamedWindow(self.win, 1)
+#		cv.MoveWindow(self.win, 25, 800)
+#		cv.ResizeWindow(self.win, 160, 120)
 		self.bridge = CvBridge()
 		self.image_sub = rospy.Subscriber('/camera/rgb/image_raw',Image,self.callback)
 		feature_name = 'surf'
@@ -150,25 +151,36 @@ class image_converter:
 		kp, desc = self.detector.detectAndCompute(cv_image, None)
 		print 'eye - %d features, frame - %d features' % (len(self.eye_kp), len(kp))
 
-		def match_and_draw(win):
+#		def match_and_draw(win):
+		def match_and_draw():
 			print 'matching...'
 			raw_matches = self.matcher.knnMatch(self.eye_desc, trainDescriptors = desc, k = 2) #2
 			p1, p2, kp_pairs = filter_matches(self.eye_kp, kp, raw_matches)
+			print 'found %d' % len(p1)
 			if len(p1) >= 4:
 				H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
 				print '%d / %d	inliers/matched' % (np.sum(status), len(status))
-				vis = explore_match(win, self.eyeimg, cv_image, kp_pairs, status, H)
-				while True:
-					c = cv.WaitKey(7) % 0x100
-					if c == 27:
-						break
-				print 'Continue...'
-			else:
-				H, status = None, None
+				vis = explore_match(self.eyeimg, cv_image, kp_pairs, status, H)
+
+				new_image = self.convert_image(vis)
+				try:
+					self.image_pub.publish(self.bridge.cv_to_imgmsg(new_image, "bgr8"))		
+				except CvBridgeError, e:
+					print e
+
+#				vis = explore_match(win, self.eyeimg, cv_image, kp_pairs, status, H)
+#				while True:
+#					c = cv.WaitKey(7) % 0x100
+#					if c == 27:
+#						break
+#				print 'Continue...'
+#			else:
+#				H, status = None, None
 				print '%d matches found, not enough for homography estimation' % len(p1)
 
 
-		match_and_draw(self.win)
+		match_and_draw()
+#		match_and_draw(self.win)
 
 
 #		try:
