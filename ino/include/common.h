@@ -34,6 +34,7 @@ struct payload_t {
 	uint8_t pload_type; //PLOAD_TYPE
 	uint32_t ms;
 	uint32_t counter;
+	uint16_t voltage;
 	union {
 		uint8_t buf[32 - sizeof(uint8_t) - sizeof(uint32_t) - sizeof(uint32_t)];
 		stickservo_t servo;
@@ -59,10 +60,10 @@ struct payload_t {
 #define STICK_NODE 01
 
 // Address of the acc node
-#define ACC_NODE 021
+#define ACC_NODE 02
 
 // Address of the stick node
-#define NRF_MPU6050_NODE 02
+#define NRF_MPU6050_NODE 03
 
 #define CHANNEL 90
 
