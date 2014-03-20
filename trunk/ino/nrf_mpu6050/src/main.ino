@@ -116,6 +116,8 @@ void read_cmd()
 	}
 }
 
+int printDelay = 10;
+
 void loop()
 {
 	unsigned long qms;
@@ -147,7 +149,7 @@ void loop()
 			while (fifoCount < packetSize) {
 				fifoCount = mpu.getFIFOCount();
 			}
-    
+
 			// read a packet from FIFO
 			mpu.getFIFOBytes(fifoBuffer, packetSize);
 			
@@ -165,7 +167,7 @@ void loop()
 			reply.d.mpu.gravity[1] = gravity.y * 100;
 			reply.d.mpu.gravity[2] = gravity.z * 100;
 			// display quaternion values in easy matrix form: w x y z
-			if(millis() - ms > 5000) {
+			if(millis() - ms > printDelay) {
 				RF24NetworkHeader header(PC2NRF_NODE);
 				qms = millis();
 				reply.pload_type = PL_MPU;
@@ -201,7 +203,7 @@ void loop()
 //			mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
 //			mpu.dmpGetAccel(&data.aa, fifoBuffer);
 ///			mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
-			mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
+//			mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
 		}
 	}
 }
