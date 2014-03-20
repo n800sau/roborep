@@ -32,17 +32,19 @@ typedef struct __acc_t {
 // Structure of our payload
 struct payload_t {
 	uint8_t pload_type; //PLOAD_TYPE
-	uint32_t ms;
+	uint32_t ms; //TIME
 	uint32_t counter;
 	uint16_t voltage;
 	union {
-		uint8_t buf[32 - sizeof(uint8_t) - sizeof(uint32_t) - sizeof(uint32_t)];
+		uint8_t buf[32 - sizeof(uint8_t) - sizeof(uint32_t) - sizeof(uint32_t) - sizeof(uint16_t)];
 		stickservo_t servo;
 		mpu_t mpu;
 		acc_t acc;
 	} d;
 };
 
+#define ADDRESS_MARKER "ADDRESS:"
+#define END_MARKER ":END"
 #define CMD_MARKER "STICK:"
 #define REPLY_MARKER "REPLY:"
 #define REPLY_START_MARKER "REPLYSTART"
@@ -55,17 +57,20 @@ struct payload_t {
 // Topology
 //
 
+// Address of pc 2 nrf network node
+#define PC2NRF_NODE 00
+
 // Address of base node
-#define BASE_NODE 00
+#define BASE_NODE 01
 
 // Address of the stick node
-#define STICK_NODE 01
+#define STICK_NODE 02
 
 // Address of the acc node
-#define ACC_NODE 02
+#define ACC_NODE 03
 
 // Address of the stick node
-#define NRF_MPU6050_NODE 03
+#define NRF_MPU6050_NODE 04
 
 #define CHANNEL 90
 
