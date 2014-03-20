@@ -75,7 +75,7 @@ void setup()
 
 		// enable Arduino interrupt detection
 		Serial.println("Enabling interrupt detection (Arduino external interrupt 0)...");
-		attachInterrupt(0, dmpDataReady, RISING);
+		attachInterrupt(1, dmpDataReady, RISING);
 		mpuIntStatus = mpu.getIntStatus();
 
 		// set our DMP Ready flag so the main loop() function knows it's okay to use it
@@ -166,7 +166,7 @@ void loop()
 			reply.d.mpu.gravity[2] = gravity.z * 100;
 			// display quaternion values in easy matrix form: w x y z
 			if(millis() - ms > 5000) {
-				RF24NetworkHeader header(BASE_NODE);
+				RF24NetworkHeader header(PC2NRF_NODE);
 				qms = millis();
 				reply.pload_type = PL_MPU;
 				reply.ms = qms;
