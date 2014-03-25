@@ -31,6 +31,10 @@ uint16_t packetSize;	// expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;		// count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
+//pause between value output
+int printDelay = 10;
+
+
 volatile bool mpuInterrupt = false;		// indicates whether MPU interrupt pin has gone high
 void dmpDataReady() {
 	mpuInterrupt = true;
@@ -116,8 +120,6 @@ void read_cmd()
 	}
 }
 
-int printDelay = 10;
-
 void loop()
 {
 	unsigned long qms;
@@ -173,7 +175,8 @@ void loop()
 				reply.pload_type = PL_MPU;
 				reply.ms = qms;
 				reply.counter = ++pcounter;
-				Serial.print("Sending...");
+
+/*				Serial.print("Sending...");
 				Serial.print(reply.counter);
 				Serial.print(", ms=");
 				Serial.println(reply.ms);
@@ -191,6 +194,7 @@ void loop()
 				Serial.print(reply.d.mpu.gravity[1]);
 				Serial.print("\t");
 				Serial.println(reply.d.mpu.gravity[2]);
+*/
 				bool ok = network.write(header,&reply,sizeof(reply));
 				if (ok)
 					Serial.println("Replied ok.");
