@@ -99,14 +99,28 @@ void loop(void)
 	// check network
 	if ( network.available() ) {
 		RF24NetworkHeader header;
-		payload_t payload;
-		network.read(header,&payload,sizeof(payload));
+		payload_t reply;
+		network.read(header,&reply,sizeof(reply));
 
 		Serial.print(REPLY_MARKER);
-		Serial.print("Received packet #");
-		Serial.print(payload.counter);
+		Serial.print(" #");
+		Serial.print(reply.counter);
 		Serial.print(" at ");
-		Serial.println(payload.ms);
+		Serial.print(reply.ms);
+		Serial.print("\tquat\t");
+		Serial.print(reply.d.mpu.quaternion[0]);
+		Serial.print("\t");
+		Serial.print(reply.d.mpu.quaternion[1]);
+		Serial.print("\t");
+		Serial.print(reply.d.mpu.quaternion[2]);
+		Serial.print("\t");
+		Serial.print(reply.d.mpu.quaternion[3]);
+		Serial.print("\tgrav\t");
+		Serial.print(reply.d.mpu.gravity[0]);
+		Serial.print("\t");
+		Serial.print(reply.d.mpu.gravity[1]);
+		Serial.print("\t");
+		Serial.println(reply.d.mpu.gravity[2]);
 	} else {
 		// If it's time to send a message, send it!
 		unsigned long now = millis();
