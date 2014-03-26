@@ -1,5 +1,9 @@
+#include <ros.h>
+#include <charger_appeal/lighthouse_cmd.h>
 #include <EventFuse.h>
 
+ros::NodeHandle nh;
+charger_appeal::lighthouse_cmd cmd_msg;
 
 struct LED {
 	int pin;
@@ -25,6 +29,14 @@ void FuseEvent(FuseID fuse, int& led_index){
 //	Serial.println(pin->state);
 }
 
+void messageCb(const charger_appeal::lighthouse_cmd& command_msg) {
+	Serial.print(command_msg.command);
+	Serial.print(",");
+	Serial.println(command_msg.param1);
+}
+
+ros::Subscriber<charger_appeal::lighthouse_cmd> request("/charger_appeal/lighthouse_cmd", messageCb );
+
 void setup() {
 //	Serial.begin(57600);
 	for(int i=0; i<N_LEDS; i++) {
@@ -33,9 +45,12 @@ void setup() {
 		EventFuse::newFuse(i, pin->count, INF_REPEAT, FuseEvent);
 	}
 //	Serial.println("setup");
+	nh.initNode();
+	nh.subscribe(request);
 }
 
 void loop(){
+	nh.spinOnce();
 	delayMicroseconds(100);
 	EventFuse::burn();
 }
