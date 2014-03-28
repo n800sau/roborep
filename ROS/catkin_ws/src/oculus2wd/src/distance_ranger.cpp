@@ -68,17 +68,20 @@ void set_blocking (int fd, int should_block)
 
 int main(int argc, char ** argv)
 {
-	const char *portname = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
+	ros::init(argc, argv, "distance_ranger");
+	ros::NodeHandle nh;
+	std::string tty_dev;
+	nh.param("tty", tty_dev, std::string("/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0"));
+	printf("tty=%s\n", tty_dev.c_str());
+	//const char *portname = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
 	//const char *portname = "/dev/serial/by-id/usb-Revolution_AXE027_PICAXE_USB-if00-port0";
-	int fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
+	int fd = open (tty_dev.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
 	if (fd < 0) {
-		fprintf (stderr, "error %d opening %s: %s", errno, portname, strerror (errno));
+		fprintf (stderr, "error %d opening %s: %s", errno, tty_dev.c_str(), strerror (errno));
 		return 1;
 	}
 	set_interface_attribs (fd, B4800, 0);	// set speed to 115,200 bps, 8n1 (no parity)
 	set_blocking (fd, 0);	// set no blocking
-	ros::init(argc, argv, "distance_ranger");
-	ros::NodeHandle nh;
 	ros::Publisher pub = nh.advertise<oculus2wd::distance_sensor> ("/oculus2wd/head_distance", 1);
 	char buf[100];
 	int pos = 0, n;
