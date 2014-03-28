@@ -1,3 +1,5 @@
+// to get horizontal distance line using xtion
+
 #include <sstream>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
