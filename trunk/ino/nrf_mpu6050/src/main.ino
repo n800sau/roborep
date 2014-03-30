@@ -102,7 +102,7 @@ void setup()
 unsigned long ms = 0;
 unsigned long pcounter = 0;
 
-#define ACC_THRESHOLD 70
+#define ACC_THRESHOLD 30
 int16_t a_x=0, a_y=0, a_z=0;
 
 
@@ -163,30 +163,30 @@ void loop()
 			// (this lets us immediately read more without waiting for an interrupt)
 			fifoCount -= packetSize;
 
-			int16_t x, y, z;
-			mpu.getAcceleration(&x, &y, &z);
-			if(abs(x - a_x) > ACC_THRESHOLD || abs(y - a_y) > ACC_THRESHOLD || abs(z - a_z) > ACC_THRESHOLD) {
-				Serial.print("Acc diff:");
-				Serial.print(abs(x - a_x));
-				Serial.print(",");
-				Serial.print(abs(y - a_y));
-				Serial.print(",");
-				Serial.println(abs(z - a_z));
-				a_x = x;
-				a_y = y;
-				a_z = z;
+			if(millis() - ms > printDelay) {
+				int16_t x, y, z;
+				mpu.getAcceleration(&x, &y, &z);
+				if(abs(x - a_x) > ACC_THRESHOLD || abs(y - a_y) > ACC_THRESHOLD || abs(z - a_z) > ACC_THRESHOLD) {
+					Serial.print("Acc diff:");
+					Serial.print(abs(x - a_x));
+					Serial.print(",");
+					Serial.print(abs(y - a_y));
+					Serial.print(",");
+					Serial.println(abs(z - a_z));
+					a_x = x;
+					a_y = y;
+					a_z = z;
 
-				payload_t reply;
-				Quaternion q;
-				mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
-				mpu.dmpGetQuaternion(&q, fifoBuffer);
-				VectorFloat gravity;
-				mpu.dmpGetGravity(&gravity, &q);
-				reply.d.mpu.gravity[0] = gravity.x * 100;
-				reply.d.mpu.gravity[1] = gravity.y * 100;
-				reply.d.mpu.gravity[2] = gravity.z * 100;
-				// display quaternion values in easy matrix form: w x y z
-				if(millis() - ms > printDelay) {
+					payload_t reply;
+					Quaternion q;
+					mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
+					mpu.dmpGetQuaternion(&q, fifoBuffer);
+					VectorFloat gravity;
+					mpu.dmpGetGravity(&gravity, &q);
+					reply.d.mpu.gravity[0] = gravity.x * 100;
+					reply.d.mpu.gravity[1] = gravity.y * 100;
+					reply.d.mpu.gravity[2] = gravity.z * 100;
+					// display quaternion values in easy matrix form: w x y z
 					RF24NetworkHeader header(PC2NRF_NODE);
 					qms = millis();
 					reply.pload_type = PL_MPU;
@@ -217,6 +217,7 @@ void loop()
 						Serial.println("Replied ok.");
 					else
 						Serial.println("Reply failed.");
+					radio.powerDown();
 					ms = millis();
 				}
 //				mpu.dmpGetEuler(data.euler, &data.q);
