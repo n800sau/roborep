@@ -102,6 +102,10 @@ void setup()
 unsigned long ms = 0;
 unsigned long pcounter = 0;
 
+#define ACC_THRESHOLD 70
+int16_t a_x=0, a_y=0, a_z=0;
+
+
 void read_cmd()
 {
 	// If so, grab it and print it out
@@ -158,56 +162,70 @@ void loop()
 			// track FIFO count here in case there is > 1 packet available
 			// (this lets us immediately read more without waiting for an interrupt)
 			fifoCount -= packetSize;
-    
-			payload_t reply;
-			Quaternion q;
-			mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
-			mpu.dmpGetQuaternion(&q, fifoBuffer);
-			VectorFloat gravity;
-			mpu.dmpGetGravity(&gravity, &q);
-			reply.d.mpu.gravity[0] = gravity.x * 100;
-			reply.d.mpu.gravity[1] = gravity.y * 100;
-			reply.d.mpu.gravity[2] = gravity.z * 100;
-			// display quaternion values in easy matrix form: w x y z
-			if(millis() - ms > printDelay) {
-				RF24NetworkHeader header(PC2NRF_NODE);
-				qms = millis();
-				reply.pload_type = PL_MPU;
-				reply.ms = qms;
-				reply.counter = ++pcounter;
 
-/*				Serial.print("Sending...");
-				Serial.print(reply.counter);
-				Serial.print(", ms=");
-				Serial.println(reply.ms);
-				Serial.print("quat\t");
-				Serial.print(reply.d.mpu.quaternion[0]);
-				Serial.print("\t");
-				Serial.print(reply.d.mpu.quaternion[1]);
-				Serial.print("\t");
-				Serial.print(reply.d.mpu.quaternion[2]);
-				Serial.print("\t");
-				Serial.println(reply.d.mpu.quaternion[3]);
-				Serial.print("grav\t");
-				Serial.print(reply.d.mpu.gravity[0]);
-				Serial.print("\t");
-				Serial.print(reply.d.mpu.gravity[1]);
-				Serial.print("\t");
-				Serial.println(reply.d.mpu.gravity[2]);
+			int16_t x, y, z;
+			mpu.getAcceleration(&x, &y, &z);
+			if(abs(x - a_x) > ACC_THRESHOLD || abs(y - a_y) > ACC_THRESHOLD || abs(z - a_z) > ACC_THRESHOLD) {
+				Serial.print("Acc diff:");
+				Serial.print(abs(x - a_x));
+				Serial.print(",");
+				Serial.print(abs(y - a_y));
+				Serial.print(",");
+				Serial.println(abs(z - a_z));
+				a_x = x;
+				a_y = y;
+				a_z = z;
+
+				payload_t reply;
+				Quaternion q;
+				mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
+				mpu.dmpGetQuaternion(&q, fifoBuffer);
+				VectorFloat gravity;
+				mpu.dmpGetGravity(&gravity, &q);
+				reply.d.mpu.gravity[0] = gravity.x * 100;
+				reply.d.mpu.gravity[1] = gravity.y * 100;
+				reply.d.mpu.gravity[2] = gravity.z * 100;
+				// display quaternion values in easy matrix form: w x y z
+				if(millis() - ms > printDelay) {
+					RF24NetworkHeader header(PC2NRF_NODE);
+					qms = millis();
+					reply.pload_type = PL_MPU;
+					reply.ms = qms;
+					reply.counter = ++pcounter;
+    
+/*					Serial.print("Sending...");
+					Serial.print(reply.counter);
+					Serial.print(", ms=");
+					Serial.println(reply.ms);
+					Serial.print("quat\t");
+					Serial.print(reply.d.mpu.quaternion[0]);
+					Serial.print("\t");
+					Serial.print(reply.d.mpu.quaternion[1]);
+					Serial.print("\t");
+					Serial.print(reply.d.mpu.quaternion[2]);
+					Serial.print("\t");
+					Serial.println(reply.d.mpu.quaternion[3]);
+					Serial.print("grav\t");
+					Serial.print(reply.d.mpu.gravity[0]);
+					Serial.print("\t");
+					Serial.print(reply.d.mpu.gravity[1]);
+					Serial.print("\t");
+					Serial.println(reply.d.mpu.gravity[2]);
 */
-				bool ok = network.write(header,&reply,sizeof(reply));
-				if (ok)
-					Serial.println("Replied ok.");
-				else
-					Serial.println("Reply failed.");
-				ms = millis();
+					bool ok = network.write(header,&reply,sizeof(reply));
+					if (ok)
+						Serial.println("Replied ok.");
+					else
+						Serial.println("Reply failed.");
+					ms = millis();
+				}
+//				mpu.dmpGetEuler(data.euler, &data.q);
+//				mpu.dmpGetGravity(&data.gravity, &data.q);
+//				mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
+//				mpu.dmpGetAccel(&data.aa, fifoBuffer);
+//				mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
+//				mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
 			}
-//			mpu.dmpGetEuler(data.euler, &data.q);
-//			mpu.dmpGetGravity(&data.gravity, &data.q);
-//			mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
-//			mpu.dmpGetAccel(&data.aa, fifoBuffer);
-///			mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
-//			mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
 		}
 	}
 }
