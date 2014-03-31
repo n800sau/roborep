@@ -101,9 +101,9 @@ unsigned long pcounter = 0;
 
 
 //pause between value output (ms)
-const int printDelay = 1000;
+const int printDelay = 5000;
 
-const int ACC_THRESHOLD = 80;
+const int ACC_THRESHOLD = 150;
 int16_t a_x=0, a_y=0, a_z=0;
 
 
