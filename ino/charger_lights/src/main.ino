@@ -1,9 +1,21 @@
 #include <ros.h>
 #include <charger_appeal/lighthouse_cmd.h>
+#include <charger_appeal/lighthouse_status.h>
 #include <EventFuse.h>
 
 ros::NodeHandle nh;
 charger_appeal::lighthouse_cmd cmd_msg;
+charger_appeal::lighthouse_status status_msg;
+
+
+void messageCb(const charger_appeal::lighthouse_cmd& command_msg) {
+	Serial.print(command_msg.command);
+	Serial.print(",");
+	Serial.println(command_msg.param1);
+}
+
+ros::Subscriber<charger_appeal::lighthouse_cmd> request("/charger_appeal/lighthouse_cmd", messageCb );
+ros::Publisher reply("/charger_appeal/lighthouse_status", &status_msg);
 
 struct LED {
 	int pin;
@@ -23,19 +35,15 @@ void FuseEvent(FuseID fuse, int& led_index){
 	LED *pin = pins + led_index;
 	pin->state = !pin->state;
 	digitalWrite(pin->pin, pin->state);
+	status_msg.led_index = led_index;
+	status_msg.led_on = pin->state;
+	reply.publish(&status_msg);
 //	Serial.print("event:");
 //	Serial.print(led_index);
 //	Serial.print(":");
 //	Serial.println(pin->state);
 }
 
-void messageCb(const charger_appeal::lighthouse_cmd& command_msg) {
-	Serial.print(command_msg.command);
-	Serial.print(",");
-	Serial.println(command_msg.param1);
-}
-
-ros::Subscriber<charger_appeal::lighthouse_cmd> request("/charger_appeal/lighthouse_cmd", messageCb );
 
 void setup() {
 //	Serial.begin(57600);
@@ -47,6 +55,7 @@ void setup() {
 //	Serial.println("setup");
 	nh.initNode();
 	nh.subscribe(request);
+	nh.advertise(reply);
 }
 
 void loop(){
