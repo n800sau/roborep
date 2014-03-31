@@ -31,9 +31,6 @@ uint16_t packetSize;	// expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;		// count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
-//pause between value output
-int printDelay = 10;
-
 
 volatile bool mpuInterrupt = false;		// indicates whether MPU interrupt pin has gone high
 void dmpDataReady() {
@@ -102,7 +99,11 @@ void setup()
 unsigned long ms = 0;
 unsigned long pcounter = 0;
 
-#define ACC_THRESHOLD 30
+
+//pause between value output (ms)
+const int printDelay = 1000;
+
+const int ACC_THRESHOLD = 80;
 int16_t a_x=0, a_y=0, a_z=0;
 
 
@@ -163,70 +164,71 @@ void loop()
 			// (this lets us immediately read more without waiting for an interrupt)
 			fifoCount -= packetSize;
 
-			if(millis() - ms > printDelay) {
-				int16_t x, y, z;
-				mpu.getAcceleration(&x, &y, &z);
-				if(abs(x - a_x) > ACC_THRESHOLD || abs(y - a_y) > ACC_THRESHOLD || abs(z - a_z) > ACC_THRESHOLD) {
-					Serial.print("Acc diff:");
-					Serial.print(abs(x - a_x));
-					Serial.print(",");
-					Serial.print(abs(y - a_y));
-					Serial.print(",");
-					Serial.println(abs(z - a_z));
-					a_x = x;
-					a_y = y;
-					a_z = z;
+			int16_t x, y, z;
+			mpu.getAcceleration(&x, &y, &z);
+//			Serial.println(abs(millis() - ms));
+			// send if timeout or acceleration change is bigger that threshold
+			if(abs(millis() - ms) > printDelay || abs(x - a_x) > ACC_THRESHOLD || abs(y - a_y) > ACC_THRESHOLD || abs(z - a_z) > ACC_THRESHOLD) {
+				Serial.print(millis() - ms);
+				Serial.print(", Acc diff:");
+				Serial.print(abs(x - a_x));
+				Serial.print(",");
+				Serial.print(abs(y - a_y));
+				Serial.print(",");
+				Serial.println(abs(z - a_z));
+				a_x = x;
+				a_y = y;
+				a_z = z;
 
-					payload_t reply;
-					Quaternion q;
-					mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
-					mpu.dmpGetQuaternion(&q, fifoBuffer);
-					VectorFloat gravity;
-					mpu.dmpGetGravity(&gravity, &q);
-					reply.d.mpu.gravity[0] = gravity.x * 100;
-					reply.d.mpu.gravity[1] = gravity.y * 100;
-					reply.d.mpu.gravity[2] = gravity.z * 100;
-					// display quaternion values in easy matrix form: w x y z
-					RF24NetworkHeader header(PC2NRF_NODE);
-					qms = millis();
-					reply.pload_type = PL_MPU;
-					reply.ms = qms;
-					reply.counter = ++pcounter;
-    
-/*					Serial.print("Sending...");
-					Serial.print(reply.counter);
-					Serial.print(", ms=");
-					Serial.println(reply.ms);
-					Serial.print("quat\t");
-					Serial.print(reply.d.mpu.quaternion[0]);
-					Serial.print("\t");
-					Serial.print(reply.d.mpu.quaternion[1]);
-					Serial.print("\t");
-					Serial.print(reply.d.mpu.quaternion[2]);
-					Serial.print("\t");
-					Serial.println(reply.d.mpu.quaternion[3]);
-					Serial.print("grav\t");
-					Serial.print(reply.d.mpu.gravity[0]);
-					Serial.print("\t");
-					Serial.print(reply.d.mpu.gravity[1]);
-					Serial.print("\t");
-					Serial.println(reply.d.mpu.gravity[2]);
+				payload_t reply;
+				Quaternion q;
+				mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
+				mpu.dmpGetQuaternion(&q, fifoBuffer);
+				VectorFloat gravity;
+				mpu.dmpGetGravity(&gravity, &q);
+				reply.d.mpu.gravity[0] = gravity.x * 100;
+				reply.d.mpu.gravity[1] = gravity.y * 100;
+				reply.d.mpu.gravity[2] = gravity.z * 100;
+				// display quaternion values in easy matrix form: w x y z
+				RF24NetworkHeader header(PC2NRF_NODE);
+				qms = millis();
+				reply.pload_type = PL_MPU;
+				reply.ms = qms;
+				reply.counter = ++pcounter;
+
+/*				Serial.print("Sending...");
+				Serial.print(reply.counter);
+				Serial.print(", ms=");
+				Serial.println(reply.ms);
+				Serial.print("quat\t");
+				Serial.print(reply.d.mpu.quaternion[0]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.quaternion[1]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.quaternion[2]);
+				Serial.print("\t");
+				Serial.println(reply.d.mpu.quaternion[3]);
+				Serial.print("grav\t");
+				Serial.print(reply.d.mpu.gravity[0]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.gravity[1]);
+				Serial.print("\t");
+				Serial.println(reply.d.mpu.gravity[2]);
 */
-					bool ok = network.write(header,&reply,sizeof(reply));
-					if (ok)
-						Serial.println("Replied ok.");
-					else
-						Serial.println("Reply failed.");
-					radio.powerDown();
-					ms = millis();
-				}
-//				mpu.dmpGetEuler(data.euler, &data.q);
-//				mpu.dmpGetGravity(&data.gravity, &data.q);
-//				mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
-//				mpu.dmpGetAccel(&data.aa, fifoBuffer);
-//				mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
-//				mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
+				bool ok = network.write(header,&reply,sizeof(reply));
+				if (ok)
+					Serial.println("Replied ok.");
+				else
+					Serial.println("Reply failed.");
+				radio.powerDown();
+				ms = millis();
 			}
+//			mpu.dmpGetEuler(data.euler, &data.q);
+//			mpu.dmpGetGravity(&data.gravity, &data.q);
+//			mpu.dmpGetYawPitchRoll(data.ypr, &data.q, &data.gravity);
+//			mpu.dmpGetAccel(&data.aa, fifoBuffer);
+//			mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
+//			mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
 		}
 	}
 }
