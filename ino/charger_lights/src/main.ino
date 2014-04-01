@@ -32,6 +32,7 @@ LED pins[N_LEDS] = {
 };
 
 void FuseEvent(FuseID fuse, int& led_index){
+	nh.spinOnce();
 	LED *pin = pins + led_index;
 	pin->state = !pin->state;
 	digitalWrite(pin->pin, pin->state);
