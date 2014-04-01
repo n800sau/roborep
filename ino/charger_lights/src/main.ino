@@ -1,21 +1,6 @@
-#include <ros.h>
-#include <charger_appeal/lighthouse_cmd.h>
-#include <charger_appeal/lighthouse_status.h>
 #include <EventFuse.h>
-
-ros::NodeHandle nh;
-charger_appeal::lighthouse_cmd cmd_msg;
-charger_appeal::lighthouse_status status_msg;
-
-
-void messageCb(const charger_appeal::lighthouse_cmd& command_msg) {
-	Serial.print(command_msg.command);
-	Serial.print(",");
-	Serial.println(command_msg.param1);
-}
-
-ros::Subscriber<charger_appeal::lighthouse_cmd> request("/charger_appeal/lighthouse_cmd", messageCb );
-ros::Publisher reply("/charger_appeal/lighthouse_status", &status_msg);
+#include <JsonParser.h>
+#include "../../include/printf.h"
 
 struct LED {
 	int pin;
@@ -31,36 +16,55 @@ LED pins[N_LEDS] = {
 	{11, LOW, 3000}
 };
 
+#define MAX_INPUT_LEN 200
+char inputString[MAX_INPUT_LEN];
+int inputPos = 0;
+boolean stringComplete = false;
+
 void FuseEvent(FuseID fuse, int& led_index){
-	nh.spinOnce();
 	LED *pin = pins + led_index;
 	pin->state = !pin->state;
 	digitalWrite(pin->pin, pin->state);
-	status_msg.led_index = led_index;
-	status_msg.led_on = pin->state;
-	reply.publish(&status_msg);
+	printf("{\"led\":%d,\"on\":%d}\r\n", led_index, pin->state);
 //	Serial.print("event:");
 //	Serial.print(led_index);
 //	Serial.print(":");
 //	Serial.println(pin->state);
 }
 
+void serialEvent() {
+  while (Serial.available()) {
+	char inChar = (char)Serial.read();
+	// add it to the inputString:
+	inputString[inputPos++] = inChar;
+	inputString[inputPos] = 0;
+	if (inChar == '\n' || inputPos >= MAX_INPUT_LEN-1) {
+	  stringComplete = true;
+	}
+  }
+}
 
 void setup() {
-//	Serial.begin(57600);
+	Serial.begin(57600);
+	printf_begin();
 	for(int i=0; i<N_LEDS; i++) {
 		LED *pin = pins + i;
 		pinMode(pin->pin, OUTPUT);
 		EventFuse::newFuse(i, pin->count, INF_REPEAT, FuseEvent);
 	}
 //	Serial.println("setup");
-	nh.initNode();
-	nh.subscribe(request);
-	nh.advertise(reply);
 }
 
 void loop(){
-	nh.spinOnce();
+	if (stringComplete) {
+		JsonParser<32> parser;
+		JsonHashTable data = parser.parseHashTable(inputString);
+		char* name = data.getString("command");
+		printf("Executing %s...\n", name);
+		inputString[0] = 0;
+		stringComplete = false;
+	}
+
 	delayMicroseconds(100);
 	EventFuse::burn();
 }
