@@ -130,7 +130,7 @@ void process_cb (const sensor_msgs::ImageConstPtr& msg)
 					mout.setTo(cv::Scalar(0, 0, 0));
 //				cv::drawKeypoints(mout, keypoints, mout, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_OVER_OUTIMG);
 
-					cv::rectangle(mout, pmin, pmax, cv::Scalar::all(-1), 1, 8, 0);
+					cv::rectangle(mout, pmin, pmax, cv::Scalar(255, 0, 0), 1, 8, 0);
 //				contours,hier = cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
 
 //				std::vector<std::vector<cv::Point> > squares;
