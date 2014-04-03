@@ -1,0 +1,7 @@
+<library path="lib/libimage_signal_nd">
+  <class name="image_signal_nd/ImageSignalNd" type="image_signal_nd::ImageSignalNd" base_class_type="nodelet::Nodelet">
+    <description>
+      To find signal in an image.
+    </description>
+  </class>
+</library>
