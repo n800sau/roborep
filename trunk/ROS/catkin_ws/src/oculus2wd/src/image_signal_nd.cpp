@@ -1,3 +1,8 @@
+#include <boost/version.hpp> 
+#if ((BOOST_VERSION / 100) % 1000) >= 53 
+#include <boost/thread/lock_guard.hpp> 
+#endif 
+
 #include <pluginlib/class_list_macros.h>
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
@@ -29,8 +34,7 @@ namespace image_signal_nd
 				ros::NodeHandle &private_nh = getPrivateNodeHandle();
 				it.reset(new image_transport::ImageTransport(nh));
 				// Monitor whether anyone is subscribed to the output
-				typedef image_transport::SubscriberStatusCallback ConnectCB;
-				ConnectCB connect_cb = boost::bind(&ImageSignalNd::connectCb, this);
+				image_transport::SubscriberStatusCallback connect_cb = boost::bind(&ImageSignalNd::connectCb, this);
 				// Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
 				img_pub  = it->advertise("/oculus2wd/signal_image_nd",  1, connect_cb, connect_cb);
@@ -41,7 +45,7 @@ namespace image_signal_nd
 			{
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
 				if (img_pub.getNumSubscribers() == 0) {
-					img_pub.shutdown();
+					img_sub.shutdown();
 				} else if (!img_sub) {
 					image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
 					img_sub = it->subscribe("/camera/rgb/image_raw", 1, &ImageSignalNd::imageCb, this, hints);
@@ -52,7 +56,6 @@ namespace image_signal_nd
 			{
 				int x, y;
 				msgbuf.push_back(msg);
-//				printf("tick %d\n", msg->header.seq);
 				NODELET_DEBUG("tick %d\n", msg->header.seq);
 				if(msgbuf.size() >= MSGBUF_SIZE) {
 					cv::Mat msrc[MSGBUF_SIZE-1], mold, mnew, mmask, mout;
@@ -66,7 +69,7 @@ namespace image_signal_nd
 						if(i>0) {
 							mmask = mnew - mold;
 							cv::threshold(mmask, mmask, 100, 255, cv::THRESH_BINARY);
-    
+
 							bool found = false;
 							std::set<int> xset;
 							std::set<int> yset;
@@ -118,8 +121,10 @@ namespace image_signal_nd
 								printf("%d:nobjects=%d\n", msg->header.seq, (xlist.size()-1) * (ylist.size()-1));
 								mout = cv_ptr->image;
 								mout.setTo(cv::Scalar(0, 0, 0));
-    
+
 								cv::rectangle(mout, pmin, pmax, cv::Scalar(255, 0, 0), 1, 8, 0);
+
+								// Create updated CameraInfo message
 								cv_bridge::CvImage out_msg;
 								out_msg.header   = msg->header; // Same timestamp and tf frame as input image
 								out_msg.encoding = pmsg->encoding;
@@ -132,11 +137,11 @@ namespace image_signal_nd
 				}
 			}
 
-		boost::circular_buffer<sensor_msgs::ImageConstPtr> msgbuf;
-		boost::mutex connect_mutex;
-		boost::shared_ptr<image_transport::ImageTransport> it;
-		image_transport::Subscriber img_sub;
-		image_transport::Publisher img_pub;
+			boost::circular_buffer<sensor_msgs::ImageConstPtr> msgbuf;
+			boost::mutex connect_mutex;
+			boost::shared_ptr<image_transport::ImageTransport> it;
+			image_transport::Subscriber img_sub;
+			image_transport::Publisher img_pub;
 	};
 
 	PLUGINLIB_DECLARE_CLASS(image_signal_nd, ImageSignalNd, image_signal_nd::ImageSignalNd, nodelet::Nodelet);
