@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   dynamic_reconfigure
+  nodelet
 )
 
 ## System dependencies are found with CMake's conventions
@@ -60,6 +61,7 @@ add_message_files(
    battery.msg
    arduino_power.msg
    mpu6050.msg
+   distance_sensor.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -103,10 +105,8 @@ generate_dynamic_reconfigure_options(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES oculus2wd
-  CATKIN_DEPENDS
-  roscpp
-  rospy
-  std_msgs
+  LIBRARIES image_signal_nd
+  CATKIN_DEPENDS roscpp rospy std_msgs nodelet
 #  DEPENDS system_lib
 )
 
@@ -125,6 +125,12 @@ include_directories(
 # add_library(oculus2wd
 #   src/${PROJECT_NAME}/oculus2wd.cpp
 # )
+
+add_library(image_signal_nd src/image_signal_nd.cpp)
+target_link_libraries(image_signal_nd ${catkin_LIBRARIES})
+if(catkin_EXPORTED_LIBRARIES)
+  add_dependencies(image_signal_nd ${catkin_EXPORTED_LIBRARIES})
+endif()
 
 ## Declare a cpp executable
 # add_executable(oculus2wd_node src/oculus2wd_node.cpp)
@@ -156,6 +162,10 @@ add_dependencies(extract_line ${PROJECT_NAME}_gencfg)
 
 add_executable(poisson_surface src/poisson_surface.cpp)
 target_link_libraries(poisson_surface ${catkin_LIBRARIES})
+
+add_executable(distance_ranger src/distance_ranger.cpp)
+target_link_libraries(distance_ranger ${catkin_LIBRARIES})
+add_dependencies(distance_ranger oculus2wd_generate_messages_cpp)
 
 #############
 ## Install ##
