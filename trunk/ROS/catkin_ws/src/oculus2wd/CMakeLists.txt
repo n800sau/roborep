@@ -144,6 +144,9 @@ endif()
 #   ${catkin_LIBRARIES}
 # )
 
+add_executable(img2www src/img2www.cpp)
+target_link_libraries(img2www ${catkin_LIBRARIES})
+
 add_executable(points2_processor src/points2.cpp)
 target_link_libraries(points2_processor ${catkin_LIBRARIES})
 
