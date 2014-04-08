@@ -1,0 +1,3 @@
+<launch>
+	<node name="img2www" pkg="oculus2wd" type="img2www" args="image:=/camera/rgb/image_raw _filename:=/var/www/rgbframe/frame.jpg"/>
+</launch>
