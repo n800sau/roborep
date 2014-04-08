@@ -10,4 +10,5 @@
 		<arg name="depth_registration" value="true" />
 	</include>
 <!--	<include file="$(find freenect_launch)/launch/freenect.launch"/> -->
+	<node name="img2www" pkg="oculus2wd" type="img2www" args="image:=/camera/rgb/image_raw _filename:=/var/www/rgbframe/frame.jpg"/>
 </launch>
