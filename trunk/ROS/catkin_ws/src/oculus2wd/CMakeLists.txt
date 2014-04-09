@@ -144,7 +144,7 @@ endif()
 #   ${catkin_LIBRARIES}
 # )
 
-add_executable(img2www src/img2www.cpp)
+add_executable(img2www src/img2www.cpp src/skin_detector.cpp)
 target_link_libraries(img2www ${catkin_LIBRARIES})
 
 add_executable(points2_processor src/points2.cpp)
