@@ -32,7 +32,7 @@ def callback(data):
 		if english_mode:
 			say('Turn on the light, please.')
 		else:
-			say('', VOICE_RU)
+			say('Включите свет, пожалуйста.', VOICE_RU)
 
 # Ordered this way to minimize wait time.
 rospy.init_node('light_help', anonymous = True)
