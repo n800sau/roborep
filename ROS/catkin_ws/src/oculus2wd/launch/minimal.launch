@@ -4,6 +4,7 @@
 	<node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" />
 	<node name="powerhelp" pkg="oculus2wd" type="powerhelp.py" />
 	<node name="laptop_battery" pkg="linux_hardware" type="laptop_battery.py" />
+	<node name="brightness" pkg="oculus2wd" type="brightness.py" />
 <!--	<node name="imu_ir" pkg="oculus2wd" type="imu_ir.py" /> -->
 	<node name="$(anon base_serial_node)" pkg="rosserial_python" type="serial_node.py" args="/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A4015M29-if00-port0"/>
 	<include file="$(find openni2_launch)/launch/openni2.launch">
