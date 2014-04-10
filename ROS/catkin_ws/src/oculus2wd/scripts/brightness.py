@@ -14,7 +14,7 @@ def callback(data):
 	data = numpy.array(cv_image)
 	dataval = data.mean() / 256.
 #		print cv2.calcHist( [data], [0], None, [8], [0, 255] )
-#		print data.mean(), data.max(), data.dtype
+#	print data.mean(), data.max(), data.dtype
 #		ret, mask = cv2.threshold(data, 0, 100, cv2.THRESH_BINARY)
 #		print cv2.mean(cv_image)
 	pub.publish(dataval)
