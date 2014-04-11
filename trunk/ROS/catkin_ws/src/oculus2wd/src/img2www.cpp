@@ -11,7 +11,7 @@
 
 #include"skin_detector.hpp"
 
-std::string imgfname, clrfname, skinfname;
+std::string imgfname, clrfname, skinfname, circlesfname;
 image_transport::Subscriber img_sub;
 
 ros::Time last_stamp;
@@ -54,6 +54,21 @@ void saveimage_cb(const sensor_msgs::ImageConstPtr& msg)
 //		cv::inRange(imgHSV, cv::Scalar(170,160,60), cv::Scalar(180,255,255), mask);
 		cv::inRange(imgHSV, cv::Scalar(90,0,0), cv::Scalar(180,255,255), mask);
 //		cv::inRange(imgHSV, cv::Scalar(0,0,0), cv::Scalar(255,255,255), mask);
+		std::vector<cv::Vec3f> circles;
+		cv::HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 1, mask.rows/20, 200, 100, 0, 0 );
+		for( size_t i = 0; i < circles.size(); i++ )
+		{
+			cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+			int radius = cvRound(circles[i][2]);
+			// draw the circle center
+			cv::circle( dst, center, 3, cv::Scalar(0,255,0), -1, 8, 0 );
+			// draw the circle outline
+			cv::circle( dst, center, radius, cv::Scalar(0,0,255), 3, 8, 0 );
+		}
+		write_img(dst, circlesfname);
+		int morph_size = 10;
+//		cv::Mat element = cv::getStructuringElement(CV_SHAPE_RECT, cv::Size( 2*morph_size + 1, 2*morph_size+1 ), cv::Point( morph_size, morph_size ) );
+//		cv::morphologyEx( mask, mask, cv::MORPH_OPEN, element);
 //		cv::GaussianBlur( mask, mask, cv::Size( 3, 3 ), 0, 0 );
 		cv::cvtColor(mask, mask, CV_GRAY2RGB);
 		write_img(mask, clrfname);
@@ -79,6 +94,7 @@ int main(int argc, char ** argv)
 	local_nh.param("filename_raw", imgfname, std::string(std::string("/var/www/rgbframe/frame.png")));
 	local_nh.param("filename_color", clrfname, std::string(std::string("/var/www/rgbframe/frame_color.png")));
 	local_nh.param("filename_skin", skinfname, std::string(std::string("/var/www/rgbframe/frame_skin.png")));
+	local_nh.param("filename_circles", circlesfname, std::string(std::string("/var/www/rgbframe/frame_circles.png")));
 	ros::ServiceServer save = local_nh.advertiseService ("save", service);
 
 	ros::spin();

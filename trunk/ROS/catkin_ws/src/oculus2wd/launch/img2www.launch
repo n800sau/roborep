@@ -3,5 +3,6 @@
 		_filename_raw:=/var/www/rgbframe/frame.jpg
 		_filename_color:=/var/www/rgbframe/frame_color.jpg
 		_filename_skin:=/var/www/rgbframe/frame_skin.jpg
+		_filename_circles:=/var/www/rgbframe/frame_circles.jpg
 	" />
 </launch>

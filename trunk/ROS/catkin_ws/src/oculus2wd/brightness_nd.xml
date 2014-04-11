@@ -1,0 +1,7 @@
+<library path="lib/libbrightness_nd">
+  <class name="brightness_nd/BrightnessNd" type="brightness_nd::BrightnessNd" base_class_type="nodelet::Nodelet">
+    <description>
+      To find signal in an image.
+    </description>
+  </class>
+</library>
