@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="BrightnessNd" args="load brightness_nd/BrightnessNd standalone_nodelet" output="screen">
+  </node>
+
+</launch>
+
+
