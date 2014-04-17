@@ -9,6 +9,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
+#include <boost/thread.hpp>
 
 #include"skin_detector.hpp"
 
@@ -285,14 +286,14 @@ bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
 	return true;
 }
 
-void write_img(const cv::Mat img, std::string fname)
+void write_img(const cv::Mat img, std::string fname, cv::Scalar clr=cvScalar(0, 0, 250))
 {
 	cv::Mat c_img = img.clone();
 	char text[50];
 	time_t t = last_stamp.sec;
 	std::strftime(text, sizeof(text), "%H:%M:%S", localtime(&t));
 //	printf("%s\n", text);
-	cv::putText(c_img, text, cvPoint(10,10), CV_FONT_HERSHEY_PLAIN, 0.5, cvScalar(0, 0, 250), 1, CV_AA);
+	cv::putText(c_img, text, cvPoint(10,10), CV_FONT_HERSHEY_SIMPLEX, 0.3, clr, 1, CV_AA);
 	unsigned pos = fname.find_last_of('.');
 	std::string ext = fname.substr(pos+1);
 	std::string tmpfname = fname + ".tmp." + ext;
@@ -380,7 +381,7 @@ void savedisparityimage_cb(const stereo_msgs::DisparityImageConstPtr& msg)
 	}
 
 	cv::resize(disparity_color, disparity_color, cv::Size(160,120));
-	write_img(disparity_color, dispfname);
+	write_img(disparity_color, dispfname, cvScalar(0, 0, 0));
 
 }
 
@@ -394,8 +395,8 @@ int main(int argc, char ** argv)
 	last_stamp = ros::Time::now();
 	step = ros::Duration(1, 0);
 	image_transport::ImageTransport it(nh);
-	img_sub = it.subscribe(topic1, 1, saveimage_cb);
-	disp_sub = nh.subscribe<stereo_msgs::DisparityImage>(topic2, 1, savedisparityimage_cb);
+	img_sub = it.subscribe(topic1, 100, saveimage_cb);
+	disp_sub = nh.subscribe<stereo_msgs::DisparityImage>(topic2, 100, savedisparityimage_cb, ros::TransportHints().unreliable());
 
 	ros::NodeHandle local_nh("~");
 	local_nh.param("filename_raw", imgfname, std::string(std::string("/var/www/rgbframe/frame.png")));
@@ -404,6 +405,14 @@ int main(int argc, char ** argv)
 	local_nh.param("filename_circles", circlesfname, std::string(std::string("/var/www/rgbframe/frame_circles.png")));
 	local_nh.param("filename_disparity", dispfname, std::string(std::string("/var/www/rgbframe/frame_disparity.png")));
 	ros::ServiceServer save = local_nh.advertiseService ("save", service);
+//	ros::AsyncSpinner spinner(2);
+//	spinner.start();
 
+//	ros::Rate r(5);
+//	while (ros::ok())
+//	{
+//		ROS_INFO_STREAM("Main thread [" << boost::this_thread::get_id() << "].");
+//		r.sleep();
+//	}
 	ros::spin();
 }
