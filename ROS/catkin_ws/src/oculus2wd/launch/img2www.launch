@@ -1,8 +1,11 @@
 <launch>
-	<node name="img2www" pkg="oculus2wd" type="img2www" args="image:=/camera/rgb/image_raw 
+	<node name="img2www" pkg="oculus2wd" type="img2www" args="
+		image:=/camera/rgb/image_raw
+		disparity:=/camera/depth_registered/disparity
 		_filename_raw:=/var/www/rgbframe/frame.jpg
 		_filename_color:=/var/www/rgbframe/frame_color.jpg
 		_filename_skin:=/var/www/rgbframe/frame_skin.jpg
 		_filename_circles:=/var/www/rgbframe/frame_circles.jpg
+		_filename_disparity:=/var/www/rgbframe/frame_disparity.jpg
 	" />
 </launch>
