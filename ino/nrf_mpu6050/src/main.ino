@@ -103,7 +103,8 @@ unsigned long pcounter = 0;
 //pause between value output (ms)
 const int printDelay = 5000;
 
-const int ACC_THRESHOLD = 150;
+const int ACC_THRESHOLD = 200;
+//const int ACC_THRESHOLD = 2700;
 int16_t a_x=0, a_y=0, a_z=0;
 
 
