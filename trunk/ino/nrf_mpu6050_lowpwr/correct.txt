@@ -1,0 +1,26 @@
+500 -2256
+1000 2316
+
+diff = (-2256-2316)/500
+-9.144
+2256/9.144 = ~246.71916010498687664042
+
+
+INTELLIGENCE FUNCTION
+INCREMENT             32 mg/LSB
+
+AFS_SEL Full Scale Range LSB Sensitivity
+   0           ±2g        16384 LSB/g
+   1           ±4g         8192 LSB/g
+   2           ±8g         4096 LSB/g
+   3          ±16g         2048 LSB/g
+
+offset * 32 ?
+
+threshold:
+32 mg - 1
+64 mg - 2
+
+
+16g -> 1 - 1/2048 = 0.48 mg :
+threshold 2 = 2/0.48 = change 4
