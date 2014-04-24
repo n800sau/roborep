@@ -102,25 +102,49 @@ void loop(void)
 		payload_t reply;
 		network.read(header,&reply,sizeof(reply));
 
-		Serial.print(REPLY_MARKER);
-		Serial.print(" #");
-		Serial.print(reply.counter);
-		Serial.print(" at ");
-		Serial.print(reply.ms);
-		Serial.print("\tquat\t");
-		Serial.print(reply.d.mpu.quaternion[0]);
-		Serial.print("\t");
-		Serial.print(reply.d.mpu.quaternion[1]);
-		Serial.print("\t");
-		Serial.print(reply.d.mpu.quaternion[2]);
-		Serial.print("\t");
-		Serial.print(reply.d.mpu.quaternion[3]);
-		Serial.print("\tgrav\t");
-		Serial.print(reply.d.mpu.gravity[0]);
-		Serial.print("\t");
-		Serial.print(reply.d.mpu.gravity[1]);
-		Serial.print("\t");
-		Serial.println(reply.d.mpu.gravity[2]);
+		switch(reply.pload_type) {
+			case PL_MPU:
+				Serial.print(REPLY_MARKER);
+				Serial.print(" #");
+				Serial.print(reply.counter);
+				Serial.print(" at ");
+				Serial.print(reply.ms);
+				Serial.print("\tquat\t");
+				Serial.print(reply.d.mpu.quaternion[0]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.quaternion[1]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.quaternion[2]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.quaternion[3]);
+				Serial.print("\tgrav\t");
+				Serial.print(reply.d.mpu.gravity[0]);
+				Serial.print("\t");
+				Serial.print(reply.d.mpu.gravity[1]);
+				Serial.print("\t");
+				Serial.println(reply.d.mpu.gravity[2]);
+				break;
+			case PL_ACC: 
+				Serial.print(REPLY_MARKER);
+				Serial.print(" #");
+				Serial.print(reply.counter);
+				Serial.print(" at ");
+				Serial.print(reply.ms);
+				Serial.print("\tacc\t");
+				Serial.print(reply.d.acc.raw[0] * (int)reply.d.acc.uScale);
+				Serial.print("\t");
+				Serial.print(reply.d.acc.raw[1] * (int)reply.d.acc.uScale);
+				Serial.print("\t");
+				Serial.println(reply.d.acc.raw[2] * (int)reply.d.acc.uScale);
+				break;
+			default:
+				Serial.print(REPLY_MARKER);
+				Serial.print(" #");
+				Serial.print(reply.counter);
+				Serial.print(" at ");
+				Serial.println(reply.ms);
+				break;
+		}
 	} else {
 		// If it's time to send a message, send it!
 		unsigned long now = millis();
