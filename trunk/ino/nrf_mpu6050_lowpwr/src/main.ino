@@ -1,3 +1,21 @@
+// to include nrf code define the following
+#define WITH_NRF
+
+#ifdef WITH_NRF
+#include <RF24.h>
+#include <RF24Network.h>
+#include <SPI.h>
+
+// nRF24L01(+) radio attached using Getting Started board 
+RF24 radio(9,10);
+
+// Network uses that radio
+RF24Network network(radio);
+
+unsigned long pcounter = 0;
+
+#endif // WITH_NRF
+
 #include <avr/sleep.h>
 
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
@@ -11,6 +29,9 @@
 	#include "Wire.h"
 #endif
 
+#include "../../include/common.h"
+#include "../../include/printf.h"
+
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
 // AD0 low = 0x68 (default for InvenSense evaluation board)
@@ -20,23 +41,12 @@ MPU6050 mpu;
 
 
 
-
 // uncomment "OUTPUT_READABLE_ACCELGYRO" if you want to see a tab-separated
 // list of the accel X/Y/Z and then gyro X/Y/Z values in decimal. Easy to read,
 // not so easy to parse, and slow(er) over UART.
 #define OUTPUT_READABLE_ACCELGYRO
 
-// uncomment "OUTPUT_BINARY_ACCELGYRO" to send all 6 axes of data as 16-bit
-// binary, one right after the other. This is very fast (as fast as possible
-// without compression or data loss), and easy to parse, but impossible to read
-// for a human.
-//#define OUTPUT_BINARY_ACCELGYRO
-
-
-enum CORR_TYPE {AX=0, AY, AZ, GX, GY, GZ};
-int16_t corrs[] = {-1660 /* G */, 750, -550, 0, 0, 0};
-//int16_t corrs[] = {-5130, 1320, -1017, -141, 55, 86};
-int16_t vals[6];
+int16_t corr_x = -1660, corr_y = 750, corr_z = -550;
 
 int wakeInt = 1;                 // pin used for waking up
 volatile bool interrupted;
@@ -64,6 +74,13 @@ void setup() {
 	delay(200);
 	mpu.initialize();
 
+#ifdef WITH_NRF
+	SPI.begin();
+	radio.begin();
+	network.begin(CHANNEL, NRF_MPU6050_NODE);
+	radio.powerDown();
+#endif // WITH_NRF
+
 	// verify connection
 	Serial.println("Testing device connections...");
 	Serial.println(mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
@@ -72,18 +89,12 @@ void setup() {
 
 	Serial.println("Updating internal sensor offsets...");
 	mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
-	mpu.setXAccelOffset(corrs[0]);
-	mpu.setYAccelOffset(corrs[1]);
-	mpu.setZAccelOffset(corrs[2]);
-	mpu.setXGyroOffset(corrs[3]);
-	mpu.setYGyroOffset(corrs[4]);
-	mpu.setZGyroOffset(corrs[5]);
+	mpu.setXAccelOffset(corr_x);
+	mpu.setYAccelOffset(corr_y);
+	mpu.setZAccelOffset(corr_z);
 	Serial.print(mpu.getXAccelOffset()); Serial.print("\t"); // -76
 	Serial.print(mpu.getYAccelOffset()); Serial.print("\t"); // -2359
 	Serial.print(mpu.getZAccelOffset()); Serial.print("\t"); // 1688
-	Serial.print(mpu.getXGyroOffset()); Serial.print("\t"); // 0
-	Serial.print(mpu.getYGyroOffset()); Serial.print("\t"); // 0
-	Serial.print(mpu.getZGyroOffset()); Serial.print("\t"); // 0
 	Serial.println();
 
 	mpu.setInterruptMode(MPU6050_INTMODE_ACTIVELOW);
@@ -186,9 +197,6 @@ void loop() {
 		Serial.println(st, HEX);
 		int i;
 
-		// read raw accel/gyro measurements from device
-		mpu.getMotion6(&vals[AX], &vals[AY], &vals[AZ], &vals[GX], &vals[GY], &vals[GZ]);
-
 
 		if(st & (1 << MPU6050_INTERRUPT_ZMOT_BIT)) {
 			Serial.println("Stopped");
@@ -211,25 +219,36 @@ void loop() {
 		}
 
 
-		// these methods (and a few others) are also available
-		//mpu.getAcceleration(&ax, &ay, &az);
-		//mpu.getRotation(&gx, &gy, &gz);
+		int16_t ax, ay, az;
+		mpu.getAcceleration(&ax, &ay, &az);
 
 		#ifdef OUTPUT_READABLE_ACCELGYRO
 			// display tab-separated accel/gyro x/y/z values
-			Serial.print("a/g:\t");
-			for(i=0; i<6; i++) {
-				Serial.print(vals[i]); Serial.print("\t");
-			}
+			Serial.print("a:\t");
+			Serial.print(ax); Serial.print("\t");
+			Serial.print(ay); Serial.print("\t");
+			Serial.print(az); Serial.print("\t");
 			Serial.println();
 		#endif
 
-		#ifdef OUTPUT_BINARY_ACCELGYRO
-			for(i=0; i<6; i++) {
-				Serial.write((uint8_t)(vals[i] >> 8)); Serial.write((uint8_t)(vals[i] & 0xFF));
-			}
-			Serial.println();
-		#endif
+#ifdef WITH_NRF
+		RF24NetworkHeader header(PC2NRF_NODE);
+		payload_t reply;
+		reply.pload_type = PL_ACC;
+		reply.d.acc.raw[0] = ax;
+		reply.d.acc.raw[1] = ay;
+		reply.d.acc.raw[2] = az;
+		reply.d.acc.uScale = 1;
+		reply.ms = millis();
+		reply.counter = ++pcounter;
+		bool ok = network.write(header,&reply,sizeof(reply));
+		if (ok)
+			Serial.println("Replied ok.");
+		else
+			Serial.println("Reply failed.");
+		radio.powerDown();
+#endif // WITH_NRF
+
 	}
 
 	delay(100);     // this delay is needed, the sleep 
