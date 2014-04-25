@@ -48,13 +48,15 @@ MPU6050 mpu;
 
 int16_t corr_x = -1660, corr_y = 750, corr_z = -550;
 
-int wakeInt = 1;                 // pin used for waking up
+int wakePin = 3;                 // pin used for waking up
+int wakeInt = wakePin - 2;       // interrupt used for waking up
 volatile bool interrupted;
 
 void setup() {
 
 
-  pinMode(wakeInt, INPUT);
+	pinMode(wakePin, INPUT);
+	digitalWrite(wakePin, HIGH);
 
 	// join I2C bus (I2Cdev library doesn't do this automatically)
 	#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -98,11 +100,12 @@ void setup() {
 	Serial.println();
 
 	mpu.setInterruptMode(MPU6050_INTMODE_ACTIVELOW);
-//	mpu.setIntEnabled((1 << MPU6050_INTERRUPT_MOT_BIT) | (1 << MPU6050_INTERRUPT_ZMOT_BIT));
-	mpu.setIntEnabled((1 << MPU6050_INTERRUPT_MOT_BIT) | (1 << MPU6050_INTERRUPT_DATA_RDY_BIT));
+	mpu.setIntEnabled((1 << MPU6050_INTERRUPT_MOT_BIT) | (1 << MPU6050_INTERRUPT_ZMOT_BIT));
+// to make periodic wakening uncomment the next line
+//	mpu.setIntEnabled((1 << MPU6050_INTERRUPT_MOT_BIT) | (1 << MPU6050_INTERRUPT_DATA_RDY_BIT));
 
 	mpu.setMotionDetectionThreshold(1);
-	mpu.setMotionDetectionDuration(4);
+	mpu.setMotionDetectionDuration(1);
 
 	mpu.setZeroMotionDetectionThreshold(156);
 	mpu.setZeroMotionDetectionDuration(0);
@@ -126,6 +129,8 @@ void wakeUpNow()        // here the interrupt is handled after wakeup
 
 void sleepNow()         // here we put the arduino to sleep
 {
+	Serial.println("Timer: Entering Sleep mode");
+	delay(100);     // this delay is needed, the sleep 
     /* Now is the time to set the sleep mode. In the Atmega8 datasheet
      * http://www.atmel.com/dyn/resources/prod_documents/doc2486.pdf on page 35
      * there is a list of sleep modes which explains which clocks and 
