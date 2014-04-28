@@ -107,7 +107,7 @@ void loop(void)
 				Serial.print(REPLY_MARKER);
 				Serial.print(" #");
 				Serial.print(reply.counter);
-				Serial.print(" at ");
+				Serial.print(" ms ");
 				Serial.print(reply.ms);
 				Serial.print("\tquat\t");
 				Serial.print(reply.d.mpu.quaternion[0]);
@@ -128,7 +128,7 @@ void loop(void)
 				Serial.print(REPLY_MARKER);
 				Serial.print(" #");
 				Serial.print(reply.counter);
-				Serial.print(" at ");
+				Serial.print(" ms ");
 				Serial.print(reply.ms);
 				Serial.print("\tacc\t");
 				Serial.print(reply.d.acc.raw[0] * (int)reply.d.acc.uScale);
@@ -141,7 +141,7 @@ void loop(void)
 				Serial.print(REPLY_MARKER);
 				Serial.print(" #");
 				Serial.print(reply.counter);
-				Serial.print(" at ");
+				Serial.print(" ms ");
 				Serial.println(reply.ms);
 				break;
 		}
@@ -151,7 +151,8 @@ void loop(void)
 		if ( now - last_sent >= interval)
 		{
 			last_sent = now;
-			Serial.print("V:");
+			Serial.print(CONTROLLER_STATE_MARKER);
+			Serial.print("\tv\t");
 			Serial.println(readVccMv(), DEC);
 		}
 //		Serial.println("Nothing");

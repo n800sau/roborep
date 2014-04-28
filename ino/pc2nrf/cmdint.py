@@ -1,116 +1,178 @@
 #!/usr/bin/env python
 
-import cmd, sys, os, atexit, readline, socket, time
+import cmd, sys, os, serial, atexit, readline, socket, time
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 
 from forklift import run_process, terminate_all
 import libcommon_py as common
+from conf_ino import configure
 
-import rospy
-from oculus2wd.msg import drive_status
-from oculus2wd.msg import drive
+class SerReader:
 
-class OculusShell(cmd.Cmd):
-	intro = 'Welcome to the oculus shell.	Type help or ? to list commands.\n'
-	prompt = '(oculus) '
+	def __init__(self):
+		cfg = configure().as_dict('serial')
+		self.s = serial.Serial(cfg['serial_port'], int(cfg.get('baud_rate', 9600)), timeout=5, interCharTimeout=1)
+		self.reply_mode = False
+		self.replylist = []
+		self.final_replylist = []
+
+	def read_replylist(self):
+		rs = self.final_replylist
+		self.final_replylist = []
+		return rs
+
+	def readline(self):
+		return self.s.readline()
+
+	def write(self, line):
+		self.s.write(line)
+
+	def idle(self):
+		if self.s.inWaiting():
+			line = self.readline()
+			print line
+#			print >>sys.stderr, '%s, %s, %s' % (line, common.REPLY_START_MARKER, line == common.REPLY_START_MARKER)
+#			print >>sys.stderr, self.final_replylist
+			if self.reply_mode:
+				if line.strip() == common.REPLY_END_MARKER:
+					self.final_replylist += self.replylist
+					self.replylist = []
+					self.reply_mode = False
+				else:
+					#print >>sys.stderr, line
+					self.replylist.append(line)
+			else:
+				if line.startswith(common.REPLY_MARKER):
+					#print >>sys.stderr, line
+					self.final_replylist.append(line[len(common.REPLY_MARKER):])
+				elif line.strip() == common.REPLY_START_MARKER:
+					self.reply_mode = True
+				elif line.startswith(common.SERVO_STATE_MARKER):
+					self.final_replylist.append(line[len(common.SERVO_STATE_MARKER):])
+
+class NRFShell(cmd.Cmd):
+	intro = 'Welcome to the NRF shell.	Type help or ? to list commands.\n'
+	prompt = '(nrf) '
 
 	def __init__(self):
 		cmd.Cmd.__init__(self)
-		rospy.init_node('drive_node')
-		self.pub = rospy.Publisher('/oculus2wd/base_command', drive)
-		rospy.Subscriber("/oculus2wd/base_status", drive_status, self.on_reply)
-		print dir(drive_status)
 		self.file = None
 		self.logfile = None
+		self.subprocess = run_process(SerReader(), robject=self)
 
 	def write_log(self, line):
 		if not self.logfile:
-			self.logfile = file('oculus_base.log', 'a+')
+			self.logfile = file('nrf_base.log', 'a+')
 		self.logfile.write('%s\n' % line.rstrip())
 		self.logfile.flush()
 
 	def batstat(self):
-		status = 'Unknown'
-		energy_full = None
-		energy_now = None
-		for line in file('/sys/class/power_supply/BAT0/uevent'):
-			line = line.strip()
-			if line:
-				n,v = line.split('=')
-				if n in ('POWER_SUPPLY_STATUS',):
-					status = v
-				elif n in ('POWER_SUPPLY_CHARGE_FULL', 'POWER_SUPPLY_ENERGY_FULL'):
-					energy_full = int(v)
-				elif n in ('POWER_SUPPLY_CHARGE_NOW', 'POWER_SUPPLY_ENERGY_NOW'):
-					energy_now = int(v)
-		if energy_full and energy_now:
-			print 'Status %g%%, %s' % (float(energy_now) /energy_full * 100, status)
+		print 'Battery status: %d%%' % (float(file('/sys/class/power_supply/BAT0/charge_now').read())/float(file('/sys/class/power_supply/BAT0/charge_full').read())*100),
+		current = int(file('/sys/class/power_supply/BAT0/current_now').read())
+		if current == 0:
+			print ',charging...'
+		else:
+			print ',current=%s' % current
 
-	def on_reply(self, *args):
-		print '\n%s' % args
+	def readreply(self):
+		self.batstat()
+		i = 0
+		while True:
+			sys.stdout.write("\x0d%s" % ('*' * i))
+			sys.stdout.flush()
+			rs = self.subprocess.read_replylist(wait=True)
+			if rs:
+				break
+			time.sleep(1)
+			i += 1
+			if i > 10:
+				break
+		print "\x0d%s\n" % (' ' * i)
+		return ''.join(rs)
 
-	# ----- oculus commands -----
+	def print_reply(self):
+		reply = self.readreply()
+		if reply:
+			print 'REPLY:', reply
+		else:
+			print 'NO REPLY'
+
+	# ----- nrf commands -----
 
 	def do_step_fw(self, arg):
 		'Step forward'
-		self.pub.publish(drive(ord('f'), 255, 1))
+		self.subprocess.write('f%c\n' % 255)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_step_back(self, arg):
 		'Step back'
-		self.pub.publish(drive(ord('b'), 255, 1))
+		self.subprocess.write('b%c\n' % 255)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_forward(self, arg):
 		'Forward (0-255)'
-		self.pub.publish(drive(ord('f'), int(arg), 1))
+		self.subprocess.write('f%c\n' % int(arg))
 
 	def do_back(self, arg):
 		'Back (0-255)'
-		self.pub.publish(drive(ord('b'), int(arg), 1))
+		self.subprocess.write('b%c\n' % int(arg))
 
 	def do_step_left(self, arg):
 		'Step left'
-		self.pub.publish(drive(ord('l'), 255, 1))
+		self.subprocess.write('l%c\n' % 255)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_step_right(self, arg):
 		'Step right'
-		self.pub.publish(drive(ord('r'), 255, 1))
+		self.subprocess.write('r%c\n' % 255)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_setcam(self, arg):
-		'Set cam angle [55-80]'
-		pos = int(arg)
-		pos = 80 - pos * (80-55) / 100.
-		self.pub.publish(drive(ord('v'), pos, 1))
+		'Set cam angle [75-100]'
+		self.subprocess.write('v%c\n' % int(arg))
+		self.print_reply()
 
 	def do_release_cam(self, arg):
 		'Release cam'
-		self.pub.publish(drive(ord('w'), 0, 1))
+		self.subprocess.write('w\n')
+		self.print_reply()
+
+	def do_version(self, arg):
+		'Get firmware version'
+		self.subprocess.write('y\n')
+		self.print_reply()
 
 	def do_stop(self, arg):
 		'Stop motors'
-		self.pub.publish(drive(ord('s'), 0, 1))
+		self.subprocess.write('s\n')
+		self.print_reply()
 
-	def do_eof(self, arg):
-		print
-		self.do_quit(arg)
+	def do_echo(self, arg):
+		'Echo on/off: ECHO <ON|OFF>'
+		if arg.lower() == 'on':
+			self.subprocess.write('e1\n')
+		elif arg.lower() == 'off':
+			self.subprocess.write('e0\n')
+		self.print_reply()
 
 
-	# ----- oculus commands end-----
+	# ----- nrf commands end-----
 
 	def do_quit(self, arg):
 		'Exit the shell:	 QUIT'
 		self.close()
 		sys.exit(0)
 		return True
+
+	def do_eof(self, arg):
+		print
+		self.do_quit(arg)
 
 	# ----- record and playback -----
 
@@ -142,7 +204,7 @@ class OculusShell(cmd.Cmd):
 			self.logfile = None
 
 if __name__ == '__main__':
-	histfile = os.path.join(os.environ["HOME"], ".oculushist")
+	histfile = os.path.join(os.environ["HOME"], ".nrfhist")
 	try:
 		readline.read_history_file(histfile)
 	except IOError:
@@ -150,4 +212,4 @@ if __name__ == '__main__':
 	atexit.register(readline.write_history_file, histfile)
 	atexit.register(terminate_all)
 	del histfile
-	OculusShell().cmdloop()
+	NRFShell().cmdloop()
