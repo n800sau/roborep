@@ -43,6 +43,7 @@ struct payload_t {
 	} d;
 };
 
+#define READY_MARKER "READY!"
 #define ADDRESS_MARKER "ADDRESS:"
 #define END_MARKER ":END"
 #define CMD_MARKER "STICK:"
