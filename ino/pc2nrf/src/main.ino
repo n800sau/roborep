@@ -1,5 +1,5 @@
 #include "../../include/common.h"
-#include "../../include/printf.h"
+//#include "../../include/printf.h"
 #include <SPI.h>
 #include <RF24.h>
 #include <RF24Network.h>
@@ -33,14 +33,15 @@ String cmdBuffer;
 void setup(void)
 {
 	Serial.begin(57600);
-	inputString.reserve(200);
-	printf_begin();
+	inputString.reserve(100);
+//	printf_begin();
 	Serial.println("PC to nrf network interface");
  
 	SPI.begin();
 	radio.begin();
 	network.begin(CHANNEL, PC2NRF_NODE);
-	cmdBuffer.reserve(500);
+	cmdBuffer.reserve(100);
+	Serial.println(READY_MARKER);
 }
 
 /*
@@ -63,6 +64,12 @@ void serialEvent() {
   }
 }
 
+void process_own_command(String cmd)
+{
+	Serial.print("Processing command:");
+	Serial.println(cmd);
+}
+
 void loop(void)
 {
 	// Pump the network regularly
@@ -77,18 +84,24 @@ void loop(void)
 			}
 		} else {
 			if(inputString.equals(END_MARKER)) {
-				// send command buffer to the current address
-				int payload_size = cmdBuffer.length() + 2;
-				byte payload[payload_size];
-				cmdBuffer.getBytes(payload, payload_size);
-				RF24NetworkHeader header(current_address);
-				if (network.write(header,&payload,sizeof(payload)))
-					Serial.println("ok.");
-				else
-					Serial.println("failed.");
+				if(current_address == PC2NRF_NODE) {
+					// this is to me
+					process_own_command(cmdBuffer);
+				} else {
+					// send command buffer to the current address
+					int payload_size = cmdBuffer.length() + 2;
+					byte payload[payload_size];
+					cmdBuffer.getBytes(payload, payload_size);
+					RF24NetworkHeader header(current_address);
+					if (network.write(header,&payload,sizeof(payload)))
+						Serial.println("ok.");
+					else
+						Serial.println("failed.");
+				}
 				current_address = -1;
 				cmdBuffer = "";
 			} else {
+	Serial.println(cmdBuffer);
 				cmdBuffer += inputString + '\n';
 			}
 		}
@@ -126,9 +139,9 @@ void loop(void)
 				break;
 			case PL_ACC: 
 				Serial.print(REPLY_MARKER);
-				Serial.print(" #");
+				Serial.print("\t#\t");
 				Serial.print(reply.counter);
-				Serial.print(" ms ");
+				Serial.print("\tms\t");
 				Serial.print(reply.ms);
 				Serial.print("\tacc\t");
 				Serial.print(reply.d.acc.raw[0] * (int)reply.d.acc.uScale);
@@ -152,6 +165,8 @@ void loop(void)
 		{
 			last_sent = now;
 			Serial.print(CONTROLLER_STATE_MARKER);
+			Serial.print("\tms\t");
+			Serial.print(millis());
 			Serial.print("\tv\t");
 			Serial.println(readVccMv(), DEC);
 		}
