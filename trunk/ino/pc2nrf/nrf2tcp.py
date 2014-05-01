@@ -19,20 +19,22 @@ if __name__ == '__main__':
 	tcp_host = cfg.get('tcp_host', '0.0.0.0')
 	tcp_port = cfg['tcp_port']
 
-	print s_port, s_rate
+#	print s_port, s_rate
 #	check_call(['stty', '-F', s_port, str(s_rate)])
-	serdev = serial.Serial(s_port, s_rate, timeout=5, interCharTimeout=1)
-	while True:
-		line = serdev.readline()
-		if line.strip() == common.READY_MARKER:
-			break
-	settime_cmd = '%s%d\r\nsetTime %d\r\n%s\r\n' % (common.ADDRESS_MARKER, common.PC2NRF_NODE, time.time() * 1000, common.END_MARKER)
-	print serdev.write(settime_cmd), 'bytes written'
-	serdev.flushOutput()
-#	while True:
-#		print 'waiting...'
-#		print serdev.readline()
-#	sys.exit()
+	serdev = serial.Serial(s_port, s_rate, timeout=1, interCharTimeout=1)
+	repeat = True
+	while repeat:
+		settime_cmd = '%s%d\n%ssetTime %d\n%s\n' % (common.ADDRESS_MARKER, common.PC2NRF_NODE, common.DATA_MARKER, time.time() * 1000, common.END_MARKER)
+		print serdev.write(settime_cmd), 'bytes written'
+		serdev.flushOutput()
+		curtime = time.time()
+		while curtime + 3 > time.time():
+#			print 'waiting...'
+			repl = serdev.readline().strip()
+			print repl
+			if repl == common.ACK_MARKER:
+				repeat = False
+				break
 #	cmdlist = ['nc.traditional', '-l', '-p', tcp_port, tcp_host]
 	cmdlist = ['nc', '-C', '-k', '-l', tcp_port]
 	while True:
