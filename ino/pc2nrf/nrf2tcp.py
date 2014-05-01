@@ -11,11 +11,13 @@ import libcommon_py as common
 
 if __name__ == '__main__':
 
-	cfg = configure().as_dict('serial')
+	cfgobj = configure(os.path.dirname(__file__))
+
+	cfg = cfgobj.as_dict('serial')
 	s_port = cfg['serial_port']
 	s_rate = int(cfg.get('baud_rate', 9600))
 
-	cfg = configure().as_dict('serial2tcp')
+	cfg = cfgobj.as_dict('serial2tcp')
 	tcp_host = cfg.get('tcp_host', '0.0.0.0')
 	tcp_port = cfg['tcp_port']
 
@@ -33,10 +35,10 @@ if __name__ == '__main__':
 #			print 'waiting...'
 			repl = serdev.readline().strip()
 			if repl:
-				print repl
 				if repl == common.ACK_MARKER:
 					repeat = False
 					break
+				print repl
 #	cmdlist = ['nc.traditional', '-l', '-p', tcp_port, tcp_host]
 	cmdlist = ['nc', '-C', '-k', '-l', tcp_port]
 	while True:

@@ -44,7 +44,7 @@ if __name__ == '__main__':
 					if marker in (common.CONTROLLER_STATE_MARKER, common.REPLY_MARKER):
 						line = line.split(common.DATA_SEPARATOR)[1:]
 						ldict = dict(zip(line[::2], line[1::2]))
-						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs']))),
+						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs'])))
 						if marker not in files:
 							files[marker] = {}
 							files[marker]['file'] = file(marker + '.csv', 'a')
