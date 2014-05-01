@@ -14,7 +14,8 @@ RF24Network network(radio);
 // How often to print voltage
 const unsigned long interval = 5000; //ms
 
-unsigned long time_offset = 0;
+unsigned long secs_offset = 0;
+unsigned long millis_offset = 0;
 
 // When did we last print voltage?
 unsigned long last_sent;
@@ -71,9 +72,10 @@ void process_own_command(String cmd)
 {
 	const String setTimeCmd = "setTime";
 	if(cmd.startsWith(setTimeCmd)) {
-		time_offset = cmd.substring(setTimeCmd.length() + 1).toInt() - millis();
-		Serial.print("Number:");
-		Serial.println(time_offset);
+		millis_offset = millis();
+		secs_offset = cmd.substring(setTimeCmd.length() + 1).toInt();
+		Serial.print("Time offset:");
+		Serial.println(secs_offset);
 	}
 //	Serial.print("Processing command:");
 //	Serial.println(cmd);
@@ -81,7 +83,7 @@ void process_own_command(String cmd)
 
 unsigned long curTime()
 {
-	return time_offset + millis();
+	return secs_offset + (millis() - millis_offset) / 1000;
 }
 
 void loop(void)
@@ -137,52 +139,54 @@ void loop(void)
 				Serial.print(reply.counter);
 				Serial.print(" ms ");
 				Serial.print(reply.ms);
-				Serial.print("\tquat\t");
+				Serial.print(DATA_SEPARATOR "quat" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[0]);
-				Serial.print("\t");
+				Serial.print(DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[1]);
-				Serial.print("\t");
+				Serial.print(DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[2]);
-				Serial.print("\t");
+				Serial.print(DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[3]);
-				Serial.print("\tgrav\t");
+				Serial.print(DATA_SEPARATOR "grav" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.gravity[0]);
-				Serial.print("\t");
+				Serial.print(DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.gravity[1]);
-				Serial.print("\t");
+				Serial.print(DATA_SEPARATOR);
 				Serial.println(reply.d.mpu.gravity[2]);
 				break;
 			case PL_ACC: 
 				Serial.print(REPLY_MARKER);
-				Serial.print("\t#\t");
+				Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
+				Serial.print(curTime());
+				Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
 				Serial.print(reply.counter);
-				Serial.print("\tms\t");
+				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
 				Serial.print(reply.ms);
-				Serial.print("\tacc\t");
+				Serial.print(DATA_SEPARATOR "acc" DATA_SEPARATOR);
 				Serial.print(reply.d.acc.raw[0] * (int)reply.d.acc.uScale);
-				Serial.print("\t");
+				Serial.print(DATA_SEPARATOR);
 				Serial.print(reply.d.acc.raw[1] * (int)reply.d.acc.uScale);
-				Serial.print("\t");
+				Serial.print(DATA_SEPARATOR);
 				Serial.println(reply.d.acc.raw[2] * (int)reply.d.acc.uScale);
 				break;
 			default:
 				Serial.print(REPLY_MARKER);
-				Serial.print(" #");
+				Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
 				Serial.print(reply.counter);
-				Serial.print(" ms ");
+				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
 				Serial.println(reply.ms);
 				break;
 		}
 	} else {
 		// If it's time to send a message, send it!
-		unsigned long now = curTime();
+		unsigned long now = millis();
 		if ( now - last_sent >= interval)
 		{
 			last_sent = now;
 			Serial.print(CONTROLLER_STATE_MARKER);
-			Serial.print("\tms\t");
+			Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
 			Serial.print(curTime());
-			Serial.print("\tv\t");
+			Serial.print(DATA_SEPARATOR "v" DATA_SEPARATOR);
 			Serial.println(readVccMv(), DEC);
 		}
 //		Serial.println("Nothing");
