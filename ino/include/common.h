@@ -43,17 +43,18 @@ struct payload_t {
 	} d;
 };
 
-#define READY_MARKER "READY!"
-#define ADDRESS_MARKER "ADDRESS:"
-#define END_MARKER ":END"
-#define CMD_MARKER "STICK:"
-#define REPLY_MARKER "REPLY:"
-#define REPLY_START_MARKER "REPLYSTART"
-#define REPLY_END_MARKER "REPLYEND"
-#define SERVO_STATE_MARKER "SERVOSTATE"
-#define CONTROLLER_STATE_MARKER "CONTROLLERSTATE"
-#define MPU_MARKER "MPU"
-#define ACCEL_MARKER "ACCEL"
+const char DATA_MARKER = 'D';
+const char READY_MARKER = '!';
+const char ACK_MARKER = '.';
+const char ADDRESS_MARKER = 'A';
+const char END_MARKER = 'E';
+const char CMD_MARKER = 'P';
+const char REPLY_MARKER = 'R';
+const char REPLY_START_MARKER = 'B';
+const char SERVO_STATE_MARKER = 'M';
+const char CONTROLLER_STATE_MARKER = 'S';
+const char MPU_MARKER = 'U';
+const char ACCEL_MARKER = 'X';
 
 //
 // Topology

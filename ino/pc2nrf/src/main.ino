@@ -1,5 +1,5 @@
 #include "../../include/common.h"
-//#include "../../include/printf.h"
+#include "../../include/printf.h"
 #include <SPI.h>
 #include <RF24.h>
 #include <RF24Network.h>
@@ -14,11 +14,13 @@ RF24Network network(radio);
 // How often to print voltage
 const unsigned long interval = 5000; //ms
 
+unsigned long time_offset = 0;
+
 // When did we last print voltage?
 unsigned long last_sent;
 
-String inputString = "";         // a string to hold incoming data
-boolean stringComplete = false;  // whether the string is complete
+String inputString = "";		 // a string to hold incoming data
+boolean stringComplete = false;	 // whether the string is complete
 
 // ADDRESS: <address>
 // line1
@@ -27,7 +29,7 @@ boolean stringComplete = false;  // whether the string is complete
 // ...
 // :END
 
-int current_address;
+int current_address = -1;
 String cmdBuffer;
 
 void setup(void)
@@ -35,39 +37,51 @@ void setup(void)
 	Serial.begin(57600);
 	inputString.reserve(100);
 //	printf_begin();
-	Serial.println("PC to nrf network interface");
+//	Serial.println(F("PC to nrf network interface"));
  
 	SPI.begin();
 	radio.begin();
 	network.begin(CHANNEL, PC2NRF_NODE);
 	cmdBuffer.reserve(100);
-	Serial.println(READY_MARKER);
 }
 
 /*
   SerialEvent occurs whenever a new data comes in the
  hardware serial RX.  This routine is run between each
  time loop() runs, so using delay inside loop can delay
- response.  Multiple bytes of data may be available.
+ response.	Multiple bytes of data may be available.
  */
 void serialEvent() {
   while (Serial.available()) {
-    // get the new byte:
-    char inChar = (char)Serial.read();
-    // add it to the inputString:
-    inputString += inChar;
-    // if the incoming character is a newline, set a flag
-    // so the main loop can do something about it:
-    if (inChar == '\n') {
-      stringComplete = true;
-    }
+	// get the new byte:
+	char inChar = (char)Serial.read();
+	// add it to the inputString:
+	// if the incoming character is a newline, set a flag
+	// so the main loop can do something about it:
+	if (inChar == '\n') {
+	  inputString.trim();
+	  stringComplete = true;
+	  break;
+	}
+	inputString += inChar;
   }
 }
 
 void process_own_command(String cmd)
 {
-	Serial.print("Processing command:");
-	Serial.println(cmd);
+	const String setTimeCmd = "setTime";
+	if(cmd.startsWith(setTimeCmd)) {
+		time_offset = cmd.substring(setTimeCmd.length() + 1).toInt() - millis();
+		Serial.print("Number:");
+		Serial.println(time_offset);
+	}
+//	Serial.print("Processing command:");
+//	Serial.println(cmd);
+}
+
+unsigned long curTime()
+{
+	return time_offset + millis();
 }
 
 void loop(void)
@@ -77,16 +91,18 @@ void loop(void)
 	// print the string when a newline arrives:
 	// check command from PC
 	if (stringComplete) {
+		char marker = inputString.charAt(0);
 		if(current_address < 0) {
 			// new command ???
-			if(inputString.startsWith(ADDRESS_MARKER)) {
-				current_address = inputString.substring(sizeof(ADDRESS_MARKER)).toInt();
+			if(marker == ADDRESS_MARKER) {
+				current_address = inputString.substring(1).toInt();
 			}
 		} else {
-			if(inputString.equals(END_MARKER)) {
+			if(marker == END_MARKER) {
 				if(current_address == PC2NRF_NODE) {
 					// this is to me
 					process_own_command(cmdBuffer);
+					Serial.println(ACK_MARKER);
 				} else {
 					// send command buffer to the current address
 					int payload_size = cmdBuffer.length() + 2;
@@ -100,9 +116,8 @@ void loop(void)
 				}
 				current_address = -1;
 				cmdBuffer = "";
-			} else {
-	Serial.println(cmdBuffer);
-				cmdBuffer += inputString + '\n';
+			} else if (marker == DATA_MARKER) {
+				cmdBuffer += inputString.substring(1) + '\n';
 			}
 		}
 		// clear the string:
@@ -160,13 +175,13 @@ void loop(void)
 		}
 	} else {
 		// If it's time to send a message, send it!
-		unsigned long now = millis();
+		unsigned long now = curTime();
 		if ( now - last_sent >= interval)
 		{
 			last_sent = now;
 			Serial.print(CONTROLLER_STATE_MARKER);
 			Serial.print("\tms\t");
-			Serial.print(millis());
+			Serial.print(curTime());
 			Serial.print("\tv\t");
 			Serial.println(readVccMv(), DEC);
 		}
