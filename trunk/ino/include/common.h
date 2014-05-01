@@ -56,6 +56,8 @@ const char CONTROLLER_STATE_MARKER = 'S';
 const char MPU_MARKER = 'U';
 const char ACCEL_MARKER = 'X';
 
+#define DATA_SEPARATOR "\t"
+
 //
 // Topology
 //
