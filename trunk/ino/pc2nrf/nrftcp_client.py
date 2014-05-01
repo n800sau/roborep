@@ -12,7 +12,7 @@ import libcommon_py as common
 if __name__ == '__main__':
 
 	files = {}
-	cfg = configure().as_dict('serial2tcp')
+	cfg = configure(os.path.dirname(__file__)).as_dict('serial2tcp')
 	tcp_host = cfg.get('tcp_host', 'localhost')
 	tcp_port = cfg['tcp_port']
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs'])))
 						if marker not in files:
 							files[marker] = {}
-							files[marker]['file'] = file(marker + '.csv', 'a')
+							files[marker]['file'] = file(os.path.join(os.path.dirname(__file__), marker + '.csv'), 'a')
 							files[marker]['csv'] = csv.writer(files[marker]['file'])
 						files[marker]['csv'].writerow([
 								time.strftime('%d.%m.%Y %H:%M:%S'),
