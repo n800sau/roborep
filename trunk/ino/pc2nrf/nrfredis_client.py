@@ -24,12 +24,12 @@ if __name__ == '__main__':
 
 	r = redis.Redis(**params)
 
+	queues = {}
 	while True:
 		try:
-			queues = {}
 			for rk in r.smembers('s.queues'):
 				els = r.lrange(rk, 0, MAX2READ)
-				lastel = queues.get(rk, [None])[0]
+				lastel = (queues.get(rk, []) + [None])[0]
 				try:
 					lastndx = els.index(lastel)
 				except ValueError:
@@ -37,7 +37,8 @@ if __name__ == '__main__':
 				if lastndx >= 0:
 					#remove old elements
 					els = els[:lastndx]
-				queues[rk] = els
+				if els:
+					queues[rk] = els
 				#process new elements
 				for line in reversed(els):
 					if line:
