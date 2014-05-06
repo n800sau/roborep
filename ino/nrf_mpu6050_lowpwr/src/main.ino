@@ -5,6 +5,7 @@
 #include <RF24.h>
 #include <RF24Network.h>
 #include <SPI.h>
+#include <voltage.h>
 
 // nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(9,10);
@@ -251,6 +252,7 @@ void loop() {
 		RF24NetworkHeader header(PC2NRF_NODE);
 		payload_t reply;
 		reply.pload_type = PL_ACC;
+		reply.voltage = readVccMv();
 		reply.d.acc.raw[0] = ax;
 		reply.d.acc.raw[1] = ay;
 		reply.d.acc.raw[2] = az;
