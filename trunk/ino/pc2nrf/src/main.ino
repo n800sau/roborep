@@ -1,11 +1,9 @@
 #include "../../include/common.h"
-#include "../../include/printf.h"
 #include <SPI.h>
 #include <RF24.h>
 #include <RF24Network.h>
 #include <voltage.h>
 
-// nRF24L01(+) radio attached using Getting Started board 
 RF24 radio(8,10);
 
 // Network uses that radio
@@ -36,14 +34,13 @@ String cmdBuffer;
 void setup(void)
 {
 	Serial.begin(57600);
-	inputString.reserve(100);
-//	printf_begin();
+	inputString.reserve(80);
 //	Serial.println(F("PC to nrf network interface"));
  
 	SPI.begin();
 	radio.begin();
 	network.begin(CHANNEL, PC2NRF_NODE);
-	cmdBuffer.reserve(100);
+	cmdBuffer.reserve(80);
 }
 
 /*
@@ -74,8 +71,8 @@ void process_own_command(String cmd)
 	if(cmd.startsWith(setTimeCmd)) {
 		millis_offset = millis();
 		secs_offset = cmd.substring(setTimeCmd.length() + 1).toInt();
-		Serial.print("Time offset:");
-		Serial.println(secs_offset);
+//		Serial.print("Time offset:");
+//		Serial.println(secs_offset);
 	}
 //	Serial.print("Processing command:");
 //	Serial.println(cmd);

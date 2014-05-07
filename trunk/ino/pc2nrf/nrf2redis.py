@@ -25,6 +25,8 @@ if __name__ == '__main__':
 	if redis_port:
 		params['port'] = redis_port
 
+	cleaned = []
+
 	r = redis.Redis(**params)
 
 	serdev = serial.Serial(s_port, s_rate, timeout=1, interCharTimeout=1)
@@ -49,6 +51,9 @@ if __name__ == '__main__':
 			if line:
 				marker = line[0]
 				rk = 'q.' + marker
+				if rk not in cleaned:
+					r.delete(rk)
+					cleaned.append(rk)
 				r.lpush(rk, line)
 				r.ltrim(rk, 0, MAX_QUEUE_SIZE - 1)
 				r.sadd('s.queues', rk)
