@@ -56,7 +56,7 @@ if __name__ == '__main__':
 #						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs'])))
 						qdata['csv'].writerow(line + [
 								time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs']))),
-								time.strftime('%d.%m.%Y %H:%M:%S')
+								time.strftime('%d/%m/%Y %H:%M:%S')
 							]
 						)
 #					else:

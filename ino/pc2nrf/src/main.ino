@@ -136,19 +136,19 @@ void loop(void)
 				Serial.print(reply.counter);
 				Serial.print(" ms ");
 				Serial.print(reply.ms);
-				Serial.print(DATA_SEPARATOR "quat" DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "quat_0" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[0]);
-				Serial.print(DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "quat_1" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[1]);
-				Serial.print(DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "quat_2" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[2]);
-				Serial.print(DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "quat_3" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[3]);
-				Serial.print(DATA_SEPARATOR "grav" DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "grav_x" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.gravity[0]);
-				Serial.print(DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "grav_y" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.gravity[1]);
-				Serial.print(DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "grav_z" DATA_SEPARATOR);
 				Serial.println(reply.d.mpu.gravity[2]);
 				break;
 			case PL_ACC: 
@@ -159,11 +159,11 @@ void loop(void)
 				Serial.print(reply.counter);
 				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
 				Serial.print(reply.ms);
-				Serial.print(DATA_SEPARATOR "acc" DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "acc_x" DATA_SEPARATOR);
 				Serial.print(reply.d.acc.raw[0] * (int)reply.d.acc.uScale);
-				Serial.print(DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "acc_y" DATA_SEPARATOR);
 				Serial.print(reply.d.acc.raw[1] * (int)reply.d.acc.uScale);
-				Serial.print(DATA_SEPARATOR);
+				Serial.print(DATA_SEPARATOR "acc_z" DATA_SEPARATOR);
 				Serial.println(reply.d.acc.raw[2] * (int)reply.d.acc.uScale);
 				break;
 			default:
