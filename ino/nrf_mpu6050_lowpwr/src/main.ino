@@ -18,6 +18,7 @@ unsigned long pcounter = 0;
 #endif // WITH_NRF
 
 #include <avr/sleep.h>
+#include <avr/wdt.h>
 
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
@@ -121,6 +122,8 @@ void setup() {
 
 	attachInterrupt(wakeInt, wakeUpNow, LOW); // use interrupt 0 (pin 2) and run function
 
+	// enable watchdog (8 second threshold)
+	wdt_enable(WDTO_8S);
 }
 
 void wakeUpNow()		// here the interrupt is handled after wakeup
@@ -203,6 +206,9 @@ void sleepNow()			// here we put the arduino to sleep
 }
 
 void loop() {
+
+	// reset watchdog
+	wdt_reset();
 
 	if(interrupted) {
 
