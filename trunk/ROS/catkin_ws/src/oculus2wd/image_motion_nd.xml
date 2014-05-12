@@ -1,0 +1,7 @@
+<library path="lib/libimage_motion_nd">
+  <class name="image_motion_nd/ImageMotionNd" type="image_motion_nd::ImageMotionNd" base_class_type="nodelet::Nodelet">
+    <description>
+      To find motion.
+    </description>
+  </class>
+</library>

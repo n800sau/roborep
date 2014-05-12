@@ -55,6 +55,7 @@
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
+    <nodelet plugin="${prefix}/image_motion_nd.xml"/>
     <nodelet plugin="${prefix}/image_signal_nd.xml"/>
     <nodelet plugin="${prefix}/brightness_nd.xml"/>
     <!-- You can specify that this package is a metapackage here: -->

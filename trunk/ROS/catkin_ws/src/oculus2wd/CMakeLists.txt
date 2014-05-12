@@ -106,6 +106,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES oculus2wd
   LIBRARIES image_signal_nd
+  LIBRARIES image_motion_nd
   LIBRARIES brightness_nd
   CATKIN_DEPENDS roscpp rospy std_msgs nodelet
 #  DEPENDS system_lib
@@ -131,6 +132,12 @@ add_library(image_signal_nd src/image_signal_nd.cpp)
 target_link_libraries(image_signal_nd ${catkin_LIBRARIES})
 if(catkin_EXPORTED_LIBRARIES)
   add_dependencies(image_signal_nd ${catkin_EXPORTED_LIBRARIES})
+endif()
+
+add_library(image_motion_nd src/image_motion_nd.cpp)
+target_link_libraries(image_motion_nd ${catkin_LIBRARIES})
+if(catkin_EXPORTED_LIBRARIES)
+  add_dependencies(image_motion_nd ${catkin_EXPORTED_LIBRARIES})
 endif()
 
 add_library(brightness_nd src/brightness_nd.cpp)
@@ -169,6 +176,9 @@ add_dependencies(extract_line ${PROJECT_NAME}_gencfg)
 
 #add_executable(nurbs_surface src/nurbs_surface.cpp)
 #target_link_libraries(nurbs_surface ${catkin_LIBRARIES})
+
+add_executable(motion1 src/motion1.cpp)
+target_link_libraries(motion1 ${catkin_LIBRARIES})
 
 add_executable(poisson_surface src/poisson_surface.cpp)
 target_link_libraries(poisson_surface ${catkin_LIBRARIES})

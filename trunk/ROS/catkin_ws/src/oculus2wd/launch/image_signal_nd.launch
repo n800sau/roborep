@@ -1,7 +1,7 @@
 <launch>
-  <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
+<!--  <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/> -->
 
-  <node pkg="nodelet" type="nodelet" name="ImageSignalNd" args="load image_signal_nd/ImageSignalNd standalone_nodelet" output="screen">
+  <node pkg="nodelet" type="nodelet" name="image_signal_nd" args="load image_signal_nd/ImageSignalNd standalone_nodelet" output="screen">
   </node>
 
 </launch>
