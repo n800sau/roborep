@@ -13,8 +13,8 @@
 
 #include"skin_detector.hpp"
 
-std::string imgfname, clrfname, skinfname, circlesfname, dispfname;
-image_transport::Subscriber img_sub;
+std::string imgfname, clrfname, skinfname, circlesfname, dispfname, motionfname;
+image_transport::Subscriber img_sub, mimg_sub;
 ros::Subscriber disp_sub;
 
 cv::Mat_<cv::Vec3b> disparity_color;
@@ -344,6 +344,15 @@ void saveimage_cb(const sensor_msgs::ImageConstPtr& msg)
 	}
 }
 
+void savemotion_cb(const sensor_msgs::ImageConstPtr& msg)
+{
+	cv::Mat dst;
+	cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
+	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
+	cv::cvtColor(dst, dst, CV_BGR2RGB);
+	write_img(dst, motionfname);
+}
+
 void savedisparityimage_cb(const stereo_msgs::DisparityImageConstPtr& msg)
 {
 	// Check for common errors in input
@@ -391,12 +400,14 @@ int main(int argc, char ** argv)
 	ros::NodeHandle nh;
 	std::string topic1 = nh.resolveName("image");
 	std::string topic2 = nh.resolveName("disparity");
+	std::string topic3 = nh.resolveName("image_motion");
 //	printf("image=%s\n", topic1.c_str());
 	last_stamp = ros::Time::now();
 	step = ros::Duration(1, 0);
 	image_transport::ImageTransport it(nh);
 	img_sub = it.subscribe(topic1, 100, saveimage_cb);
 	disp_sub = nh.subscribe<stereo_msgs::DisparityImage>(topic2, 100, savedisparityimage_cb, ros::TransportHints().unreliable());
+	mimg_sub = it.subscribe(topic3, 100, savemotion_cb);
 
 	ros::NodeHandle local_nh("~");
 	local_nh.param("filename_raw", imgfname, std::string(std::string("/var/www/rgbframe/frame.png")));
@@ -404,6 +415,7 @@ int main(int argc, char ** argv)
 	local_nh.param("filename_skin", skinfname, std::string(std::string("/var/www/rgbframe/frame_skin.png")));
 	local_nh.param("filename_circles", circlesfname, std::string(std::string("/var/www/rgbframe/frame_circles.png")));
 	local_nh.param("filename_disparity", dispfname, std::string(std::string("/var/www/rgbframe/frame_disparity.png")));
+	local_nh.param("filename_motion", motionfname, std::string(std::string("/var/www/rgbframe/frame_motion.png")));
 	ros::ServiceServer save = local_nh.advertiseService ("save", service);
 //	ros::AsyncSpinner spinner(2);
 //	spinner.start();
