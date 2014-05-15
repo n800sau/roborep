@@ -1,0 +1,7 @@
+<library path="lib/libsegment_object_nd">
+  <class name="segment_object_nd/SegmentObjectNd" type="segment_object_nd::SegmentObjectNd" base_class_type="nodelet::Nodelet">
+    <description>
+      To find motion.
+    </description>
+  </class>
+</library>

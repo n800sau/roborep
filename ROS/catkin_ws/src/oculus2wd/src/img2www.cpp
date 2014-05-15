@@ -13,8 +13,8 @@
 
 #include"skin_detector.hpp"
 
-std::string imgfname, clrfname, skinfname, circlesfname, dispfname, motionfname;
-image_transport::Subscriber img_sub, mimg_sub;
+std::string imgfname, clrfname, skinfname, circlesfname, dispfname, motionfname, segmentobjectfname;
+image_transport::Subscriber img_sub, mimg_sub, soimg_sub;
 ros::Subscriber disp_sub;
 
 cv::Mat_<cv::Vec3b> disparity_color;
@@ -326,10 +326,19 @@ void saveimage_cb(const sensor_msgs::ImageConstPtr& msg)
 			cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 			int radius = cvRound(circles[i][2]);
 			// draw the circle center
-			cv::circle( dst, center, 3, cv::Scalar(0,255,0), -1, 8, 0 );
+			cv::circle( dst, center, 3, cvScalar(0,255,0), -1, 8, 0 );
 			// draw the circle outline
-			cv::circle( dst, center, radius, cv::Scalar(0,0,255), 3, 8, 0 );
+			cv::circle( dst, center, radius, cvScalar(0,0,255), 3, 8, 0 );
 		}
+
+		std::vector<cv::Vec4i> lines;
+		cv::HoughLinesP(mask, lines, 1, CV_PI/180, 50, 50, 10 );
+		for( size_t i = 0; i < lines.size(); i++ )
+		{
+			cv::Vec4i l = lines[i];
+			cv::line( dst, cvPoint(l[0], l[1]), cvPoint(l[2], l[3]), cvScalar(0,0,255), 1, CV_AA);
+		}
+
 		write_img(dst, circlesfname);
 		int morph_size = 10;
 //		cv::Mat element = cv::getStructuringElement(CV_SHAPE_RECT, cv::Size( 2*morph_size + 1, 2*morph_size+1 ), cv::Point( morph_size, morph_size ) );
@@ -351,6 +360,15 @@ void savemotion_cb(const sensor_msgs::ImageConstPtr& msg)
 	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
 	cv::cvtColor(dst, dst, CV_BGR2RGB);
 	write_img(dst, motionfname);
+}
+
+void savesegmentobject_cb(const sensor_msgs::ImageConstPtr& msg)
+{
+	cv::Mat dst;
+	cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
+	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
+	cv::cvtColor(dst, dst, CV_BGR2RGB);
+	write_img(dst, segmentobjectfname);
 }
 
 void savedisparityimage_cb(const stereo_msgs::DisparityImageConstPtr& msg)
@@ -401,6 +419,7 @@ int main(int argc, char ** argv)
 	std::string topic1 = nh.resolveName("image");
 	std::string topic2 = nh.resolveName("disparity");
 	std::string topic3 = nh.resolveName("image_motion");
+	std::string topic4 = nh.resolveName("image_segment_object");
 //	printf("image=%s\n", topic1.c_str());
 	last_stamp = ros::Time::now();
 	step = ros::Duration(1, 0);
@@ -408,6 +427,7 @@ int main(int argc, char ** argv)
 	img_sub = it.subscribe(topic1, 100, saveimage_cb);
 	disp_sub = nh.subscribe<stereo_msgs::DisparityImage>(topic2, 100, savedisparityimage_cb, ros::TransportHints().unreliable());
 	mimg_sub = it.subscribe(topic3, 100, savemotion_cb);
+	soimg_sub = it.subscribe(topic4, 100, savesegmentobject_cb);
 
 	ros::NodeHandle local_nh("~");
 	local_nh.param("filename_raw", imgfname, std::string(std::string("/var/www/rgbframe/frame.png")));
@@ -416,6 +436,7 @@ int main(int argc, char ** argv)
 	local_nh.param("filename_circles", circlesfname, std::string(std::string("/var/www/rgbframe/frame_circles.png")));
 	local_nh.param("filename_disparity", dispfname, std::string(std::string("/var/www/rgbframe/frame_disparity.png")));
 	local_nh.param("filename_motion", motionfname, std::string(std::string("/var/www/rgbframe/frame_motion.png")));
+	local_nh.param("filename_segment_object", segmentobjectfname, std::string(std::string("/var/www/rgbframe/frame_segment_object.png")));
 	ros::ServiceServer save = local_nh.advertiseService ("save", service);
 //	ros::AsyncSpinner spinner(2);
 //	spinner.start();
