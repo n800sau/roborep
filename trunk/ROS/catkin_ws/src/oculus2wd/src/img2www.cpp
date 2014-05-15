@@ -358,7 +358,7 @@ void savemotion_cb(const sensor_msgs::ImageConstPtr& msg)
 	cv::Mat dst;
 	cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
 	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
-	cv::cvtColor(dst, dst, CV_BGR2RGB);
+//	cv::cvtColor(dst, dst, CV_BGR2RGB);
 	write_img(dst, motionfname);
 }
 
@@ -367,7 +367,7 @@ void savesegmentobject_cb(const sensor_msgs::ImageConstPtr& msg)
 	cv::Mat dst;
 	cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
 	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
-	cv::cvtColor(dst, dst, CV_BGR2RGB);
+//	cv::cvtColor(dst, dst, CV_BGR2RGB);
 	write_img(dst, segmentobjectfname);
 }
 
