@@ -16,6 +16,6 @@
       port: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A4015M29-if00-port0
     </rosparam>
   </node> -->
-<!--  <include file="$(find oculus2wd)/launch/img2www.launch"/> -->
+ <include file="$(find oculus2wd)/launch/img2www.launch"/>
 
 </launch>

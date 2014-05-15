@@ -21,7 +21,7 @@ namespace segment_object_nd
 	class SegmentObjectNd : public nodelet::Nodelet
 	{
 		public:
-			SegmentObjectNd() : update_bg_model(true) {}
+			SegmentObjectNd() : update_bg_model(20) {}
 
 		private:
 			virtual void onInit()
@@ -55,7 +55,9 @@ namespace segment_object_nd
 				cv_bridge::CvImagePtr cv_ptr;
 				cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 
-				bgsubtractor(cv_ptr->image, bgmask, update_bg_model ? -1 : 0);
+				bgsubtractor(cv_ptr->image, bgmask, (update_bg_model-- > 0) ? -1 : 0);
+				if(update_bg_model < 0)
+					update_bg_model = 0;
 				refineSegments(cv_ptr->image, bgmask, cv_ptr->image);
 
 				// Create updated CameraInfo message
@@ -110,7 +112,7 @@ namespace segment_object_nd
 			image_transport::Subscriber img_sub;
 			image_transport::Publisher img_pub;
 			cv::BackgroundSubtractorMOG bgsubtractor;
-			bool update_bg_model;
+			int update_bg_model;
 			cv::Mat bgmask;
 	};
 
