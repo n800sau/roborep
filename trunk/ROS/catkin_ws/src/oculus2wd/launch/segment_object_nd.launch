@@ -1,0 +1,9 @@
+<launch>
+<!--  <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/> -->
+
+  <node pkg="nodelet" type="nodelet" name="segment_object_nd" args="load segment_object_nd/SegmentObjectNd standalone_nodelet" output="screen">
+  </node>
+
+</launch>
+
+
