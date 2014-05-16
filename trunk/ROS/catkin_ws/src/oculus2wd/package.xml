@@ -57,6 +57,7 @@
   <export>
     <nodelet plugin="${prefix}/segment_object_nd.xml"/>
     <nodelet plugin="${prefix}/image_motion_nd.xml"/>
+    <nodelet plugin="${prefix}/image_motion1_nd.xml"/>
     <nodelet plugin="${prefix}/image_signal_nd.xml"/>
     <nodelet plugin="${prefix}/brightness_nd.xml"/>
     <!-- You can specify that this package is a metapackage here: -->

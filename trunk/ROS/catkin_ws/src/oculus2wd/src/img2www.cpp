@@ -13,8 +13,8 @@
 
 #include"skin_detector.hpp"
 
-std::string imgfname, clrfname, skinfname, circlesfname, dispfname, motionfname, segmentobjectfname;
-image_transport::Subscriber img_sub, mimg_sub, soimg_sub;
+std::string imgfname, clrfname, skinfname, circlesfname, dispfname, motionfname, motion1fname, segmentobjectfname;
+image_transport::Subscriber img_sub, mimg_sub, m1img_sub, soimg_sub;
 ros::Subscriber disp_sub;
 
 cv::Mat_<cv::Vec3b> disparity_color;
@@ -362,6 +362,15 @@ void savemotion_cb(const sensor_msgs::ImageConstPtr& msg)
 	write_img(dst, motionfname);
 }
 
+void savemotion1_cb(const sensor_msgs::ImageConstPtr& msg)
+{
+	cv::Mat dst;
+	cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
+	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
+//	cv::cvtColor(dst, dst, CV_BGR2RGB);
+	write_img(dst, motion1fname);
+}
+
 void savesegmentobject_cb(const sensor_msgs::ImageConstPtr& msg)
 {
 	cv::Mat dst;
@@ -419,7 +428,8 @@ int main(int argc, char ** argv)
 	std::string topic1 = nh.resolveName("image");
 	std::string topic2 = nh.resolveName("disparity");
 	std::string topic3 = nh.resolveName("image_motion");
-	std::string topic4 = nh.resolveName("image_segment_object");
+	std::string topic4 = nh.resolveName("image_motion1");
+	std::string topic5 = nh.resolveName("image_segment_object");
 //	printf("image=%s\n", topic1.c_str());
 	last_stamp = ros::Time::now();
 	step = ros::Duration(1, 0);
@@ -427,7 +437,8 @@ int main(int argc, char ** argv)
 	img_sub = it.subscribe(topic1, 100, saveimage_cb);
 	disp_sub = nh.subscribe<stereo_msgs::DisparityImage>(topic2, 100, savedisparityimage_cb, ros::TransportHints().unreliable());
 	mimg_sub = it.subscribe(topic3, 100, savemotion_cb);
-	soimg_sub = it.subscribe(topic4, 100, savesegmentobject_cb);
+	m1img_sub = it.subscribe(topic4, 100, savemotion1_cb);
+	soimg_sub = it.subscribe(topic5, 100, savesegmentobject_cb);
 
 	ros::NodeHandle local_nh("~");
 	local_nh.param("filename_raw", imgfname, std::string(std::string("/var/www/rgbframe/frame.png")));
@@ -436,6 +447,7 @@ int main(int argc, char ** argv)
 	local_nh.param("filename_circles", circlesfname, std::string(std::string("/var/www/rgbframe/frame_circles.png")));
 	local_nh.param("filename_disparity", dispfname, std::string(std::string("/var/www/rgbframe/frame_disparity.png")));
 	local_nh.param("filename_motion", motionfname, std::string(std::string("/var/www/rgbframe/frame_motion.png")));
+	local_nh.param("filename_motion1", motion1fname, std::string(std::string("/var/www/rgbframe/frame_motion1.png")));
 	local_nh.param("filename_segment_object", segmentobjectfname, std::string(std::string("/var/www/rgbframe/frame_segment_object.png")));
 	ros::ServiceServer save = local_nh.advertiseService ("save", service);
 //	ros::AsyncSpinner spinner(2);

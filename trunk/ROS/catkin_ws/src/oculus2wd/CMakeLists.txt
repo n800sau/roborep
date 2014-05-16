@@ -107,6 +107,7 @@ catkin_package(
 #  LIBRARIES oculus2wd
   LIBRARIES image_signal_nd
   LIBRARIES image_motion_nd
+  LIBRARIES image_motion1_nd
   LIBRARIES segment_object_nd
   LIBRARIES brightness_nd
   CATKIN_DEPENDS roscpp rospy std_msgs nodelet
@@ -133,6 +134,18 @@ add_library(image_signal_nd src/image_signal_nd.cpp)
 target_link_libraries(image_signal_nd ${catkin_LIBRARIES})
 if(catkin_EXPORTED_LIBRARIES)
   add_dependencies(image_signal_nd ${catkin_EXPORTED_LIBRARIES})
+endif()
+
+add_library(image_motion_nd src/image_motion_nd.cpp)
+target_link_libraries(image_motion_nd ${catkin_LIBRARIES})
+if(catkin_EXPORTED_LIBRARIES)
+  add_dependencies(image_motion_nd ${catkin_EXPORTED_LIBRARIES})
+endif()
+
+add_library(image_motion1_nd src/image_motion1_nd.cpp)
+target_link_libraries(image_motion1_nd ${catkin_LIBRARIES})
+if(catkin_EXPORTED_LIBRARIES)
+  add_dependencies(image_motion1_nd ${catkin_EXPORTED_LIBRARIES})
 endif()
 
 add_library(segment_object_nd src/segment_object_nd.cpp)
