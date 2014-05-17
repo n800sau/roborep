@@ -149,7 +149,9 @@ void loop(void)
 				Serial.print(DATA_SEPARATOR "grav_y" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.gravity[1]);
 				Serial.print(DATA_SEPARATOR "grav_z" DATA_SEPARATOR);
-				Serial.println(reply.d.mpu.gravity[2]);
+				Serial.print(reply.d.mpu.gravity[2]);
+				Serial.print(DATA_SEPARATOR "v" DATA_SEPARATOR);
+				Serial.println(reply.voltage);
 				break;
 			case PL_ACC: 
 				Serial.print(REPLY_MARKER);
@@ -164,14 +166,18 @@ void loop(void)
 				Serial.print(DATA_SEPARATOR "acc_y" DATA_SEPARATOR);
 				Serial.print(reply.d.acc.raw[1] * (int)reply.d.acc.uScale);
 				Serial.print(DATA_SEPARATOR "acc_z" DATA_SEPARATOR);
-				Serial.println(reply.d.acc.raw[2] * (int)reply.d.acc.uScale);
+				Serial.print(reply.d.acc.raw[2] * (int)reply.d.acc.uScale);
+				Serial.print(DATA_SEPARATOR "v" DATA_SEPARATOR);
+				Serial.println(reply.voltage);
 				break;
 			default:
 				Serial.print(REPLY_MARKER);
 				Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
 				Serial.print(reply.counter);
 				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
-				Serial.println(reply.ms);
+				Serial.print(reply.ms);
+				Serial.print(DATA_SEPARATOR "v" DATA_SEPARATOR);
+				Serial.println(reply.voltage);
 				break;
 		}
 	} else {
