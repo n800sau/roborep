@@ -1,5 +1,5 @@
 <launch>
-<!--  <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/> -->
+<!-- <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/> -->
 
   <node pkg="nodelet" type="nodelet" name="image_motion1_nd" args="load image_motion1_nd/ImageMotion1Nd standalone_nodelet" output="screen">
   </node>

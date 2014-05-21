@@ -63,7 +63,7 @@ namespace segment_object_nd
 				// Create updated CameraInfo message
 				cv_bridge::CvImage out_msg;
 				out_msg.header	 = msg->header; // Same timestamp and tf frame as input image
-				out_msg.encoding = msg->encoding;
+				out_msg.encoding = sensor_msgs::image_encodings::BGR8;
 				out_msg.image	 = cv_ptr->image; // Your cv::Mat
 				img_pub.publish(out_msg.toImageMsg());
 			}
