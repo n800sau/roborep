@@ -288,8 +288,9 @@ bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
 
 void write_img(const cv::Mat img, std::string fname, cv::Scalar clr=cvScalar(0, 0, 250))
 {
-	cv::Mat c_img = img.clone();
+	cv::Mat c_img;
 	char text[50];
+	img.copyTo(c_img);
 	time_t t = last_stamp.sec;
 	std::strftime(text, sizeof(text), "%H:%M:%S", localtime(&t));
 //	printf("%s\n", text);
@@ -313,6 +314,10 @@ void saveimage_cb(const sensor_msgs::ImageConstPtr& msg)
 		dst.copyTo(imgHSV);
 		cv::cvtColor(dst, dst, CV_BGR2RGB);
 		write_img(dst, imgfname);
+
+//		write_img(imgHSV, clrfname);
+		skinMat= mySkinDetector.getSkin(dst);
+		write_img(skinMat, skinfname);
 
 		cv::GaussianBlur( imgHSV, imgHSV, cv::Size( 3, 3 ), 0, 0 );
 		cv::cvtColor(imgHSV, imgHSV, CV_BGR2HSV);
@@ -340,16 +345,13 @@ void saveimage_cb(const sensor_msgs::ImageConstPtr& msg)
 		}
 
 		write_img(dst, circlesfname);
+
 		int morph_size = 10;
 //		cv::Mat element = cv::getStructuringElement(CV_SHAPE_RECT, cv::Size( 2*morph_size + 1, 2*morph_size+1 ), cv::Point( morph_size, morph_size ) );
 //		cv::morphologyEx( mask, mask, cv::MORPH_OPEN, element);
 //		cv::GaussianBlur( mask, mask, cv::Size( 3, 3 ), 0, 0 );
 		cv::cvtColor(mask, mask, CV_GRAY2RGB);
 		write_img(mask, clrfname);
-//		write_img(imgHSV, clrfname);
-		skinMat= mySkinDetector.getSkin(dst);
-		write_img(skinMat, skinfname);
-
 	}
 }
 
@@ -364,11 +366,13 @@ void savemotion_cb(const sensor_msgs::ImageConstPtr& msg)
 
 void savemotion1_cb(const sensor_msgs::ImageConstPtr& msg)
 {
+	printf("here1\n");
 	cv::Mat dst;
 	cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
 	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
 //	cv::cvtColor(dst, dst, CV_BGR2RGB);
 	write_img(dst, motion1fname);
+	printf("here2\n");
 }
 
 void savesegmentobject_cb(const sensor_msgs::ImageConstPtr& msg)
@@ -434,11 +438,11 @@ int main(int argc, char ** argv)
 	last_stamp = ros::Time::now();
 	step = ros::Duration(1, 0);
 	image_transport::ImageTransport it(nh);
-	img_sub = it.subscribe(topic1, 100, saveimage_cb);
-	disp_sub = nh.subscribe<stereo_msgs::DisparityImage>(topic2, 100, savedisparityimage_cb, ros::TransportHints().unreliable());
-	mimg_sub = it.subscribe(topic3, 100, savemotion_cb);
-	m1img_sub = it.subscribe(topic4, 100, savemotion1_cb);
-	soimg_sub = it.subscribe(topic5, 100, savesegmentobject_cb);
+	img_sub = it.subscribe(topic1, 10, saveimage_cb);
+	disp_sub = nh.subscribe<stereo_msgs::DisparityImage>(topic2, 10, savedisparityimage_cb, ros::TransportHints().unreliable());
+	mimg_sub = it.subscribe(topic3, 1, savemotion_cb);
+	m1img_sub = it.subscribe(topic4, 1, savemotion1_cb);
+	soimg_sub = it.subscribe(topic5, 1, savesegmentobject_cb);
 
 	ros::NodeHandle local_nh("~");
 	local_nh.param("filename_raw", imgfname, std::string(std::string("/var/www/rgbframe/frame.png")));

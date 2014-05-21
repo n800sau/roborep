@@ -11,7 +11,7 @@
 		_filename_circles:=/var/www/rgbframe/frame_circles.jpg
 		_filename_disparity:=/var/www/rgbframe/frame_disparity.jpg
 		_filename_motion:=/var/www/rgbframe/frame_motion.jpg
-		_filename_motion:=/var/www/rgbframe/frame_motion1.jpg
+		_filename_motion1:=/var/www/rgbframe/frame_motion1.jpg
 		_filename_segment_object:=/var/www/rgbframe/frame_segment_object.jpg
 	" />
 </launch>
