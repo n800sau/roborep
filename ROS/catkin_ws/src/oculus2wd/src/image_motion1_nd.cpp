@@ -55,16 +55,15 @@ namespace image_motion1_nd
 			// count the number of changes and return.
 			int detectMotion(const cv::Mat & motion, cv::Mat & result, cv::Mat & result_cropped,
 					int x_start, int x_stop, int y_start, int y_stop,
-					int max_deviation,
-					cv::Scalar & color)
+					int max_deviation, cv::Scalar & color)
 			{
+				int number_of_changes = 0;
 				// calculate the standard deviation
 				cv::Scalar mean, stddev;
 				cv::meanStdDev(motion, mean, stddev);
-				// if not to much changes then the motion is real (neglect agressive snow, temporary sunlight)
+				// if noto to much changes then the motion is real (neglect agressive snow, temporary sunlight)
 				if(stddev[0] < max_deviation)
 				{
-					int number_of_changes = 0;
 					int min_x = motion.cols, max_x = 0;
 					int min_y = motion.rows, max_y = 0;
 					// loop over image and detect changes
@@ -98,9 +97,8 @@ namespace image_motion1_nd
 						cropped.copyTo(result_cropped);
 						cv::rectangle(result,rect,color,1);
 					}
-					return number_of_changes;
 				}
-				return 0;
+				return number_of_changes;
 			}
 
 			void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -113,12 +111,11 @@ namespace image_motion1_nd
 				// color, the color for drawing the rectangle when something has changed.
 				cv::Mat d1, d2, motion, result, result_cropped;
 				int number_of_changes;
-				cv::Scalar color(0,255,255); // yellow
+				cv::Scalar color(255, 0, 0);
 				// Detect motion in window
 				int x_start = 1, x_stop = cv_ptr->image.cols-1;
 				int y_start = 1, y_stop = cv_ptr->image.rows-1;
 				// If more than 'there_is_motion' pixels are changed, we say there is motion
-				// and store an image on disk
 				int there_is_motion = 1;
 				// Maximum deviation of the image, the higher the value, the more motion is allowed
 				int max_deviation = 1000;
@@ -139,6 +136,7 @@ namespace image_motion1_nd
 						// Calc differences between the images and do AND-operation
 						// threshold image, low differences are ignored (ex. contrast change due to sunlight)
 						next_frame.copyTo(result);
+						cv::cvtColor(result, result, CV_GRAY2BGR);
 						cv::absdiff(prev_frame, next_frame, d1);
 						cv::absdiff(next_frame, current_frame, d2);
 						cv::bitwise_and(d1, d2, motion);
@@ -152,12 +150,12 @@ namespace image_motion1_nd
 		//						NODELET_INFO("Number of changes=%d", number_of_changes);
 								cv_bridge::CvImage result_msg;
 								result_msg.header = msg->header; // Same timestamp and tf frame as input image
-								result_msg.encoding = sensor_msgs::image_encodings::MONO8;
+								result_msg.encoding = sensor_msgs::image_encodings::BGR8;
 								result_msg.image = result;
 								res_pub.publish(result_msg.toImageMsg());
 								cv_bridge::CvImage cropped_msg;
 								cropped_msg.header = msg->header; // Same timestamp and tf frame as input image
-								cropped_msg.encoding = sensor_msgs::image_encodings::MONO8;
+								cropped_msg.encoding = sensor_msgs::image_encodings::BGR8;
 								cropped_msg.image = result_cropped;
 								cropped_pub.publish(cropped_msg.toImageMsg());
 							}
