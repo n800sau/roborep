@@ -10,6 +10,7 @@ from conf_ino import configure
 import libcommon_py as common
 
 MAX_QUEUE_SIZE = 1000
+MESSAGE_CHAN = 'nrf'
 
 if __name__ == '__main__':
 
@@ -57,6 +58,7 @@ if __name__ == '__main__':
 				r.lpush(rk, line)
 				r.ltrim(rk, 0, MAX_QUEUE_SIZE - 1)
 				r.sadd('s.queues', rk)
+				r.publish(MESSAGE_CHAN, rk)
 		except KeyboardInterrupt:
 			break
 		except:

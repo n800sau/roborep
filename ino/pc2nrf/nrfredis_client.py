@@ -10,6 +10,7 @@ from conf_ino import configure
 import libcommon_py as common
 
 MAX2READ = 100
+MESSAGE_CHAN = 'nrf'
 
 if __name__ == '__main__':
 
@@ -21,10 +22,13 @@ if __name__ == '__main__':
 		params['port'] = redis_port
 
 	r = redis.Redis(**params)
+	p = r.pubsub()
+	p.subscribe(MESSAGE_CHAN)
 
 	queues = {}
-	while True:
+	for item in p.listen():
 		try:
+#			print item
 			for marker in r.smembers('s.queues'):
 				lasttimestamp = None
 				if marker not in queues:
@@ -52,20 +56,22 @@ if __name__ == '__main__':
 				for line in reversed(els):
 					line = [s.strip() for s in line.split(common.DATA_SEPARATOR)[1:]]
 					ldict = dict(zip(line[::2], line[1::2]))
-					if lasttimestamp is None or lasttimestamp < int(ldict['secs']):
+					if ldict:
+						if lasttimestamp is None or lasttimestamp < int(ldict['secs']):
 #						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs'])))
-						qdata['csv'].writerow(line + [
-								time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs']))),
-								time.strftime('%d/%m/%Y %H:%M:%S')
-							]
-						)
+							qdata['csv'].writerow(line + [
+									time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs']))),
+									time.strftime('%d/%m/%Y %H:%M:%S')
+								]
+							)
 #					else:
 #						print 'Old data', time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs'])))
-					qdata['file'].flush()
+						qdata['file'].flush()
 		except KeyboardInterrupt:
 			break
 		except:
 			traceback.print_exc()
+		time.sleep(0.001)  # be nice to the system :)
 
 	for qdata in queues.values():
 		qdata['file'].close()
