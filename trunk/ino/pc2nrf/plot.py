@@ -2,7 +2,7 @@
 
 import csv
 import matplotlib as mpl
-mpl.use('Agg')
+#mpl.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -32,5 +32,5 @@ plt.gcf().autofmt_xdate()
 
 leg = ax1.legend()
 
-#plt.show()
-plt.savefig('plot.png', bbox_inches='tight')
+plt.show()
+#plt.savefig('plot.png', bbox_inches='tight')
