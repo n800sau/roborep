@@ -70,7 +70,7 @@ void process_own_command(String cmd)
 	const String setTimeCmd = "setTime";
 	if(cmd.startsWith(setTimeCmd)) {
 		millis_offset = millis();
-		secs_offset = cmd.substring(setTimeCmd.length() + 1).toInt();
+		secs_offset = cmd.substring(setTimeCmd.length()).toInt();
 //		Serial.print("Time offset:");
 //		Serial.println(secs_offset);
 	}
@@ -78,9 +78,9 @@ void process_own_command(String cmd)
 //	Serial.println(cmd);
 }
 
-unsigned long curTime()
+unsigned long millisOffset()
 {
-	return secs_offset + (millis() - millis_offset) / 1000;
+	return millis() - millis_offset;
 }
 
 void loop(void)
@@ -156,7 +156,9 @@ void loop(void)
 			case PL_ACC: 
 				Serial.print(REPLY_MARKER);
 				Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
-				Serial.print(curTime());
+				Serial.print(secs_offset);
+				Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
+				Serial.print(millisOffset());
 				Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
 				Serial.print(reply.counter);
 				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
@@ -188,7 +190,9 @@ void loop(void)
 			last_sent = now;
 			Serial.print(CONTROLLER_STATE_MARKER);
 			Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
-			Serial.print(curTime());
+			Serial.print(secs_offset);
+			Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
+			Serial.print(millisOffset());
 			Serial.print(DATA_SEPARATOR "v" DATA_SEPARATOR);
 			Serial.println(readVccMv(), DEC);
 		}
