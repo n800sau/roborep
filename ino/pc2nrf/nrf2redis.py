@@ -51,14 +51,16 @@ if __name__ == '__main__':
 			line = serdev.readline().strip()
 			if line:
 				marker = line[0]
-				rk = 'q.' + marker
-				if rk not in cleaned:
-					r.delete(rk)
-					cleaned.append(rk)
-				r.lpush(rk, line)
-				r.ltrim(rk, 0, MAX_QUEUE_SIZE - 1)
-				r.sadd('s.queues', rk)
-				r.publish(MESSAGE_CHAN, rk)
+				if marker:
+					rk = 'q.' + marker
+					if rk not in cleaned:
+						r.delete(rk)
+						cleaned.append(rk)
+					r.lpush(rk, line)
+					print line
+					r.ltrim(rk, 0, MAX_QUEUE_SIZE - 1)
+					r.sadd('s.queues', rk)
+					r.publish(MESSAGE_CHAN, rk)
 		except KeyboardInterrupt:
 			break
 		except:

@@ -2,6 +2,10 @@
 
 import sys, os, redis, traceback, time, csv
 from subprocess import check_call
+from datetime import datetime
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
@@ -12,7 +16,27 @@ import libcommon_py as common
 MAX2READ = 100
 MESSAGE_CHAN = 'nrf'
 
+def send_email(msgtxt):
+	msg = MIMEMultipart()
+	msg['Subject'] = 'door notification %s' % time.strftime('%Y/%m/%d %H:%M')
+	msg['From'] = 'itmousecage@gmail.com'
+	msg['To'] = 'n800sau@gmail.com'
+	msg.attach(MIMEText(msgtxt, 'plain', 'utf-8'))
+
+	smtpserver = smtplib.SMTP("smtp.gmail.com",587)
+	smtpserver.ehlo()
+	smtpserver.starttls()
+	smtpserver.ehlo
+	smtpserver.login('itmousecage@gmail.com', 'rktnrf000')
+	smtpserver.sendmail(msg['From'], msg['To'], msg.as_string())
+	smtpserver.close()
+
+def extract_time(ldict):
+	return float(ldict['secs']) + float(ldict['moffset']) / 1000
+
 if __name__ == '__main__':
+
+	last_time = time.time()
 
 	cfgobj = configure(os.path.dirname(__file__))
 	cfg = cfgobj.as_dict('serial2redis')
@@ -27,8 +51,8 @@ if __name__ == '__main__':
 
 	queues = {}
 	for item in p.listen():
+#		print item
 		try:
-#			print item
 			for marker in r.smembers('s.queues'):
 				lasttimestamp = None
 				if marker not in queues:
@@ -38,7 +62,7 @@ if __name__ == '__main__':
 					# read last csv file line
 					for row in csv.reader(queues[marker]['file']):
 						ldict = dict(zip(row[::2], row[1::2]))
-						lasttimestamp = int(ldict['secs'])
+						lasttimestamp = extract_time(ldict)
 				qdata = queues[marker]
 				els = r.lrange(marker, 0, MAX2READ)
 				if qdata['lastel']:
@@ -57,15 +81,16 @@ if __name__ == '__main__':
 					line = [s.strip() for s in line.split(common.DATA_SEPARATOR)[1:]]
 					ldict = dict(zip(line[::2], line[1::2]))
 					if ldict:
-						if lasttimestamp is None or lasttimestamp < int(ldict['secs']):
-#						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs'])))
+						if lasttimestamp is None or lasttimestamp < extract_time(ldict):
+#						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['msecs']) / 1000))
+							if time.time() > last_time + 100 and item['data'] != 'q.S':
+								last_time = time.time()
+								send_email('\n'.join(line))
 							qdata['csv'].writerow(line + [
-									time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs']))),
-									time.strftime('%d/%m/%Y %H:%M:%S')
+									datetime.fromtimestamp(extract_time(ldict)).strftime('%d/%m/%Y %H:%M:%S.%f'),
+									datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')
 								]
 							)
-#					else:
-#						print 'Old data', time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['secs'])))
 						qdata['file'].flush()
 		except KeyboardInterrupt:
 			break
