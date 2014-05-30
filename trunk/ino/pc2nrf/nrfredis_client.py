@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, redis, traceback, time, csv
+import sys, os, redis, traceback, time, csv, json
 from subprocess import check_call
 from datetime import datetime
 import smtplib
@@ -83,9 +83,14 @@ if __name__ == '__main__':
 					if ldict:
 						if lasttimestamp is None or lasttimestamp < extract_time(ldict):
 #						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['msecs']) / 1000))
-							if time.time() > last_time + 100 and item['data'] != 'q.S':
-								last_time = time.time()
-								send_email('\n'.join(line))
+							if item['data'] == 'q.R':
+								if time.time() > last_time + 120:
+									r_collection = []
+									last_time = time.time()
+									send_email('\n'.join(line))
+								r.zadd('acc_x', extract_time(ldict), ldict['acc_x'])
+								r.zadd('acc_y', extract_time(ldict), ldict['acc_y'])
+								r.zadd('acc_z', extract_time(ldict), ldict['acc_z'])
 							qdata['csv'].writerow(line + [
 									datetime.fromtimestamp(extract_time(ldict)).strftime('%d/%m/%Y %H:%M:%S.%f'),
 									datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f')
