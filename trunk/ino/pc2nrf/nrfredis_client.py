@@ -16,9 +16,9 @@ import libcommon_py as common
 MAX2READ = 100
 MESSAGE_CHAN = 'nrf'
 
-def send_email(msgtxt):
+def send_email(msgtxt, subject):
 	msg = MIMEMultipart()
-	msg['Subject'] = 'door notification %s' % time.strftime('%Y/%m/%d %H:%M')
+	msg['Subject'] = subject
 	msg['From'] = 'itmousecage@gmail.com'
 	msg['To'] = 'n800sau@gmail.com'
 	msg.attach(MIMEText(msgtxt, 'plain', 'utf-8'))
@@ -83,11 +83,16 @@ if __name__ == '__main__':
 					if ldict:
 						if lasttimestamp is None or lasttimestamp < extract_time(ldict):
 #						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['msecs']) / 1000))
-							if item['data'] == 'q.R':
+							if marker == 'q.R':
 								if time.time() > last_time + 120:
 									r_collection = []
 									last_time = time.time()
-									send_email('\n'.join(line))
+									send_email(
+										'Triggered at %s : %s' % (datetime.fromtimestamp(extract_time(ldict)).strftime('%d/%m/%Y %H:%M:%S.%f'),
+											'\n'.join(line)),
+										'door notification %s, v: %s' % (time.strftime('%Y/%m/%d %H:%M'), ldict['v'])
+									)
+								print ldict.keys()
 								r.zadd('acc_x', extract_time(ldict), ldict['acc_x'])
 								r.zadd('acc_y', extract_time(ldict), ldict['acc_y'])
 								r.zadd('acc_z', extract_time(ldict), ldict['acc_z'])
