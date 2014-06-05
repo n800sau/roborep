@@ -16,6 +16,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 
 from conf_ino import configure
 
+
+# wait before start for 5 mins
+time.sleep(300)
+
+
 NEXT_EVENT_TIMEOUT = 120 #secs
 
 def send_email(msgtxt, fnamelist):
@@ -45,6 +50,7 @@ def draw_plot(ldict):
 		ax1.set_xlabel('time')
 		ax1.set_ylabel('value')
 		ax1.plot(data_time, data_x, color='r', label='X')
+		ax1.legend()
 
 	if data_y:
 		ax2 = fig.add_subplot(222)
@@ -52,6 +58,7 @@ def draw_plot(ldict):
 		ax2.set_xlabel('time')
 		ax2.set_ylabel('value')
 		ax2.plot(data_time, data_y, color='g', label='Y')
+		ax2.legend()
 
 	if data_z:
 		ax3 = fig.add_subplot(223)
@@ -59,9 +66,9 @@ def draw_plot(ldict):
 		ax3.set_xlabel('time')
 		ax3.set_ylabel('value')
 		ax3.plot(data_time, data_z, color='b', label='Z')
+		ax3.legend()
 
-	plt.gcf().autofmt_xdate()
-	ax1.legend()
+	plt.gcf().autofmt_xdate(bottom=0.2, rotation=30, ha='right')
 
 
 cfgobj = configure(os.path.dirname(__file__))
@@ -89,11 +96,11 @@ for row in vf:
 		if (data_x and max(data_x)-min(data_x) > 100) or (data_y and max(data_y)-min(data_y) > 100) or (data_z and max(data_z)-min(data_z) > 100):
 			# draw plot
 			bname = 'plot_%s.png' % last_t.strftime('%Y.%m.%d-%H:%M')
-			draw_plot(ldict)
-			fname = os.path.join('/var/www/http/atad', bname)
-			plt.savefig(fname, bbox_inches='tight')
-			print fname, 'saved'
 			if not r.sismember('s.files', bname):
+				draw_plot(ldict)
+				fname = os.path.join('/var/www/http/atad', bname)
+				plt.savefig(fname, bbox_inches='tight')
+				print fname, 'saved'
 				send_email('door plots', [fname])
 				r.sadd('s.files', bname)
 				print bname, 'sent'
