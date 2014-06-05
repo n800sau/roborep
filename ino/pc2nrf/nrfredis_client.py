@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, redis, traceback, time, csv, json
+import sys, os, redis, traceback, time, csv, json, subprocess
 from subprocess import check_call
 from datetime import datetime
 import smtplib
@@ -15,6 +15,9 @@ import libcommon_py as common
 
 MAX2READ = 100
 MESSAGE_CHAN = 'nrf'
+
+# secs
+REPEAT_TIMEOUT = 300
 
 def send_email(msgtxt, subject):
 	msg = MIMEMultipart()
@@ -33,6 +36,9 @@ def send_email(msgtxt, subject):
 
 def extract_time(ldict):
 	return float(ldict['secs']) + float(ldict['moffset']) / 1000
+
+def start_plot_process():
+	subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), 'plotz.py')], close_fds=True)
 
 if __name__ == '__main__':
 
@@ -84,7 +90,7 @@ if __name__ == '__main__':
 						if lasttimestamp is None or lasttimestamp < extract_time(ldict):
 #						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['msecs']) / 1000))
 							if marker == 'q.R':
-								if time.time() > last_time + 120:
+								if time.time() > last_time + REPEAT_TIMEOUT:
 									r_collection = []
 									last_time = time.time()
 									send_email(
@@ -92,6 +98,7 @@ if __name__ == '__main__':
 											'\n'.join(line)),
 										'door notification %s, v: %s' % (time.strftime('%Y/%m/%d %H:%M'), ldict['v'])
 									)
+									start_plot_process()
 								print ldict.keys()
 								r.zadd('acc_x', extract_time(ldict), ldict['acc_x'])
 								r.zadd('acc_y', extract_time(ldict), ldict['acc_y'])
