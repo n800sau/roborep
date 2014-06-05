@@ -55,8 +55,13 @@ int wakeInt = wakePin - 2;		 // interrupt used for waking up
 
 #define COUNTER_INIT 20
 
+// watchdog 8 secs count before sending triggered
+#define WD_COUNTER_INIT 2
+
 volatile bool interrupted = false;
 volatile int counter = COUNTER_INIT;
+volatile bool wd_int = false;
+volatile int wd_int_counter = WD_COUNTER_INIT;
 
 
 void setup() {
@@ -135,12 +140,28 @@ void wakeUpNow()		// here the interrupt is handled after wakeup
 	interrupted = true;
 }
 
-void sleepNow()			// here we put the arduino to sleep
+// watchdog interrupt
+ISR(WDT_vect) 
+{
+	wdt_disable();	// disable watchdog
+	interrupted = true;
+	wd_int = true;
+}
+
+void sleepNow(const byte watchdog_interval)			// here we put the arduino to sleep
 {
 	mpu.setIntEnabled((1 << MPU6050_INTERRUPT_MOT_BIT) | (1 << MPU6050_INTERRUPT_ZMOT_BIT));
 
 	Serial.println("Timer: Entering Sleep mode");
+	Serial.flush();
 	delay(100);		// this delay is needed, the sleep 
+
+	// watchdog thing
+	MCUSR = 0;													// reset various flags
+	WDTCSR |= 0b00011000;								// see docs, set WDCE, WDE
+	WDTCSR =	0b01000000 | watchdog_interval;		// set WDIE, and appropriate delay
+
+
 	/* Now is the time to set the sleep mode. In the Atmega8 datasheet
 	 * http://www.atmel.com/dyn/resources/prod_documents/doc2486.pdf on page 35
 	 * there is a list of sleep modes which explains which clocks and 
@@ -160,6 +181,7 @@ void sleepNow()			// here we put the arduino to sleep
 	 * sleep mode: SLEEP_MODE_PWR_DOWN
 	 * 
 	 */	 
+	wdt_reset();
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // sleep mode is set here
 
 	sleep_enable();			 // enables the sleep bit in the mcucr register
@@ -215,67 +237,91 @@ void loop() {
 		interrupted = false;
 
 
-		int st = mpu.getIntStatus();
-		Serial.print("\tst: 0x");
-		Serial.println(st, HEX);
-		int i;
+		if(wd_int) {
+			wd_int = false;
+			if(--wd_int_counter <= 0) {
+				wd_int_counter = WD_COUNTER_INIT;
+#ifdef WITH_NRF
+				RF24NetworkHeader header(PC2NRF_NODE);
+				payload_t reply;
+				reply.pload_type = PL_VOLTAGE;
+				reply.voltage = readVccMv();
+				reply.ms = millis();
+				reply.counter = ++pcounter;
+				bool ok = network.write(header,&reply,sizeof(reply));
+				if (ok)
+					Serial.println("Replied ok.");
+				else
+					Serial.println("Reply failed.");
+				radio.powerDown();
+#endif // WITH_NRF
+			}
+			// 8 secs again
+			sleepNow(0b100001);
+		} else {
+
+			int st = mpu.getIntStatus();
+			Serial.print("\tst: 0x");
+			Serial.println(st, HEX);
+			int i;
 
 
-		if(st & (1 << MPU6050_INTERRUPT_ZMOT_BIT)) {
-			Serial.println("Stopped");
-		}
+			if(st & (1 << MPU6050_INTERRUPT_ZMOT_BIT)) {
+				Serial.println("Stopped");
+			}
 
-		if(st & (1 << MPU6050_INTERRUPT_MOT_BIT)) {
-			Serial.print("Moving:");
-			Serial.print(mpu.getXNegMotionDetected());
-			Serial.print("-X-");
-			Serial.print(mpu.getXPosMotionDetected());
-			Serial.print(" ");
-			Serial.print(mpu.getYNegMotionDetected());
-			Serial.print("-Y-");
-			Serial.print(mpu.getYPosMotionDetected());
-			Serial.print(" ");
-			Serial.print(mpu.getZNegMotionDetected());
-			Serial.print("-Z-");
-			Serial.print(mpu.getZPosMotionDetected());
-			Serial.println();
-		}
+			if(st & (1 << MPU6050_INTERRUPT_MOT_BIT)) {
+				Serial.print("Moving:");
+				Serial.print(mpu.getXNegMotionDetected());
+				Serial.print("-X-");
+				Serial.print(mpu.getXPosMotionDetected());
+				Serial.print(" ");
+				Serial.print(mpu.getYNegMotionDetected());
+				Serial.print("-Y-");
+				Serial.print(mpu.getYPosMotionDetected());
+				Serial.print(" ");
+				Serial.print(mpu.getZNegMotionDetected());
+				Serial.print("-Z-");
+				Serial.print(mpu.getZPosMotionDetected());
+				Serial.println();
+			}
 
 
-		int16_t ax, ay, az;
-		mpu.getAcceleration(&ax, &ay, &az);
+			int16_t ax, ay, az;
+			mpu.getAcceleration(&ax, &ay, &az);
 
-		#ifdef OUTPUT_READABLE_ACCELGYRO
-			// display tab-separated accel/gyro x/y/z values
-			Serial.print("a:\t");
-			Serial.print(ax); Serial.print("\t");
-			Serial.print(ay); Serial.print("\t");
-			Serial.print(az); Serial.print("\t");
-			Serial.println();
-		#endif
+			#ifdef OUTPUT_READABLE_ACCELGYRO
+				// display tab-separated accel/gyro x/y/z values
+				Serial.print("a:\t");
+				Serial.print(ax); Serial.print("\t");
+				Serial.print(ay); Serial.print("\t");
+				Serial.print(az); Serial.print("\t");
+				Serial.println();
+			#endif
 
 #ifdef WITH_NRF
-		RF24NetworkHeader header(PC2NRF_NODE);
-		payload_t reply;
-		reply.pload_type = PL_ACC;
-		reply.voltage = readVccMv();
-		reply.d.acc.raw[0] = ax;
-		reply.d.acc.raw[1] = ay;
-		reply.d.acc.raw[2] = az;
-		reply.d.acc.uScale = 1;
-		reply.ms = millis();
-		reply.counter = ++pcounter;
-		bool ok = network.write(header,&reply,sizeof(reply));
-		if (ok)
-			Serial.println("Replied ok.");
-		else
-			Serial.println("Reply failed.");
-		radio.powerDown();
+			RF24NetworkHeader header(PC2NRF_NODE);
+			payload_t reply;
+			reply.pload_type = PL_ACC;
+			reply.voltage = readVccMv();
+			reply.d.acc.raw[0] = ax;
+			reply.d.acc.raw[1] = ay;
+			reply.d.acc.raw[2] = az;
+			reply.d.acc.uScale = 1;
+			reply.ms = millis();
+			reply.counter = ++pcounter;
+			bool ok = network.write(header,&reply,sizeof(reply));
+			if (ok)
+				Serial.println("Replied ok.");
+			else
+				Serial.println("Reply failed.");
+			radio.powerDown();
 #endif // WITH_NRF
 
-		counter--;
-		if(counter < 0) {
-			sleepNow();		// sleep function called here
+			counter--;
+			if(counter < 0) {
+				sleepNow(0b100001);		// sleep function called here
+			}
 		}
 	}
 
@@ -283,3 +329,9 @@ void loop() {
 					  //function will provoke a Serial error otherwise!!
 
 }
+
+// sleep bit patterns:
+//	1 second:	 0b000110
+//	2 seconds: 0b000111
+//	4 seconds: 0b100000
+//	8 seconds: 0b100001
