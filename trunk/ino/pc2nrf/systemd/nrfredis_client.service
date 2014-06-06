@@ -1,0 +1,11 @@
+[Unit]
+Description=nrf notifier
+After=syslog.target network.target nrf2redis.target
+[Service]
+Type=simple
+ExecStart=/home/n800s/work/roborep/ino/pc2nrf/nrfredis_client.py
+User=n800s
+Group=n800s
+Restart=always
+[Install]
+WantedBy=multi-user.target
