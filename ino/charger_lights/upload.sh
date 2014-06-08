@@ -1,2 +1,2 @@
-./reset.sh &
+#./reset.sh &
 ino upload
