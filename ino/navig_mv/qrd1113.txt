@@ -1,0 +1,7 @@
+green	1   330 om +
+blue	4   -
+purple	3   10 k -- +
+white	2   -
+
+1-2 led
+3-4 transistor
