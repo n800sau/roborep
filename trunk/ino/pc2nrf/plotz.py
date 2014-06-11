@@ -51,6 +51,7 @@ def draw_plot(ldict):
 		ax1.set_ylabel('value')
 		ax1.plot(data_time, data_x, color='r', label='X')
 		ax1.legend()
+		plt.gcf().autofmt_xdate(bottom=0.2, rotation=30, ha='right')
 
 	if data_y:
 		ax2 = fig.add_subplot(222)
@@ -59,6 +60,7 @@ def draw_plot(ldict):
 		ax2.set_ylabel('value')
 		ax2.plot(data_time, data_y, color='g', label='Y')
 		ax2.legend()
+		plt.gcf().autofmt_xdate(bottom=0.2, rotation=30, ha='right')
 
 	if data_z:
 		ax3 = fig.add_subplot(223)
@@ -67,8 +69,7 @@ def draw_plot(ldict):
 		ax3.set_ylabel('value')
 		ax3.plot(data_time, data_z, color='b', label='Z')
 		ax3.legend()
-
-	plt.gcf().autofmt_xdate(bottom=0.2, rotation=30, ha='right')
+		plt.gcf().autofmt_xdate(bottom=0.2, rotation=30, ha='right')
 
 
 cfgobj = configure(os.path.dirname(__file__))
@@ -81,7 +82,7 @@ if redis_port:
 r = redis.Redis(**params)
 
 timeout = timedelta(seconds=NEXT_EVENT_TIMEOUT)
-f = file('q.R.csv')
+f = file(os.path.join(os.path.dirname(__file__), 'q.R.csv'))
 vf = csv.reader(f)
 data_time = []
 data_x = []
@@ -90,21 +91,22 @@ data_z = []
 last_t = None
 for row in vf:
 	ldict = dict(zip(row[::2], row[1::2]))
-	t = datetime.fromtimestamp(float(ldict['secs']) + float(ldict['moffset'])/1000)
-	if last_t is None or last_t + timeout < t:
-		# draw plot and start next plot
-		if (data_x and max(data_x)-min(data_x) > 100) or (data_y and max(data_y)-min(data_y) > 100) or (data_z and max(data_z)-min(data_z) > 100):
-			# draw plot
-			bname = 'plot_%s.png' % last_t.strftime('%Y.%m.%d-%H:%M')
-			if not r.sismember('s.files', bname):
-				draw_plot(ldict)
-				fname = os.path.join('/var/www/http/atad', bname)
-				plt.savefig(fname, bbox_inches='tight')
-				print fname, 'saved'
-				send_email('door plots', [fname])
-				r.sadd('s.files', bname)
-				print bname, 'sent'
-			#plt.show()
+	if ldict['type'] == common.PL_ACC:
+		t = datetime.fromtimestamp(float(ldict['secs']) + float(ldict['moffset'])/1000)
+		if last_t is None or last_t + timeout < t:
+					# draw plot and start next plot
+			if (data_x and max(data_x)-min(data_x) > 100) or (data_y and max(data_y)-min(data_y) > 100) or (data_z and max(data_z)-min(data_z) > 100):
+				# draw plot
+				bname = 'plot_%s.png' % last_t.strftime('%Y.%m.%d-%H:%M')
+				if not r.sismember('s.files', bname):
+					draw_plot(ldict)
+					fname = os.path.join('/var/www/http/atad', bname)
+					plt.savefig(fname, bbox_inches='tight')
+					print fname, 'saved'
+					send_email('door plots', [fname])
+					r.sadd('s.files', bname)
+					print bname, 'sent'
+				#plt.show()
 
 		data_x = []
 		data_y = []

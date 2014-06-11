@@ -129,17 +129,19 @@ void loop(void)
 		payload_t reply;
 		network.read(header,&reply,sizeof(reply));
 
+		Serial.print(REPLY_MARKER);
+		Serial.print(DATA_SEPARATOR "type" DATA_SEPARATOR);
+		Serial.print(reply.pload_type);
+		Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
+		Serial.print(secs_offset);
+		Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
+		Serial.print(millisOffset());
+		Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
+		Serial.print(reply.counter);
+		Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
+		Serial.print(reply.ms);
 		switch(reply.pload_type) {
 			case PL_MPU:
-				Serial.print(REPLY_MARKER);
-				Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
-				Serial.print(secs_offset);
-				Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
-				Serial.print(millisOffset());
-				Serial.print(" #");
-				Serial.print(reply.counter);
-				Serial.print(" ms ");
-				Serial.print(reply.ms);
 				Serial.print(DATA_SEPARATOR "quat_0" DATA_SEPARATOR);
 				Serial.print(reply.d.mpu.quaternion[0]);
 				Serial.print(DATA_SEPARATOR "quat_1" DATA_SEPARATOR);
@@ -158,15 +160,6 @@ void loop(void)
 				Serial.println(reply.voltage);
 				break;
 			case PL_ACC: 
-				Serial.print(REPLY_MARKER);
-				Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
-				Serial.print(secs_offset);
-				Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
-				Serial.print(millisOffset());
-				Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
-				Serial.print(reply.counter);
-				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
-				Serial.print(reply.ms);
 				Serial.print(DATA_SEPARATOR "acc_x" DATA_SEPARATOR);
 				Serial.print(reply.d.acc.raw[0] * (int)reply.d.acc.uScale);
 				Serial.print(DATA_SEPARATOR "acc_y" DATA_SEPARATOR);
@@ -177,15 +170,6 @@ void loop(void)
 				Serial.println(reply.voltage);
 				break;
 			default:
-				Serial.print(REPLY_MARKER);
-				Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
-				Serial.print(secs_offset);
-				Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
-				Serial.print(millisOffset());
-				Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
-				Serial.print(reply.counter);
-				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
-				Serial.print(reply.ms);
 				Serial.print(DATA_SEPARATOR "v" DATA_SEPARATOR);
 				Serial.println(reply.voltage);
 				break;
