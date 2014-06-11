@@ -56,7 +56,7 @@ int wakeInt = wakePin - 2;		 // interrupt used for waking up
 #define COUNTER_INIT 20
 
 // watchdog 8 secs count before sending triggered
-#define WD_COUNTER_INIT 2
+#define WD_COUNTER_INIT 4
 
 volatile bool interrupted = false;
 volatile int counter = COUNTER_INIT;
