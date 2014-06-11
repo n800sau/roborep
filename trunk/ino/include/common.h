@@ -8,7 +8,8 @@ enum PLOAD_TYPE
 	PL_SETSERVO = 1,
 	PL_SERVO_STATE,
 	PL_MPU,
-	PL_ACC
+	PL_ACC,
+	PL_VOLTAGE
 };
 
 #define NO_SET 0xff
