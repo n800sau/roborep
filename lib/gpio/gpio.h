@@ -12,47 +12,11 @@
 #ifndef GPIO_H
 #define	GPIO_H
 
-class GPIO {
-public:
+#define GPIO_LOW 0
+#define GPIO_HIGH 1
 
-	/* Constants */
-	static const int DIRECTION_OUT = 1;
-	static const int DIRECTION_IN = 0;
-	
-	static const int OUTPUT_HIGH = 1;
-	static const int OUTPUT_LOW = 0;
-		
-	GPIO();
-	
-	/**
-	 * 
-     * @param port
-     * @param DDR
-     */
-	static void open(int port, int DDR);
-	/**
-	 * 
-     * @param port
-     */
-	static void close(int port);
-	/**
-	 * 
-     * @param port
-     * @param value
-     */
-	static int read(int port);
-	/**
-	* 
-	* @param port
-	* @param value
-	*/	
-	static void write(int port,int value);	
-	
-	virtual ~GPIO();
-	
-private:
-
-};
+void digitalWrite(int pin, int value);
+int digitalRead(int pin);
 
 #endif	/* GPIO_H */
 
