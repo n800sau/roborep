@@ -27,7 +27,7 @@ using namespace std;
 class SPI {
 public:
 	
-	SPI();
+	SPI(const char *dev="/dev/spidev1.0");
 	uint8_t transfer(uint8_t tx_);
 	virtual ~SPI();
 

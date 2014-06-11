@@ -10,9 +10,9 @@
 
 #include "spi.h"
 
-SPI::SPI() {
+SPI::SPI(const char *dev) {
 	
-	this->device = "/dev/spidev1.0";;
+	this->device = dev;
 	this->bits = 8;
 //	this->speed = 24000000; // 24Mhz - proly doesnt work
 	this->speed = 16000000; // 16Mhz 
