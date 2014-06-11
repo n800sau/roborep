@@ -132,6 +132,10 @@ void loop(void)
 		switch(reply.pload_type) {
 			case PL_MPU:
 				Serial.print(REPLY_MARKER);
+				Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
+				Serial.print(secs_offset);
+				Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
+				Serial.print(millisOffset());
 				Serial.print(" #");
 				Serial.print(reply.counter);
 				Serial.print(" ms ");
@@ -174,6 +178,10 @@ void loop(void)
 				break;
 			default:
 				Serial.print(REPLY_MARKER);
+				Serial.print(DATA_SEPARATOR "secs" DATA_SEPARATOR);
+				Serial.print(secs_offset);
+				Serial.print(DATA_SEPARATOR "moffset" DATA_SEPARATOR);
+				Serial.print(millisOffset());
 				Serial.print(DATA_SEPARATOR "#" DATA_SEPARATOR);
 				Serial.print(reply.counter);
 				Serial.print(DATA_SEPARATOR "ms" DATA_SEPARATOR);
