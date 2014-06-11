@@ -3,7 +3,7 @@ CCOPTS=-L.
 STRIP=-strip
 SRCS=RF24.cpp
 OBJECTS=RF24.o
-HEADERS=RF24.h
+HEADERS=RF24.h RF24_config.h nRF24L01.h
 NAME=libRF24.a
 
 .cpp.o: $(HEADERS)
