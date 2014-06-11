@@ -57,7 +57,7 @@ if __name__ == '__main__':
 						r.delete(rk)
 						cleaned.append(rk)
 					r.lpush(rk, line)
-					print line
+#					print line
 					r.ltrim(rk, 0, MAX_QUEUE_SIZE - 1)
 					r.sadd('s.queues', rk)
 					r.publish(MESSAGE_CHAN, rk)

@@ -89,7 +89,7 @@ if __name__ == '__main__':
 					if ldict:
 						if lasttimestamp is None or lasttimestamp < extract_time(ldict):
 #						print time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(float(ldict['msecs']) / 1000))
-							if marker == 'q.R':
+							if marker == 'q.R' and ldict['type'] == common.PL_ACC:
 								if time.time() > last_time + REPEAT_TIMEOUT:
 									r_collection = []
 									last_time = time.time()
