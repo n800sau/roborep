@@ -1,69 +1,27 @@
-/* 
- * https://github.com/mrshu/GPIOlib
- * Copyright (c) 2011, Copyright (c) 2011 mr.Shu
- * All rights reserved. 
- * 
- * Modified on 24 June 2012, 11:06 AM
- * File:   gpio.cpp
- * Author: purinda (purinda@gmail.com)
- * 
- */
-
 #include "gpio.h"
-#include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
-GPIO::GPIO() {
-}
-
-GPIO::~GPIO() {
-}
-
-void GPIO::open(int port, int DDR)
+std::string gpio_path(int pin)
 {
-	FILE *f;
-	f = fopen("/sys/class/gpio/export", "w");
-	fprintf(f, "%d\n", port);
-	fclose(f);
-
-	char file[128];
-	sprintf(file, "/sys/class/gpio/gpio%d/direction", port);
-	f = fopen(file, "w");
-	if (DDR == 0)	fprintf(f, "in\n");
-	else		fprintf(f, "out\n");
-	fclose(f);
+	std::ostringstream rs;
+	rs << "/sys/class/gpio/gpio" << pin << "/value";
+	return rs.str();
 }
 
-void GPIO::close(int port)
+void digitalWrite(int pin, int value)
 {
-	FILE *f;
-	f = fopen("/sys/class/gpio/unexport", "w");
-	fprintf(f, "%d\n", port);
-	fclose(f);
+	std::ofstream ofs;
+	ofs.open(gpio_path(pin).c_str(), std::ifstream::out);
+	ofs << value;
 }
 
-int GPIO::read(int port)
+int digitalRead(int pin)
 {
-	FILE *f;
-	
-	char file[128];
-	sprintf(file, "/sys/class/gpio/gpio%d/value", port);
-	f = fopen(file, "r");
-
-	int i;
-	fscanf(f, "%d", &i);
-	fclose(f);
-	return i;
-
-}
-void GPIO::write(int port, int value){
-	FILE *f;
-
-	char file[128];
-	sprintf(file, "/sys/class/gpio/gpio%d/value", port);
-	f = fopen(file, "w");
-	
-	if (value == 0)	fprintf(f, "0\n");
-	else		fprintf(f, "1\n");
-	
-	fclose(f);
+	int rs;
+	std::ifstream ifs;
+	ifs.open(gpio_path(pin).c_str(), std::ifstream::in);
+	ifs >> rs;
+	return rs;
 }

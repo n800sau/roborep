@@ -339,9 +339,6 @@ void RF24::begin(void)
   // just to simulate arduino milis()
   __start_timer();
   // Initialize pins
-  pinMode(ce_pin,OUTPUT);
-  pinMode(csn_pin,OUTPUT);
-
   ce(LOW);
   csn(HIGH);
 

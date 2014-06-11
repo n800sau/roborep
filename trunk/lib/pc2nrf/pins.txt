@@ -1,0 +1,10 @@
+NRF24      P9
+
+1 - GRD  - 1
+2 - VCC  - 3
+3 - CE   - 27
+4 - CSN  - 25
+5 - SCK  - 22
+6 - MOSI - 18
+7 - MISO - 21
+8 - IRQ  - 12
