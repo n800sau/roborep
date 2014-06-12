@@ -491,6 +491,7 @@ void ReServant::json2redislist(int list_id)
 	}
 	json_decref(js);
 	redisAsyncCommand(aredis, NULL, NULL, "SET %s.timestamp %s", myid(), s_timestamp(&t));
+	redisAsyncCommand(aredis, NULL, NULL, "PUBLISH %s %d", myid(), list_id);
 }
 
 json_t *ReServant::tabbed2json(const char *ptr)
