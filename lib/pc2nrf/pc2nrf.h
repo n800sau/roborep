@@ -4,6 +4,7 @@
 #include <reservant.h>
 #include <RF24Network.h>
 #include <RF24.h>
+#include "../../ino/include/common.h"
 
 class PC2NRF:public ReServant
 {
@@ -15,8 +16,11 @@ class PC2NRF:public ReServant
 		// Network uses that radio
 		RF24Network network;
 
-		// packet counter
-		int pcounter;
+		// has data mark
+		bool has_data;
+
+		// data
+		payload_t reply;
 
 	protected:
 		virtual bool create_servant();
