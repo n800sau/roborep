@@ -18,6 +18,7 @@ SPI::SPI(const char *dev) {
 	this->speed = 16000000; // 16Mhz 
 //	this->speed = 8000000; // 8Mhz 
 //	this->speed = 2000000; // 2Mhz 
+	this->mode = SPI_MODE_0;
 
 	this->init();
 }

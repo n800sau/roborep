@@ -94,6 +94,7 @@ class ReServant
 		virtual void destroy_servant();
 
 		//loop interval in seconds
+		//it may be called after create_servant
 		void setLoopInterval(float interval=0.5);
 };
 
