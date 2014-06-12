@@ -1,6 +1,4 @@
 #include "pc2nrf.h"
-#include <compatibility.h>
-#include "../../ino/include/common.h"
 
 #include <syslog.h>
 #include <string.h>
@@ -10,34 +8,24 @@
 #include <hiredis_ext.h>
 
 PC2NRF::PC2NRF():
-	ReServant("pc2nrf"), pcounter(0), radio(115, 117), network(radio)
+	ReServant("pc2nrf"), radio(115, 117), network(radio), has_data(false)
 {
 }
 
 bool PC2NRF::create_servant()
 {
 	bool rs = ReServant::create_servant();
+	setLoopInterval(0.1);
 	radio.begin();
 	network.begin(CHANNEL, PC2NRF_NODE);
-	printf("\n");
 	return rs;
 }
 
 bool PC2NRF::fill_json(json_t *js, int list_id)
 {
-	return true;
-}
-
-void PC2NRF::loop()
-{
-	// Pump the network regularly
-	network.update();
-
-	// check network
-	if ( network.available() ) {
-		RF24NetworkHeader header;
-		payload_t reply;
-		network.read(header,&reply,sizeof(reply));
+	bool rs = has_data;
+	if(has_data) {
+		has_data = false;
 		timespec ts;
 		if(clock_gettime(CLOCK_REALTIME_COARSE, &ts) < 0) {
 			syslog(LOG_ERR, "Error getting time of day %s", strerror(errno));
@@ -82,18 +70,46 @@ void PC2NRF::loop()
 		}
 		printf(DATA_SEPARATOR "v" DATA_SEPARATOR);
 		printf("%u\n", reply.voltage);
-/*	} else {
-		RF24NetworkHeader header(PC2NRF_NODE);
-		payload_t reply;
-		reply.pload_type = PL_VOLTAGE;
-		reply.voltage = 100;
-		reply.ms = __millis();
-		reply.counter = ++pcounter;
-		bool ok = network.write(header,&reply,sizeof(reply));
-		if (ok)
-			printf("Replied ok.\n");
-		else
-			printf("Reply failed.\n");
-*/	}
+		// form redis data
+		json_t *sjs = json_object();
+		json_object_set_new(sjs, "type", json_integer(reply.pload_type));
+		json_object_set_new(sjs, "secs", json_integer(ts.tv_sec));
+		json_object_set_new(sjs, "moffset", json_integer(ts.tv_nsec / 1000));
+		json_object_set_new(sjs, "#", json_integer(reply.counter));
+		json_object_set_new(sjs, "ms", json_integer(reply.ms));
+		switch(reply.pload_type) {
+			case PL_MPU:
+				json_object_set_new(sjs, "quat_0", json_integer(reply.d.mpu.quaternion[0]));
+				json_object_set_new(sjs, "quat_1", json_integer(reply.d.mpu.quaternion[1]));
+				json_object_set_new(sjs, "quat_2", json_integer(reply.d.mpu.quaternion[2]));
+				json_object_set_new(sjs, "quat_3", json_integer(reply.d.mpu.quaternion[3]));
+				json_object_set_new(sjs, "grav_x", json_integer(reply.d.mpu.gravity[0]));
+				json_object_set_new(sjs, "grav_y", json_integer(reply.d.mpu.gravity[1]));
+				json_object_set_new(sjs, "grav_z", json_integer(reply.d.mpu.gravity[2]));
+				break;
+			case PL_ACC:
+				json_object_set_new(sjs, "acc_x", json_real(reply.d.acc.raw[0] * (int)reply.d.acc.uScale));
+				json_object_set_new(sjs, "acc_y", json_real(reply.d.acc.raw[1] * (int)reply.d.acc.uScale));
+				json_object_set_new(sjs, "acc_z", json_real(reply.d.acc.raw[2] * (int)reply.d.acc.uScale));
+				break;
+		}
+		json_object_set_new(sjs, "mv", json_integer(reply.voltage));
+		json_object_set_new(js, "data", sjs);
+	}
+	return rs;
+}
+
+void PC2NRF::loop()
+{
+	// Pump the network regularly
+	network.update();
+
+	// check network
+	if ( network.available() ) {
+		RF24NetworkHeader header;
+		network.read(header,&reply,sizeof(reply));
+		has_data = true;
+//		json2redislist();
+	}
 	ReServant::loop();
 }

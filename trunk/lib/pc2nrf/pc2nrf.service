@@ -1,0 +1,11 @@
+[Unit]
+Description=RF24 service
+After=syslog.target network.target
+[Service]
+Type=simple
+ExecStart=/home/n800s/work/roborep/lib/pc2nrf/pc2nrfd
+User=n800s
+Group=n800s
+Restart=always
+[Install]
+WantedBy=multi-user.target

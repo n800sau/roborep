@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PIDFILE=/home/n800s/run/pc2nrf.pid
-DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/pc2nrf/pc2nrfd
+DAEMON=/home/n800s/work/roborep/lib/pc2nrf/pc2nrfd
 
 PPID=`pidof -o %PPID ${DAEMON}`
 if [ -z "$PPID" ]; then
