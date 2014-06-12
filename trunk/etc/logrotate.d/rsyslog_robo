@@ -12,6 +12,7 @@
 /var/log/userver.log
 /var/log/tcpserver.log
 /var/log/nrf_basenode.log
+/var/log/pc2nrf.log
 {
 	rotate 2
 	daily
