@@ -1,6 +1,6 @@
 [Unit]
 Description=RF24 service
-After=syslog.target network.target
+After=syslog.target network.target gpio_set.service
 [Service]
 Type=simple
 ExecStart=/home/n800s/work/roborep/lib/pc2nrf/pc2nrfd

@@ -1,0 +1,8 @@
+[Unit]
+Description=Set GPIO mode for RF24 service
+[Service]
+Type=oneshot
+ExecStart=/home/n800s/work/roborep/lib/pc2nrf/gpio_set.sh
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target

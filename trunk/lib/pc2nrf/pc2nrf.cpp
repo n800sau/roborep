@@ -7,6 +7,9 @@
 #include <time.h>
 #include <hiredis_ext.h>
 
+#define MAX_QUEUE_SIZE 1000
+
+
 PC2NRF::PC2NRF():
 	ReServant("pc2nrf"), radio(115, 117), network(radio), has_data(false)
 {
@@ -15,6 +18,7 @@ PC2NRF::PC2NRF():
 bool PC2NRF::create_servant()
 {
 	bool rs = ReServant::create_servant();
+	set_redis_list_limit(MAX_QUEUE_SIZE);
 	setLoopInterval(0.1);
 	radio.begin();
 	network.begin(CHANNEL, PC2NRF_NODE);

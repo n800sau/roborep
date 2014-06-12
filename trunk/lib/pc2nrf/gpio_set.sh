@@ -1,3 +1,5 @@
+#!/bin/sh
+
 sudo su -c '
 for p in 115 117
 do
