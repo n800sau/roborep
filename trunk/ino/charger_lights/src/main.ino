@@ -1,31 +1,23 @@
 #include <EventFuse.h>
 #include <JsonParser.h>
 #include "../../include/printf.h"
+#include <IRremote.h>
 
-struct LED {
-	int pin;
-	boolean state;
-	int count;
-};
+#define IR_PIN 13
 
-#define N_LEDS 3
+IRsend ir;
 
-LED pins[N_LEDS] = {
-	{13, LOW, 1000},
-	{12, LOW, 2000},
-	{11, LOW, 3000}
-};
 
 #define MAX_INPUT_LEN 200
 char inputString[MAX_INPUT_LEN];
 int inputPos = 0;
 boolean stringComplete = false;
 
+#define SIGNAL_LEN 6
+static unsigned int irsignal[SIGNAL_LEN] = {10, 20, 10, 20, 10, 20};
+
 void FuseEvent(FuseID fuse, int& led_index){
-	LED *pin = pins + led_index;
-	pin->state = !pin->state;
-	digitalWrite(pin->pin, pin->state);
-	printf("{\"led\":%d,\"on\":%d}\r\n", led_index, pin->state);
+	ir.sendRaw(irsignal, SIGNAL_LEN, 56);
 //	Serial.print("event:");
 //	Serial.print(led_index);
 //	Serial.print(":");
@@ -47,11 +39,7 @@ void serialEvent() {
 void setup() {
 	Serial.begin(57600);
 	printf_begin();
-	for(int i=0; i<N_LEDS; i++) {
-		LED *pin = pins + i;
-		pinMode(pin->pin, OUTPUT);
-		EventFuse::newFuse(i, pin->count, INF_REPEAT, FuseEvent);
-	}
+	EventFuse::newFuse(500, INF_REPEAT, FuseEvent);
 //	Serial.println("setup");
 }
 
