@@ -79,7 +79,7 @@ bool PC2NRF::fill_json(json_t *js, int list_id)
 		json_object_set_new(sjs, "type", json_integer(reply.pload_type));
 		json_object_set_new(sjs, "secs", json_integer(ts.tv_sec));
 		json_object_set_new(sjs, "moffset", json_integer(ts.tv_nsec / 1000));
-		json_object_set_new(sjs, "#", json_integer(reply.counter));
+		json_object_set_new(sjs, "counter", json_integer(reply.counter));
 		json_object_set_new(sjs, "ms", json_integer(reply.ms));
 		switch(reply.pload_type) {
 			case PL_MPU:
