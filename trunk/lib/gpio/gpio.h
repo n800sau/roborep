@@ -6,6 +6,7 @@
 
 void digitalWrite(int pin, int value);
 int digitalRead(int pin);
+void wait_interrupt(int pin);
 
 #endif	/* GPIO_H */
 
