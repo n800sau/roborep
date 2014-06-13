@@ -11,8 +11,10 @@ int main(int argc, char const **argv)
 		srv.run();
 		return 0;
 	} catch (const std::exception& e) {
-		syslog(LOG_ERR, e.what());
-		std::cerr << "Error " << e.what() << endl << strerror(errno) << endl;
+		char buf[256];
+		snprintf(buf, sizeof(buf), "Error %s\n%s\n", e.what(), strerror(errno));
+		syslog(LOG_ERR, buf);
+		fputs(buf, stderr);
 		return 1;
 	}
 }
