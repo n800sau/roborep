@@ -9,3 +9,6 @@ Group=n800s
 Restart=always
 [Install]
 WantedBy=multi-user.target
+[Path]
+PathExists=/sys/class/gpio/gpio115
+PathExists=/sys/class/gpio/gpio117

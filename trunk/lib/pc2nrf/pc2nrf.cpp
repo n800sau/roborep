@@ -19,7 +19,7 @@ bool PC2NRF::create_servant()
 {
 	bool rs = ReServant::create_servant();
 	set_redis_list_limit(MAX_QUEUE_SIZE);
-	setLoopInterval(0.1);
+//	setLoopInterval(0.1);
 	radio.begin();
 	network.begin(CHANNEL, PC2NRF_NODE);
 	return rs;
@@ -113,7 +113,7 @@ void PC2NRF::loop()
 		RF24NetworkHeader header;
 		network.read(header,&reply,sizeof(reply));
 		has_data = true;
-//		json2redislist();
+		json2redislist();
 	}
 	ReServant::loop();
 }
