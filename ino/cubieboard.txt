@@ -1,0 +1,12 @@
+platform-sw-ehci.1-usb-0:1.3:1.0-port0 -> ../../ttyUSB0    base 
+platform-sw-ehci.1-usb-0:1.1.4:1.0-port0 -> ../../ttyUSB1  picaxe serial
+platform-sw-ehci.1-usb-0:1.4:1.0-port0 -> ../../ttyUSB2     328 nav ir receiver
+platform-sw-ehci.1-usb-0:1.1.1:1.0-port0 -> ../../ttyUSB3   side mpu6050 328
+platform-sw-ehci.1-usb-0:1.1.2:1.0-port0 -> ../../ttyUSB4   picaxe programmer
+platform-sw-ehci.1-usb-0:1.1.3:1.0-port0 -> ../../ttyUSB5   328 base ir transmitter
+
+usb-FTDI_FT232R_USB_UART_A4015M29-if00-port0 -> ../../ttyUSB0
+usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0 -> ../../ttyUSB1
+usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0 -> ../../ttyUSB3 side mpu6050 328
+usb-Revolution_AXE027_PICAXE_USB-if00-port0 -> ../../ttyUSB4
+usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0 -> ../../ttyUSB5
