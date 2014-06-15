@@ -7,4 +7,17 @@ NRF24      P9
 5 - SCK  - 22
 6 - MOSI - 18
 7 - MISO - 21
-8 - IRQ  - 12  GPIO1_28  60
+
+           P8
+8 - IRQ  - 4  GPIO1_7 39
+
+# not working
+#8 - IRQ  - 12  GPIO1_28  60
+
+
+
+P8
+
+out in
+43 - 44    GPIO2_8 (72) - GPIO2_9 (73)
+45 - 46    GPIO2_6 (70) - GPIO2_7 (71)

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 sudo su -c '
-for p in 60 115 117
+for p in 39 115 117 70 71 72 73
 do
 echo ${p} >/sys/class/gpio/unexport
 done
