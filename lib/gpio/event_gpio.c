@@ -38,6 +38,9 @@ SOFTWARE.
 #include "event_gpio.h"
 //#include "common.h"
 
+#define ARRAY_SIZE(a)  (sizeof(a) / sizeof(a[0]))
+
+
 const char *stredge[4] = {"none", "rising", "falling", "both"};
 
 // file descriptors

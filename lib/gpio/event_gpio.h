@@ -28,10 +28,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#define ARRAY_SIZE(a)  (sizeof(a) / sizeof(a[0]))
-
-
-
 #define NO_EDGE      0
 #define RISING_EDGE  1
 #define FALLING_EDGE 2
@@ -40,9 +36,6 @@ SOFTWARE.
 #define INPUT  0
 #define OUTPUT 1
 #define ALT0   4
-
-#define HIGH 1
-#define LOW  0
 
 #define PUD_OFF  0
 #define PUD_DOWN 1
