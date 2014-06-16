@@ -6,22 +6,36 @@
 #include <errno.h>
 #include <time.h>
 #include <hiredis_ext.h>
+#include "../gpio/event_gpio.h"
 
 #define MAX_QUEUE_SIZE 1000
 
+#define PIN_INTERRUPT 39
+//#define PIN_INTERRUPT 73
+#define PIN_CE 115
+#define PIN_CS 117
+
+void PC2NRF_interrupt_callback(unsigned gpio)
+{
+	printf("interrupt\n");
+}
 
 PC2NRF::PC2NRF():
-	ReServant("pc2nrf"), radio(115, 117), network(radio), has_data(false)
+	ReServant("pc2nrf"), radio(PIN_CE, PIN_CS), network(radio), has_data(false)
 {
 }
 
 bool PC2NRF::create_servant()
 {
 	bool rs = ReServant::create_servant();
-	set_redis_list_limit(MAX_QUEUE_SIZE);
+	if(rs) {
+		set_redis_list_limit(MAX_QUEUE_SIZE);
 //	setLoopInterval(0.1);
-	radio.begin();
-	network.begin(CHANNEL, PC2NRF_NODE);
+		radio.begin();
+		network.begin(CHANNEL, PC2NRF_NODE);
+		add_edge_callback(PIN_INTERRUPT, PC2NRF_interrupt_callback);
+		add_edge_detect(PIN_INTERRUPT, FALLING_EDGE);
+	}
 	return rs;
 }
 
