@@ -50,7 +50,7 @@ if __name__ == '__main__':
 		try:
 			line = serdev.readline().strip()
 			if line:
-				marker = line[0]
+				marker = line[0].strip()
 				if marker:
 					rk = 'q.' + marker
 					if rk not in cleaned:
