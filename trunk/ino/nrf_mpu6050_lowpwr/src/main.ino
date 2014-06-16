@@ -18,7 +18,12 @@ unsigned long pcounter = 0;
 #endif // WITH_NRF
 
 #include <avr/sleep.h>
+
+#define USE_WD
+
+#ifdef USE_WD
 #include <avr/wdt.h>
+#endif
 
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
@@ -56,7 +61,7 @@ int wakeInt = wakePin - 2;		 // interrupt used for waking up
 #define COUNTER_INIT 20
 
 // watchdog 8 secs count before sending triggered
-#define WD_COUNTER_INIT 4
+#define WD_COUNTER_INIT 10
 
 volatile bool interrupted = false;
 volatile int counter = COUNTER_INIT;
@@ -127,8 +132,11 @@ void setup() {
 
 	attachInterrupt(wakeInt, wakeUpNow, LOW); // use interrupt 0 (pin 2) and run function
 
+#ifdef USE_WD
 	// enable watchdog (8 second threshold)
 	wdt_enable(WDTO_8S);
+#endif
+
 }
 
 void wakeUpNow()		// here the interrupt is handled after wakeup
@@ -140,6 +148,7 @@ void wakeUpNow()		// here the interrupt is handled after wakeup
 	interrupted = true;
 }
 
+#ifdef USE_WD
 // watchdog interrupt
 ISR(WDT_vect) 
 {
@@ -147,6 +156,7 @@ ISR(WDT_vect)
 	interrupted = true;
 	wd_int = true;
 }
+#endif
 
 void sleepNow(const byte watchdog_interval)			// here we put the arduino to sleep
 {
@@ -156,11 +166,12 @@ void sleepNow(const byte watchdog_interval)			// here we put the arduino to slee
 	Serial.flush();
 	delay(100);		// this delay is needed, the sleep 
 
+#ifdef USE_WD
 	// watchdog thing
 	MCUSR = 0;													// reset various flags
 	WDTCSR |= 0b00011000;								// see docs, set WDCE, WDE
 	WDTCSR =	0b01000000 | watchdog_interval;		// set WDIE, and appropriate delay
-
+#endif
 
 	/* Now is the time to set the sleep mode. In the Atmega8 datasheet
 	 * http://www.atmel.com/dyn/resources/prod_documents/doc2486.pdf on page 35
@@ -229,14 +240,16 @@ void sleepNow(const byte watchdog_interval)			// here we put the arduino to slee
 
 void loop() {
 
+#ifdef USE_WD
 	// reset watchdog
 	wdt_reset();
+#endif
 
 	if(interrupted) {
 
 		interrupted = false;
 
-
+#ifdef USE_WD
 		if(wd_int) {
 			wd_int = false;
 			if(--wd_int_counter <= 0) {
@@ -259,7 +272,7 @@ void loop() {
 			// 8 secs again
 			sleepNow(0b100001);
 		} else {
-
+#endif
 			int st = mpu.getIntStatus();
 			Serial.print("\tst: 0x");
 			Serial.println(st, HEX);
@@ -323,7 +336,9 @@ void loop() {
 				sleepNow(0b100001);		// sleep function called here
 			}
 		}
+#ifdef USE_WD
 	}
+#endif
 
 	delay(100);		// this delay is needed, the sleep 
 					  //function will provoke a Serial error otherwise!!
