@@ -652,11 +652,3 @@ int blocking_wait_for_edge(unsigned int gpio, unsigned int edge)
     close(epfd);
     return 0;
 }
-
-int main()
-{
-	printf("waiting...\n");
-	blocking_wait_for_edge(73, FALLING_EDGE);
-	printf("finished\n");
-	return 0;
-}
