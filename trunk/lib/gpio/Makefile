@@ -1,9 +1,9 @@
 CC=g++
 CCOPTS=-L.
 STRIP=-strip
-SRCS=gpio.cpp
-OBJECTS=gpio.o
-HEADERS=gpio.h
+SRCS=gpio.cpp event_gpio.c
+OBJECTS=gpio.o event_gpio.o
+HEADERS=gpio.h event_gpio.h
 NAME=libgpio.a
 
 .cpp.o: $(HEADERS)
