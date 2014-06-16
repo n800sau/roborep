@@ -7,6 +7,7 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <sys/epoll.h>
 
 std::string gpio_path(int pin)
 {
@@ -37,13 +38,4 @@ int digitalRead(int pin)
 	ifs.open(gpio_path(pin).c_str(), std::ifstream::in);
 	ifs >> rs;
 	return rs;
-}
-
-void wait_interrupt(int pin)
-{
-	struct pollfd pfd;
-	pfd.fd = open(gpio_path(pin).c_str(), O_RDONLY|O_NONBLOCK);
-	pfd.events = POLLIN;
-	poll(&pfd, 1, -1);
-	close(pfd.fd);
 }
