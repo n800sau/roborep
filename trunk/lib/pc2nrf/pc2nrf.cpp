@@ -17,7 +17,7 @@
 
 void PC2NRF_interrupt_callback(unsigned gpio)
 {
-	printf("interrupt\n");
+//	printf("interrupt\n");
 }
 
 PC2NRF::PC2NRF():
@@ -33,8 +33,8 @@ bool PC2NRF::create_servant()
 //	setLoopInterval(0.1);
 		radio.begin();
 		network.begin(CHANNEL, PC2NRF_NODE);
-		add_edge_callback(PIN_INTERRUPT, PC2NRF_interrupt_callback);
-		add_edge_detect(PIN_INTERRUPT, FALLING_EDGE);
+//		add_edge_callback(PIN_INTERRUPT, PC2NRF_interrupt_callback);
+//		add_edge_detect(PIN_INTERRUPT, FALLING_EDGE);
 	}
 	return rs;
 }
@@ -79,11 +79,11 @@ bool PC2NRF::fill_json(json_t *js, int list_id)
 				break;
 			case PL_ACC: 
 				printf(DATA_SEPARATOR "acc_x" DATA_SEPARATOR);
-				printf("%g", reply.d.acc.raw[0] * (int)reply.d.acc.uScale);
+				printf("%g", reply.d.acc.raw[0] * (float)reply.d.acc.uScale);
 				printf(DATA_SEPARATOR "acc_y" DATA_SEPARATOR);
-				printf("%g", reply.d.acc.raw[1] * (int)reply.d.acc.uScale);
+				printf("%g", reply.d.acc.raw[1] * (float)reply.d.acc.uScale);
 				printf(DATA_SEPARATOR "acc_z" DATA_SEPARATOR);
-				printf("%g", reply.d.acc.raw[2] * (int)reply.d.acc.uScale);
+				printf("%g", reply.d.acc.raw[2] * (float)reply.d.acc.uScale);
 				break;
 		}
 		printf(DATA_SEPARATOR "v" DATA_SEPARATOR);
