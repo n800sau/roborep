@@ -1,4 +1,5 @@
 #include "reservant.h"
+#include "hiredis_ext.h"
 
 #include <stdio.h>
 #include <linux/limits.h>
@@ -38,7 +39,6 @@ const char *s_timestamp(const double *dt)
 	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d.%6.6ld", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec, tv.tv_usec);
 	return rs;
 }
-
 
 //#################
 static void ReServant_on_udp_event(int fd, short int fields, void *arg)
@@ -212,7 +212,7 @@ bool ReServant::create_servant()
 		redisLibeventAttach(aredis,base);
 		redisAsyncSetConnectCallback(aredis, ReServant_connectCallback);
 		redisAsyncSetDisconnectCallback(aredis, ReServant_disconnectCallback);
-		redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP cmd.%s", myid());
+		redisAsyncCommand(aredis, ReServant_cmdCallback, this, "SUBSCRIBE %s", myid());
 		servant_created = rs = true;
 	}
 	return rs;
@@ -291,25 +291,22 @@ int ReServant::processJsonCmd(json_t *js)
 
 void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 {
-	if (reply == NULL) {
-		syslog(LOG_WARNING, "no reply\n");
-	} else {
-		if(reply->str) {
-			json_error_t error;
+	//fprint_reply(reply);
+	if(reply->type == REDIS_REPLY_ARRAY && reply->elements >= 3 && strcmp(reply->element[0]->str, "message") == 0) {
+		printf("get %s\n", reply->element[2]->str);
+		json_error_t error;
 #ifdef JSON_DECODE_ANY
-			json_t *js = json_loads(reply->str, JSON_DECODE_ANY, &error);
+		json_t *js = json_loads(reply->element[2]->str, JSON_DECODE_ANY, &error);
 #else
-			json_t *js = json_loads(reply->str, 0, &error);
+		json_t *js = json_loads(reply->element[2]->str, 0, &error);
 #endif
-			if (js == NULL) {
-				syslog(LOG_ERR, "Error JSON decoding:%s", error.text);
-			} else {
-				processJsonCmd(js);
-				json_decref(js);
-			}
+		if (js == NULL) {
+			syslog(LOG_ERR, "Error JSON decoding:%s", error.text);
+		} else {
+			processJsonCmd(js);
+			json_decref(js);
 		}
 	}
-	redisAsyncCommand(aredis, ReServant_cmdCallback, this, "LPOP cmd.%s", myid());
 }
 
 void ReServant::runUDPserver(const char *host, int port)
