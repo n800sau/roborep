@@ -47,11 +47,11 @@ void Kalman::stop_state(json_t *js)
 	int adxl345_n = reply->integer;
 	char buf[256];
 	sprintf(buf, "{\"cmd\": \"stop_state\", \"reply_key\": \"reply_adxl345_%d\"}", adxl345_n);
-	redisCommandN(redis, 3, "LPUSH", "cmd.adxl345", buf);
+	redisCommandN(redis, 3, "PUBLISH", "cmd.adxl345", buf);
 	reply = (redisReply *)redisCommand(redis, "INCRBY sequence 1");
 	int l3g4200d_n = reply->integer;
 	sprintf(buf, "{\"cmd\": \"stop_state\", \"reply_key\": \"reply_l3g4200d_%d\"}", l3g4200d_n);
-	redisCommandN(redis, 3, "LPUSH", "cmd.l3g4200d", buf);
+	redisCommandN(redis, 3, "PUBLISH", "cmd.l3g4200d", buf);
 
 	syslog(LOG_DEBUG, "Waiting for adxl345 reply");
 	reply = (redisReply *)redisCommand(redis, "BRPOP reply_adxl345_%d 50", adxl345_n);
@@ -74,7 +74,7 @@ bool Kalman::create_servant()
 {
 	bool rs = ReServant::create_servant();
 	if(rs) {
-		redisCommandN(redis, 3, "LPUSH", "cmd.kalman", "{\"cmd\": \"stop_state\"}");
+		redisCommandN(redis, 3, "PUBLISH", "cmd.kalman", "{\"cmd\": \"stop_state\"}");
 	}
 	return rs;
 }
