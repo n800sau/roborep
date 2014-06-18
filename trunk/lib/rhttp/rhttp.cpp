@@ -61,7 +61,6 @@ bool Rhttp::create_servant()
 {
 	bool rs = ReServant::create_servant();
 	if(rs) {
-	//	redisAsyncCommand(aredis, Rhttp_keyCallBacke, NULL, "SUBSCRIBE ");
 		runHttpd("0.0.0.0", port);
 	}
 	return rs;
