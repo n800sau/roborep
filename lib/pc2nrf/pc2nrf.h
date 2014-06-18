@@ -5,6 +5,7 @@
 #include <RF24Network.h>
 #include <RF24.h>
 #include "../../ino/include/common.h"
+#include <pthread.h>
 
 class PC2NRF:public ReServant
 {
@@ -22,6 +23,8 @@ class PC2NRF:public ReServant
 		// data
 		payload_t reply;
 
+		pthread_mutex_t mtx;
+
 	protected:
 		virtual bool create_servant();
 		virtual void loop();
@@ -30,6 +33,8 @@ class PC2NRF:public ReServant
 	public:
 
 		PC2NRF();
+		~PC2NRF();
+		void network_process();
 };
 
 #endif

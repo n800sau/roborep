@@ -15,14 +15,22 @@
 #define PIN_CE 115
 #define PIN_CS 117
 
-void PC2NRF_interrupt_callback(unsigned gpio)
+void PC2NRF_interrupt_callback(unsigned gpio, void *userptr)
 {
-//	printf("interrupt\n");
+	PC2NRF* ths = (PC2NRF*)userptr;
+	printf("interrupt\n");
+	ths->network_process();
 }
 
 PC2NRF::PC2NRF():
 	ReServant("pc2nrf"), radio(PIN_CE, PIN_CS), network(radio), has_data(false)
 {
+	pthread_mutex_init(&mtx, NULL);
+}
+
+PC2NRF::~PC2NRF()
+{
+	pthread_mutex_destroy(&mtx);
 }
 
 bool PC2NRF::create_servant()
@@ -30,11 +38,11 @@ bool PC2NRF::create_servant()
 	bool rs = ReServant::create_servant();
 	if(rs) {
 		set_redis_list_limit(MAX_QUEUE_SIZE);
-//	setLoopInterval(0.1);
+	setLoopInterval(1);
 		radio.begin();
 		network.begin(CHANNEL, PC2NRF_NODE);
-//		add_edge_callback(PIN_INTERRUPT, PC2NRF_interrupt_callback);
-//		add_edge_detect(PIN_INTERRUPT, FALLING_EDGE);
+		add_edge_callback(PIN_INTERRUPT, PC2NRF_interrupt_callback, this);
+		add_edge_detect(PIN_INTERRUPT, FALLING_EDGE);
 	}
 	return rs;
 }
@@ -106,9 +114,9 @@ bool PC2NRF::fill_json(json_t *js, int list_id)
 				json_object_set_new(sjs, "grav_z", json_integer(reply.d.mpu.gravity[2]));
 				break;
 			case PL_ACC:
-				json_object_set_new(sjs, "acc_x", json_real(reply.d.acc.raw[0] * (int)reply.d.acc.uScale));
-				json_object_set_new(sjs, "acc_y", json_real(reply.d.acc.raw[1] * (int)reply.d.acc.uScale));
-				json_object_set_new(sjs, "acc_z", json_real(reply.d.acc.raw[2] * (int)reply.d.acc.uScale));
+				json_object_set_new(sjs, "acc_x", json_real(reply.d.acc.raw[0] * (float)reply.d.acc.uScale));
+				json_object_set_new(sjs, "acc_y", json_real(reply.d.acc.raw[1] * (float)reply.d.acc.uScale));
+				json_object_set_new(sjs, "acc_z", json_real(reply.d.acc.raw[2] * (float)reply.d.acc.uScale));
 				break;
 		}
 		json_object_set_new(sjs, "mv", json_integer(reply.voltage));
@@ -117,17 +125,26 @@ bool PC2NRF::fill_json(json_t *js, int list_id)
 	return rs;
 }
 
-void PC2NRF::loop()
+void PC2NRF::network_process()
 {
+	pthread_mutex_lock (&mtx);
+
 	// Pump the network regularly
 	network.update();
 
 	// check network
-	if ( network.available() ) {
+	while ( network.available() ) {
 		RF24NetworkHeader header;
 		network.read(header,&reply,sizeof(reply));
 		has_data = true;
 		json2redislist();
 	}
+
+	pthread_mutex_unlock(&mtx);
+}
+
+void PC2NRF::loop()
+{
+	network_process();
 	ReServant::loop();
 }
