@@ -24,34 +24,36 @@ depend: $(SRCS)
 	makedepend $(CCOPTS) $(SRCS)
 # DO NOT DELETE
 
-rhttpd.o: rhttp.h /usr/include/string.h /usr/include/features.h
-rhttpd.o: /usr/include/xlocale.h ../ReServant/reservant.h
-rhttpd.o: /usr/include/jansson.h /usr/include/stdio.h /usr/include/libio.h
-rhttpd.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
-rhttpd.o: /usr/include/alloca.h /usr/include/jansson_config.h
-rhttpd.o: /usr/include/hiredis/hiredis.h /usr/include/hiredis/async.h
-rhttpd.o: /usr/include/event2/http.h /usr/include/event2/util.h
-rhttpd.o: /usr/include/event2/event-config.h /usr/include/stdint.h
-rhttpd.o: /usr/include/netdb.h /usr/include/netinet/in.h
-rhttpd.o: /usr/include/endian.h /usr/include/rpc/netdb.h /usr/include/time.h
-rhttp.o: rhttp.h /usr/include/string.h /usr/include/features.h
-rhttp.o: /usr/include/xlocale.h ../ReServant/reservant.h
-rhttp.o: /usr/include/jansson.h /usr/include/stdio.h /usr/include/libio.h
-rhttp.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
-rhttp.o: /usr/include/alloca.h /usr/include/jansson_config.h
-rhttp.o: /usr/include/hiredis/hiredis.h /usr/include/hiredis/async.h
-rhttp.o: /usr/include/event2/http.h /usr/include/event2/util.h
-rhttp.o: /usr/include/event2/event-config.h /usr/include/stdint.h
-rhttp.o: /usr/include/netdb.h /usr/include/netinet/in.h /usr/include/endian.h
-rhttp.o: /usr/include/rpc/netdb.h /usr/include/time.h /usr/include/syslog.h
-rhttp.o: /usr/include/math.h /usr/include/evhttp.h /usr/include/event.h
-rhttp.o: /usr/include/evutil.h /usr/include/event2/event_struct.h
-rhttp.o: /usr/include/event2/keyvalq_struct.h /usr/include/event2/event.h
-rhttp.o: /usr/include/event2/event_compat.h /usr/include/event2/buffer.h
-rhttp.o: /usr/include/event2/buffer_compat.h
-rhttp.o: /usr/include/event2/bufferevent.h
-rhttp.o: /usr/include/event2/bufferevent_struct.h
-rhttp.o: /usr/include/event2/bufferevent_compat.h /usr/include/event2/tag.h
-rhttp.o: /usr/include/event2/tag_compat.h /usr/include/event2/http_struct.h
-rhttp.o: /usr/include/event2/http_compat.h /usr/include/unistd.h
-rhttp.o: /usr/include/getopt.h /usr/include/libgen.h /usr/include/fcntl.h
+grhttpd.o: rhttp.h /usr/include/string.h /usr/include/features.h
+grhttpd.o: /usr/include/xlocale.h ../ReServant/reservant.h
+grhttpd.o: /usr/include/jansson.h /usr/include/stdio.h /usr/include/libio.h
+grhttpd.o: /usr/include/_G_config.h /usr/include/wchar.h
+grhttpd.o: /usr/include/stdlib.h /usr/include/alloca.h
+grhttpd.o: /usr/include/jansson_config.h /usr/include/hiredis/hiredis.h
+grhttpd.o: /usr/include/hiredis/async.h /usr/include/event2/http.h
+grhttpd.o: /usr/include/event2/util.h /usr/include/event2/event-config.h
+grhttpd.o: /usr/include/stdint.h /usr/include/netdb.h
+grhttpd.o: /usr/include/netinet/in.h /usr/include/endian.h
+grhttpd.o: /usr/include/rpc/netdb.h /usr/include/time.h
+grhttpd.o: /usr/include/event2/bufferevent.h
+grhttp.o: rhttp.h /usr/include/string.h /usr/include/features.h
+grhttp.o: /usr/include/xlocale.h ../ReServant/reservant.h
+grhttp.o: /usr/include/jansson.h /usr/include/stdio.h /usr/include/libio.h
+grhttp.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
+grhttp.o: /usr/include/alloca.h /usr/include/jansson_config.h
+grhttp.o: /usr/include/hiredis/hiredis.h /usr/include/hiredis/async.h
+grhttp.o: /usr/include/event2/http.h /usr/include/event2/util.h
+grhttp.o: /usr/include/event2/event-config.h /usr/include/stdint.h
+grhttp.o: /usr/include/netdb.h /usr/include/netinet/in.h
+grhttp.o: /usr/include/endian.h /usr/include/rpc/netdb.h /usr/include/time.h
+grhttp.o: /usr/include/event2/bufferevent.h /usr/include/syslog.h
+grhttp.o: /usr/include/math.h /usr/include/evhttp.h /usr/include/event.h
+grhttp.o: /usr/include/evutil.h /usr/include/event2/event_struct.h
+grhttp.o: /usr/include/event2/keyvalq_struct.h /usr/include/event2/event.h
+grhttp.o: /usr/include/event2/event_compat.h /usr/include/event2/buffer.h
+grhttp.o: /usr/include/event2/buffer_compat.h
+grhttp.o: /usr/include/event2/bufferevent_struct.h
+grhttp.o: /usr/include/event2/bufferevent_compat.h /usr/include/event2/tag.h
+grhttp.o: /usr/include/event2/tag_compat.h /usr/include/event2/http_struct.h
+grhttp.o: /usr/include/event2/http_compat.h /usr/include/unistd.h
+grhttp.o: /usr/include/getopt.h /usr/include/libgen.h /usr/include/fcntl.h
