@@ -25,7 +25,7 @@ class RF24;
  *
  * The frame put over the air consists of this header and a message
  */
-struct RF24NetworkHeader
+struct  __attribute__((__packed__)) RF24NetworkHeader
 {
   uint16_t from_node; /**< Logical address where the message was generated */
   uint16_t to_node; /**< Logical address where the message is going */
