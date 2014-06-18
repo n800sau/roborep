@@ -49,9 +49,12 @@ int gpio_get_direction(unsigned int gpio, unsigned int *value);
 int gpio_set_value(unsigned int gpio, unsigned int value);
 int gpio_get_value(unsigned int gpio, unsigned int *value);
 
+// function type for callbacks
+typedef void (*GPIO_CALLBACK_F)(unsigned int gpio, void *userptr);
+
 int add_edge_detect(unsigned int gpio, unsigned int edge);
 void remove_edge_detect(unsigned int gpio);
-int add_edge_callback(unsigned int gpio, void (*func)(unsigned int gpio));
+int add_edge_callback(unsigned int gpio, GPIO_CALLBACK_F func, void *userptr);
 int event_detected(unsigned int gpio);
 int gpio_event_add(unsigned int gpio);
 int gpio_event_remove(unsigned int gpio);
