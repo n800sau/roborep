@@ -22,23 +22,25 @@ depend: $(SRCS)
 	makedepend $(CCOPTS) $(SRCS)
 # DO NOT DELETE
 
-reservant.o: reservant.h /usr/include/jansson.h /usr/include/stdio.h
-reservant.o: /usr/include/features.h /usr/include/libio.h
-reservant.o: /usr/include/_G_config.h /usr/include/wchar.h
-reservant.o: /usr/include/stdlib.h /usr/include/alloca.h
-reservant.o: /usr/include/jansson_config.h /usr/include/event2/http.h
-reservant.o: /usr/include/event2/util.h /usr/include/event2/event-config.h
-reservant.o: /usr/include/stdint.h /usr/include/netdb.h
-reservant.o: /usr/include/netinet/in.h /usr/include/endian.h
-reservant.o: /usr/include/rpc/netdb.h /usr/include/time.h
-reservant.o: /usr/include/xlocale.h /usr/include/event2/bufferevent.h
-reservant.o: /usr/include/linux/limits.h /usr/include/math.h
-reservant.o: /usr/include/syslog.h /usr/include/signal.h
-reservant.o: /usr/include/malloc.h /usr/include/string.h
-reservant.o: /usr/include/unistd.h /usr/include/getopt.h
-reservant.o: /usr/include/libgen.h /usr/include/fcntl.h /usr/include/errno.h
-reservant.o: /usr/include/arpa/inet.h /usr/include/event2/listener.h
-reservant.o: /usr/include/event2/event.h /usr/include/event2/buffer.h
-hiredis_ext.o: /usr/include/stdlib.h /usr/include/features.h
-hiredis_ext.o: /usr/include/alloca.h /usr/include/string.h
-hiredis_ext.o: /usr/include/xlocale.h /usr/include/syslog.h hiredis_ext.h
+greservant.o: reservant.h /usr/include/jansson.h /usr/include/stdio.h
+greservant.o: /usr/include/features.h /usr/include/libio.h
+greservant.o: /usr/include/_G_config.h /usr/include/wchar.h
+greservant.o: /usr/include/stdlib.h /usr/include/alloca.h
+greservant.o: /usr/include/jansson_config.h /usr/include/event2/http.h
+greservant.o: /usr/include/event2/util.h /usr/include/event2/event-config.h
+greservant.o: /usr/include/stdint.h /usr/include/netdb.h
+greservant.o: /usr/include/netinet/in.h /usr/include/endian.h
+greservant.o: /usr/include/rpc/netdb.h /usr/include/time.h
+greservant.o: /usr/include/xlocale.h /usr/include/event2/bufferevent.h
+greservant.o: hiredis_ext.h /usr/include/linux/limits.h /usr/include/math.h
+greservant.o: /usr/include/syslog.h /usr/include/signal.h
+greservant.o: /usr/include/malloc.h /usr/include/string.h
+greservant.o: /usr/include/unistd.h /usr/include/getopt.h
+greservant.o: /usr/include/libgen.h /usr/include/fcntl.h /usr/include/errno.h
+greservant.o: /usr/include/arpa/inet.h /usr/include/event2/listener.h
+greservant.o: /usr/include/event2/event.h /usr/include/event2/buffer.h
+ghiredis_ext.o: /usr/include/stdlib.h /usr/include/features.h
+ghiredis_ext.o: /usr/include/alloca.h /usr/include/string.h
+ghiredis_ext.o: /usr/include/xlocale.h /usr/include/syslog.h hiredis_ext.h
+ghiredis_ext.o: /usr/include/stdio.h /usr/include/libio.h
+ghiredis_ext.o: /usr/include/_G_config.h /usr/include/wchar.h
