@@ -15,5 +15,11 @@ pause 10 ' recharge period after ranging completes
 
 let range = range * 10 / 58 ' multiply by 10 then divide by 58
 'debug range 'display range via debug command
-sertxd("Range:",#range,13,10)
+
+' output for inverted picaxe serial
+'sertxd("Range:",#range,13,10)
+
+' output for standard serial
+serout C.0, T4800_4, ("Range:",#range,13,10)
+
 goto main 'and around for
