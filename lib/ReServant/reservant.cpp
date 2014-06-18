@@ -247,7 +247,7 @@ void ReServant::run()
 {
 	create_servant();
 	do {
-		event_base_loop(base, EVLOOP_NONBLOCK);
+		event_base_loop(base, EVLOOP_ONCE);
 	} while(!exiting);
 	destroy_servant();
 }
@@ -270,21 +270,26 @@ int ReServant::processJsonCmd(json_t *js)
 {
 	int rs = -1;
 	json_t *cmd = json_object_get(js, "cmd");
-	for(int i=0; i< cmdlist_size; i++) {
-		const pCMD_FUNC cf = cmdlist[i];
-		if(strcmp(cf->cmd, json_string_value(cmd)) == 0) {
-			rs = 0;
-			call_cmd(cf, js);
-			break;
-		}
-	}
-	char *jstr = json_dumps(js, JSON_INDENT(4));
-	if(jstr) {
-		syslog(LOG_DEBUG, "%s\n", jstr);
-		free(jstr);
+	const char *cmdname = json_string_value(cmd);
+	if(strcmp(cmdname, "exit") == 0) {
+		exit(100);
 	} else {
-		syslog(LOG_ERR, "Can not encode JSON\n");
-		rs = -2;
+		for(int i=0; i< cmdlist_size; i++) {
+			const pCMD_FUNC cf = cmdlist[i];
+			if(strcmp(cf->cmd, cmdname) == 0) {
+				rs = 0;
+				call_cmd(cf, js);
+				break;
+			}
+		}
+		char *jstr = json_dumps(js, JSON_INDENT(4));
+		if(jstr) {
+			syslog(LOG_DEBUG, "%s\n", jstr);
+			free(jstr);
+		} else {
+			syslog(LOG_ERR, "Can not encode JSON\n");
+			rs = -2;
+		}
 	}
 	return rs;
 }
