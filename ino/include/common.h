@@ -1,7 +1,11 @@
 #ifndef __COMMON_H
 #define __COMMON_H
 
-//#include 
+#ifdef _GNUC__
+#define STRUCT_PACKED __attribute__((__packed__))
+#else
+#define STRUCT_PACKED
+#endif
 
 enum PLOAD_TYPE
 {
@@ -13,25 +17,26 @@ enum PLOAD_TYPE
 };
 
 #define NO_SET 0xff
+
 // 0xff - no set
-typedef struct __attribute__((__packed__)) __stickservo_t {
+typedef struct STRUCT_PACKED __stickservo_t {
 	uint8_t low;
 	uint8_t pan;
 	uint8_t tilt;
 } stickservo_t;
 
-typedef struct __attribute__((__packed__)) __mpu_t {
+typedef struct STRUCT_PACKED __mpu_t {
 	int16_t quaternion[4];
 	int16_t gravity[3];
 } mpu_t;
 
-typedef struct __attribute__((__packed__)) __acc_t {
+typedef struct STRUCT_PACKED __acc_t {
 	int16_t raw[3];
 	uint16_t uScale; //m_Scale * 10000
 } acc_t;
 
 // Structure of our payload
-struct __attribute__((__packed__)) payload_t {
+struct STRUCT_PACKED payload_t {
 	uint8_t pload_type; //PLOAD_TYPE
 	uint32_t ms; //TIME
 	uint32_t counter;
