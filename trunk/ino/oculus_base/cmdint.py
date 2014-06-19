@@ -36,7 +36,7 @@ class SerReader:
 #			print >>sys.stderr, '%s, %s, %s' % (line, common.REPLY_START_MARKER, line == common.REPLY_START_MARKER)
 #			print >>sys.stderr, self.final_replylist
 			if self.reply_mode:
-				if line.strip() == common.REPLY_END_MARKER:
+				if line.strip() == common.END_MARKER:
 					self.final_replylist += self.replylist
 					self.replylist = []
 					self.reply_mode = False
@@ -69,12 +69,13 @@ class OculusShell(cmd.Cmd):
 		self.logfile.flush()
 
 	def batstat(self):
-		print 'Battery status: %d%%' % (float(file('/sys/class/power_supply/BAT0/charge_now').read())/float(file('/sys/class/power_supply/BAT0/charge_full').read())*100),
-		current = int(file('/sys/class/power_supply/BAT0/current_now').read())
-		if current == 0:
-			print ',charging...'
-		else:
-			print ',current=%s' % current
+		if os.path.exists('/sys/class/power_supply/BAT0'):
+			print 'Battery status: %d%%' % (float(file('/sys/class/power_supply/BAT0/charge_now').read())/float(file('/sys/class/power_supply/BAT0/charge_full').read())*100),
+			current = int(file('/sys/class/power_supply/BAT0/current_now').read())
+			if current == 0:
+				print ',charging...'
+			else:
+				print ',current=%s' % current
 
 	def readreply(self):
 		self.batstat()

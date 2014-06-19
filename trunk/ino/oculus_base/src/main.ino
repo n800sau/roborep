@@ -45,7 +45,7 @@ const int MAX_BUFFER = 8;
 int buffer[MAX_BUFFER];
 int commandSize = 0;
 unsigned long lastcmd = 0;
-int timeout = 6000;
+int timeout = 500;
 
 void setup()
 {
@@ -262,5 +262,5 @@ void parseCommand()
 		}
 		Serial.println(">");
 	}
-	Serial.println(REPLY_END_MARKER);
+	Serial.println(END_MARKER);
 }
