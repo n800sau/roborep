@@ -87,5 +87,6 @@ const char ACCEL_MARKER = 'X';
 
 #define SERIAL_DEBUG
 
+#define BEACON_CODE 0xFA441211
 
 #endif //__COMMON_H
