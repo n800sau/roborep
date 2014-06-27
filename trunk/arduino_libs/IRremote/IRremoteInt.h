@@ -188,20 +188,6 @@ int MATCH_SPACE(int measured_ticks, int desired_us) {return MATCH(measured_ticks
 #define STATE_SPACE    4
 #define STATE_STOP     5
 
-// information for the interrupt handler
-typedef struct {
-  uint8_t recvpin;           // pin for IR data from detector
-  uint8_t rcvstate;          // state machine
-  uint8_t blinkflag;         // TRUE to enable blinking of pin 13 on IR processing
-  unsigned int timer;     // state timer, counts 50uS ticks.
-  unsigned int rawbuf[RAWBUF]; // raw data
-  uint8_t rawlen;         // counter of entries in rawbuf
-} 
-irparams_t;
-
-// Defined in IRremote.cpp
-extern volatile irparams_t irparams;
-
 // IR detector output is active low
 #define MARK  0
 #define SPACE 1

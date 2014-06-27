@@ -50,6 +50,10 @@ public:
 // Decoded value for NEC when a repeat code is received
 #define REPEAT 0xffffffff
 
+struct irparams_t;
+
+#define MAX_IR_RECEIVERS 5
+
 // main class for receiving IR
 class IRrecv
 {
@@ -60,6 +64,7 @@ public:
   void enableIRIn();
   void resume();
 private:
+  volatile irparams_t *pirparams;
   // These are called by decode
   int getRClevel(decode_results *results, int *offset, int *used, int t1);
   long decodeNEC(decode_results *results);
