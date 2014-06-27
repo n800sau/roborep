@@ -1,3 +1,6 @@
+No it hads ability to receive more that from a single IR.
+MAX_IR_RECEIVERS in IRremote.h defines the maximum number of IR pins.
+
 This is the IRremote library for the Arduino.
 
 To download from github (http://github.com/shirriff/Arduino-IRremote), click on the "Downloads" link in the upper right, click "Download as zip", and get a zip file.  Unzip it and rename the directory shirriff-Arduino-IRremote-nnn to IRremote
