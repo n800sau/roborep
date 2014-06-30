@@ -14,7 +14,7 @@
 
 #ifndef __RF24_H__
 #define __RF24_H__
-
+#include <nRF24L01.h>
 #include <RF24_config.h>
 
 /**
@@ -344,12 +344,23 @@ public:
    * pipe 0 for reading, and then startListening(), it will overwrite the
    * writing pipe.  Ergo, do an openWritingPipe() again before write().
    *
+   * @warning Pipe 0 is also used as the multicast address pipe. Pipe 1
+   * is the unicast pipe address.
+   *
    * @todo Enforce the restriction that pipes 1-5 must share the top 32 bits
    *
    * @param number Which pipe# to open, 0-5.
    * @param address The 40-bit address of the pipe to open.
    */
   void openReadingPipe(uint8_t number, uint64_t address);
+
+
+  /**
+   * Close a pipe after it has been previously opened.
+   * Can be safely called without having previously opened a pipe.
+   * @param pipe Which pipe # to close, 0-5.
+   */
+  void closeReadingPipe( uint8_t pipe ) ;
 
   /**@}*/
   /**
@@ -385,6 +396,13 @@ public:
    * @param channel Which RF channel to communicate on, 0-127
    */
   void setChannel(uint8_t channel);
+
+  /**
+   * Get RF communication channel
+   *
+   * @param channel To which RF channel radio is current tuned, 0-127
+   */
+  uint8_t getChannel(void);
 
   /**
    * Set Static Payload Size
@@ -424,6 +442,8 @@ public:
    *
    * Ack payloads are a handy way to return data back to senders without
    * manually changing the radio modes on both units.
+   *
+   * @warning Do note, multicast payloads will not trigger ack payloads.
    *
    * @see examples/pingpair_pl/pingpair_pl.pde
    */
@@ -473,7 +493,7 @@ public:
    * Relative mnemonics have been used to allow for future PA level
    * changes. According to 6.5 of the nRF24L01+ specification sheet,
    * they translate to: RF24_PA_MIN=-18dBm, RF24_PA_LOW=-12dBm,
-   * RF24_PA_MED=-6dBM, and RF24_PA_HIGH=0dBm.
+   * RF24_PA_HIGH=-6dBM, and RF24_PA_MAX=0dBm.
    *
    * @param level Desired PA level.
    */
@@ -590,6 +610,8 @@ public:
    * The next time a message is received on @p pipe, the data in @p buf will
    * be sent back in the acknowledgement.
    *
+   * @warning Do note, multicast payloads will not trigger ack payloads.
+   *
    * @warning According to the data sheet, only three of these can be pending
    * at any time.  I have not tested this.
    *
@@ -649,14 +671,6 @@ public:
    */
   bool testRPD(void) ;
 
-  /**
-   * Test whether this is a real radio, or a mock shim for
-   * debugging.  Setting either pin to 0xff is the way to
-   * indicate that this is not a real radio.
-   *
-   * @return true if this is a legitimate radio 
-   */
-  bool isValid() { return ce_pin != 0xff && csn_pin != 0xff; } 
 
   /**
    * Calculate the maximum timeout in us based on current hardware

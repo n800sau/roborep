@@ -1,5 +1,7 @@
 /*
  Copyright (C) 2011 J. Coliz <maniacbug@ymail.com>
+ Portions Copyright (C) 2011 Greg Copeland
+
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -9,6 +11,8 @@
 #include "nRF24L01.h"
 #include "RF24_config.h"
 #include "RF24.h"
+
+
 
 /****************************************************************************/
 
@@ -22,6 +26,7 @@ void RF24::csn(int mode)
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE0);
   SPI.setClockDivider(SPI_CLOCK_DIV4);
+
 #endif
   digitalWrite(csn_pin,mode);
 }
@@ -239,6 +244,7 @@ void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
 /****************************************************************************/
 
 RF24::RF24(uint8_t _cepin, uint8_t _cspin):
+
   ce_pin(_cepin), csn_pin(_cspin), wide_band(true), p_variant(false), 
   payload_size(32), ack_payload_available(false), dynamic_payloads_enabled(false),
   pipe0_reading_address(0)
@@ -254,6 +260,14 @@ void RF24::setChannel(uint8_t channel)
 
   const uint8_t max_channel = 127;
   write_register(RF_CH,min(channel,max_channel));
+
+}
+
+/****************************************************************************/
+
+uint8_t RF24::getChannel( void )
+{
+  return read_register( RF_CH );
 }
 
 /****************************************************************************/
@@ -297,8 +311,8 @@ static const char * const rf24_crclength_e_str_P[] PROGMEM = {
 };
 static const char rf24_pa_dbm_e_str_0[] PROGMEM = "PA_MIN";
 static const char rf24_pa_dbm_e_str_1[] PROGMEM = "PA_LOW";
-static const char rf24_pa_dbm_e_str_2[] PROGMEM = "LA_MED";
-static const char rf24_pa_dbm_e_str_3[] PROGMEM = "PA_HIGH";
+static const char rf24_pa_dbm_e_str_2[] PROGMEM = "PA_HIGH";
+static const char rf24_pa_dbm_e_str_3[] PROGMEM = "PA_MAX";
 static const char * const rf24_pa_dbm_e_str_P[] PROGMEM = { 
   rf24_pa_dbm_e_str_0,
   rf24_pa_dbm_e_str_1,
@@ -353,7 +367,7 @@ void RF24::begin(void)
   // Set 1500uS (minimum for 32B payload in ESB@250KBPS) timeouts, to make testing a little easier
   // WARNING: If this is ever lowered, either 250KBS mode with AA is broken or maximum packet
   // sizes must never be used. See documentation for a more complete explanation.
-  write_register(SETUP_RETR,(B0100 << ARD) | (B1111 << ARC));
+  write_register(SETUP_RETR,(B0101 << ARD) | (B1111 << ARC));
 
   // Restore our default PA level
   setPALevel( RF24_PA_MAX ) ;
@@ -434,6 +448,7 @@ void RF24::powerDown(void)
 void RF24::powerUp(void)
 {
   write_register(CONFIG,read_register(CONFIG) | _BV(PWR_UP));
+  delayMicroseconds(150);
 }
 
 /******************************************************************/
@@ -493,7 +508,6 @@ bool RF24::write( const void* buf, uint8_t len, const bool multicast )
 
   return result;
 }
-
 /****************************************************************************/
 
 void RF24::startWrite( const void* buf, uint8_t len, const bool multicast )
@@ -650,6 +664,13 @@ void RF24::openReadingPipe(uint8_t child, uint64_t address)
 
 /****************************************************************************/
 
+void RF24::closeReadingPipe( uint8_t pipe )
+{
+  write_register(EN_RXADDR,read_register(EN_RXADDR) & ~_BV(pgm_read_byte(&child_pipe_enable[pipe])));
+}
+
+/****************************************************************************/
+
 void RF24::toggle_features(void)
 {
   csn(LOW);
@@ -692,14 +713,14 @@ void RF24::enableAckPayload(void)
   // enable ack payload and dynamic payload features
   //
 
-  write_register(FEATURE,read_register(FEATURE) | _BV(EN_ACK_PAY) | _BV(EN_DPL) );
+  write_register(FEATURE,read_register(FEATURE) | _BV(EN_DYN_ACK) | _BV(EN_ACK_PAY) | _BV(EN_DPL) );
 
   // If it didn't work, the features are not enabled
   if ( ! read_register(FEATURE) )
   {
     // So enable them and try again
     toggle_features();
-    write_register(FEATURE,read_register(FEATURE) | _BV(EN_ACK_PAY) | _BV(EN_DPL) );
+    write_register(FEATURE,read_register(FEATURE) | _BV(EN_DYN_ACK) | _BV(EN_ACK_PAY) | _BV(EN_DPL) );
   }
 
   IF_SERIAL_DEBUG(printf("FEATURE=%i\r\n",read_register(FEATURE)));
@@ -971,6 +992,7 @@ void RF24::disableCRC( void )
 }
 
 /****************************************************************************/
+
 void RF24::setRetries(uint8_t delay, uint8_t count)
 {
  write_register(SETUP_RETR,(delay&0xf)<<ARD | (count&0xf)<<ARC);
@@ -992,4 +1014,6 @@ uint16_t RF24::getMaxTimeout( void )
 
   return to ;
 }
+
+// vim:ai:cin:sts=2 sw=2 ft=cpp
 
