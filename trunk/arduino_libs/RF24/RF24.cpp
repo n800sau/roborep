@@ -981,5 +981,20 @@ void RF24::setRetries(uint8_t delay, uint8_t count)
  write_register(SETUP_RETR,(delay&0xf)<<ARD | (count&0xf)<<ARC);
 }
 
-// vim:ai:cin:sts=2 sw=2 ft=cpp
+/****************************************************************************/
+
+uint8_t RF24::getRetries( void )
+{
+  return read_register( SETUP_RETR ) ;
+}
+
+/****************************************************************************/
+
+uint16_t RF24::getMaxTimeout( void )
+{
+  uint8_t retries = getRetries() ;
+  uint16_t to = ((250 + (250 * ((retries & 0xf0) >> 4))) * (retries & 0x0f)) ;
+
+  return to ;
+}
 
