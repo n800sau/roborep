@@ -51,7 +51,7 @@ MPU6050 mpu;
 // uncomment "OUTPUT_READABLE_ACCELGYRO" if you want to see a tab-separated
 // list of the accel X/Y/Z and then gyro X/Y/Z values in decimal. Easy to read,
 // not so easy to parse, and slow(er) over UART.
-#define OUTPUT_READABLE_ACCELGYRO
+//#define OUTPUT_READABLE_ACCELGYRO
 
 int16_t corr_x = -1660, corr_y = 750, corr_z = -550;
 
@@ -86,6 +86,7 @@ void setup() {
 	// (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
 	// it's really up to you depending on your project)
 	Serial.begin(57600);
+	printf_begin();
 
 	// initialize device
 	Serial.println("Initializing I2C devices...");
@@ -274,8 +275,8 @@ void loop() {
 		} else {
 #endif
 			int st = mpu.getIntStatus();
-			Serial.print("\tst: 0x");
-			Serial.println(st, HEX);
+//			Serial.print("\tst: 0x");
+//			Serial.println(st, HEX);
 			int i;
 
 
@@ -324,10 +325,10 @@ void loop() {
 			reply.ms = millis();
 			reply.counter = ++pcounter;
 			bool ok = network.write(header,&reply,sizeof(reply));
-			if (ok)
-				Serial.println("Replied ok.");
-			else
-				Serial.println("Reply failed.");
+//			if (ok)
+//				Serial.println("Replied ok.");
+//			else
+//				Serial.println("Reply failed.");
 			radio.powerDown();
 #endif // WITH_NRF
 
