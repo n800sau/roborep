@@ -12,3 +12,12 @@ in .profile
 NOT just in .bashrc
 
 for voice commands it needs ros-*-pocketsphinx 
+
+to avoid USB warning for xtion using openni2 add to /etc/security/limits.conf line 
+
+@realtime	hard	rtprio		100
+
+then create group realtime and add the user to that group
+and possibly add call to
+ulimit -r 10
+to .bashrc
