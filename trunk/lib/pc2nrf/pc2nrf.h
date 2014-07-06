@@ -18,7 +18,7 @@ class PC2NRF:public ReServant
 		RF24Network network;
 
 		// has data mark
-		bool has_data;
+		volatile bool has_data;
 
 		// data
 		payload_t reply;
