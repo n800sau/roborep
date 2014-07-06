@@ -1,7 +1,7 @@
 #ifndef __COMMON_H
 #define __COMMON_H
 
-#ifdef _GNUC__
+#ifdef __GNUC__
 #define STRUCT_PACKED __attribute__((__packed__))
 #else
 #define STRUCT_PACKED
