@@ -38,8 +38,8 @@ bool PC2NRF::create_servant()
 	bool rs = ReServant::create_servant();
 	if(rs) {
 		set_redis_list_limit(MAX_QUEUE_SIZE);
-	setLoopInterval(1);
 		radio.begin();
+//		network.begin(CHANNEL, ACC_NODE);
 		network.begin(CHANNEL, PC2NRF_NODE);
 		add_edge_callback(PIN_INTERRUPT, PC2NRF_interrupt_callback, this);
 		add_edge_detect(PIN_INTERRUPT, FALLING_EDGE);
@@ -145,6 +145,6 @@ void PC2NRF::network_process()
 
 void PC2NRF::loop()
 {
-	network_process();
+//	network_process();
 	ReServant::loop();
 }
