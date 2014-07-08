@@ -1,16 +1,38 @@
 #!/usr/bin/env python
 
-import cmd, sys, os, atexit, readline, socket, time
+import cmd, sys, os, atexit, json, readline, time, serial
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 
 from forklift import run_process, terminate_all
 import libcommon_py as common
+from conf_ino import configure
 
-import rospy
-from oculus2wd.msg import drive_status
-from oculus2wd.msg import drive
+class SerReader:
+
+	def __init__(self):
+		cfg = configure().as_dict('serial')
+		self.s = serial.Serial(cfg['serial_port'], int(cfg.get('baud_rate', 9600)), timeout=5, interCharTimeout=1)
+		self.reply_mode = False
+		self.replylist = []
+		self.final_replylist = []
+
+	def read_replylist(self):
+		rs = self.final_replylist
+		self.final_replylist = []
+		return rs
+
+	def readline(self):
+		return self.s.readline()
+
+	def write(self, line):
+		self.s.write(line)
+
+	def idle(self):
+		if self.s.inWaiting():
+			line = self.readline()
+			print line
 
 class OculusShell(cmd.Cmd):
 	intro = 'Welcome to the oculus shell.	Type help or ? to list commands.\n'
@@ -18,12 +40,13 @@ class OculusShell(cmd.Cmd):
 
 	def __init__(self):
 		cmd.Cmd.__init__(self)
-		rospy.init_node('drive_node')
-		self.pub = rospy.Publisher('/oculus2wd/base_command', drive)
-		rospy.Subscriber("/oculus2wd/base_status", drive_status, self.on_reply)
-		print dir(drive_status)
 		self.file = None
 		self.logfile = None
+		cfg = configure().as_dict('serial')
+		self.s = serial.Serial(cfg['serial_port'], int(cfg.get('baud_rate', 9600)), timeout=5, interCharTimeout=1)
+		self.reply_mode = False
+		self.replylist = []
+		self.subprocess = run_process(SerReader(), robject=self)
 
 	def write_log(self, line):
 		if not self.logfile:
@@ -31,73 +54,73 @@ class OculusShell(cmd.Cmd):
 		self.logfile.write('%s\n' % line.rstrip())
 		self.logfile.flush()
 
-	def batstat(self):
-		status = 'Unknown'
-		energy_full = None
-		energy_now = None
-		for line in file('/sys/class/power_supply/BAT0/uevent'):
-			line = line.strip()
-			if line:
-				n,v = line.split('=')
-				if n in ('POWER_SUPPLY_STATUS',):
-					status = v
-				elif n in ('POWER_SUPPLY_CHARGE_FULL', 'POWER_SUPPLY_ENERGY_FULL'):
-					energy_full = int(v)
-				elif n in ('POWER_SUPPLY_CHARGE_NOW', 'POWER_SUPPLY_ENERGY_NOW'):
-					energy_now = int(v)
-		if energy_full and energy_now:
-			print 'Status %g%%, %s' % (float(energy_now) /energy_full * 100, status)
-
 	def on_reply(self, *args):
 		print '\n%s' % args
 
 	# ----- oculus commands -----
 
+	def publish(self, cmd, power, secs):
+		self.subprocess.write('%s\n' % json.dumps({'command': cmd, 'power': power, 'secs': secs}))
+
 	def do_step_fw(self, arg):
 		'Step forward'
-		self.pub.publish(drive(ord('f'), 255, 1))
+		if not arg:
+			arg = 0
+		self.publish('f', 255, 1)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_step_back(self, arg):
 		'Step back'
-		self.pub.publish(drive(ord('b'), 255, 1))
+		if not arg:
+			arg = 0
+		self.publish('b', 255, 1)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_forward(self, arg):
 		'Forward (0-255)'
-		self.pub.publish(drive(ord('f'), int(arg), 1))
+		if not arg:
+			arg = 0
+		self.publish('f', int(arg), 1)
 
 	def do_back(self, arg):
 		'Back (0-255)'
-		self.pub.publish(drive(ord('b'), int(arg), 1))
+		if not arg:
+			arg = 0
+		self.publish('b', int(arg), 1)
 
 	def do_step_left(self, arg):
 		'Step left'
-		self.pub.publish(drive(ord('l'), 255, 1))
+		if not arg:
+			arg = 0
+		self.publish('l', 255, 1)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_step_right(self, arg):
 		'Step right'
-		self.pub.publish(drive(ord('r'), 255, 1))
+		if not arg:
+			arg = 0
+		self.publish('r', 255, 1)
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
 
 	def do_setcam(self, arg):
 		'Set cam angle [55-80]'
+		if not arg:
+			arg = 0
 		pos = int(arg)
 		pos = 80 - pos * (80-55) / 100.
-		self.pub.publish(drive(ord('v'), pos, 1))
+		self.publish('v', pos, 1)
 
 	def do_release_cam(self, arg):
 		'Release cam'
-		self.pub.publish(drive(ord('w'), 0, 1))
+		self.publish('w', 0, 1)
 
 	def do_stop(self, arg):
 		'Stop motors'
-		self.pub.publish(drive(ord('s'), 0, 1))
+		self.publish('s', 0, 1)
 
 	def do_eof(self, arg):
 		print
@@ -131,7 +154,7 @@ class OculusShell(cmd.Cmd):
 		return line
 
 	def emptyline(self):
-		self.batstat()
+		pass
 
 	def close(self):
 		if self.file:
