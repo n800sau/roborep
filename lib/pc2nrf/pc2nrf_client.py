@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'lib_
 from conf_ino import configure
 import libcommon_py as common
 
-MESSAGE_CHAN = 'pc2nrf'
+MESSAGE_CHAN = 'pc2nrf_ready'
 ABYSS = 'pc2nrf.js.obj'
 LAST_ELEMENT = 'nrfredis_client_last_element'
 
@@ -32,7 +32,7 @@ def send_email(msgtxt, subject):
 	smtpserver.starttls()
 	smtpserver.ehlo
 	smtpserver.login('itmousecage@gmail.com', 'rktnrf000')
-	smtpserver.sendmail(msg['From'], msg['To'], msg.as_string())
+#	smtpserver.sendmail(msg['From'], msg['To'], msg.as_string())
 	smtpserver.close()
 
 def extract_time(ldict):

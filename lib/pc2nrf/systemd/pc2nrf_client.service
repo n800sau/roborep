@@ -1,0 +1,11 @@
+[Unit]
+Description=pc2nrf redis to csv client
+After=syslog.target network.target pc2nrf.service
+[Service]
+Type=simple
+ExecStart=/home/n800s/work/roborep/lib/pc2nrf/pc2nrf_client.py
+User=n800s
+Group=n800s
+Restart=always
+[Install]
+WantedBy=multi-user.target
