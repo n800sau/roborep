@@ -18,6 +18,10 @@
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 
+#define REDIS_HOST "localhost"
+#define REDIS_PORT 6379
+
+
 double dtime()
 {
 	timeval rs;
@@ -210,13 +214,13 @@ bool ReServant::create_servant()
 		base = event_base_new();
 
 		struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-		redis = redisConnectWithTimeout((char*)"localhost", 6379, timeout);
+		redis = redisConnectWithTimeout(REDIS_HOST, REDIS_PORT, timeout);
 		if (redis->err) {
 			syslog(LOG_ERR, "Connection error: %s\n", redis->errstr);
 			exit(1);
 		}
-		aredis = redisAsyncConnect("localhost", 6379);
-		subredis = redisAsyncConnect("localhost", 6379);
+		aredis = redisAsyncConnect(REDIS_HOST, REDIS_PORT);
+		subredis = redisAsyncConnect(REDIS_HOST, REDIS_PORT);
 		if (aredis->err) {
 			/* Let *aredis leak for now... */
 			syslog(LOG_ERR, "Error: %s\n", aredis->errstr);
@@ -517,7 +521,7 @@ void ReServant::json2redislist(int list_id)
 		}
 	}
 	json_decref(js);
-	redisAsyncCommand(aredis, ReServant_dummyCallback, this, "SET %s.timestamp '%s'", myid(), s_timestamp(&t));
+	redisAsyncCommand(aredis, ReServant_dummyCallback, this, "SET %s.timestamp %s", myid(), s_timestamp(&t));
 	redisAsyncCommand(aredis, ReServant_dummyCallback, this, "PUBLISH %s_ready %d", myid(), list_id);
 }
 
