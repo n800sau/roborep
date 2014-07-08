@@ -1,23 +1,21 @@
-#include <ros.h>
-#include <oculus2wd/drive.h>
-#include <oculus2wd/drive_status.h>
-
+#include <EventFuse.h>
+#include <MsTimer2.h>
+#include <JsonParser.h>
 #include "../../include/common.h"
 #include "../../include/printf.h"
 #include <Servo.h>
 
 /*
- oculusDC version 0.5.5
- ASCII Serial Commands
- All 2 byte pairs, except for STOP, GET_VERSION, and CAMRELEASE
+	{'command': 'f', 'power': 100, 'secs': 1}
+	JSON commands:
 
- FORWARD = 'f', [0-255] (speed)
- BACKWARD = 'b', [0-255] (speed)
- LEFT = 'l', [0-255] (speed)
- RIGHT = 'r', [0-255] (speed)
- CAM = 'v', [0-255] (servo angle)
- STOP = 's' (DC motors stop)
- CAMRELEASE = 'w'
+	FORWARD = 'f', [0-255] (speed)
+	BACKWARD = 'b', [0-255] (speed)
+	LEFT = 'l', [0-255] (speed)
+	RIGHT = 'r', [0-255] (speed)
+	CAM = 'v', [0-255] (servo angle)
+	STOP = 's' (DC motors stop)
+	CAMRELEASE = 'w'
 */
 
 // pins
@@ -42,23 +40,13 @@ Servo camservo; // tilt
 int8_t acomp = 0;
 int8_t bcomp = 0;
 
-ros::NodeHandle	 nh;
-
-oculus2wd::drive_status status_msg;
-
-ros::Publisher reply("/oculus2wd/base_status", &status_msg);
-
 void reply_status()
 {
-	status_msg.left = OCR2A;
-	status_msg.right = OCR2B;
-	status_msg.camservo = camservo.read();
-	status_msg.fw_version = "ros_oculus_base:0.1";
-	reply.publish( &status_msg );
+	printf("{\"left\":%d,\"right\":%d,\"camservo\":%d}\r\n", OCR2A, OCR2B, camservo.read());
 }
 
 // do multi byte
-void parseCommand(char cmd, int power, int secs)
+void executeCommand(char cmd, int power, int secs)
 {
 	// always set speed on each move command
 	if((cmd == 'f') || (cmd == 'b') || (cmd == 'l') || (cmd == 'r'))
@@ -111,27 +99,52 @@ void parseCommand(char cmd, int power, int secs)
 	reply_status();
 }
 
-void messageCb(const oculus2wd::drive& command_msg){
-	parseCommand(command_msg.command, command_msg.power, command_msg.secs);
+void fuseEvent(FuseID fuse, int &userData) {
+	reply_status();
 }
 
-ros::Subscriber<oculus2wd::drive> request("/oculus2wd/base_command", messageCb );
+void timerTick(){
+	EventFuse::burn(1);
+}
 
 void setup()
 {
-	nh.initNode();
-	nh.advertise(reply);
-	nh.subscribe(request);
-	nh.spinOnce();
+	Serial.begin(57600);
+	printf_begin();
+	OCR2A = 0;
+	OCR2B = 0;
+	camservo.detach();
+	EventFuse::newFuse(10, INF_REPEAT, fuseEvent);
+	// 1 second fuse unit
+	MsTimer2::set(1000, timerTick);
+	MsTimer2::start();
+}
+
+#define MAX_INPUT_LEN 200
+char inputString[MAX_INPUT_LEN];
+int inputPos = 0;
+boolean stringComplete = false;
+void serialEvent() {
+	while (Serial.available()) {
+		char inChar = (char)Serial.read();
+		// add it to the inputString:
+		inputString[inputPos++] = inChar;
+		inputString[inputPos] = 0;
+		if (inChar == '\n' || inputPos >= MAX_INPUT_LEN-1) {
+			stringComplete = true;
+		}
+	}
 }
 
 void loop() {
-	nh.spinOnce();
-	if( !nh.connected() )
-	{
-		// if no comm with host, stop motors
-		OCR2A = 0;
-		OCR2B = 0;
-		camservo.detach();
+	if (stringComplete) {
+		JsonParser<32> parser;
+		JsonHashTable data = parser.parseHashTable(inputString);
+		char* cmd = data.getString("command");
+		int power = data.getLong("power");
+		int secs = data.getLong("secs");
+		executeCommand(cmd[0], power, secs);
+		inputString[0] = 0;
+		stringComplete = false;
 	}
 }
