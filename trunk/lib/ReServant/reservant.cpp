@@ -167,10 +167,18 @@ void ReServant_cmdCallback(redisAsyncContext *c, void *r, void *privdata)
 	ReServant *ths = (ReServant *)privdata;
 	ths->cmdCallback(c, (redisReply *)r);
 }
+
+
+void ReServant_dummyCallback(redisAsyncContext *c, void *r, void *privdata)
+{
+	ReServant *ths = (ReServant *)privdata;
+	ths->dummyCallback(c, (redisReply *)r);
+}
 //###############
 
 
-ReServant::ReServant(const char *s_id):exiting(0),n_calls(0),cmdlist_size(0),timer_ev(NULL),servant_created(false),redis_list_size(DEFAULT_REDIS_LIST_SIZE)
+ReServant::ReServant(const char *s_id):
+	exiting(0), n_calls(0), cmdlist_size(0), timer_ev(NULL), servant_created(false), redis_list_size(DEFAULT_REDIS_LIST_SIZE), redis(NULL), aredis(NULL), subredis(NULL)
 {
 	this->s_id = s_id;
 	_mypath[readlink("/proc/self/exe", _mypath, sizeof(_mypath))] = 0;
@@ -179,6 +187,12 @@ ReServant::ReServant(const char *s_id):exiting(0),n_calls(0),cmdlist_size(0),tim
 
 ReServant::~ReServant()
 {
+	if(aredis)
+		redisAsyncDisconnect(aredis);
+	if(subredis)
+		redisAsyncDisconnect(subredis);
+	if(redis)
+		redisFree(redis);
 }
 
 bool ReServant::create_servant()
@@ -202,6 +216,7 @@ bool ReServant::create_servant()
 			exit(1);
 		}
 		aredis = redisAsyncConnect("localhost", 6379);
+		subredis = redisAsyncConnect("localhost", 6379);
 		if (aredis->err) {
 			/* Let *aredis leak for now... */
 			syslog(LOG_ERR, "Error: %s\n", aredis->errstr);
@@ -210,9 +225,10 @@ bool ReServant::create_servant()
 
 		setLoopInterval();
 		redisLibeventAttach(aredis,base);
+		redisLibeventAttach(subredis,base);
 		redisAsyncSetConnectCallback(aredis, ReServant_connectCallback);
 		redisAsyncSetDisconnectCallback(aredis, ReServant_disconnectCallback);
-		redisAsyncCommand(aredis, ReServant_cmdCallback, this, "SUBSCRIBE %s", myid());
+		redisAsyncCommand(subredis, ReServant_cmdCallback, this, "SUBSCRIBE %s", myid());
 		servant_created = rs = true;
 	}
 	return rs;
@@ -270,35 +286,44 @@ int ReServant::processJsonCmd(json_t *js)
 {
 	int rs = -1;
 	json_t *cmd = json_object_get(js, "cmd");
-	const char *cmdname = json_string_value(cmd);
-	if(strcmp(cmdname, "exit") == 0) {
-		exit(100);
-	} else {
-		for(int i=0; i< cmdlist_size; i++) {
-			const pCMD_FUNC cf = cmdlist[i];
-			if(strcmp(cf->cmd, cmdname) == 0) {
-				rs = 0;
-				call_cmd(cf, js);
-				break;
+	if(cmd) {
+		const char *cmdname = json_string_value(cmd);
+		if(strcmp(cmdname, "exit") == 0) {
+			exit(100);
+		} else {
+			for(int i=0; i< cmdlist_size; i++) {
+				const pCMD_FUNC cf = cmdlist[i];
+				if(strcmp(cf->cmd, cmdname) == 0) {
+					rs = 0;
+					call_cmd(cf, js);
+					break;
+				}
+			}
+			char *jstr = json_dumps(js, JSON_INDENT(4));
+			if(jstr) {
+				syslog(LOG_DEBUG, "%s\n", jstr);
+				free(jstr);
+			} else {
+				syslog(LOG_ERR, "Can not encode JSON\n");
+				rs = -2;
 			}
 		}
-		char *jstr = json_dumps(js, JSON_INDENT(4));
-		if(jstr) {
-			syslog(LOG_DEBUG, "%s\n", jstr);
-			free(jstr);
-		} else {
-			syslog(LOG_ERR, "Can not encode JSON\n");
-			rs = -2;
-		}
+	} else {
+		syslog(LOG_ERR, "Bad json command\n");
 	}
 	return rs;
 }
 
+void ReServant::dummyCallback(redisAsyncContext *c, redisReply *reply)
+{
+//	fprint_reply(reply);
+}
+
 void ReServant::cmdCallback(redisAsyncContext *c, redisReply *reply)
 {
-	//fprint_reply(reply);
+//	fprint_reply(reply);
 	if(reply->type == REDIS_REPLY_ARRAY && reply->elements >= 3 && strcmp(reply->element[0]->str, "message") == 0) {
-		printf("get %s\n", reply->element[2]->str);
+		printf("Received json command: %s\n", reply->element[2]->str);
 		json_error_t error;
 #ifdef JSON_DECODE_ANY
 		json_t *js = json_loads(reply->element[2]->str, JSON_DECODE_ANY, &error);
@@ -467,7 +492,7 @@ void ReServant::set_redis_list_limit(int val)
 
 void ReServant::update_redis_list_size()
 {
-	redisAsyncCommand(aredis, NULL, NULL, "LTRIM %s.js.obj %d -1", myid(), -redis_list_size);
+	redisAsyncCommand(aredis, ReServant_dummyCallback, this, "LTRIM %s.js.obj %d -1", myid(), -redis_list_size);
 }
 
 const char *ReServant::list_suffix(int list_id)
@@ -484,7 +509,7 @@ void ReServant::json2redislist(int list_id)
 		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
 			syslog(LOG_DEBUG, "%s\n", jstr);
-			redisAsyncCommand(aredis, NULL, NULL, "RPUSH %s%s.js.obj %s", myid(), list_suffix(list_id), jstr);
+			redisAsyncCommand(aredis, ReServant_dummyCallback, this, "RPUSH %s%s.js.obj %s", myid(), list_suffix(list_id), jstr);
 			update_redis_list_size();
 			free(jstr);
 		} else {
@@ -492,8 +517,8 @@ void ReServant::json2redislist(int list_id)
 		}
 	}
 	json_decref(js);
-	redisAsyncCommand(aredis, NULL, NULL, "SET %s.timestamp %s", myid(), s_timestamp(&t));
-	redisAsyncCommand(aredis, NULL, NULL, "PUBLISH %s %d", myid(), list_id);
+	redisAsyncCommand(aredis, ReServant_dummyCallback, this, "SET %s.timestamp '%s'", myid(), s_timestamp(&t));
+	redisAsyncCommand(aredis, ReServant_dummyCallback, this, "PUBLISH %s_ready %d", myid(), list_id);
 }
 
 json_t *ReServant::tabbed2json(const char *ptr)

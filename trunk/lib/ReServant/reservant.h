@@ -47,6 +47,7 @@ class ReServant
 
 		struct event_base *base;
 
+		redisAsyncContext *subredis;
 		redisAsyncContext *aredis;
 		redisContext *redis;
 
@@ -82,6 +83,7 @@ class ReServant
 		//can be run after run() only
 		void runTCPserver(const char *host, int port);
 
+		void dummyCallback(redisAsyncContext *c, redisReply *reply);
 		void cmdCallback(redisAsyncContext *c, redisReply *reply);
 		void timer_cb_func(short what);
 
