@@ -163,9 +163,11 @@ void sleepNow(const byte watchdog_interval)			// here we put the arduino to slee
 {
 	mpu.setIntEnabled((1 << MPU6050_INTERRUPT_MOT_BIT) | (1 << MPU6050_INTERRUPT_ZMOT_BIT));
 
+#ifdef DEBUG
 	Serial.println("Timer: Entering Sleep mode");
 	Serial.flush();
-	delay(100);		// this delay is needed, the sleep 
+#endif //DEBUG
+	delay(100);		// this delay is needed, then sleep
 
 #ifdef USE_WD
 	// watchdog thing
@@ -263,10 +265,13 @@ void loop() {
 				reply.ms = millis();
 				reply.counter = ++pcounter;
 				bool ok = network.write(header,&reply,sizeof(reply));
-				if (ok)
+#ifdef DEBUG
+				if (ok) {
 					Serial.println("Replied ok.");
-				else
+				} else {
 					Serial.println("Reply failed.");
+				}
+#endif //DEBUG
 				radio.powerDown();
 #endif // WITH_NRF
 			}
@@ -277,9 +282,11 @@ void loop() {
 			int st = mpu.getIntStatus();
 //			Serial.print("\tst: 0x");
 //			Serial.println(st, HEX);
-			int i;
 
+			int16_t ax, ay, az;
+			mpu.getAcceleration(&ax, &ay, &az);
 
+#ifdef DEBUG
 			if(st & (1 << MPU6050_INTERRUPT_ZMOT_BIT)) {
 				Serial.println("Stopped");
 			}
@@ -300,10 +307,6 @@ void loop() {
 				Serial.println();
 			}
 
-
-			int16_t ax, ay, az;
-			mpu.getAcceleration(&ax, &ay, &az);
-
 			#ifdef OUTPUT_READABLE_ACCELGYRO
 				// display tab-separated accel/gyro x/y/z values
 				Serial.print("a:\t");
@@ -312,6 +315,7 @@ void loop() {
 				Serial.print(az); Serial.print("\t");
 				Serial.println();
 			#endif
+#endif //DEBUG
 
 #ifdef WITH_NRF
 			RF24NetworkHeader header(PC2NRF_NODE);
@@ -325,10 +329,13 @@ void loop() {
 			reply.ms = millis();
 			reply.counter = ++pcounter;
 			bool ok = network.write(header,&reply,sizeof(reply));
-//			if (ok)
-//				Serial.println("Replied ok.");
-//			else
-//				Serial.println("Reply failed.");
+#ifdef DEBUG
+			if (ok) {
+				Serial.println("Replied ok.");
+			} else {
+				Serial.println("Reply failed.");
+			}
+#endif //DEBUG
 			radio.powerDown();
 #endif // WITH_NRF
 
