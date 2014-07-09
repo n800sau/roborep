@@ -305,7 +305,7 @@ int ReServant::processJsonCmd(json_t *js)
 			}
 			char *jstr = json_dumps(js, JSON_INDENT(4));
 			if(jstr) {
-				syslog(LOG_DEBUG, "%s\n", jstr);
+				syslog(LOG_DEBUG, "JSON:%s\n", jstr);
 				free(jstr);
 			} else {
 				syslog(LOG_ERR, "Can not encode JSON\n");
@@ -512,7 +512,7 @@ void ReServant::json2redislist(int list_id)
 	if(fill_json(js, list_id)) {
 		char *jstr = json_dumps(js, JSON_INDENT(4));
 		if(jstr) {
-			syslog(LOG_DEBUG, "%s\n", jstr);
+//			syslog(LOG_DEBUG, "JSON for REDIS:%s\n", jstr);
 			redisAsyncCommand(aredis, ReServant_dummyCallback, this, "RPUSH %s%s.js.obj %s", myid(), list_suffix(list_id), jstr);
 			update_redis_list_size();
 			free(jstr);
