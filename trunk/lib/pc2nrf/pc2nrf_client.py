@@ -7,8 +7,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'include', 'swig'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'lib_py'))
+inopath = os.path.join(os.path.dirname(__file__), '..', '..', 'ino')
+sys.path.append(os.path.join(inopath, 'include', 'swig'))
+sys.path.append(os.path.join(inopath, 'lib_py'))
 
 from conf_ino import configure
 import libcommon_py as common
@@ -32,7 +33,7 @@ def send_email(msgtxt, subject):
 	smtpserver.starttls()
 	smtpserver.ehlo
 	smtpserver.login('itmousecage@gmail.com', 'rktnrf000')
-#	smtpserver.sendmail(msg['From'], msg['To'], msg.as_string())
+	smtpserver.sendmail(msg['From'], msg['To'], msg.as_string())
 	smtpserver.close()
 
 def extract_time(ldict):
@@ -68,7 +69,7 @@ def process_loop():
 					last_time = time.time()
 					send_email(
 						'Triggered at %s' % (datetime.fromtimestamp(extract_time(ldict)).strftime('%d/%m/%Y %H:%M:%S.%f')),
-						'door notification %s, v: %s' % (time.strftime('%Y/%m/%d %H:%M'), ldict['v'])
+						'door notification %s, mv: %s' % (time.strftime('%Y/%m/%d %H:%M'), ldict['mv'])
 					)
 					start_plot_process()
 				r.zadd('acc_x', extract_time(ldict), ldict['acc_x'])
@@ -98,7 +99,7 @@ if __name__ == '__main__':
 	p.subscribe(MESSAGE_CHAN)
 
 	queues = {}
-#	process_loop()
+	process_loop()
 	for item in p.listen():
 		try:
 			process_loop()
