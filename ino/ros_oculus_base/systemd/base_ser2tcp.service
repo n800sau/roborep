@@ -1,0 +1,12 @@
+[Unit]
+Description=Oculus 2wd base ser2tcp
+After=syslog.target network.target
+[Service]
+Type=simple
+ExecStart=/home/n800s/work/sourceforge/roborep/ino/ros_oculus_base/ser2tcp_twisted.py
+User=n800s
+Group=n800s
+Restart=always
+[Install]
+WantedBy=multi-user.target
+
