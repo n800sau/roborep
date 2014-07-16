@@ -1,5 +1,6 @@
 #include "../../include/common.h"
 #include "../../include/printf.h"
+#include <avr/sleep.h>
 #include <RF24.h>
 #include <RF24Network.h>
 #include <SPI.h>
@@ -31,10 +32,12 @@ uint16_t packetSize;	// expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;		// count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
+const int interruptPin = 1;
 
 volatile bool mpuInterrupt = false;		// indicates whether MPU interrupt pin has gone high
 void dmpDataReady() {
 	mpuInterrupt = true;
+//	detachInterrupt(interruptPin);
 }
 // ----------------------------------------------------------------------
 
@@ -58,6 +61,18 @@ void setup()
 	Serial.println(PSTR("Initializing MPU..."));
 	mpu.initialize();
 
+	// set interrupt active to low
+	mpu.setInterruptMode(MPU6050_INTMODE_ACTIVELOW);
+
+//mpu.setMotionDetectionThreshold();
+//mpu.setZeroMotionDetectionThreshold();
+//mpu.setMotionDetectionDuration();
+//mpu.setZeroMotionDetectionDuration();
+//mpu.setIntEnabled();
+//mpu.setSleepEnabled();
+//mpu.setWakeCycleEnabled();
+
+
 	// load and configure the DMP
 	Serial.println(PSTR("Initializing DMP..."));
 	devStatus = mpu.dmpInitialize();
@@ -76,7 +91,7 @@ void setup()
 
 		// enable Arduino interrupt detection
 		Serial.println("Enabling interrupt detection (Arduino external interrupt 0)...");
-		attachInterrupt(1, dmpDataReady, RISING);
+		attachInterrupt(interruptPin, dmpDataReady, FALLING);
 		mpuIntStatus = mpu.getIntStatus();
 
 		// set our DMP Ready flag so the main loop() function knows it's okay to use it
@@ -126,18 +141,72 @@ void read_cmd()
 	}
 }
 
+void sleepNow()         // here we put the arduino to sleep
+{
+    /* Now is the time to set the sleep mode. In the Atmega8 datasheet
+     * http://www.atmel.com/dyn/resources/prod_documents/doc2486.pdf on page 35
+     * there is a list of sleep modes which explains which clocks and 
+     * wake up sources are available in which sleep mode.
+     *
+     * In the avr/sleep.h file, the call names of these sleep modes are to be found:
+     *
+     * The 5 different modes are:
+     *     SLEEP_MODE_IDLE         -the least power savings 
+     *     SLEEP_MODE_ADC
+     *     SLEEP_MODE_PWR_SAVE
+     *     SLEEP_MODE_STANDBY
+     *     SLEEP_MODE_PWR_DOWN     -the most power savings
+     *
+     * For now, we want as much power savings as possible, so we 
+     * choose the according 
+     * sleep mode: SLEEP_MODE_PWR_DOWN
+     * 
+     */  
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // sleep mode is set here
+
+    sleep_enable();          // enables the sleep bit in the mcucr register
+                             // so sleep is possible. just a safety pin 
+
+    /* Now it is time to enable an interrupt. We do it here so an 
+     * accidentally pushed interrupt button doesn't interrupt 
+     * our running program. if you want to be able to run 
+     * interrupt code besides the sleep function, place it in 
+     * setup() for example.
+     * 
+     * In the function call attachInterrupt(A, B, C)
+     * A   can be either 0 or 1 for interrupts on pin 2 or 3.   
+     * 
+     * B   Name of a function you want to execute at interrupt for A.
+     *
+     * C   Trigger mode of the interrupt pin. can be:
+     *             LOW        a low level triggers
+     *             CHANGE     a change in level triggers
+     *             RISING     a rising edge of a level triggers
+     *             FALLING    a falling edge of a level triggers
+     *
+     * In all but the IDLE sleep modes only LOW can be used.
+     */
+
+    attachInterrupt(interruptPin, dmpDataReady, LOW); // use interrupt 0 (pin 2) and run function
+                                       // wakeUpNow when pin 2 gets LOW 
+
+    sleep_mode();            // here the device is actually put to sleep!!
+                             // THE PROGRAM CONTINUES FROM HERE AFTER WAKING UP
+
+    sleep_disable();         // first thing after waking from sleep:
+                             // disable sleep...
+    detachInterrupt(interruptPin);      // disables interrupt 0 on pin 2 so the 
+                             // wakeUpNow code will not be executed 
+                             // during normal running time.
+
+}
+
 void loop()
 {
 	unsigned long qms;
-	// Pump the network regularly
-	network.update();
-	// Is there anything ready for us?
-	while ( network.available() )
-	{
-		Serial.println("read cmd");
-		read_cmd();
-	}
-	if (mpuInterrupt || fifoCount >= packetSize) {
+//	delay(100);                           // waits for a second
+//	if (mpuInterrupt || fifoCount >= packetSize) {
+	if (mpuInterrupt) {
 		// reset interrupt flag and get INT_STATUS byte
 		mpuInterrupt = false;
 		mpuIntStatus = mpu.getIntStatus();
@@ -231,5 +300,16 @@ void loop()
 //			mpu.dmpGetLinearAccel(&data.aaReal, &data.aa, &data.gravity);
 //			mpu.dmpGetLinearAccelInWorld(&data.aaWorld, &data.aaReal, &data.q);
 		}
+//		attachInterrupt(interruptPin, dmpDataReady, FALLING);
 	}
+	// Pump the network regularly
+	network.update();
+	// Is there anything ready for us?
+	while ( network.available() )
+	{
+		Serial.println("read cmd");
+		read_cmd();
+	}
+    delay(100);     // this delay is needed, the sleep 
+    sleepNow();     // sleep function called here
 }

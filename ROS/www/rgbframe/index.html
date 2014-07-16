@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Video Frame</title>
+<meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes" />
+
+<script type="text/javascript">
+	<!--
+	function getState() {
+		var rs;
+		var radios = document.getElementsByName("video");
+		for(var i=0; i<radios.length; i++) {
+			if(radios[i].checked) {
+				rs = radios[i].value;
+				break;
+			}
+		}
+		return rs;
+	}
+
+	function checkTime(i)
+	{
+	if (i<10) {
+		i="0" + i;
+	}
+	return i;
+	}
+
+	function reloadpic()
+	{
+		if(getState() == 'On') {
+			var now = new Date();
+			var timestamp = now.getTime();
+			var h = now.getHours();
+			var m = now.getMinutes();
+			var s = now.getSeconds();
+			document.images["camimage"].src = "test.png?random=" + timestamp;
+			document.getElementById("timestamp").innerHTML = checkTime(h)+":"+checkTime(m)+":"+checkTime(s);
+		}
+		setTimeout("reloadpic();", 1000);
+	}
+
+	onload = function() {
+		reloadpic();
+	}
+
+	 -->
+</script>
+</head>
+<body>
+<p>
+<label><input type="radio" name="video" value="On" checked="checked" />On</label><br/>
+<label><input type="radio" name="video" value="Off" />Off</label><br/>
+</p>
+<div id='timestamp'></div>
+<img id="camimage" alt="no image allowed"></img>
+</body>
+</html>
