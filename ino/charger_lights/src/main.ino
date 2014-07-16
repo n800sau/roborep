@@ -1,9 +1,12 @@
 #include <EventFuse.h>
 #include <JsonParser.h>
 #include "../../include/printf.h"
+#include "../../include/common.h"
+
 #include <IRremote.h>
 
-#define IR_PIN 13
+
+#define LED_PIN 13
 
 IRsend ir;
 
@@ -13,15 +16,16 @@ char inputString[MAX_INPUT_LEN];
 int inputPos = 0;
 boolean stringComplete = false;
 
-#define SIGNAL_LEN 6
-static unsigned int irsignal[SIGNAL_LEN] = {10, 20, 10, 20, 10, 20};
+#define SIGNAL_LEN 4
+static unsigned int irsignal[SIGNAL_LEN] = {10, 20, 30, 40};
 
 void FuseEvent(FuseID fuse, int& led_index){
-	ir.sendRaw(irsignal, SIGNAL_LEN, 56);
-//	Serial.print("event:");
-//	Serial.print(led_index);
-//	Serial.print(":");
-//	Serial.println(pin->state);
+//	ir.sendRaw(irsignal, SIGNAL_LEN, 56);
+	ir.sendNEC(BEACON_CODE, 32);
+//	ir.sendSony(0x00000826, 15);
+//	ir.sendDISH(BEACON_CODE, 32);
+	digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+//	Serial.println("NEC");
 }
 
 void serialEvent() {
@@ -39,7 +43,7 @@ void serialEvent() {
 void setup() {
 	Serial.begin(57600);
 	printf_begin();
-	EventFuse::newFuse(500, INF_REPEAT, FuseEvent);
+	EventFuse::newFuse(2000, INF_REPEAT, FuseEvent);
 //	Serial.println("setup");
 }
 
@@ -53,6 +57,6 @@ void loop(){
 		stringComplete = false;
 	}
 
-	delayMicroseconds(100);
+	delayMicroseconds(1000);
 	EventFuse::burn();
 }
