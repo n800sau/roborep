@@ -85,4 +85,3 @@ if __name__ == '__main__':
 	reactor.listenTCP(tcp_port, tcpfactory)
 	SerialPort(USBClient(tcpfactory), s_port, reactor, baudrate=s_rate)
 	reactor.run()
-/home/n800s/work/sourceforge/roborep/ino/ros_oculus_base/systemd/base_ser2tcp.service
