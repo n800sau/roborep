@@ -111,7 +111,7 @@ namespace image_motion1_nd
 				// color, the color for drawing the rectangle when something has changed.
 				cv::Mat d1, d2, motion, result, result_cropped;
 				int number_of_changes;
-				cv::Scalar color(255, 0, 0);
+				cv::Scalar color(0, 0, 255);
 				// Detect motion in window
 				int x_start = 1, x_stop = cv_ptr->image.cols-1;
 				int y_start = 1, y_stop = cv_ptr->image.rows-1;

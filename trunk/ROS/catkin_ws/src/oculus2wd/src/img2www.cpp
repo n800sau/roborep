@@ -13,7 +13,7 @@
 
 #include"skin_detector.hpp"
 
-std::string imgfname, clrfname, skinfname, circlesfname, dispfname, motionfname, motion1fname, segmentobjectfname;
+std::string imgfname, clrfname, skinfname, circlesfname, dispfname, motionfname, motion1fname, motion1videofname, segmentobjectfname;
 image_transport::Subscriber img_sub, mimg_sub, m1img_sub, soimg_sub;
 ros::Subscriber disp_sub;
 
@@ -364,15 +364,23 @@ void savemotion_cb(const sensor_msgs::ImageConstPtr& msg)
 	write_img(dst, motionfname);
 }
 
+cv::VideoWriter motionVideo;
+
 void savemotion1_cb(const sensor_msgs::ImageConstPtr& msg)
 {
-	printf("here1\n");
 	cv::Mat dst;
 	cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
 	cv::resize(cv_ptr->image, dst, cv::Size(160,120));
 //	cv::cvtColor(dst, dst, CV_BGR2RGB);
 	write_img(dst, motion1fname);
-	printf("here2\n");
+	if(!motionVideo.isOpened()) {
+		motionVideo.open(motion1videofname, CV_FOURCC('M', 'J', 'P', 'G'), 1, cvSize(160, 120), true);
+	}
+	if(motionVideo.isOpened()) {
+		motionVideo << dst;
+	} else {
+		ROS_ERROR("Can not open video file");
+	}
 }
 
 void savesegmentobject_cb(const sensor_msgs::ImageConstPtr& msg)
@@ -452,6 +460,7 @@ int main(int argc, char ** argv)
 	local_nh.param("filename_disparity", dispfname, std::string(std::string("/var/www/rgbframe/frame_disparity.png")));
 	local_nh.param("filename_motion", motionfname, std::string(std::string("/var/www/rgbframe/frame_motion.png")));
 	local_nh.param("filename_motion1", motion1fname, std::string(std::string("/var/www/rgbframe/frame_motion1.png")));
+	local_nh.param("filename_motion1video", motion1videofname, std::string(std::string("/var/www/rgbframe/frame_motion1.avi")));
 	local_nh.param("filename_segment_object", segmentobjectfname, std::string(std::string("/var/www/rgbframe/frame_segment_object.png")));
 	ros::ServiceServer save = local_nh.advertiseService ("save", service);
 //	ros::AsyncSpinner spinner(2);

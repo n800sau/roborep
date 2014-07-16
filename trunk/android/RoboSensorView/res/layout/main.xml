@@ -43,6 +43,7 @@
 		<include layout="@layout/mag3110"/>
 		<include layout="@layout/lsm303"/>
 		<include layout="@layout/kalman"/>
+		<include layout="@layout/plot"/>
 
 		<!-- ERROR message row -->
 		<TextView
@@ -52,7 +53,7 @@
 			android:layout_height="wrap_content"
 			android:layout_width="wrap_content"
 			android:ellipsize="none"  
-			android:maxLines="100"  
+			android:maxLines="100"	
 			android:scrollHorizontally="false"
 		/>
 	</LinearLayout>

@@ -2,21 +2,14 @@ package au.n800s.cv;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.Window;
-import au.n800s.robo.common.DbMsg;
 
-public class CameraActivity extends Activity {
-
-    public CameraActivity() {
-        DbMsg.i("Instantiated new " + this.getClass());
-    }
-
+public class CameraActivity extends Activity
+{
     /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        DbMsg.i("onCreate");
+    public void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(new CameraView(this));
+        setContentView(R.layout.main);
     }
 }

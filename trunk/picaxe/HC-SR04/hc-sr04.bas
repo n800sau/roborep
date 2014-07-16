@@ -1,7 +1,10 @@
-symbol trig = 4 ' Define output pin for Trigger pulse
-symbol echo = 3 ' Define input pin for Echo pulse
+symbol trig = 4 ' Define output pin for Trigger pulse C.4
+symbol echo = 3 ' Define input pin for Echo pulse C.3
 symbol range = w1 ' 16 bit word variable for range
 symbol serialpin = c.1
+
+
+hsersetup B4800_4, %00
 
 main:
 
@@ -15,8 +18,10 @@ pause 10 ' recharge period after ranging completes
 'as picaxe cannot use 5.8, multiply by 10 then divide by 58 instead
 
 let range = range * 10 / 58 ' multiply by 10 then divide by 58
-'debug range 'display range via debug command
 
+hserout 0, ("Range:",#range,13,10)
+
+'debug range 'display range via debug command
 ' output for inverted picaxe serial
 sertxd("Range:",#range,13,10)
 

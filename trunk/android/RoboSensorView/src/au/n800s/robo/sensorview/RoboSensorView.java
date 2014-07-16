@@ -10,14 +10,17 @@ import android.widget.TableRow;
 
 import android.graphics.Color;
 
-import com.nullwire.trace.ExceptionHandler;
-
 import android.view.View.OnClickListener;
 import android.os.Handler;
 import android.os.Message;
 import android.widget.TextView;
 import android.widget.Button;
 import android.view.View;
+
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import java.lang.Thread.UncaughtExceptionHandler;
 
 import java.net.Socket;
 import org.json.JSONObject;
@@ -40,13 +43,20 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.content.Intent;
 
+import com.androidplot.xy.SimpleXYSeries;
+import com.androidplot.xy.XYSeries;
+import com.androidplot.xy.*;
+
 public class RoboSensorView extends Activity implements OnClickListener
 {
-	public static final String SERVERIP = "115.70.59.149";
+	public static final String SERVERIP = "123.243.40.133";
 	public static final String SERVERPORT = "7980";
 	public Handler Handler;
 	public Button b_restart;
 	private DataReceiverTask task;
+
+	// uncaught exception handler variable
+	private UncaughtExceptionHandler defaultUEH;
 
 	public static final String logid = "RoboSensorView";
 
@@ -74,7 +84,7 @@ public class RoboSensorView extends Activity implements OnClickListener
 						}
 						out.flush();
 					} catch(IOException e) {
-						Log.e(logid, e.toString());
+						Log.e(logid, "Writing socket", e);
 					}
 				}
 			}
@@ -98,13 +108,13 @@ public class RoboSensorView extends Activity implements OnClickListener
 										Log.i(logid, line);
 										publishProgress(jsobj);
 									} catch(Exception e) {
-										Log.e(logid, e.toString());
+										Log.e(logid, "Reading socket", e);
 									}
 //									break;
 //								}
 							}
 						} catch(IOException e) {
-							Log.e(logid, e.toString());
+							Log.e(logid, "Opening socket", e);
 						}
 					} else {
 						sockets.remove(i);
@@ -168,12 +178,38 @@ public class RoboSensorView extends Activity implements OnClickListener
 
 	}
 
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
+ // handler listener
+    private Thread.UncaughtExceptionHandler _unCaughtExceptionHandler =
+        new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable ex) {
+
+                // here I do logging of exception to a db
+                PendingIntent myActivity = PendingIntent.getActivity(getApplicationContext(),
+                    192837, new Intent(getApplicationContext(), RoboSensorView.class),
+                    PendingIntent.FLAG_ONE_SHOT);
+
+                AlarmManager alarmManager;
+                alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+                alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 15000, myActivity );
+                System.exit(2);
+
+                // re-throw critical exception further to the os (important)
+                defaultUEH.uncaughtException(thread, ex);
+            }
+        };
+
+
+	private XYPlot plot;
+
+	/** Called when the activity is first created. */
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
 		super.onCreate(savedInstanceState);
-		ExceptionHandler.register(this);
+		defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
+        // setup handler for uncaught exception 
+        Thread.setDefaultUncaughtExceptionHandler(_unCaughtExceptionHandler);
 		Log.d(logid, "Hello");
 		setContentView(R.layout.main);
 
@@ -189,16 +225,54 @@ public class RoboSensorView extends Activity implements OnClickListener
 
 		b_restart = (Button)findViewById(R.id.b_restart);
 		b_restart.setOnClickListener(this);
-		onClick(b_restart);
+//		onClick(b_restart);
 
-    }
+	   // initialize our XYPlot reference:
+		plot = (XYPlot) findViewById(R.id.mySimpleXYPlot);
+ 
+		// Create a couple arrays of y-values to plot:
+		Number[] series1Numbers = {1, 8, 5, 2, 7, 4};
+		Number[] series2Numbers = {4, 6, 3, 8, 2, 10};
+ 
+		// Turn the above arrays into XYSeries':
+		XYSeries series1 = new SimpleXYSeries(
+				Arrays.asList(series1Numbers),			// SimpleXYSeries takes a List so turn our array into a List
+				SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, // Y_VALS_ONLY means use the element index as the x value
+				"Series1");								// Set the display title of the series
+ 
+		// same as above
+		XYSeries series2 = new SimpleXYSeries(Arrays.asList(series2Numbers), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Series2");
+ 
+		// Create a formatter to use for drawing a series using LineAndPointRenderer
+		// and configure it from xml:
+		LineAndPointFormatter series1Format = new LineAndPointFormatter();
+		series1Format.setPointLabelFormatter(new PointLabelFormatter());
+		series1Format.configure(getApplicationContext(),
+				R.xml.line_point_formatter_with_plf1);
+ 
+		// add a new series' to the xyplot:
+		plot.addSeries(series1, series1Format);
+ 
+		// same as above:
+		LineAndPointFormatter series2Format = new LineAndPointFormatter();
+		series2Format.setPointLabelFormatter(new PointLabelFormatter());
+		series2Format.configure(getApplicationContext(), R.xml.line_point_formatter_with_plf2);
+		plot.addSeries(series2, series2Format);
+ 
+		// reduce the number of range labels
+		plot.setTicksPerRangeLabel(3);
+		plot.getGraphWidget().setDomainLabelOrientation(-45);
+
+
+
+	}
 
   protected void onResume() {
-    super.onResume();
+	super.onResume();
   }
  
   protected void onPause() {
-    super.onPause();
+	super.onPause();
   }
  
 
