@@ -16,6 +16,8 @@
 #ifndef IRremoteint_h
 #define IRremoteint_h
 
+//#define DEBUG
+
 #if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
 #else
@@ -162,6 +164,21 @@
 #define JVC_ZERO_SPACE 550
 #define JVC_RPT_LENGTH 60000
 
+#define LG_HDR_MARK 8000
+#define LG_HDR_SPACE 4000
+#define LG_BIT_MARK 600
+#define LG_ONE_SPACE 1600
+#define LG_ZERO_SPACE 550
+#define LG_RPT_LENGTH 60000
+
+#define SAMSUNG_HDR_MARK  5000
+#define SAMSUNG_HDR_SPACE 5000
+#define SAMSUNG_BIT_MARK  560
+#define SAMSUNG_ONE_SPACE 1600
+#define SAMSUNG_ZERO_SPACE  560
+#define SAMSUNG_RPT_SPACE 2250
+
+
 #define SHARP_BITS 15
 #define DISH_BITS 16
 
@@ -174,13 +191,6 @@
 
 #define TICKS_LOW(us) (int) (((us)*LTOL/USECPERTICK))
 #define TICKS_HIGH(us) (int) (((us)*UTOL/USECPERTICK + 1))
-
-#ifndef DEBUG
-int MATCH(int measured, int desired) {return measured >= TICKS_LOW(desired) && measured <= TICKS_HIGH(desired);}
-int MATCH_MARK(int measured_ticks, int desired_us) {return MATCH(measured_ticks, (desired_us + MARK_EXCESS));}
-int MATCH_SPACE(int measured_ticks, int desired_us) {return MATCH(measured_ticks, (desired_us - MARK_EXCESS));}
-// Debugging versions are in IRremote.cpp
-#endif
 
 // receiver states
 #define STATE_IDLE     2
@@ -202,6 +212,8 @@ int MATCH_SPACE(int measured_ticks, int desired_us) {return MATCH(measured_ticks
 #define MIN_RC6_SAMPLES 1
 #define PANASONIC_BITS 48
 #define JVC_BITS 16
+#define LG_BITS 28
+#define SAMSUNG_BITS 32
 
 
 
