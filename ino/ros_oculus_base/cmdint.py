@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import cmd, sys, os, atexit, json, readline, time, serial
+import cmd, sys, os, atexit, json, readline, time, socket, select
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
@@ -9,11 +9,12 @@ from forklift import run_process, terminate_all
 import libcommon_py as common
 from conf_ino import configure
 
-class SerReader:
+class TcpReader:
 
 	def __init__(self):
-		cfg = configure().as_dict('serial')
-		self.s = serial.Serial(cfg['serial_port'], int(cfg.get('baud_rate', 9600)), timeout=5, interCharTimeout=1)
+		cfg = configure().as_dict('serial2tcp')
+		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.s.connect(('localhost', int(cfg.get('tcp_port', 9600))))
 		self.reply_mode = False
 		self.replylist = []
 		self.final_replylist = []
@@ -23,14 +24,22 @@ class SerReader:
 		self.final_replylist = []
 		return rs
 
-	def readline(self):
-		return self.s.readline()
-
 	def write(self, line):
-		self.s.write(line)
+		self.s.send(line)
+
+	def readline(self):
+		rs = ''
+		data = True
+		while data:
+			data = self.s.recv(1)
+			rs += data
+			if data == '\n':
+				break
+		return rs
 
 	def idle(self):
-		if self.s.inWaiting():
+		readable, writable, exceptional = select.select([self.s], [], [], 0)
+		if readable:
 			line = self.readline()
 			print line
 
@@ -43,10 +52,9 @@ class OculusShell(cmd.Cmd):
 		self.file = None
 		self.logfile = None
 		cfg = configure().as_dict('serial')
-		self.s = serial.Serial(cfg['serial_port'], int(cfg.get('baud_rate', 9600)), timeout=5, interCharTimeout=1)
 		self.reply_mode = False
 		self.replylist = []
-		self.subprocess = run_process(SerReader(), robject=self)
+		self.subprocess = run_process(TcpReader(), robject=self)
 
 	def write_log(self, line):
 		if not self.logfile:
