@@ -14,8 +14,8 @@ volatile bool rMotorReverse = false;
 int Eleft = 3;
 int Eright = 2;
 
-int lInt = Eleft - 1;
-int rInt = Eright - 1;
+int lInt = Eleft - 2;
+int rInt = Eright - 2;
 
 // 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
 //
@@ -50,7 +50,7 @@ void lIntCB()
 	if( micros() - intLtime < threshold )
 		return;
 	intLhistory = intLsignal;
-	intLsignal = bitRead(PIND,2);
+	intLsignal = bitRead(PIND,Eright);
 	if ( intLhistory==intLsignal )
 		return;
 	intLtime = micros();
@@ -65,7 +65,7 @@ void rIntCB()
 	if (micros() - intRtime < threshold )
 		return;
 	intRhistory = intRsignal;
-	intRsignal = bitRead(PIND,3);
+	intRsignal = bitRead(PIND,Eleft);
 	if ( intRhistory==intRsignal )
 		return;
 	intRtime = micros();
@@ -85,7 +85,7 @@ void setLeftMotor(int pwm, int steps)
 	}
 	analogWrite(lEN,pwm); //set pwm control, 0 for stop, and 255 for maximum speed
 	lMotorReverse = lMotorDest < 0;
-	digitalWrite(lIN,(lMotorReverse) ? HIGH : LOW);
+	digitalWrite(lIN,(lMotorReverse) ? LOW : HIGH);
 }
 
 void setRightMotor(int pwm, int steps)
@@ -97,7 +97,7 @@ void setRightMotor(int pwm, int steps)
 	}
 	analogWrite(rEN,pwm);
 	rMotorReverse = rMotorDest < 0;
-	digitalWrite(rIN,(rMotorReverse < 0) ? HIGH : LOW);
+	digitalWrite(rIN,(rMotorReverse) ? LOW : HIGH);
 }
 
 void stop()
@@ -139,8 +139,8 @@ void setup()
 	pinMode(Eright, INPUT);
 	digitalWrite(Eleft, HIGH);
 	digitalWrite(Eright, HIGH);
-	attachInterrupt(rInt, rIntCB, CHANGE);
-	attachInterrupt(lInt, lIntCB, CHANGE);
+	attachInterrupt(lInt, rIntCB, CHANGE);
+	attachInterrupt(rInt, lIntCB, CHANGE);
 }
 
 void loop()
@@ -165,33 +165,33 @@ void loop()
 					setLeftMotor(240,5);
 					setRightMotor(240,5);
 					printDests();
-					delay(period2stop);
-					printDests();
-					stop();
+//					delay(period2stop);
+//					printDests();
+//					stop();
 					break;
 				case 'x'://move back
 					setLeftMotor(240,-5);
 					setRightMotor(240,-5);
+//					printDests();
+//					delay(period2stop);
 					printDests();
-					delay(period2stop);
-					printDests();
-					stop();
+//					stop();
 					break;
 				case 'd'://turn left
 					setLeftMotor(240,-5);
 					setRightMotor(240,5);
+//					printDests();
+//					delay(period2stop);
 					printDests();
-					delay(period2stop);
-					printDests();
-					stop();
+//					stop();
 					break;
 				case 'a'://turn right
 					setLeftMotor(240,5);
 					setRightMotor(240,-5);
 					printDests();
-					delay(period2stop);
-					printDests();
-					stop();
+//					delay(period2stop);
+//					printDests();
+//					stop();
 					break;
 				case 's'://stop
 					stop();
