@@ -1,5 +1,6 @@
-int period2stop = 200;
+#include <voltage.h>
 
+int stepSize = 5;
 
 int lEN = 6;
 int rEN = 5;
@@ -8,6 +9,7 @@ int rIN = 4;
 
 volatile int lMotorDest = 0;
 volatile bool lMotorReverse = false;
+
 volatile int rMotorDest = 0;
 volatile bool rMotorReverse = false;
 
@@ -78,26 +80,44 @@ void rIntCB()
 
 void setLeftMotor(int pwm, int steps)
 {
+	if(lMotorDest && steps == 0) {
+		Serial.println("Stop Left");
+	}
 	if(steps) {
 		lMotorDest += steps;
 	} else {
 		lMotorDest = 0;
 	}
-	analogWrite(lEN,pwm); //set pwm control, 0 for stop, and 255 for maximum speed
-	lMotorReverse = lMotorDest < 0;
-	digitalWrite(lIN,(lMotorReverse) ? LOW : HIGH);
+	// if motor stopped the direction should not be changed
+	// to prevent encoder to count back while the wheel is stopping
+	if(lMotorDest) {
+		lMotorReverse = lMotorDest < 0;
+		analogWrite(lEN, pwm); //set pwm control, 0 for stop, and 255 for maximum speed
+		digitalWrite(lIN, (lMotorReverse) ? LOW : HIGH);
+	} else {
+		analogWrite(lEN, 0);
+	}
 }
 
 void setRightMotor(int pwm, int steps)
 {
+	if(rMotorDest && steps == 0) {
+		Serial.println("Stop Right");
+	}
 	if(steps) {
 		rMotorDest += steps;
 	} else {
 		rMotorDest = 0;
 	}
-	analogWrite(rEN,pwm);
-	rMotorReverse = rMotorDest < 0;
-	digitalWrite(rIN,(rMotorReverse) ? LOW : HIGH);
+	// if motor stopped the direction should not be changed
+	// to prevent encoder to count back while the wheel is stopping
+	if(rMotorDest) {
+		rMotorReverse = rMotorDest < 0;
+		analogWrite(rEN, pwm);
+		digitalWrite(rIN, (rMotorReverse) ? LOW : HIGH);
+	} else {
+		analogWrite(rEN, 0);
+	}
 }
 
 void stop()
@@ -162,47 +182,35 @@ void loop()
 			switch(val)
 			{
 				case 'w'://Move ahead
-					setLeftMotor(240,5);
-					setRightMotor(240,5);
-					printDests();
-//					delay(period2stop);
-//					printDests();
-//					stop();
+					setLeftMotor(240,stepSize);
+					setRightMotor(240,stepSize);
 					break;
 				case 'x'://move back
-					setLeftMotor(240,-5);
-					setRightMotor(240,-5);
-//					printDests();
-//					delay(period2stop);
-					printDests();
-//					stop();
+					setLeftMotor(240,-stepSize);
+					setRightMotor(240,-stepSize);
 					break;
 				case 'd'://turn left
-					setLeftMotor(240,-5);
-					setRightMotor(240,5);
-//					printDests();
-//					delay(period2stop);
-					printDests();
-//					stop();
+					setLeftMotor(240,-stepSize);
+					setRightMotor(240,stepSize);
 					break;
 				case 'a'://turn right
-					setLeftMotor(240,5);
-					setRightMotor(240,-5);
-					printDests();
-//					delay(period2stop);
-//					printDests();
-//					stop();
+					setLeftMotor(240,stepSize);
+					setRightMotor(240,-stepSize);
 					break;
 				case 's'://stop
 					stop();
 					break;
 				case 'p':
-					period2stop += 100;
-					Serial.println(period2stop);
+					stepSize ++;
+					Serial.println(stepSize);
 					break;
 				case 'l':
-					period2stop -= 100;
-					Serial.println(period2stop);
+					stepSize --;
+					Serial.println(stepSize);
+					break;
+				case 'v':
+					Serial.print("V:");
+					Serial.println(readVccMv());
 					break;
 			}
 		}
