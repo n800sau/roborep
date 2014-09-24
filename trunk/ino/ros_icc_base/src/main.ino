@@ -13,37 +13,32 @@
 int stepSize = 5;
 
 // motor pins
-int rEN = 6;
-int lEN = 5;
-int rIN = 7;
-int lIN = 4;
+const int rEN = 6;
+const int lEN = 5;
+const int rIN = 7;
+const int lIN = 4;
 
+// movement
 
-// encoder count before the left motor stops
-volatile int lMotorDest = 0;
-// left motor direction
-volatile bool lMotorReverse = false;
+// left reverse
+volatile bool lReverse = false;
+// right reverse
+volatile bool rReverse = false;
 
-// encoder count before the right motor stops
-volatile int rMotorDest = 0;
-// right motor direction
-volatile bool rMotorReverse = false;
-
-// left motor default power
-int lPower = 255;
-// right motor default power
-int rPower = 230;
 
 // encoder pins
-int Eleft = 3;
-int Eright = 2;
+const int Eleft = 2;
+const int Eright = 3;
 
 // encoder interrupts
-int lInt = Eleft - 2;
-int rInt = Eright - 2;
+const int lInt = Eleft - 2;
+const int rInt = Eright - 2;
 
-// calculated coordinates and angle
-volatile float angl = 0, x = 0, y = 0;
+volatile int lDest = 0;
+volatile int lPower = 0;
+
+volatile int rDest = 0;
+volatile int rPower = 0;
 
 // 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
 //
@@ -59,20 +54,6 @@ volatile float angl = 0, x = 0, y = 0;
 //
 volatile unsigned long threshold = 10000;
 
-
-// left encoder steps total
-volatile long lEncSteps = 0;
-// left encoder steps total of the last calculation
-long lMSteps = 0;
-
-// right encoder steps total
-volatile long rEncSteps = 0;
-// right encoder steps total of the last calculation
-long rMSteps = 0;
-
-// last calculation time
-volatile unsigned long last_millis = millis();
-
 // Working variables for the interrupt routines
 //
 volatile unsigned long intLtime = 0;
@@ -82,136 +63,59 @@ volatile uint8_t intRsignal = 0;
 volatile uint8_t intLhistory = 0;
 volatile uint8_t intRhistory = 0;
 
-void resetLastMillis()
-{
-	last_millis = millis();
-}
-
 void lIntCB()
 {
 	if( micros() - intLtime < threshold )
 		return;
-	resetLastMillis();
 	intLhistory = intLsignal;
 	intLsignal = bitRead(PIND,Eright);
 	if ( intLhistory==intLsignal )
 		return;
 	intLtime = micros();
-	if(lMotorDest) {
-		lMotorDest += (lMotorDest < 0) ? 1 : -1;
-	}
-	int v = (lMotorReverse) ? -1 : 1;
-	lEncSteps += v;
+	lDest--;
 }
 
 void rIntCB()
 {
 	if (micros() - intRtime < threshold )
 		return;
-	resetLastMillis();
 	intRhistory = intRsignal;
 	intRsignal = bitRead(PIND,Eleft);
 	if ( intRhistory==intRsignal )
 		return;
 	intRtime = micros();
-	if(rMotorDest) {
-		rMotorDest += (rMotorDest < 0) ? 1 : -1;
-	}
-	int v = (rMotorReverse) ? -1 : 1;
-	rEncSteps += v;
+	rDest--;
 }
 
-
-void setLeftMotor(int pwm, int steps)
+void setLeftMotor(int pwm)
 {
-	resetLastMillis();
-	if(lMotorDest && steps == 0) {
-		Serial.println("Stop Left");
-	}
-	if(steps) {
-		lMotorDest += steps;
-	} else {
-		lMotorDest = 0;
-	}
 	// if motor stopped the direction should not be changed
 	// to prevent encoder to count back while the wheel is stopping
-	if(lMotorDest) {
-		lMotorReverse = lMotorDest < 0;
-		analogWrite(lEN, pwm); //set pwm control, 0 for stop, and 255 for maximum speed
-		digitalWrite(lIN, (lMotorReverse) ? LOW : HIGH);
-	} else {
-		analogWrite(lEN, 0);
+	if(lPower != pwm && pwm == 0) {
+		printf("Left Stop, Right: %d\r\n", rPower);
 	}
+	analogWrite(lEN, pwm); //set pwm control, 0 for stop, and 255 for maximum speed
+	lPower = pwm;
+	digitalWrite(lIN, (lReverse) ? LOW : HIGH);
 }
 
-void setRightMotor(int pwm, int steps)
+void setRightMotor(int pwm)
 {
-	resetLastMillis();
-	if(rMotorDest && steps == 0) {
-		Serial.println("Stop Right");
-	}
-	if(steps) {
-		rMotorDest += steps;
-	} else {
-		rMotorDest = 0;
-	}
 	// if motor stopped the direction should not be changed
 	// to prevent encoder to count back while the wheel is stopping
-	if(rMotorDest) {
-		rMotorReverse = rMotorDest < 0;
-		analogWrite(rEN, pwm);
-		digitalWrite(rIN, (rMotorReverse) ? LOW : HIGH);
-	} else {
-		analogWrite(rEN, 0);
+	if(rPower != pwm && pwm == 0) {
+		printf("Left: %d, Right Stop\r\n", lPower);
 	}
+	analogWrite(rEN, pwm);
+	rPower = pwm;
+	digitalWrite(rIN, (rReverse) ? LOW : HIGH);
 }
 
 void stop()
 {
-	setLeftMotor(0, 0);
-	setRightMotor(0, 0);
-}
-
-int lastLVal = -1;
-int lastRVal = -1;
-
-void printDests()
-{
-	Serial.print("M ");
-	Serial.print(lMotorDest);
-	Serial.print(" ");
-	Serial.println(rMotorDest);
-}
-
-void printEncoders()
-{
-	int lval = lEncSteps;
-	int rval = rEncSteps;
-	if(lastLVal != lval || lastRVal != rval) {
-		Serial.print(lastLVal=lval);
-		Serial.print(" ");
-		Serial.print(lastRVal=rval);
-		Serial.print(" ");
-		Serial.print(x);
-		Serial.print(" ");
-		Serial.println(y);
-	}
-}
-
-float xypos(int left, int right)
-{
-	if(left || right) {
-		Serial.print("left=");
-		Serial.print(left);
-		Serial.print(", right=");
-		Serial.println(right);
-	}
-	float Sl = ENC_STEP * left;
-	float Sr = ENC_STEP * right;
-	float s = (Sr + Sl) / 2;
-	angl = (Sr - Sl) / BASELINE + angl;
-	x = s * cos(angl) + x;
-	y = s * sin(angl) + y;
+	setLeftMotor(0);
+	setRightMotor(0);
+	lDest = rDest = 0;
 }
 
 void setup()
@@ -230,49 +134,49 @@ void setup()
 	attachInterrupt(rInt, lIntCB, CHANGE);
 }
 
-void keep_straight(bool reverse)
+void printEncoders()
 {
-	int diff = abs(rMotorDest - lMotorDest);
-	if(diff > 1) {
-		if(reverse) {
-			if(rMotorDest > lMotorDest) {
-				// speed up right
-			} else {
-				// speed up left
-			}
-		} else {
-			if(rMotorDest > lMotorDest) {
-				// speed up left
-			} else {
-				// speed up right
-			}
-		}
-		printf("DIFF=%d\r\n", diff);
+	static int last_lDest = -1;
+	static int last_rDest = -1;
+	if(last_lDest != lDest || last_rDest != rDest) {
+		Serial.print(last_lDest=lDest);
+		Serial.print(" ");
+		Serial.println(last_rDest=rDest);
+//		Serial.print(" ");
+//		Serial.print(x);
+//		Serial.print(" ");
+//		Serial.println(y);
 	}
 }
 
 void loop()
 {
+	static unsigned long last_millis = 0;
 	char val;
 	while(1)
 	{
-		if(lMotorReverse == rMotorReverse && (lMotorDest || lMotorDest) ) {
-			keep_straight(lMotorReverse);
-		}
-		printEncoders();
-		xypos(lEncSteps - lMSteps, rEncSteps - rMSteps);
-		lMSteps = lEncSteps;
-		rMSteps = rEncSteps;
-		if( ((lMotorReverse) ? -lMotorDest : lMotorDest ) <= 0) {
-			setLeftMotor(0, 0);
-		}
-		if( ((rMotorReverse) ? -rMotorDest : rMotorDest ) <= 0) {
-			setRightMotor(0, 0);
-		}
 		unsigned long cur_millis = millis();
 		unsigned long millisdiff = (last_millis > cur_millis) ? ((unsigned long) -1) - last_millis + cur_millis : cur_millis - last_millis;
-		if( millisdiff > TIME2STOP) {
+		if( millisdiff > TIME2STOP ) {
 			stop();
+		} else {
+			printEncoders();
+			if(lDest <= 0 && rDest <= 0) {
+				stop();
+			} else {
+				if(lDest > 0) {
+//					setLeftMotor(250);
+					setLeftMotor(200 + ((lDest > 2) ? 55 : 10));
+				} else {
+					setLeftMotor(0);
+				}
+				if(rDest > 0) {
+//					setRightMotor(250);
+					setRightMotor(200 + ((rDest > 2) ? 55 : 10));
+				} else {
+					setRightMotor(0);
+				}
+			}
 		}
 		val = Serial.read();
 		if(val!=-1)
@@ -282,23 +186,29 @@ void loop()
 			{
 				case 'w'://Move ahead
 					stop();
-					setLeftMotor(lPower,stepSize);
-					setRightMotor(rPower,stepSize);
+					lDest = rDest = stepSize;
+					lReverse = rReverse = false;
 					break;
 				case 'x'://move back
 					stop();
-					setLeftMotor(lPower,-stepSize);
-					setRightMotor(rPower,-stepSize);
+					lDest = rDest = stepSize;
+					lReverse = rReverse = true;
 					break;
 				case 'a'://turn left
 					stop();
-					setLeftMotor(lPower,-stepSize);
-					setRightMotor(rPower,stepSize);
+					lDest = rDest = stepSize;
+//					lDest = 0;
+//					rDest = stepSize;
+					lReverse = false;
+					rReverse = true;
 					break;
 				case 'd'://turn right
 					stop();
-					setLeftMotor(lPower,stepSize);
-					setRightMotor(rPower,-stepSize);
+					lDest = rDest = stepSize;
+//					lDest = stepSize;
+//					rDest = 0;
+					lReverse = true;
+					rReverse = false;
 					break;
 				case 's'://stop
 					stop();
@@ -316,6 +226,7 @@ void loop()
 					Serial.println(readVccMv());
 					break;
 			}
+			last_millis = cur_millis;
 		}
 	}
 }
