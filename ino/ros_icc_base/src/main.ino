@@ -7,7 +7,7 @@
 #define WHEEL_DIAMETER 0.065
 #define BASELINE 0.14
 
-#define ENC_STEP (COUNT_PER_REV * WHEEL_DIAMETER / M_PI)
+#define ENC_STEP (WHEEL_DIAMETER * M_PI / COUNT_PER_REV)
 
 // count of encoder ticks until stop
 int stepSize = 5;
@@ -73,6 +73,7 @@ void lIntCB()
 		return;
 	intLtime = micros();
 	lDest--;
+	calc_xy((lReverse) ? -1 : 1, 0);
 }
 
 void rIntCB()
@@ -85,6 +86,7 @@ void rIntCB()
 		return;
 	intRtime = micros();
 	rDest--;
+	calc_xy(0, (rReverse) ? -1 : 1);
 }
 
 void setLeftMotor(int pwm)
@@ -118,6 +120,18 @@ void stop()
 	lDest = rDest = 0;
 }
 
+volatile double fi = 0, x = 0, y = 0;
+
+void calc_xy(double l, double r)
+{
+	l *= ENC_STEP;
+	r *= ENC_STEP;
+	double dist = (l+r)/2.;
+	fi = (r - l) / BASELINE + fi;
+	x = dist * cos(fi) + x;
+	y = dist * sin(fi) + y;
+}
+
 void setup()
 {
 	Serial.begin(57600);
@@ -139,13 +153,17 @@ void printEncoders()
 	static int last_lDest = -1;
 	static int last_rDest = -1;
 	if(last_lDest != lDest || last_rDest != rDest) {
+		Serial.print("DATA ");
+		Serial.print("left:");
 		Serial.print(last_lDest=lDest);
-		Serial.print(" ");
-		Serial.println(last_rDest=rDest);
-//		Serial.print(" ");
-//		Serial.print(x);
-//		Serial.print(" ");
-//		Serial.println(y);
+		Serial.print(",right:");
+		Serial.print(last_rDest=rDest);
+		Serial.print(",x:");
+		Serial.print(x);
+		Serial.print(",y:");
+		Serial.print(y);
+		Serial.print(",fi:");
+		Serial.println(fi);
 	}
 }
 
@@ -197,18 +215,14 @@ void loop()
 				case 'a'://turn left
 					stop();
 					lDest = rDest = stepSize;
-//					lDest = 0;
-//					rDest = stepSize;
-					lReverse = false;
-					rReverse = true;
+					lReverse = true;
+					rReverse = false;
 					break;
 				case 'd'://turn right
 					stop();
 					lDest = rDest = stepSize;
-//					lDest = stepSize;
-//					rDest = 0;
-					lReverse = true;
-					rReverse = false;
+					lReverse = false;
+					rReverse = true;
 					break;
 				case 's'://stop
 					stop();
@@ -224,6 +238,10 @@ void loop()
 				case 'v':
 					Serial.print("V:");
 					Serial.println(readVccMv());
+					break;
+				case 'z':
+					Serial.println("Position reset");
+					fi = x = y = 0;
 					break;
 			}
 			last_millis = cur_millis;
