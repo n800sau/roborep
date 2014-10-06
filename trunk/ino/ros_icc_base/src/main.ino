@@ -1,5 +1,8 @@
 #include <voltage.h>
 #include "../../include/printf.h"
+#include <Wire.h>
+#include "hmc5883l_proc.h"
+#include "adxl345_proc.h"
 
 // time in millisecs to stop if no encoder reading
 #define TIME2STOP 10000
@@ -8,6 +11,8 @@
 #define BASELINE 0.14
 
 #define ENC_STEP (WHEEL_DIAMETER * M_PI / COUNT_PER_REV)
+#define MAX_MOTOR_POWER 255
+#define MIN_MOTOR_POWER 200
 
 // count of encoder ticks until stop
 int stepSize = 5;
@@ -136,6 +141,13 @@ void setup()
 {
 	Serial.begin(57600);
 	printf_begin();
+
+	Serial.println("Starting the I2C interface.");
+	Wire.begin(); // Start the I2C interface.
+
+	setup_compass();
+	setup_accel();
+
 	pinMode(lEN, OUTPUT);
 	pinMode(rEN, OUTPUT);
 	pinMode(lIN, OUTPUT);
@@ -163,7 +175,11 @@ void printEncoders()
 		Serial.print(",y:");
 		Serial.print(y);
 		Serial.print(",fi:");
-		Serial.println(fi);
+		Serial.print(fi);
+		Serial.print(",head:");
+		Serial.print(headingDegrees);
+		Serial.print(",acc_x:");
+		Serial.println(accel_scaled.YAxis);
 	}
 }
 
@@ -171,80 +187,85 @@ void loop()
 {
 	static unsigned long last_millis = 0;
 	char val;
-	while(1)
-	{
-		unsigned long cur_millis = millis();
-		unsigned long millisdiff = (last_millis > cur_millis) ? ((unsigned long) -1) - last_millis + cur_millis : cur_millis - last_millis;
-		if( millisdiff > TIME2STOP ) {
+	process_compass();
+	process_accel();
+	unsigned long cur_millis = millis();
+	unsigned long millisdiff = (last_millis > cur_millis) ? ((unsigned long) -1) - last_millis + cur_millis : cur_millis - last_millis;
+	if( millisdiff > TIME2STOP ) {
+		stop();
+	} else {
+		printEncoders();
+		if(lDest <= 0 && rDest <= 0) {
 			stop();
 		} else {
-			printEncoders();
-			if(lDest <= 0 && rDest <= 0) {
-				stop();
+			if(lDest > 0) {
+				setLeftMotor((lDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+			} else if(lDest < 0) {
+				Serial.println("Left reverse correction");
+				lReverse = !lReverse;
+				lDest = -lDest;
 			} else {
-				if(lDest > 0) {
-//					setLeftMotor(250);
-					setLeftMotor(200 + ((lDest > 2) ? 55 : 10));
-				} else {
-					setLeftMotor(0);
-				}
-				if(rDest > 0) {
-//					setRightMotor(250);
-					setRightMotor(200 + ((rDest > 2) ? 55 : 10));
-				} else {
-					setRightMotor(0);
-				}
+				setLeftMotor(0);
+			}
+			if(rDest > 0) {
+				setRightMotor((rDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+			} else if(rDest < 0) {
+				Serial.println("Right reverse correction");
+				rReverse = !rReverse;
+				rDest = -rDest;
+			} else {
+				setRightMotor(0);
 			}
 		}
-		val = Serial.read();
-		if(val!=-1)
+	}
+	val = Serial.read();
+	if(val!=-1)
+	{
+		Serial.println(val);
+		switch(val)
 		{
-			Serial.println(val);
-			switch(val)
-			{
-				case 'w'://Move ahead
-					stop();
-					lDest = rDest = stepSize;
-					lReverse = rReverse = false;
-					break;
-				case 'x'://move back
-					stop();
-					lDest = rDest = stepSize;
-					lReverse = rReverse = true;
-					break;
-				case 'a'://turn left
-					stop();
-					lDest = rDest = stepSize;
-					lReverse = true;
-					rReverse = false;
-					break;
-				case 'd'://turn right
-					stop();
-					lDest = rDest = stepSize;
-					lReverse = false;
-					rReverse = true;
-					break;
-				case 's'://stop
-					stop();
-					break;
-				case 'p':
-					stepSize ++;
-					Serial.println(stepSize);
-					break;
-				case 'l':
-					stepSize --;
-					Serial.println(stepSize);
-					break;
-				case 'v':
-					Serial.print("V:");
-					Serial.println(readVccMv());
-					break;
-				case 'z':
-					Serial.println("Position reset");
-					fi = x = y = 0;
-					break;
-			}
-			last_millis = cur_millis;
+			case 'w'://Move ahead
+				stop();
+				lDest = rDest = stepSize;
+				lReverse = rReverse = false;
+				break;
+			case 'x'://move back
+				stop();
+				lDest = rDest = stepSize;
+				lReverse = rReverse = true;
+				break;
+			case 'a'://turn left
+				stop();
+				lDest = rDest = stepSize;
+				lReverse = true;
+				rReverse = false;
+				break;
+			case 'd'://turn right
+				stop();
+				lDest = rDest = stepSize;
+				lReverse = false;
+				rReverse = true;
+				break;
+			case 's'://stop
+				stop();
+				break;
+			case 'p':
+				stepSize ++;
+				Serial.println(stepSize);
+				break;
+			case 'l':
+				stepSize --;
+				Serial.println(stepSize);
+				break;
+			case 'v':
+				Serial.print("V:");
+				Serial.println(readVccMv());
+				break;
+			case 'z':
+				Serial.println("Position reset");
+				fi = x = y = 0;
+				break;
 		}
+		last_millis = cur_millis;
 	}
 }
