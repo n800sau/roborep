@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include "hmc5883l_proc.h"
 #include "adxl345_proc.h"
+#include "l3g4200d_proc.h"
 
 // time in millisecs to stop if no encoder reading
 #define TIME2STOP 10000
@@ -147,6 +148,7 @@ void setup()
 
 	setup_compass();
 	setup_accel();
+	setup_gyro();
 
 	pinMode(lEN, OUTPUT);
 	pinMode(rEN, OUTPUT);
@@ -179,7 +181,9 @@ void printEncoders()
 		Serial.print(",head:");
 		Serial.print(headingDegrees);
 		Serial.print(",acc_x:");
-		Serial.println(accel_scaled.YAxis);
+		Serial.print(accel_scaled.XAxis);
+		Serial.print(",gyro_x:");
+		Serial.println((int)gyro.g.x);
 	}
 }
 
@@ -189,6 +193,7 @@ void loop()
 	char val;
 	process_compass();
 	process_accel();
+	process_gyro();
 	unsigned long cur_millis = millis();
 	unsigned long millisdiff = (last_millis > cur_millis) ? ((unsigned long) -1) - last_millis + cur_millis : cur_millis - last_millis;
 	if( millisdiff > TIME2STOP ) {
