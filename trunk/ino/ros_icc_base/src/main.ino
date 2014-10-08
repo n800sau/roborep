@@ -4,6 +4,7 @@
 #include "hmc5883l_proc.h"
 #include "adxl345_proc.h"
 #include "l3g4200d_proc.h"
+#include <Kalman.h>
 
 // time in millisecs to stop if no encoder reading
 #define TIME2STOP 10000
@@ -45,6 +46,9 @@ volatile int lPower = 0;
 
 volatile int rDest = 0;
 volatile int rPower = 0;
+
+int azimuth = -1;
+
 
 // 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
 //
@@ -124,6 +128,7 @@ void stop()
 	setLeftMotor(0);
 	setRightMotor(0);
 	lDest = rDest = 0;
+	azimuth = -1;
 }
 
 volatile double fi = 0, x = 0, y = 0;
@@ -180,10 +185,13 @@ void printEncoders()
 		Serial.print(fi);
 		Serial.print(",head:");
 		Serial.print(headingDegrees);
-		Serial.print(",acc_x:");
-		Serial.print(accel_scaled.XAxis);
-		Serial.print(",gyro_x:");
-		Serial.println((int)gyro.g.x);
+		Serial.print(",azim:");
+		Serial.print(azimuth);
+//		Serial.print(",acc_x:");
+//		Serial.print(accel_scaled.XAxis);
+//		Serial.print(",gyro_x:");
+//		Serial.print((int)gyro.g.x);
+		Serial.println("");
 	}
 }
 
@@ -200,26 +208,48 @@ void loop()
 		stop();
 	} else {
 		printEncoders();
-		if(lDest <= 0 && rDest <= 0) {
-			stop();
-		} else {
-			if(lDest > 0) {
-				setLeftMotor((lDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
-			} else if(lDest < 0) {
-				Serial.println("Left reverse correction");
-				lReverse = !lReverse;
-				lDest = -lDest;
+		if(azimuth >= 0) {
+			int offset = azimuth - headingDegrees;
+			if(offset > 180) offset = 360 - offset;
+			else if(offset < -180) offset = 360 + offset;
+			int pwm = 200 + 55 * abs(offset) / 180;
+			Serial.print("offset=");
+			Serial.println(offset);
+			if( offset > 10) {
+				lReverse = false;
+				rReverse = true;
+				setLeftMotor(200);
+				setRightMotor(200);
+			} else if ( offset < -10 ) {
+				lReverse = true;
+				rReverse = false;
+				setLeftMotor(200);
+				setRightMotor(200);
 			} else {
-				setLeftMotor(0);
+				stop();
 			}
-			if(rDest > 0) {
-				setRightMotor((rDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
-			} else if(rDest < 0) {
-				Serial.println("Right reverse correction");
-				rReverse = !rReverse;
-				rDest = -rDest;
+		} else {
+			if(lDest <= 0 && rDest <= 0) {
+				stop();
 			} else {
-				setRightMotor(0);
+				if(lDest > 0) {
+					setLeftMotor((lDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+				} else if(lDest < 0) {
+					Serial.println("Left reverse correction");
+					lReverse = !lReverse;
+					lDest = -lDest;
+				} else {
+					setLeftMotor(0);
+				}
+				if(rDest > 0) {
+					setRightMotor((rDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+				} else if(rDest < 0) {
+					Serial.println("Right reverse correction");
+					rReverse = !rReverse;
+					rDest = -rDest;
+				} else {
+					setRightMotor(0);
+				}
 			}
 		}
 	}
@@ -269,6 +299,18 @@ void loop()
 			case 'z':
 				Serial.println("Position reset");
 				fi = x = y = 0;
+				break;
+			case 'y': // go north
+				azimuth = 0;
+				break;
+			case 'b': // go south
+				azimuth = 180;
+				break;
+			case 'g': // go west
+				azimuth = 360-90;
+				break;
+			case 'h': // go east
+				azimuth = 90;
 				break;
 		}
 		last_millis = cur_millis;
