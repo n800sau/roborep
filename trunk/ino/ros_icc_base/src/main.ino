@@ -126,12 +126,12 @@ void setRightMotor(int pwm)
 	digitalWrite(rIN, (rReverse) ? LOW : HIGH);
 }
 
-void stop()
+void stop(bool reset_azimuth=false)
 {
 	setLeftMotor(0);
 	setRightMotor(0);
 	lDest = rDest = 0;
-	if(!compass_mode) {
+	if(reset_azimuth) {
 		azimuth = -1;
 	}
 }
@@ -174,7 +174,8 @@ void setup()
 
 void printState()
 {
-	Serial.print("DATA ");
+	Serial.print((compass_mode) ? "C mode" : "D mode");
+	Serial.print(" DATA ");
 	Serial.print("left:");
 	Serial.print(lDest);
 	Serial.print(",right:");
@@ -224,32 +225,32 @@ void loop()
 //		Serial.print(headingDegrees);
 //		Serial.println("");
 	if( millisdiff > TIME2STOP ) {
-		stop();
+		stop(true);
 	} else {
 		if(last_lDest != lDest || last_rDest != rDest) {
 			printState();
 			last_lDest=lDest;
 			last_rDest=rDest;
 		}
-		if(azimuth >= 0) {
-			offset = azimuth - headingDegrees;
-			if(offset > 180) offset = 360 - offset;
-			else if(offset < -180) offset = 360 + offset;
-			int pwm = 200 + 55 * abs(offset) / 180;
-//			Serial.print("offset=");
-//			Serial.println(offset);
-			if( offset > 10) {
-				lReverse = false;
-				rReverse = true;
-				setLeftMotor(200);
-				setRightMotor(200);
-			} else if ( offset < -10 ) {
-				lReverse = true;
-				rReverse = false;
-				setLeftMotor(200);
-				setRightMotor(200);
-			} else {
-				stop();
+		if(compass_mode) {
+			if(azimuth >= 0) {
+				offset = azimuth - headingDegrees;
+				if(offset > 180) offset = 360 - offset;
+				else if(offset < -180) offset = 360 + offset;
+				int pwm = 200 + 55 * abs(offset) / 180;
+				if( offset > 10) {
+					lReverse = false;
+					rReverse = true;
+					setLeftMotor(200);
+					setRightMotor(200);
+				} else if ( offset < -10 ) {
+					lReverse = true;
+					rReverse = false;
+					setLeftMotor(200);
+					setRightMotor(200);
+				} else {
+					stop();
+				}
 			}
 		} else {
 			if(lDest <= 0 && rDest <= 0) {
@@ -282,39 +283,18 @@ void loop()
 		Serial.println(val);
 		switch(val)
 		{
-			case 'w'://Move ahead
-				stop();
-				lDest = rDest = stepSize;
-				lReverse = rReverse = false;
-				break;
-			case 'x'://move back
-				stop();
-				lDest = rDest = stepSize;
-				lReverse = rReverse = true;
-				break;
-			case 'a'://turn left
-				stop();
-				lDest = rDest = stepSize;
-				lReverse = true;
-				rReverse = false;
-				break;
-			case 'd'://turn right
-				stop();
-				lDest = rDest = stepSize;
-				lReverse = false;
-				rReverse = true;
-				break;
-			case 's'://stop
-				stop();
-				// forcibly stop compass direction
-				azimuth = -1;
+			case '`':
+				stop(true);
+				compass_mode = !compass_mode;
 				break;
 			case 'q':
 				stepSize ++;
+				Serial.print("step:");
 				Serial.println(stepSize);
 				break;
 			case 'z':
 				stepSize --;
+				Serial.print("step:");
 				Serial.println(stepSize);
 				break;
 			case 'v':
@@ -325,27 +305,71 @@ void loop()
 				Serial.println("Position reset");
 				fi = x = y = 0;
 				break;
-			case 'y': // go north
-				intentDir = 0;
+			case 's'://stop
+				stop(true);
 				break;
-			case 'b': // go south
-				intentDir = 180;
-				break;
-			case 'g': // go west
-				intentDir = 360-90;
-				break;
-			case 'h': // go east
-				intentDir = 90;
-				break;
-			case 'j': // reduce azimuth
-				intentDir = (360 + intentDir - 10) % 360;
-				break;
-			case 'l': // enlarge azimuth
-				intentDir = (360 + intentDir + 10) % 360;
-				break;
-			case 'k': // start direction
-				azimuth = intentDir;
-				break;
+		}
+		if(compass_mode) {
+			switch(val)
+			{
+				case 'w'://Move ahead
+					stop();
+					lDest = rDest = stepSize;
+					lReverse = rReverse = false;
+					break;
+				case 'x'://move back
+					stop();
+					lDest = rDest = stepSize;
+					lReverse = rReverse = true;
+					break;
+				case 'y': // go north
+					intentDir = 0;
+					break;
+				case 'b': // go south
+					intentDir = 180;
+					break;
+				case 'g': // go west
+					intentDir = 360-90;
+					break;
+				case 'h': // go east
+					intentDir = 90;
+					break;
+				case 'j': // reduce azimuth
+					intentDir = (360 + intentDir - 10) % 360;
+					break;
+				case 'l': // enlarge azimuth
+					intentDir = (360 + intentDir + 10) % 360;
+					break;
+				case 'k': // start direction
+					azimuth = intentDir;
+					break;
+			}
+		} else {
+			switch(val)
+			{
+				case 'w'://Move ahead
+					stop();
+					lDest = rDest = stepSize;
+					lReverse = rReverse = false;
+					break;
+				case 'x'://move back
+					stop();
+					lDest = rDest = stepSize;
+					lReverse = rReverse = true;
+					break;
+				case 'a'://turn left
+					stop();
+					lDest = rDest = stepSize;
+					lReverse = true;
+					rReverse = false;
+					break;
+				case 'd'://turn right
+					stop();
+					lDest = rDest = stepSize;
+					lReverse = false;
+					rReverse = true;
+					break;
+			}
 		}
 		last_millis = cur_millis;
 		printState();
