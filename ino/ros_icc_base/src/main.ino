@@ -16,6 +16,8 @@
 #define MAX_MOTOR_POWER 255
 #define MIN_MOTOR_POWER 200
 
+bool compass_mode = true;
+
 // count of encoder ticks until stop
 int stepSize = 5;
 
@@ -47,8 +49,9 @@ volatile int lPower = 0;
 volatile int rDest = 0;
 volatile int rPower = 0;
 
+int intentDir = 0;
 int azimuth = -1;
-
+int offset = 0;
 
 // 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
 //
@@ -128,7 +131,9 @@ void stop()
 	setLeftMotor(0);
 	setRightMotor(0);
 	lDest = rDest = 0;
-	azimuth = -1;
+	if(!compass_mode) {
+		azimuth = -1;
+	}
 }
 
 volatile double fi = 0, x = 0, y = 0;
@@ -167,54 +172,72 @@ void setup()
 	attachInterrupt(rInt, lIntCB, CHANGE);
 }
 
-void printEncoders()
+void printState()
 {
-	static int last_lDest = -1;
-	static int last_rDest = -1;
-	if(last_lDest != lDest || last_rDest != rDest) {
-		Serial.print("DATA ");
-		Serial.print("left:");
-		Serial.print(last_lDest=lDest);
-		Serial.print(",right:");
-		Serial.print(last_rDest=rDest);
-		Serial.print(",x:");
-		Serial.print(x);
-		Serial.print(",y:");
-		Serial.print(y);
-		Serial.print(",fi:");
-		Serial.print(fi);
-		Serial.print(",head:");
-		Serial.print(headingDegrees);
-		Serial.print(",azim:");
-		Serial.print(azimuth);
-//		Serial.print(",acc_x:");
-//		Serial.print(accel_scaled.XAxis);
-//		Serial.print(",gyro_x:");
-//		Serial.print((int)gyro.g.x);
-		Serial.println("");
+	Serial.print("DATA ");
+	Serial.print("left:");
+	Serial.print(lDest);
+	Serial.print(",right:");
+	Serial.print(rDest);
+	Serial.print(",x:");
+	Serial.print(x);
+	Serial.print(",y:");
+	Serial.print(y);
+	Serial.print(",fi:");
+	Serial.print(fi);
+	Serial.print(",head:");
+	Serial.print(headingDegrees);
+	Serial.print(",dir:");
+	Serial.print(intentDir);
+	int intentOffset = -1;
+	if(intentDir >= 0) {
+		intentOffset = intentDir - headingDegrees;
+		if(intentOffset > 180) intentOffset = 360 - intentOffset;
+		else if(intentOffset < -180) intentOffset = 360 + intentOffset;
 	}
+	Serial.print(",off:");
+	Serial.print(intentOffset);
+	Serial.print(",azim:");
+	Serial.print(azimuth);
+	Serial.print(",off:");
+	Serial.print(offset);
+//	Serial.print(",acc_x:");
+//	Serial.print(accel_scaled.XAxis);
+//	Serial.print(",gyro_x:");
+//	Serial.print((int)gyro.g.x);
+	Serial.println("");
 }
 
 void loop()
 {
 	static unsigned long last_millis = 0;
+	static int last_lDest = -1;
+	static int last_rDest = -1;
 	char val;
 	process_compass();
 	process_accel();
 	process_gyro();
 	unsigned long cur_millis = millis();
 	unsigned long millisdiff = (last_millis > cur_millis) ? ((unsigned long) -1) - last_millis + cur_millis : cur_millis - last_millis;
+//		Serial.print(compass_raw.XAxis);
+//		Serial.print(":");
+//		Serial.print(headingDegrees);
+//		Serial.println("");
 	if( millisdiff > TIME2STOP ) {
 		stop();
 	} else {
-		printEncoders();
+		if(last_lDest != lDest || last_rDest != rDest) {
+			printState();
+			last_lDest=lDest;
+			last_rDest=rDest;
+		}
 		if(azimuth >= 0) {
-			int offset = azimuth - headingDegrees;
+			offset = azimuth - headingDegrees;
 			if(offset > 180) offset = 360 - offset;
 			else if(offset < -180) offset = 360 + offset;
 			int pwm = 200 + 55 * abs(offset) / 180;
-			Serial.print("offset=");
-			Serial.println(offset);
+//			Serial.print("offset=");
+//			Serial.println(offset);
 			if( offset > 10) {
 				lReverse = false;
 				rReverse = true;
@@ -283,12 +306,14 @@ void loop()
 				break;
 			case 's'://stop
 				stop();
+				// forcibly stop compass direction
+				azimuth = -1;
 				break;
-			case 'p':
+			case 'q':
 				stepSize ++;
 				Serial.println(stepSize);
 				break;
-			case 'l':
+			case 'z':
 				stepSize --;
 				Serial.println(stepSize);
 				break;
@@ -296,23 +321,33 @@ void loop()
 				Serial.print("V:");
 				Serial.println(readVccMv());
 				break;
-			case 'z':
+			case '0':
 				Serial.println("Position reset");
 				fi = x = y = 0;
 				break;
 			case 'y': // go north
-				azimuth = 0;
+				intentDir = 0;
 				break;
 			case 'b': // go south
-				azimuth = 180;
+				intentDir = 180;
 				break;
 			case 'g': // go west
-				azimuth = 360-90;
+				intentDir = 360-90;
 				break;
 			case 'h': // go east
-				azimuth = 90;
+				intentDir = 90;
+				break;
+			case 'j': // reduce azimuth
+				intentDir = (360 + intentDir - 10) % 360;
+				break;
+			case 'l': // enlarge azimuth
+				intentDir = (360 + intentDir + 10) % 360;
+				break;
+			case 'k': // start direction
+				azimuth = intentDir;
 				break;
 		}
 		last_millis = cur_millis;
+		printState();
 	}
 }
