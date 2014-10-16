@@ -1,5 +1,4 @@
 #include "hmc5883l_proc.h"
-#include <HMC5883L.h>
 
 // Store our compass as a variable.
 HMC5883L compass;
@@ -38,15 +37,15 @@ void setup_compass()
 void process_compass()
 {
 	// Retrive the raw values from the compass (not scaled).
-	MagnetometerRaw raw = compass.ReadRawAxis();
+	compass_raw = compass.ReadRawAxis();
 	// Retrived the scaled values from the compass (scaled to the configured scale).
-	MagnetometerScaled scaled = compass.ReadScaledAxis();
+	compass_scaled = compass.ReadScaledAxis();
 	
 	// Values are accessed like so:
-	MilliGauss_OnThe_XAxis = scaled.XAxis;// (or YAxis, or ZAxis)
+	MilliGauss_OnThe_XAxis = compass_scaled.XAxis;// (or YAxis, or ZAxis)
 
 	// Calculate heading when the magnetometer is level, then correct for signs of axis.
-	heading = atan2(scaled.YAxis, scaled.XAxis);
+	heading = atan2(compass_scaled.YAxis, compass_scaled.XAxis);
 	
 	// Once you have your heading, you must then add your 'Declination Angle', which is the 'Error' of the magnetic field in your location.
 	// Find yours here: http://www.magnetic-declination.com/
