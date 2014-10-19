@@ -176,16 +176,20 @@ void printState()
 {
 	Serial.print((compass_mode) ? "C mode" : "D mode");
 	Serial.print(" DATA ");
-	Serial.print("left:");
+	Serial.print("lsteps:");
 	Serial.print(lDest);
-	Serial.print(",right:");
+	Serial.print(",rsteps:");
 	Serial.print(rDest);
-	Serial.print(",x:");
-	Serial.print(x);
-	Serial.print(",y:");
-	Serial.print(y);
-	Serial.print(",fi:");
-	Serial.print(fi);
+	Serial.print(",lpw:");
+	Serial.print(lPower * ((lReverse) ? -1 : 1));
+	Serial.print(",rpw:");
+	Serial.print(rPower * ((rReverse) ? -1 : 1));
+//	Serial.print(",x:");
+//	Serial.print(x);
+//	Serial.print(",y:");
+//	Serial.print(y);
+//	Serial.print(",fi:");
+//	Serial.print(fi);
 	Serial.print(",head:");
 	Serial.print(headingDegrees);
 	Serial.print(",dir:");
