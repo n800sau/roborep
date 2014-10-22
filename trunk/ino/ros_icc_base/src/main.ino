@@ -19,7 +19,11 @@
 bool compass_mode = true;
 
 // count of encoder ticks until stop
-int stepSize = 5;
+int LstepSize = 5;
+int RstepSize = 5;
+
+// turn step size
+int TstepSize = 4;
 
 // motor pins
 const int rEN = 6;
@@ -43,6 +47,10 @@ const int Eright = 3;
 const int lInt = Eleft - 2;
 const int rInt = Eright - 2;
 
+// encoder distance counter
+volatile int lCounter = 0;
+volatile int rCounter = 0;
+
 volatile int lDest = 0;
 volatile int lPower = 0;
 
@@ -51,6 +59,7 @@ volatile int rPower = 0;
 
 int intentDir = 0;
 int azimuth = -1;
+int azimuth_allowance = 20;
 int offset = 0;
 
 // 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
@@ -85,7 +94,10 @@ void lIntCB()
 	if ( intLhistory==intLsignal )
 		return;
 	intLtime = micros();
-	lDest--;
+	lCounter += (lReverse) ? -1 : 1;
+	if(azimuth < 0) {
+		lDest--;
+	}
 	calc_xy((lReverse) ? -1 : 1, 0);
 }
 
@@ -98,7 +110,10 @@ void rIntCB()
 	if ( intRhistory==intRsignal )
 		return;
 	intRtime = micros();
-	rDest--;
+	lCounter += (lReverse) ? -1 : 1;
+	if(azimuth < 0) {
+		rDest--;
+	}
 	calc_xy(0, (rReverse) ? -1 : 1);
 }
 
@@ -184,6 +199,10 @@ void printState()
 	Serial.print(lPower * ((lReverse) ? -1 : 1));
 	Serial.print(",rpw:");
 	Serial.print(rPower * ((rReverse) ? -1 : 1));
+	Serial.print(",lcnt:");
+	Serial.print(lCounter);
+	Serial.print(",rcnt:");
+	Serial.print(rCounter);
 //	Serial.print(",x:");
 //	Serial.print(x);
 //	Serial.print(",y:");
@@ -213,11 +232,37 @@ void printState()
 	Serial.println("");
 }
 
+void updateMove()
+{
+	if(lDest <= 0 && rDest <= 0) {
+		stop();
+	} else {
+		if(lDest > 0) {
+			setLeftMotor((lDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+		} else if(lDest < 0) {
+			Serial.println("Left reverse correction");
+			lReverse = !lReverse;
+			lDest = -lDest;
+		} else {
+			setLeftMotor(0);
+		}
+		if(rDest > 0) {
+			setRightMotor((rDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+		} else if(rDest < 0) {
+			Serial.println("Right reverse correction");
+			rReverse = !rReverse;
+			rDest = -rDest;
+		} else {
+			setRightMotor(0);
+		}
+	}
+}
+
 void loop()
 {
+	static int last_lCounter = -1;
+	static int last_rCounter = -1;
 	static unsigned long last_millis = 0;
-	static int last_lDest = -1;
-	static int last_rDest = -1;
 	char val;
 	process_compass();
 	process_accel();
@@ -231,54 +276,35 @@ void loop()
 	if( millisdiff > TIME2STOP ) {
 		stop(true);
 	} else {
-		if(last_lDest != lDest || last_rDest != rDest) {
+		if(last_lCounter != lCounter || last_rCounter != rCounter) {
 			printState();
-			last_lDest=lDest;
-			last_rDest=rDest;
+			last_lCounter=lCounter;
+			last_rCounter=rCounter;
 		}
 		if(compass_mode) {
 			if(azimuth >= 0) {
 				offset = azimuth - headingDegrees;
 				if(offset > 180) offset = 360 - offset;
 				else if(offset < -180) offset = 360 + offset;
-				int pwm = 200 + 55 * abs(offset) / 180;
-				if( offset > 10) {
+				int pwm = 210 + 55 * abs(offset) / 180;
+				if( offset > azimuth_allowance) {
 					lReverse = false;
 					rReverse = true;
-					setLeftMotor(200);
-					setRightMotor(200);
-				} else if ( offset < -10 ) {
+					setLeftMotor(pwm);
+					setRightMotor(pwm);
+				} else if ( offset < -azimuth_allowance ) {
 					lReverse = true;
 					rReverse = false;
-					setLeftMotor(200);
-					setRightMotor(200);
+					setLeftMotor(pwm);
+					setRightMotor(pwm);
 				} else {
 					stop();
 				}
+			} else {
+				updateMove();
 			}
 		} else {
-			if(lDest <= 0 && rDest <= 0) {
-				stop();
-			} else {
-				if(lDest > 0) {
-					setLeftMotor((lDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
-				} else if(lDest < 0) {
-					Serial.println("Left reverse correction");
-					lReverse = !lReverse;
-					lDest = -lDest;
-				} else {
-					setLeftMotor(0);
-				}
-				if(rDest > 0) {
-					setRightMotor((rDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
-				} else if(rDest < 0) {
-					Serial.println("Right reverse correction");
-					rReverse = !rReverse;
-					rDest = -rDest;
-				} else {
-					setRightMotor(0);
-				}
-			}
+			updateMove();
 		}
 	}
 	val = Serial.read();
@@ -292,14 +318,24 @@ void loop()
 				compass_mode = !compass_mode;
 				break;
 			case 'q':
-				stepSize ++;
-				Serial.print("step:");
-				Serial.println(stepSize);
+				LstepSize ++;
+				Serial.print("left step:");
+				Serial.println(LstepSize);
 				break;
 			case 'z':
-				stepSize --;
-				Serial.print("step:");
-				Serial.println(stepSize);
+				LstepSize --;
+				Serial.print("left step:");
+				Serial.println(LstepSize);
+				break;
+			case 'e':
+				RstepSize ++;
+				Serial.print("right step:");
+				Serial.println(RstepSize);
+				break;
+			case 'c':
+				RstepSize --;
+				Serial.print("right step:");
+				Serial.println(RstepSize);
 				break;
 			case 'v':
 				Serial.print("V:");
@@ -318,13 +354,17 @@ void loop()
 			{
 				case 'w'://Move ahead
 					stop();
-					lDest = rDest = stepSize;
+					lDest = LstepSize;
+					rDest = RstepSize;
 					lReverse = rReverse = false;
+					azimuth = -1;
 					break;
 				case 'x'://move back
 					stop();
-					lDest = rDest = stepSize;
+					lDest = LstepSize;
+					rDest = RstepSize;
 					lReverse = rReverse = true;
+					azimuth = -1;
 					break;
 				case 'y': // go north
 					intentDir = 0;
@@ -353,23 +393,25 @@ void loop()
 			{
 				case 'w'://Move ahead
 					stop();
-					lDest = rDest = stepSize;
+					lDest = LstepSize;
+					rDest = RstepSize;
 					lReverse = rReverse = false;
 					break;
 				case 'x'://move back
 					stop();
-					lDest = rDest = stepSize;
+					lDest = LstepSize;
+					rDest = RstepSize;
 					lReverse = rReverse = true;
 					break;
 				case 'a'://turn left
 					stop();
-					lDest = rDest = stepSize;
+					lDest = rDest = TstepSize;
 					lReverse = true;
 					rReverse = false;
 					break;
 				case 'd'://turn right
 					stop();
-					lDest = rDest = stepSize;
+					lDest = rDest = TstepSize;
 					lReverse = false;
 					rReverse = true;
 					break;
