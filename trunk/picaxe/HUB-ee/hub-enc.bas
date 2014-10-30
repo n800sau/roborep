@@ -13,8 +13,8 @@
 
 symbol M1PWMPin = C.3
 symbol M1In1Pin = B.2
-symbol M1In2Pin = C.2
-symbol M1qA = pinB.4
+symbol M1In2Pin = B.4
+symbol M1qA = pinC.1
 symbol M1qb = pinC.6
 
 ; Power can be from 0 - 1023
@@ -28,10 +28,10 @@ symbol M1qcnt = w3
 symbol oldM1qA = b10
 
 symbol M2PWMPin = C.5
-symbol M2In1Pin = C.7
-symbol M2In2Pin = C.4
-symbol M2qA = pinB.5
-symbol M2qb = pinB.3
+symbol M2In1Pin = B.5
+symbol M2In2Pin = B.3
+symbol M2qA = pinC.2
+symbol M2qb = pinC.4
 
 ; Power can be from 0 - 1023
 symbol M2Power = w1
