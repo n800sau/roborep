@@ -1,9 +1,12 @@
 #include <HUBeeBMDWheel.h>
 
+int MVpin = A4;
+int IRpin = A5;
+
 HUBeeBMDWheel motor1Wheel;
 HUBeeBMDWheel motor2Wheel;
 
-int motor1Speed = 150, motor2Speed = 170;
+int motor1Speed = 100, motor2Speed = 100;
 
 int motor1QeiAPin	 = 3; //external interrupt 1 (UNO) or 0 (Leonardo)
 int motor1QeiBPin	 = 7;
@@ -20,7 +23,8 @@ int directionTimer = 1000;
 int samples;
 unsigned long int sampleSum = 0;
 unsigned long int speedSaturation;
-int count=10;
+int count = 0;
+bool lastMVfound = false;
 
 void setup()
 {
@@ -56,7 +60,22 @@ void setup()
 
 void loop()
 {
-	if(count-- > 0) {
+	bool MVfound = analogRead(MVpin) > 300;
+	if(MVfound != lastMVfound) {
+		lastMVfound = MVfound;
+		if(MVfound) {
+			count = 1;
+		}
+	}
+	float volts = analogRead(IRpin)*0.0048828125;   // value from sensor * (5/1024) - if running 3.3.volts then change 5 to 3.3
+	float distance = 65*pow(volts, -1.10);          // worked out from graph 65 = theretical distance / (1/Volts)
+	Serial.print("Distance ");
+	Serial.print(analogRead(IRpin));
+	Serial.print(" Sensor ");
+	Serial.println(analogRead(MVpin));
+	
+	if(count > 0) {
+		count--;
 		Serial.print(" Count 1: ");
 		Serial.print(motor1QeiCounts);
 		Serial.print(" Count 2: ");
