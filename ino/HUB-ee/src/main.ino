@@ -1,7 +1,10 @@
 #include <HUBeeBMDWheel.h>
+#include "hmc5883l_proc.h"
+#include "adxl345_proc.h"
+#include "l3g4200d_proc.h"
 
-int MVpin = A4;
-int IRpin = A5;
+int MVpin = A2;
+int IRpin = A3;
 
 HUBeeBMDWheel motor1Wheel;
 HUBeeBMDWheel motor2Wheel;
@@ -28,12 +31,19 @@ bool lastMVfound = false;
 
 void setup()
 {
+	Serial.println("Starting the I2C interface.");
+	Wire.begin(); // Start the I2C interface.
+
+	setup_compass();
+	setup_accel();
+	setup_gyro();
+
 	pinMode(motor1QeiAPin, INPUT_PULLUP);
 	pinMode(motor2QeiAPin, INPUT_PULLUP);
 	pinMode(motor1QeiBPin, INPUT_PULLUP);
 	pinMode(motor2QeiBPin, INPUT_PULLUP);
-	motor1Wheel.setupPins(8,11,9); //setup using pins 12 and 2 for direction control, and 3 for PWM speed control
-	motor2Wheel.setupPins(13,12,10);//setup using pins 13 and 4 for direction control, and 11 for PWM speed control
+	motor1Wheel.setupPins(11,8,9); //setup using pins 12 and 2 for direction control, and 3 for PWM speed control
+	motor2Wheel.setupPins(12,13,10);//setup using pins 13 and 4 for direction control, and 11 for PWM speed control
 	motor1Wheel.setDirectionMode(1); //Set the direction mode to 1
 	motor2Wheel.setDirectionMode(1); //set the direction mode to 1
 	motor1Wheel.setBrakeMode(true);
@@ -57,9 +67,23 @@ void setup()
 	speedSaturation = 32767;
 }
 
+void printState()
+{
+	Serial.print("head:");
+	Serial.print(headingDegrees);
+//	Serial.print(",acc_x:");
+//	Serial.print(accel_scaled.XAxis);
+//	Serial.print(",gyro_x:");
+//	Serial.print((int)gyro.g.x);
+	Serial.println("");
+}
 
 void loop()
 {
+	process_compass();
+	process_accel();
+	process_gyro();
+	printState();
 	bool MVfound = analogRead(MVpin) > 300;
 	if(MVfound != lastMVfound) {
 		lastMVfound = MVfound;
@@ -69,12 +93,15 @@ void loop()
 	}
 	float volts = analogRead(IRpin)*0.0048828125;   // value from sensor * (5/1024) - if running 3.3.volts then change 5 to 3.3
 	float distance = 65*pow(volts, -1.10);          // worked out from graph 65 = theretical distance / (1/Volts)
-	Serial.print("Distance ");
-	Serial.print(analogRead(IRpin));
-	Serial.print(" Sensor ");
-	Serial.println(analogRead(MVpin));
-	
-	if(count > 0) {
+//	Serial.print("Distance ");
+//	Serial.print(distance);
+//	Serial.print(" Sensor ");
+//	Serial.println(analogRead(MVpin));
+	if(distance < 50) {
+		motor1Wheel.setMotorPower(-motor1Speed); //full speed ahead
+		motor2Wheel.setMotorPower(-motor2Speed); //full speed ahead
+		delay(1000);
+	} else if(count > 0) {
 		count--;
 		Serial.print(" Count 1: ");
 		Serial.print(motor1QeiCounts);
@@ -91,8 +118,8 @@ void loop()
 		Serial.println(motor2QeiCounts);
 		motor1Wheel.setMotorPower(-motor1Speed);
 		motor2Wheel.setMotorPower(-motor2Speed);
+		delay(1000);
 	}
-	delay(1000);
 	motor1Wheel.stopMotor();
 	motor2Wheel.stopMotor();
 }
