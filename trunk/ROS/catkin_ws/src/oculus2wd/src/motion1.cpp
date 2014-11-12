@@ -1,10 +1,11 @@
-#include<opencv/cv.h>
-#include<opencv/highgui.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<time.h>
-#include<fcntl.h>
-#include<pthread.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <unistd.h>
 
 int num_frame=0;
 

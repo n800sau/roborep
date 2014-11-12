@@ -2,7 +2,7 @@
 
 <!--  <arg name="depth_mode" default="2" /> -->
 
-  <include file="$(find turtlebot_bringup)/launch/3dsensor.launch"/>
+<!--  <include file="$(find turtlebot_bringup)/launch/3dsensor.launch"/> -->
   <node name="status" pkg="oculus2wd" type="status.py" />
   <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" />
   <node name="powerhelp" pkg="oculus2wd" type="powerhelp.py" />
