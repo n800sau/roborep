@@ -1,0 +1,4 @@
+<launch>
+	<node name="acc_ser2tcp" pkg="nanaybot" type="acc2tcp.sh" />
+	<node name="imu_ir_tcp" pkg="nanaybot" type="imu_ir_tcp.py" />
+</launch>
