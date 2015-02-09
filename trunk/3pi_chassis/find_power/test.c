@@ -10,6 +10,8 @@
 
 #include <stdlib.h>
 
+#define MAX_SPEED 100
+
 const char instructions_line1[] PROGMEM = "Searchi";
 const char instructions_line2[] PROGMEM = "ng...  ";
 
@@ -24,6 +26,12 @@ int bat_test(int max_val)
 	lcd_goto_xy(0,1);
 	print_long(max_val);
 	print("mV");
+	int enc1 = encoders_get_counts_m1();
+	lcd_goto_xy(0,2);
+	print_long(enc1);
+	int enc2 = encoders_get_counts_m2();
+	lcd_goto_xy(0,3);
+	print_long(enc2);
 
 	return bat;
 }
@@ -69,8 +77,8 @@ void start_random_move()
 {
 	m1_back = rand() % 2;
 	m2_back = rand() % 2;
-	m1_speed = rand() % 255;
-	m2_speed = rand() % 255;
+	m1_speed = rand() % MAX_SPEED;
+	m2_speed = rand() % MAX_SPEED;
 	set_motors(m1_speed * (m1_back ? -1 : 1), m2_speed * (m2_back ? -1 : 1));
 }
 
@@ -81,6 +89,7 @@ void stop_move()
 
 int main()
 {
+	int i;
 
 	// set up the 3pi
 	initialize();
@@ -99,7 +108,7 @@ int main()
 	// start moving
 	start_random_move();
 
-	while(1)
+	for(i=0; i<100; i++)
 	{
 		// get bat value
 		val = bat_test(max_val);
@@ -113,8 +122,6 @@ int main()
 			start_random_move();
 		}
 
-		encoders_get_counts_m1();
-		encoders_get_counts_m2();
 
 		delay_ms(100);
 	}
