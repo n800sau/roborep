@@ -13,8 +13,8 @@ LDFLAGS=-Wl,-gc-sections -lpololu_$(DEVICE) -Wl,-relax
 PORT=usb
 AVRDUDE=avrdude
 
-TARGET=slave
-OBJECT_FILES=slave.o utils.o
+TARGET=test
+OBJECT_FILES=test.o
 
 
 
