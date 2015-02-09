@@ -34,5 +34,5 @@ utils.o: utils.c
 	$(CC) $(CFLAGS) $(OBJECT_FILES) $(LDFLAGS) -o $@
 
 program: $(TARGET).hex
-	$(AVRDUDE) -p $(AVRDUDE_DEVICE) -c usbasp -P $(PORT) -U flash:w:$(TARGET).hex
+	$(AVRDUDE) -p $(AVRDUDE_DEVICE) -c usbasp -P $(PORT) -U flash:w:$(TARGET).hex -q
 
