@@ -10,7 +10,9 @@
 
 #include <stdlib.h>
 
-#define MAX_SPEED 100
+#define MAX_SPEED 40
+#define MAX_DELAY 1000
+#define STEP 10
 
 const char instructions_line1[] PROGMEM = "Searchi";
 const char instructions_line2[] PROGMEM = "ng...  ";
@@ -20,17 +22,18 @@ int bat_test(int max_val)
 {
 	int bat = read_battery_millivolts();
 
-	lcd_goto_xy(0,0);
-	print_long(bat);
-	print("mV");
-	lcd_goto_xy(0,1);
-	print_long(max_val);
-	print("mV");
+//	lcd_goto_xy(0,0);
+//	print_long(bat);
+//	print("mV");
+//	lcd_goto_xy(0,1);
+//	print_long(max_val);
+//	print("mV");
+	clear();
 	int enc1 = encoders_get_counts_m1();
-	lcd_goto_xy(0,2);
+	lcd_goto_xy(0,0);
 	print_long(enc1);
 	int enc2 = encoders_get_counts_m2();
-	lcd_goto_xy(0,3);
+	lcd_goto_xy(0,1);
 	print_long(enc2);
 
 	return bat;
@@ -94,11 +97,11 @@ int main()
 	// set up the 3pi
 	initialize();
 
+	delay_ms(5000);
 	// Move to random place
 	start_random_move();
 	delay_ms(1000);
 	stop_move();
-	delay_ms(500);
 	// stopped
 	encoders_init(0, 0, 0, 0);
 
@@ -107,8 +110,9 @@ int main()
 	int val = bat_test(max_val);
 	// start moving
 	start_random_move();
-
-	for(i=0; i<100; i++)
+	int count = 0;
+	i = 0;
+	while(1)
 	{
 		// get bat value
 		val = bat_test(max_val);
@@ -116,13 +120,25 @@ int main()
 			// closer to the power point
 			max_val = val;
 			// keep on moving
-		} else {
+		}
+			if(val > 5050) {
+				stop_move();
+			} else if(i++ < 10000) {
 			// further from the power point
 			// change direction
-			start_random_move();
-		}
+				if(count <= 0) {
+					stop_move();
+					delay_ms(STEP);
+					count = rand() % MAX_DELAY / STEP;
+					start_random_move();
+				} else {
+					count--;
+				}
+			} else {
+				stop_move();
+			}
 
 
-		delay_ms(100);
+		delay_ms(STEP);
 	}
 }
