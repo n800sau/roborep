@@ -88,6 +88,12 @@ void setup_motors()
 	//start the wheels
 	motor1ElapsedTime = micros();
 	motor2ElapsedTime = micros();
+
+//		motor1Wheel.setMotorPower(200); //full speed ahead
+//		motor2Wheel.setMotorPower(200); //full speed ahead
+//		delay(1000);
+//		motor1Wheel.stopMotor();
+//		motor2Wheel.stopMotor();
 }
 
 void process_motors()
