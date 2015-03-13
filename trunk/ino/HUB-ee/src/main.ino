@@ -6,6 +6,7 @@
 #include "irdist_proc.h"
 #include "presence_proc.h"
 #include <voltage.h>
+#include <JsonParser.h>
 
 // hmc5883l - 0x1e
 // adxl345 - 0x53
@@ -15,6 +16,47 @@
 
 int led = 6;
 int lon = 0;
+
+void ParseAnObject()
+{
+    char json[] = "{\"Name\":\"Blanchon\",\"Skills\":[\"C\",\"C++\",\"C#\"],\"Age\":32,\"Online\":true}\x0d\x0a";
+
+    JsonParser<32> parser;
+
+    Serial.print("Parse ");
+    Serial.println(json);
+
+    JsonHashTable hashTable = parser.parseHashTable(json);
+
+    if (!hashTable.success())
+    {
+        Serial.println("JsonParser.parseHashTable() failed");
+        return;
+    }
+
+    char* name = hashTable.getString("Name");
+    Serial.print("name=");
+    Serial.println(name);
+
+    JsonArray skills = hashTable.getArray("Skills");
+    Serial.println("skills:");
+    for (int i = 0; i < skills.getLength(); i++)
+    {
+        char* value = skills.getString(i);
+        Serial.print(i);
+        Serial.print(" ");
+        Serial.println(value);
+    }
+
+    int age = hashTable.getLong("Age");
+    Serial.print("age=");
+    Serial.println(age);
+
+    bool online = hashTable.getBool("Online");
+    Serial.print("online=");
+    Serial.println(online);
+}
+
 
 void setup()
 {
@@ -32,12 +74,14 @@ void setup()
 	setup_irdist();
 	setup_presence();
 	setup_motors();
+	ParseAnObject();
 }
 
 void printState()
 {
 	int v = readVccMv();
-	Serial.print("{\"V\":");
+	Serial.print("{\"type\":\"sensors\"");
+	Serial.print(",\"V\":");
 	Serial.print(v);
 	Serial.print(",\"head\":");
 	Serial.print(headingDegrees);
@@ -74,6 +118,49 @@ void printState()
 	Serial.println(".");
 }
 
+static char jsonBuf[256];
+static int inputPos = 0;
+static boolean jsonComplete = false;
+
+void serialEvent() {
+	while (Serial.available() && !jsonComplete) {
+		char inChar = (char)Serial.read();
+//		Serial.println((int)inChar);
+		// change 0xd to 0xa
+		if( inChar == 0xd ) inChar = 0xa;
+		// skip double 0xa or the first 0xa
+		if( ! (inChar == 0xa && (inputPos <= 0 || jsonBuf[inputPos-1] == 0xa)) ) {
+			jsonBuf[inputPos] = inChar;
+			jsonBuf[++inputPos] = 0;
+			// check for the end of json
+			if((inputPos >= sizeof(jsonBuf) - 1) ||
+					(inputPos >= 2 &&
+					(inputPos < 3 || jsonBuf[inputPos-3] == 0xa) &&
+					(jsonBuf[inputPos-2] == '.') &&
+					(jsonBuf[inputPos-1] == 0xa))
+			) {
+				// end of json
+				Serial.println("json end");
+				// check for empty json
+				if(inputPos >= 5) {
+					// not empty
+					// remove useless tail
+					jsonBuf[inputPos-3] = 0;
+					jsonComplete = true;
+				}
+				inputPos = 0;
+			}
+		}
+	}
+}
+
+void execute(const char *cmd, JsonHashTable &data)
+{
+	if(strcmp(cmd, "sensors") == 0) {
+		printState();
+	}
+}
+
 void loop()
 {
 	digitalWrite(led, lon);
@@ -86,6 +173,21 @@ void loop()
 	process_presence();
 	process_motors();
 
-	printState();
-	delay(1000);
+	if (jsonComplete) {
+		JsonParser<32> parser;
+		JsonHashTable data = parser.parseHashTable(jsonBuf);
+		if (!data.success())
+		{
+			Serial.println("JSON parsing failed of");
+			Serial.println(jsonBuf);
+		} else {
+//			Serial.println(jsonBuf);
+			char* cmd = data.getString("command");
+			Serial.print("command:");
+			Serial.println(cmd);
+			execute(cmd, data);
+		}
+		jsonComplete = false;
+	}
+	delay(10);
 }
