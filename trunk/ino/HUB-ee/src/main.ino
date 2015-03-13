@@ -63,7 +63,8 @@ void setup()
 	pinMode(led, OUTPUT);
 	digitalWrite(led, 1);
 	Serial.begin(57600);
-	Serial.println("Starting the I2C interface.");
+//	Serial.println("Starting the I2C interface.");
+	Serial.println("Reloading...");
 	Wire.begin(); // Start the I2C interface.
 
 	setup_compass();
@@ -74,13 +75,13 @@ void setup()
 	setup_irdist();
 	setup_presence();
 	setup_motors();
-	ParseAnObject();
+//	ParseAnObject();
 }
 
 void printState()
 {
 	int v = readVccMv();
-	Serial.print("{\"type\":\"sensors\"");
+	Serial.print("JSON:{\"type\":\"sensors\"");
 	Serial.print(",\"V\":");
 	Serial.print(v);
 	Serial.print(",\"head\":");
