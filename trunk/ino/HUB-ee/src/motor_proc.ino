@@ -63,6 +63,44 @@ void Motor2quickQEI()
 	motor2OldElapsedTime = microTime;
 }
 
+void stop()
+{
+	motor1Wheel.setMotorPower(0);
+	motor2Wheel.setMotorPower(0);
+}
+
+void mv_forward(int ms)
+{
+	motor1Wheel.setMotorPower(motor1Speed);
+	motor2Wheel.setMotorPower(motor2Speed);
+	delay(ms);
+	stop();
+}
+
+void mv_back(int ms)
+{
+	motor1Wheel.setMotorPower(-motor1Speed);
+	motor2Wheel.setMotorPower(-motor2Speed);
+	delay(ms);
+	stop();
+}
+
+void turn_left(int ms)
+{
+	motor1Wheel.setMotorPower(-motor1Speed);
+	motor2Wheel.setMotorPower(motor2Speed);
+	delay(ms);
+	stop();
+}
+
+void turn_right(int ms)
+{
+	motor1Wheel.setMotorPower(motor1Speed);
+	motor2Wheel.setMotorPower(-motor2Speed);
+	delay(ms);
+	stop();
+}
+
 void setup_motors()
 {
 	pinMode(motor1QeiAPin, INPUT_PULLUP);

@@ -7,24 +7,32 @@ class irobec:
 
 	mmenu = (
 			{
-				'title': 'Item 1',
-				'key': '1',
-				'cb': 'func1',
+				'title': 'L',
+				'key': 'A',
+				'cb': 'turn_left',
+				'y': 1,
+				'x': 0,
 			},
 			{
-				'title': 'Item 2',
-				'key': '2',
-				'cb': 'func2',
+				'title': 'R',
+				'key': 'D',
+				'cb': 'turn_right',
+				'y': 1,
+				'x': 2,
 			},
 			{
-				'title': 'Item 3',
-				'key': '3',
-				'cb': 'func3',
+				'title': 'F',
+				'key': 'W',
+				'cb': 'step_forward',
+				'y': 0,
+				'x': 1,
 			},
 			{
-				'title': 'Item 4',
-				'key': '4',
-				'cb': 'func4',
+				'title': 'B',
+				'key': 'S',
+				'cb': 'step_back',
+				'y': 2,
+				'x': 1,
 			},
 		)
 
@@ -54,28 +62,31 @@ class irobec:
 		self.c.send_command("sensors")
 		reply = self.c.read_json()
 		if reply:
+			self.stdscr.addstr(self.maxy - 11, 0, time.strftime('%d.%m.%y %H:%M:%S'))
 			self.stdscr.addstr(self.maxy - 10, 0, '%.2f' % reply['head'])
 
-	def func1(self):
-		reply = self.c.read_json()
-		self.stdscr.addstr(self.maxy - 3, 0, 'Pos 1')
+	def turn_left(self):
+		self.c.send_command("turn_left")
+		self.stdscr.addstr(self.maxy - 3, 0, 'L')
 
-	def func2(self):
-		self.stdscr.addstr(self.maxy - 3, 0, 'Pos 2')
+	def turn_right(self):
+		self.c.send_command("turn_right")
+		self.stdscr.addstr(self.maxy - 3, 0, 'R')
 
-	def func3(self):
-		self.stdscr.addstr(self.maxy - 3, 0, 'Pos 3')
+	def step_forward(self):
+		self.c.send_command("step_forward")
+		self.stdscr.addstr(self.maxy - 3, 0, 'F')
 
-	def func4(self):
-		self.stdscr.addstr(self.maxy - 3, 0, 'Pos 4')
+	def step_back(self):
+		self.c.send_command("step_back")
+		self.stdscr.addstr(self.maxy - 3, 0, 'B')
 
 	def update(self):
 
 		y = self.maxy - len(self.mmenu) - 4
 
 		for item in self.mmenu:
-			self.stdscr.addstr(y, 0, '%s: %s' % (item['key'], item['title']))
-			y += 1
+			self.stdscr.addstr(y + item['y'], 0 + item['x'], item['title'])
 
 		self.stdscr.refresh()
 
@@ -89,7 +100,7 @@ class irobec:
 					self.stdscr.clear()
 					break  # Exit the while()
 				for item in self.mmenu:
-					if ord(item['key']) == c:
+					if c in (ord(item['key'].lower()), ord(item['key'].upper())) :
 #						try:
 						getattr(self, item['cb'])()
 #						except Exception, e:
