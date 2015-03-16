@@ -17,47 +17,6 @@
 int led = 6;
 int lon = 0;
 
-void ParseAnObject()
-{
-    char json[] = "{\"Name\":\"Blanchon\",\"Skills\":[\"C\",\"C++\",\"C#\"],\"Age\":32,\"Online\":true}\x0d\x0a";
-
-    JsonParser<32> parser;
-
-    Serial.print("Parse ");
-    Serial.println(json);
-
-    JsonHashTable hashTable = parser.parseHashTable(json);
-
-    if (!hashTable.success())
-    {
-        Serial.println("JsonParser.parseHashTable() failed");
-        return;
-    }
-
-    char* name = hashTable.getString("Name");
-    Serial.print("name=");
-    Serial.println(name);
-
-    JsonArray skills = hashTable.getArray("Skills");
-    Serial.println("skills:");
-    for (int i = 0; i < skills.getLength(); i++)
-    {
-        char* value = skills.getString(i);
-        Serial.print(i);
-        Serial.print(" ");
-        Serial.println(value);
-    }
-
-    int age = hashTable.getLong("Age");
-    Serial.print("age=");
-    Serial.println(age);
-
-    bool online = hashTable.getBool("Online");
-    Serial.print("online=");
-    Serial.println(online);
-}
-
-
 void setup()
 {
 	pinMode(led, OUTPUT);
@@ -75,7 +34,7 @@ void setup()
 	setup_irdist();
 	setup_presence();
 	setup_motors();
-//	ParseAnObject();
+	Serial.println("Ready");
 }
 
 void printState()
@@ -159,6 +118,14 @@ void execute(const char *cmd, JsonHashTable &data)
 {
 	if(strcmp(cmd, "sensors") == 0) {
 		printState();
+	} else if (strcmp(cmd, "step_forward") == 0) {
+		mv_forward(1000);
+	} else if (strcmp(cmd, "step_back") == 0) {
+		mv_back(1000);
+	} else if (strcmp(cmd, "turn_left") == 0) {
+		turn_left(1000);
+	} else if (strcmp(cmd, "turn_right") == 0) {
+		turn_right(1000);
 	}
 }
 
