@@ -34,15 +34,26 @@ class irobec:
 				'y': 2,
 				'x': 1,
 			},
+			{
+				'title': 'RST',
+				'key': 'R',
+				'cb': 'reset',
+				'y': 1,
+				'x': 5,
+			},
 		)
 
 	def __init__(self):
 		self.c = robec()
 		self.c.connect('192.168.1.96', 23)
+		self.wait4sensors = False
 
-		self.stdscr = curses.initscr()
-
-	def init(self):
+	def init(self, stdscr=None):
+		if stdscr is None:
+			self.stdscr = curses.initscr()
+		else:
+			self.stdscr = stdscr
+		curses.use_default_colors()
 		curses.noecho()
 		curses.cbreak()
 		curses.curs_set(0)
@@ -59,11 +70,24 @@ class irobec:
 		curses.endwin()
 
 	def show_sensors(self):
-		self.c.send_command("sensors")
-		reply = self.c.read_json()
-		if reply:
-			self.stdscr.addstr(self.maxy - 11, 0, time.strftime('%d.%m.%y %H:%M:%S'))
-			self.stdscr.addstr(self.maxy - 10, 0, '%.2f' % reply['head'])
+		self.wait4sensors = True
+		try:
+			self.c.send_command("sensors")
+			reply = self.c.read_json()
+			if reply:
+				self.stdscr.clear()
+				y = 15
+				self.stdscr.addstr(self.maxy - y, 0, time.strftime('%d.%m.%y %H:%M:%S'))
+				y -= 1
+				self.stdscr.addstr(self.maxy - y, 0, 'V:%.3f' % (reply['V']/1000.))
+				y -= 1
+				self.stdscr.addstr(self.maxy - y, 0, '%.2f' % reply['head'])
+				y -= 1
+				self.stdscr.addstr(self.maxy - y, 0, '%d - %d' % (reply['LC'], reply['RC']))
+				y -= 1
+				self.stdscr.addstr(self.maxy - y, 0, 'T:%d' % reply['T'])
+		finally:
+			self.wait4sensors = False
 
 	def turn_left(self):
 		self.c.send_command("turn_left")
@@ -80,6 +104,10 @@ class irobec:
 	def step_back(self):
 		self.c.send_command("step_back")
 		self.stdscr.addstr(self.maxy - 3, 0, 'B')
+
+	def reset(self):
+		self.c.send_at("IORST")
+		self.stdscr.addstr(self.maxy - 3, 0, 'X')
 
 	def update(self):
 
@@ -109,15 +137,20 @@ class irobec:
 				self.update()
 			else:
 				self.c.spin()
-				if time.time() - t > 1:
+				if time.time() - t > 1 and not self.wait4sensors:
 					t = time.time()
 					self.show_sensors()
+					self.update()
 
-if __name__ == '__main__':
-
+def tapp(stdscr):
 	r = irobec()
 	try:
-		r.init()
+		r.init(stdscr)
 		r.run()
 	finally:
 		r.reset()
+
+if __name__ == '__main__':
+
+	curses.wrapper(tapp)
+
