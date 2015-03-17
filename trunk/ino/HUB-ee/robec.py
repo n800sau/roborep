@@ -21,16 +21,27 @@ class robec:
 		self.recv_data = ''
 		self.dbg_data = ''
 
+	def dbprint(self, text):
+		print >>sys.stderr, text
+
 	def connect(self, host, port):
 		self.sock.connect((host, port))
 		self.sock.setblocking(0)
 
+	def send_line(self, line):
+		self.dbprint('Sending %s' % line)
+		self.sock.sendall(line + '\n')
+
 	def send_json(self, jsondict):
+		self.dbprint('Sending %s' % jsondict)
 		self.sock.sendall(json.dumps(jsondict) + EOJ)
 
 	def send_command(self, command, **kwds):
 		kwds['command'] = command
 		return self.send_json(kwds)
+
+	def send_at(self, command):
+		return self.send_line('+++AT' + command)
 
 	def read_dbg(self):
 		rs = self.dbg_data
@@ -39,7 +50,7 @@ class robec:
 
 	def read_line(self):
 		rs = ''
-#		print 'REMAIN:', self.recv_data
+		self.dbprint( 'REMAIN: %s' % self.recv_data)
 		self.recv_data = self.recv_data.replace('\x0d', '\x0a')
 		self.recv_data = self.recv_data.replace('\x0a\x0a', '\x0a')
 		nldex = self.recv_data.find('\x0a')
@@ -82,6 +93,8 @@ class robec:
 			try:
 				data = self.sock.recv(1024)
 				if data:
+					self.dbprint('len=%d' % len(data))
+					self.dbprint('data=%s' % data)
 					self.recv_data += data
 				else:
 					break
