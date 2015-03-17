@@ -6,7 +6,7 @@
 #include "irdist_proc.h"
 #include "presence_proc.h"
 #include <voltage.h>
-#include <JsonParser.h>
+#include <ArduinoJson.h>
 
 // hmc5883l - 0x1e
 // adxl345 - 0x53
@@ -16,12 +16,14 @@
 
 int led = 6;
 int lon = 0;
+unsigned long last_time = millis();
+
 
 void setup()
 {
 	pinMode(led, OUTPUT);
 	digitalWrite(led, 1);
-	Serial.begin(57600);
+	Serial.begin(115200);
 //	Serial.println("Starting the I2C interface.");
 	Serial.println("Reloading...");
 	Wire.begin(); // Start the I2C interface.
@@ -43,6 +45,12 @@ void printState()
 	Serial.print("JSON:{\"type\":\"sensors\"");
 	Serial.print(",\"V\":");
 	Serial.print(v);
+	Serial.print(",\"LC\":");
+	Serial.print(motor1QeiCounts);
+	Serial.print(",\"RC\":");
+	Serial.print(motor2QeiCounts);
+	Serial.println();
+
 	Serial.print(",\"head\":");
 	Serial.print(headingDegrees);
 	Serial.print(",\"acc_x\":");
@@ -76,6 +84,11 @@ void printState()
 
 	Serial.println("}");
 	Serial.println(".");
+}
+
+void ok()
+{
+	Serial.println("{\"reply\":\"ok\"}");
 }
 
 static char jsonBuf[256];
@@ -114,25 +127,34 @@ void serialEvent() {
 	}
 }
 
-void execute(const char *cmd, JsonHashTable &data)
+void execute(const char *cmd, JsonObject &data)
 {
 	if(strcmp(cmd, "sensors") == 0) {
 		printState();
 	} else if (strcmp(cmd, "step_forward") == 0) {
 		mv_forward(1000);
+		ok();
 	} else if (strcmp(cmd, "step_back") == 0) {
 		mv_back(1000);
+		ok();
 	} else if (strcmp(cmd, "turn_left") == 0) {
 		turn_left(1000);
+		ok();
 	} else if (strcmp(cmd, "turn_right") == 0) {
 		turn_right(1000);
+		ok();
 	}
 }
 
 void loop()
 {
-	digitalWrite(led, lon);
-	lon = !lon;
+	unsigned long t = millis();
+	if(abs(t - last_time) > 1000) {
+		last_time = t;
+		digitalWrite(led, lon);
+		lon = !lon;
+		Serial.println("tick");
+	}
 	process_compass();
 	process_accel();
 	process_gyro();
@@ -142,20 +164,20 @@ void loop()
 	process_motors();
 
 	if (jsonComplete) {
-		JsonParser<32> parser;
-		JsonHashTable data = parser.parseHashTable(jsonBuf);
+		jsonComplete = false;
+		StaticJsonBuffer<32> parser;
+		JsonObject &data = parser.parseObject(jsonBuf);
 		if (!data.success())
 		{
 			Serial.println("JSON parsing failed of");
 			Serial.println(jsonBuf);
 		} else {
 //			Serial.println(jsonBuf);
-			char* cmd = data.getString("command");
+			const char* cmd = data["command"];
 			Serial.print("command:");
 			Serial.println(cmd);
 			execute(cmd, data);
 		}
-		jsonComplete = false;
 	}
-	delay(10);
+	delay(20);
 }

@@ -1,3 +1,4 @@
+extern volatile int motor1QeiCounts, motor2QeiCounts;
 
 void setup_motors();
 void process_motors();
