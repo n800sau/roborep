@@ -4,7 +4,7 @@
 static HUBeeBMDWheel motor1Wheel;
 static HUBeeBMDWheel motor2Wheel;
 
-int motor1Speed = 100, motor2Speed = 100;
+static int motor1Speed = 100, motor2Speed = 100;
 
 int motor1QeiAPin	 = 3; //external interrupt 1 (UNO) or 0 (Leonardo)
 int motor1QeiBPin	 = 7;
@@ -65,8 +65,8 @@ void Motor2quickQEI()
 
 void stop()
 {
-	motor1Wheel.setMotorPower(0);
-	motor2Wheel.setMotorPower(0);
+	motor1Wheel.stopMotor();
+	motor2Wheel.stopMotor();
 }
 
 void mv_forward(int ms)
