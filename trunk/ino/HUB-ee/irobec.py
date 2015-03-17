@@ -81,9 +81,9 @@ class irobec:
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, 'V:%.3f' % (reply['V']/1000.))
 				y -= 1
-				self.stdscr.addstr(self.maxy - y, 0, '%.2f' % reply['head'])
+				self.stdscr.addstr(self.maxy - y, 0, '%.2f -> %d' % (reply['head'], reply['IRdist']))
 				y -= 1
-				self.stdscr.addstr(self.maxy - y, 0, '%d - %d' % (reply['LC'], reply['RC']))
+				self.stdscr.addstr(self.maxy - y, 0, '%d <> %d' % (reply['LC'], reply['RC']))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, 'T:%d' % reply['T'])
 		finally:
