@@ -4,12 +4,24 @@
 static HUBeeBMDWheel motor1Wheel;
 static HUBeeBMDWheel motor2Wheel;
 
+static const int min_pwr = 30;
+static const int max_pwr = 100;
+
 static int motor1Speed = 100, motor2Speed = 100;
+
+float motor1Coef = 1, motor2Coef = 1;
 
 int motor1QeiAPin	 = 3; //external interrupt 1 (UNO) or 0 (Leonardo)
 int motor1QeiBPin	 = 7;
 int motor2QeiAPin = 2; //external interrupt 0 (UNO) or 1 (Leonardo)
 int motor2QeiBPin = 4;
+
+// counts to move
+volatile int lCount = 0, rCount = 0;
+// to which direction (1, -1)
+volatile int lDir = 0, rDir = 0;
+
+volatile unsigned long stopTime = millis();
 
 volatile int motor1QeiCounts = 0, motor2QeiCounts = 0;
 volatile int oldMotor1QeiCounts = 0, oldMmotor2QeiCounts = 0;
@@ -29,10 +41,12 @@ void Motor1quickQEI()
 		case 0:
 		case 3:
 			motor1QeiCounts--;
+			if(lDir < 0 && lCount > 0) lCount--;
 			break;
 		case 1:
 		case 2:
 			motor1QeiCounts++;
+			if(lDir > 0 && lCount > 0) lCount--;
 			break;
 	}
 
@@ -53,9 +67,11 @@ void Motor2quickQEI()
 		case 0:
 		case 3:
 			motor2QeiCounts++;
+			if(rDir > 0 && rCount > 0) rCount--;
 			break;
 		case 2:
 			motor2QeiCounts--;
+			if(rDir < 0 && rCount > 0) rCount--;
 			break;
 	}
 	microTime = micros();
@@ -65,40 +81,81 @@ void Motor2quickQEI()
 
 void stop()
 {
+	lCount = 0;
+	rCount = 0;
+	lDir = 0;
+	rDir = 0;
 	motor1Wheel.stopMotor();
 	motor2Wheel.stopMotor();
 }
 
 void mv_forward(int ms)
 {
-	motor1Wheel.setMotorPower(motor1Speed);
-	motor2Wheel.setMotorPower(motor2Speed);
-	delay(ms);
-	stop();
+	lCount = 10;
+	rCount = 10;
+	lDir = 1;
+	rDir = 1;
+	stopTime = millis() + ms;
 }
 
 void mv_back(int ms)
 {
-	motor1Wheel.setMotorPower(-motor1Speed);
-	motor2Wheel.setMotorPower(-motor2Speed);
-	delay(ms);
-	stop();
+	lCount = 10;
+	rCount = 10;
+	lDir = -1;
+	rDir = -1;
+	stopTime = millis() + ms;
 }
 
 void turn_left(int ms)
 {
-	motor1Wheel.setMotorPower(-motor1Speed);
-	motor2Wheel.setMotorPower(motor2Speed);
-	delay(ms);
-	stop();
+	lCount = 10;
+	rCount = 10;
+	lDir = -1;
+	rDir = 1;
+	stopTime = millis() + ms;
 }
 
 void turn_right(int ms)
 {
-	motor1Wheel.setMotorPower(motor1Speed);
-	motor2Wheel.setMotorPower(-motor2Speed);
-	delay(ms);
+	lCount = 10;
+	rCount = 10;
+	lDir = 1;
+	rDir = -1;
+	stopTime = millis() + ms;
+}
+
+void calibrate_motors()
+{
+	int m1Q = motor1QeiCounts;
+	int m2Q = motor2QeiCounts;
+	float c1, c2;
 	stop();
+	delay(1000);
+	motor1QeiCounts = motor2QeiCounts = 0;
+	motor1Coef = motor2Coef = 1;
+	motor1Wheel.setMotorPower(motor1Speed);
+	motor2Wheel.setMotorPower(motor2Speed);
+	delay(1000);
+	stop();
+	if(motor2QeiCounts && motor1QeiCounts) {
+		c1 = sqrt(float(motor2QeiCounts) / motor1QeiCounts);
+		c2 = 1 / c1;
+		delay(1000);
+		motor1Wheel.setMotorPower(-motor1Speed);
+		motor2Wheel.setMotorPower(-motor2Speed);
+		delay(1000);
+		stop();
+		motor1QeiCounts = m1Q;
+		motor2QeiCounts = m2Q;
+		motor1Coef = c1;
+		motor2Coef = c2;
+	} else {
+		motor1Wheel.setMotorPower(-motor1Speed);
+		motor2Wheel.setMotorPower(-motor2Speed);
+		delay(1000);
+		stop();
+	}
 }
 
 void setup_motors()
@@ -136,5 +193,30 @@ void setup_motors()
 
 void process_motors()
 {
+	int pwr;
+	if(stopTime > millis()) {
+		if(lCount > 0) {
+			pwr = lDir * motor1Speed * motor1Coef;
+			if(lCount < 5) {
+				pwr -= (pwr - min_pwr) / 5. * (5 - lCount);
+			}
+			motor1Wheel.setMotorPower(pwr);
+		} else {
+			lDir = 0;
+			motor1Wheel.stopMotor();
+		}
+		if(rCount > 0) {
+			pwr = rDir * motor2Speed * motor2Coef;
+			if(rCount < 5) {
+				pwr -= (pwr - min_pwr) / 5. * (5 - rCount);
+			}
+			motor2Wheel.setMotorPower(rDir * motor2Speed * motor2Coef);
+		} else {
+			rDir = 0;
+			motor2Wheel.stopMotor();
+		}
+	} else {
+		stop();
+	}
 }
 

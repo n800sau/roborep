@@ -80,7 +80,12 @@ void printState()
 	Serial.print(", \"IRdist\":");
 	Serial.print(distance);
 	Serial.print(", \"Presence\":");
-	Serial.print(MVcount);
+	Serial.println(MVcount);
+
+	Serial.print(", \"Lcoef\":");
+	Serial.print(motor1Coef);
+	Serial.print(", \"Rcoef\":");
+	Serial.print(motor2Coef);
 
 	Serial.println("}");
 	Serial.println(".");
@@ -143,6 +148,12 @@ void execute(const char *cmd, JsonObject &data)
 	} else if (strcmp(cmd, "turn_right") == 0) {
 		turn_right(1000);
 		ok();
+	} else if (strcmp(cmd, "reset_encoders") == 0) {
+		motor1QeiCounts = motor2QeiCounts = 0;
+		ok();
+	} else if (strcmp(cmd, "calibrate_motors") == 0) {
+		calibrate_motors();
+		ok();
 	}
 }
 
@@ -161,7 +172,6 @@ void loop()
 	process_bmp085();
 	process_irdist();
 	process_presence();
-	process_motors();
 
 	if (jsonComplete) {
 		jsonComplete = false;
@@ -179,5 +189,6 @@ void loop()
 			execute(cmd, data);
 		}
 	}
+	process_motors();
 	delay(20);
 }
