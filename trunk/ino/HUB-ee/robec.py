@@ -5,6 +5,7 @@ import socket
 import select
 import errno
 import json
+import time
 from StringIO import StringIO
 
 # end of json marker
@@ -60,6 +61,7 @@ class robec:
 		return rs
 
 	def read_json(self):
+		t = time.time()
 		rs = None
 		data = ''
 		json_read = False
@@ -85,6 +87,9 @@ class robec:
 				else:
 					self.dbg_data += l
 			elif not json_read:
+				break
+			elif t + 2 < time.time():
+				self.dbprint('timeout')
 				break
 		return rs
 
