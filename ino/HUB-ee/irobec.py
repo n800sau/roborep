@@ -41,6 +41,20 @@ class irobec:
 				'y': 1,
 				'x': 5,
 			},
+			{
+				'title': 'Z',
+				'key': 'Z',
+				'cb': 'reset_encoders',
+				'y': 2,
+				'x': 5,
+			},
+			{
+				'title': 'M',
+				'key': 'M',
+				'cb': 'calibrate_motors',
+				'y': 3,
+				'x': 5,
+			},
 		)
 
 	def __init__(self):
@@ -76,14 +90,16 @@ class irobec:
 			reply = self.c.read_json()
 			if reply:
 				self.stdscr.clear()
-				y = 15
+				y = 20
 				self.stdscr.addstr(self.maxy - y, 0, time.strftime('%d.%m.%y %H:%M:%S'))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, 'V:%.3f' % (reply['V']/1000.))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, '%.2f -> %d' % (reply['head'], reply['IRdist']))
 				y -= 1
-				self.stdscr.addstr(self.maxy - y, 0, '%d <> %d' % (reply['LC'], reply['RC']))
+				self.stdscr.addstr(self.maxy - y, 0, ' %4d <> %4d' % (reply['LC'], reply['RC']))
+				y -= 1
+				self.stdscr.addstr(self.maxy - y, 0, '[%.2f <> %.2f]' % (reply['Lcoef'], reply['Rcoef']))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, 'T:%d' % reply['T'])
 		finally:
@@ -108,6 +124,14 @@ class irobec:
 	def reset(self):
 		self.c.send_at("IORST")
 		self.stdscr.addstr(self.maxy - 3, 0, 'X')
+
+	def reset_encoders(self):
+		self.c.send_command("reset_encoders")
+		self.stdscr.addstr(self.maxy - 3, 0, 'Z')
+
+	def calibrate_motors(self):
+		self.c.send_command("calibrate_motors")
+		self.stdscr.addstr(self.maxy - 3, 0, 'M')
 
 	def update(self):
 
