@@ -18,6 +18,17 @@ int led = 6;
 int lon = 0;
 unsigned long last_time = millis();
 
+int lastLCount = 0, lastRCount = 0;
+
+typedef struct _Vec{
+	int lCount, rCount;
+	short heading;
+} Vec;
+
+#define VECBUF_SIZE 50
+Vec vecbuf[VECBUF_SIZE];
+int vec_pointer = 0;
+bool vec_overflow = false;
 
 void setup()
 {
@@ -42,6 +53,8 @@ void setup()
 void printState()
 {
 	int v = readVccMv();
+		Serial.print(vec_pointer);
+		Serial.println(" vectors");
 	Serial.print("JSON:{\"type\":\"sensors\"");
 	Serial.print(",\"V\":");
 	Serial.print(v);
@@ -86,9 +99,27 @@ void printState()
 	Serial.print(motor1Coef);
 	Serial.print(", \"Rcoef\":");
 	Serial.print(motor2Coef);
+	Serial.print(", \"vec_over\":");
+	Serial.print(vec_overflow);
+	Serial.println(", \"vects\": [");
+	for(int i=0; i<vec_pointer; i++) {
+		if(i > 0) {
+			Serial.println(",");
+		}
+		Serial.print("{\"lC\":");
+		Serial.print(vecbuf[i].lCount);
+		Serial.print(",\"rC\":");
+		Serial.print(vecbuf[i].rCount);
+		Serial.print(",\"h\":");
+		Serial.print(vecbuf[i].heading);
+		Serial.print("}");
+	}
+	Serial.println("]");
+	vec_pointer = 0;
 
 	Serial.println("}");
 	Serial.println(".");
+		Serial.println("JSON sent");
 }
 
 void ok()
@@ -149,11 +180,30 @@ void execute(const char *cmd, JsonObject &data)
 		turn_right(1000);
 		ok();
 	} else if (strcmp(cmd, "reset_encoders") == 0) {
-		motor1QeiCounts = motor2QeiCounts = 0;
+		lastLCount = lastRCount = motor1QeiCounts = motor2QeiCounts = 0;
 		ok();
 	} else if (strcmp(cmd, "calibrate_motors") == 0) {
 		calibrate_motors();
 		ok();
+	}
+}
+
+void add_vector()
+{
+	if(lastLCount != motor1QeiCounts || lastRCount != motor2QeiCounts) {
+		vecbuf[vec_pointer].lCount = motor1QeiCounts - lastLCount;
+		vecbuf[vec_pointer].rCount = motor2QeiCounts - lastRCount;
+		vecbuf[vec_pointer].heading = headingDegrees;
+		vec_pointer++;
+		if(vec_pointer >= VECBUF_SIZE) {
+			for(int i=0; i<VECBUF_SIZE - 1; i++) {
+				vecbuf[i] = vecbuf[i+1];
+			}
+			vec_pointer = VECBUF_SIZE - 1;
+			vec_overflow = true;
+		}
+		lastLCount = motor1QeiCounts;
+		lastRCount = motor2QeiCounts;
 	}
 }
 
@@ -190,5 +240,6 @@ void loop()
 		}
 	}
 	process_motors();
+	add_vector();
 	delay(20);
 }
