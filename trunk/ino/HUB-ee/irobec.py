@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import curses, time
+import curses, time, math, sys
 from robec import robec
 
 class irobec:
@@ -61,6 +61,8 @@ class irobec:
 		self.c = robec()
 		self.c.connect('192.168.1.96', 23)
 		self.wait4sensors = False
+		self.x = 0
+		self.y = 0
 
 	def init(self, stdscr=None):
 		if stdscr is None:
@@ -78,6 +80,9 @@ class irobec:
 
 		self.maxy,self.maxx = self.stdscr.getmaxyx()
 		self.update()
+
+	def dbprint(self, text):
+		print >>sys.__stderr__, text
 
 	def reset(self):
 		self.stdscr.refresh()
@@ -102,6 +107,19 @@ class irobec:
 				self.stdscr.addstr(self.maxy - y, 0, '[%.2f <> %.2f]' % (reply['Lcoef'], reply['Rcoef']))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, 'T:%d' % reply['T'])
+				# north is X
+				if reply['vects']:
+					self.dbprint('vectors=%s\n' % reply['vects'])
+					for v in reply['vects']:
+						self.dbprint('v=%s\n' % v)
+						dist = (v['rC'] + v['lC']) / 2.
+						angl = v['h']
+						dx = math.cos(math.radians(angl))
+						dy = math.sin(math.radians(angl))
+						self.x += dx * dist
+						self.y += dy * dist
+				y -= 1
+				self.stdscr.addstr(self.maxy - y, 0, '%.1f, %.1f' % (self.x, self.y))
 		finally:
 			self.wait4sensors = False
 
@@ -128,6 +146,7 @@ class irobec:
 	def reset_encoders(self):
 		self.c.send_command("reset_encoders")
 		self.stdscr.addstr(self.maxy - 3, 0, 'Z')
+		self.x = self.y = 0
 
 	def calibrate_motors(self):
 		self.c.send_command("calibrate_motors")

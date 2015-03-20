@@ -23,7 +23,7 @@ class robec:
 		self.dbg_data = ''
 
 	def dbprint(self, text):
-		print >>sys.stderr, text
+		print >>sys.__stderr__, text
 
 	def connect(self, host, port):
 		self.sock.connect((host, port))
@@ -51,7 +51,7 @@ class robec:
 
 	def read_line(self):
 		rs = ''
-		self.dbprint( 'REMAIN: %s' % self.recv_data)
+#		self.dbprint( 'REMAIN: %s' % self.recv_data)
 		self.recv_data = self.recv_data.replace('\x0d', '\x0a')
 		self.recv_data = self.recv_data.replace('\x0a\x0a', '\x0a')
 		nldex = self.recv_data.find('\x0a')
@@ -77,7 +77,15 @@ class robec:
 					json_read = False
 					try:
 						rs = json.loads(data)
+						self.dbprint('Received %s' % rs)
+						if rs.get('vects', None):
+							f = file('vectors.log', 'a')
+							for v in rs['vects']:
+								f.write('%s\n' % v)
+							f.close()
 					except Exception, e:
+						self.dbprint(e)
+						self.dbprint('Received bad json: %s\n' % data)
 						self.dbg_data += str(e)
 						self.dbg_data += 'Received: "%s"' % data
 						rs = ''
@@ -85,6 +93,7 @@ class robec:
 				elif json_read:
 					data += l
 				else:
+					self.dbprint('Line: %s\n' % l)
 					self.dbg_data += l
 			elif not json_read:
 				break
@@ -98,8 +107,8 @@ class robec:
 			try:
 				data = self.sock.recv(1024)
 				if data:
-					self.dbprint('len=%d' % len(data))
-					self.dbprint('data=%s' % data)
+#					self.dbprint('len=%d' % len(data))
+#					self.dbprint('data=%s' % data)
 					self.recv_data += data
 				else:
 					break
@@ -123,7 +132,9 @@ class robec:
 					self.spin()
 					jdata = self.read_json()
 					if jdata:
-						print jdata
+						self.dbprint('Receivd JSON: %s' % jdata)
+#					else:
+#						self.dbprint('no JSON replied')
 				elif s == sys.stdin:
 #					print 'reading stdin...'
 					msg = sys.stdin.readline()
