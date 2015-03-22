@@ -2,6 +2,8 @@
 
 import curses, time, math, sys
 from robec import robec
+import redis
+import json
 
 class irobec:
 
@@ -63,6 +65,8 @@ class irobec:
 		self.wait4sensors = False
 		self.x = 0
 		self.y = 0
+		self.r = redis.Redis()
+		self.r.delete('xy')
 
 	def init(self, stdscr=None):
 		if stdscr is None:
@@ -109,15 +113,18 @@ class irobec:
 				self.stdscr.addstr(self.maxy - y, 0, 'T:%d' % reply['T'])
 				# north is X
 				if reply['vects']:
-					self.dbprint('vectors=%s\n' % reply['vects'])
+#					self.dbprint('vectors=%s\n' % reply['vects'])
 					for v in reply['vects']:
-						self.dbprint('v=%s\n' % v)
+#						self.dbprint('v=%s\n' % v)
 						dist = (v['rC'] + v['lC']) / 2.
 						angl = v['h']
 						dx = math.cos(math.radians(angl))
 						dy = math.sin(math.radians(angl))
 						self.x += dx * dist
 						self.y += dy * dist
+						v['x'] = self.x
+						v['y'] = self.y
+						self.r.rpush('xy', json.dumps(v))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, '%.1f, %.1f' % (self.x, self.y))
 		finally:

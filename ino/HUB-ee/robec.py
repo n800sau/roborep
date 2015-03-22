@@ -6,6 +6,7 @@ import select
 import errno
 import json
 import time
+import redis
 from StringIO import StringIO
 
 # end of json marker
@@ -21,6 +22,8 @@ class robec:
 			self.sock = sock
 		self.recv_data = ''
 		self.dbg_data = ''
+		self.r = redis.Redis()
+		self.r.delete('vectors')
 
 	def dbprint(self, text):
 		print >>sys.__stderr__, text
@@ -79,10 +82,8 @@ class robec:
 						rs = json.loads(data)
 						self.dbprint('Received %s' % rs)
 						if rs.get('vects', None):
-							f = file('vectors.log', 'a')
 							for v in rs['vects']:
-								f.write('%s\n' % v)
-							f.close()
+								self.r.rpush('vectors', json.dumps(v))
 					except Exception, e:
 						self.dbprint(e)
 						self.dbprint('Received bad json: %s\n' % data)
