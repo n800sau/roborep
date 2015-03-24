@@ -1,6 +1,7 @@
-#include <BMP085.h>
+#include <Adafruit_BMP085_U.h>
 
-extern BMP085 bmp;
+extern Adafruit_BMP085_Unified bmp;
+extern sensors_event_t bmp085_event;
 
 void setup_bmp085();
 void process_bmp085();

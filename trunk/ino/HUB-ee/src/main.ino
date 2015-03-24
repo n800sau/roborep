@@ -18,6 +18,8 @@ int led = 6;
 int lon = 0;
 unsigned long last_time = millis();
 
+float stop_acc_x = 0;
+
 int lastLCount = 0, lastRCount = 0;
 
 typedef struct _Vec{
@@ -35,8 +37,8 @@ void setup()
 	pinMode(led, OUTPUT);
 	digitalWrite(led, 1);
 	Serial.begin(115200);
-//	Serial.println("Starting the I2C interface.");
-	Serial.println("Reloading...");
+//	Serial.println(F("Starting the I2C interface."));
+	Serial.println(F("Reloading..."));
 	Wire.begin(); // Start the I2C interface.
 
 	setup_compass();
@@ -47,84 +49,86 @@ void setup()
 	setup_irdist();
 	setup_presence();
 	setup_motors();
-	Serial.println("Ready");
+	Serial.println(F("Ready"));
 }
 
 void printState()
 {
 	int v = readVccMv();
-		Serial.print(vec_pointer);
-		Serial.println(" vectors");
-	Serial.print("JSON:{\"type\":\"sensors\"");
-	Serial.print(",\"V\":");
+//		Serial.print(vec_pointer);
+//		Serial.println(F(" vectors"));
+	Serial.print(F("JSON:{\"type\":\"sensors\""));
+	Serial.print(F(",\"V\":"));
 	Serial.print(v);
-	Serial.print(",\"LC\":");
+	Serial.print(F(",\"LC\":"));
 	Serial.print(motor1QeiCounts);
-	Serial.print(",\"RC\":");
+	Serial.print(F(",\"RC\":"));
 	Serial.print(motor2QeiCounts);
 	Serial.println();
 
-	Serial.print(",\"head\":");
+	Serial.print(F(",\"head\":"));
 	Serial.print(headingDegrees);
-	Serial.print(",\"acc_x\":");
-	Serial.print(accel_scaled.XAxis);
-	Serial.print(",\"gyro_x\":");
+	Serial.print(F(",\"acc_x\":"));
+	Serial.print(adxl345_event.acceleration.x - stop_acc_x);
+	Serial.print(F(",\"acc_x_avg\":"));
+	Serial.print(acc_x_avg() - stop_acc_x);
+	Serial.print(F(",\"gyro_x\":"));
 	Serial.print((int)gyro.g.x);
 	Serial.println();
 
-	Serial.print(", \"T\":");
-	Serial.print(bmp.readTemperature());
+	Serial.print(F(", \"T\":"));
+	float temperature;
+	bmp.getTemperature(&temperature);
+	Serial.print(temperature);
 
-	Serial.print(", \"P\":");
-	Serial.print(bmp.readPressure());
+	Serial.print(F(", \"P\":"));
+	Serial.print(bmp085_event.pressure);
 
 	// Calculate altitude assuming 'standard' barometric
 	// pressure of 1013.25 millibar = 101325 Pascal
-	Serial.print(", \"Alt\":");
-	Serial.print(bmp.readAltitude());
+	Serial.print(F(", \"Alt\":"));
+	Serial.print(bmp.pressureToAltitude(SENSORS_PRESSURE_SEALEVELHPA, bmp085_event.pressure));
 
   // you can get a more precise measurement of altitude
   // if you know the current sea level pressure which will
   // vary with weather and such. If it is 1015 millibars
   // that is equal to 101500 Pascals.
 	// Sydney 1018.1 hPa
-	Serial.print(", \"R.alt\":");
-	Serial.print(bmp.readAltitude(101500));
-	Serial.print(", \"IRdist\":");
+	Serial.print(F(", \"IRdist\":"));
 	Serial.print(distance);
-	Serial.print(", \"Presence\":");
+	Serial.print(F(", \"Presence\":"));
 	Serial.println(MVcount);
 
-	Serial.print(", \"Lcoef\":");
+	Serial.print(F(", \"Lcoef\":"));
 	Serial.print(motor1Coef);
-	Serial.print(", \"Rcoef\":");
+	Serial.print(F(", \"Rcoef\":"));
 	Serial.print(motor2Coef);
-	Serial.print(", \"vec_over\":");
+	Serial.print(F(", \"vec_over\":"));
 	Serial.print(vec_overflow);
-	Serial.println(", \"vects\": [");
+	Serial.println(F(", \"vects\": ["));
 	for(int i=0; i<vec_pointer; i++) {
 		if(i > 0) {
-			Serial.println(",");
+			Serial.println(F(","));
 		}
-		Serial.print("{\"lC\":");
+		Serial.print(F("{\"lC\":"));
 		Serial.print(vecbuf[i].lCount);
-		Serial.print(",\"rC\":");
+		Serial.print(F(",\"rC\":"));
 		Serial.print(vecbuf[i].rCount);
-		Serial.print(",\"h\":");
+		Serial.print(F(",\"h\":"));
 		Serial.print(vecbuf[i].heading);
-		Serial.print("}");
+		Serial.print(F("}"));
 	}
-	Serial.println("]");
+	Serial.println(F("]"));
 	vec_pointer = 0;
 
-	Serial.println("}");
-	Serial.println(".");
-		Serial.println("JSON sent");
+	Serial.println(F("}"));
+	Serial.println(F("."));
+		Serial.println(F("JSON sent"));
 }
 
 void ok()
 {
-	Serial.println("{\"reply\":\"ok\"}");
+	Serial.println(F("{\"reply\":\"ok\"}"));
 }
 
 static char jsonBuf[256];
@@ -149,7 +153,7 @@ void serialEvent() {
 					(jsonBuf[inputPos-1] == 0xa))
 			) {
 				// end of json
-				Serial.println("json end");
+				Serial.println(F("json end"));
 				// check for empty json
 				if(inputPos >= 5) {
 					// not empty
@@ -185,6 +189,9 @@ void execute(const char *cmd, JsonObject &data)
 	} else if (strcmp(cmd, "calibrate_motors") == 0) {
 		calibrate_motors();
 		ok();
+	} else if (strcmp(cmd, "set_acc_zero") == 0) {
+		stop_acc_x = adxl345_event.acceleration.x;
+		ok();
 	}
 }
 
@@ -214,7 +221,7 @@ void loop()
 		last_time = t;
 		digitalWrite(led, lon);
 		lon = !lon;
-		Serial.println("tick");
+//		Serial.println(F("tick"));
 	}
 	process_compass();
 	process_accel();
@@ -229,12 +236,12 @@ void loop()
 		JsonObject &data = parser.parseObject(jsonBuf);
 		if (!data.success())
 		{
-			Serial.println("JSON parsing failed of");
+			Serial.println(F("JSON parsing failed of"));
 			Serial.println(jsonBuf);
 		} else {
 //			Serial.println(jsonBuf);
 			const char* cmd = data["command"];
-			Serial.print("command:");
+			Serial.print(F("command:"));
 			Serial.println(cmd);
 			execute(cmd, data);
 		}
