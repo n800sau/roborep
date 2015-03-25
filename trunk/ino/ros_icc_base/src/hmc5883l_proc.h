@@ -1,6 +1,6 @@
-#include <HMC5883L.h>
+#include <Adafruit_HMC5883_U.h>
 
-extern MagnetometerRaw compass_raw;
+extern sensors_event_t hmc5883_event;
 extern float headingDegrees;
 
 void setup_compass();
