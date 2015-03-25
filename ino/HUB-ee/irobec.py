@@ -37,24 +37,31 @@ class irobec:
 				'x': 1,
 			},
 			{
-				'title': 'RST',
+				'title': 'R-RST',
 				'key': 'R',
 				'cb': 'reset',
 				'y': 1,
 				'x': 5,
 			},
 			{
-				'title': 'Z',
+				'title': 'Z-res enc',
 				'key': 'Z',
 				'cb': 'reset_encoders',
 				'y': 2,
 				'x': 5,
 			},
 			{
-				'title': 'M',
+				'title': 'M-cal mot',
 				'key': 'M',
 				'cb': 'calibrate_motors',
 				'y': 3,
+				'x': 5,
+			},
+			{
+				'title': 'C-zacc',
+				'key': 'C',
+				'cb': 'set_acc_zero',
+				'y': 4,
 				'x': 5,
 			},
 		)
@@ -67,6 +74,7 @@ class irobec:
 		self.y = 0
 		self.r = redis.Redis()
 		self.r.delete('xy')
+		self.hit_time = None
 
 	def init(self, stdscr=None):
 		if stdscr is None:
@@ -98,13 +106,18 @@ class irobec:
 			self.c.send_command("sensors")
 			reply = self.c.read_json()
 			if reply:
+				if reply['acc_hit']:
+					self.hit_time = time.time()
+				elif self.hit_time:
+					if time.time() - self.hit_time > 5:
+						self.hit_time = None
 				self.stdscr.clear()
 				y = 20
 				self.stdscr.addstr(self.maxy - y, 0, time.strftime('%d.%m.%y %H:%M:%S'))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, 'V:%.3f' % (reply['V']/1000.))
 				y -= 1
-				self.stdscr.addstr(self.maxy - y, 0, '%.2f -> %d' % (reply['head'], reply['IRdist']))
+				self.stdscr.addstr(self.maxy - y, 0, '%.2f -> %d (%g) %s' % (reply['head'], reply['IRdist'], reply['acc_x_max'], ('hit!' if self.hit_time else '')))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, ' %4d <> %4d' % (reply['LC'], reply['RC']))
 				y -= 1
@@ -158,6 +171,10 @@ class irobec:
 	def calibrate_motors(self):
 		self.c.send_command("calibrate_motors")
 		self.stdscr.addstr(self.maxy - 3, 0, 'M')
+
+	def set_acc_zero(self):
+		self.c.send_command("set_acc_zero")
+		self.stdscr.addstr(self.maxy - 3, 0, 'C')
 
 	def update(self):
 
