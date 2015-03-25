@@ -54,6 +54,7 @@ void setup()
 
 void printState()
 {
+	int i;
 	int v = readVccMv();
 //		Serial.print(vec_pointer);
 //		Serial.println(F(" vectors"));
@@ -69,9 +70,16 @@ void printState()
 	Serial.print(F(",\"head\":"));
 	Serial.print(headingDegrees);
 	Serial.print(F(",\"acc_x\":"));
-	Serial.print(adxl345_event.acceleration.x - stop_acc_x);
+	Serial.print(adxl345_state.event.acceleration.x - stop_acc_x);
 	Serial.print(F(",\"acc_x_avg\":"));
 	Serial.print(acc_x_avg() - stop_acc_x);
+	Serial.print(F(",\"acc_x_max\":"));
+	Serial.print(acc_x_max() - stop_acc_x);
+	Serial.print(F(",\"acc_hit\":"));
+	Serial.print((int)adxl345_state.single_tap);
+
+	adxl345_state.reset();
+
 	Serial.print(F(",\"gyro_x\":"));
 	Serial.print((int)gyro.g.x);
 	Serial.println();
@@ -106,7 +114,8 @@ void printState()
 	Serial.print(F(", \"vec_over\":"));
 	Serial.print(vec_overflow);
 	Serial.println(F(", \"vects\": ["));
-	for(int i=0; i<vec_pointer; i++) {
+	int count = min(vec_pointer, 5);
+	for(i=0; i<count; i++) {
 		if(i > 0) {
 			Serial.println(F(","));
 		}
@@ -119,7 +128,10 @@ void printState()
 		Serial.print(F("}"));
 	}
 	Serial.println(F("]"));
-	vec_pointer = 0;
+	for(i=0; i<VECBUF_SIZE - count; i++) {
+		vecbuf[i] = vecbuf[i+count];
+	}
+	vec_pointer -= count;
 
 	Serial.println(F("}"));
 	Serial.println(F("."));
@@ -190,7 +202,7 @@ void execute(const char *cmd, JsonObject &data)
 		calibrate_motors();
 		ok();
 	} else if (strcmp(cmd, "set_acc_zero") == 0) {
-		stop_acc_x = adxl345_event.acceleration.x;
+		stop_acc_x = adxl345_state.event.acceleration.x;
 		ok();
 	}
 }
