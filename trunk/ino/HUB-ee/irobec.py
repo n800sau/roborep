@@ -64,6 +64,13 @@ class irobec:
 				'y': 4,
 				'x': 5,
 			},
+			{
+				'title': 'P-spin',
+				'key': 'P',
+				'cb': 'spinning',
+				'y': 4,
+				'x': 12,
+			},
 		)
 
 	def __init__(self):
@@ -175,6 +182,10 @@ class irobec:
 	def set_acc_zero(self):
 		self.c.send_command("set_acc_zero")
 		self.stdscr.addstr(self.maxy - 3, 0, 'C')
+
+	def spinning(self):
+		self.c.send_command("spinning")
+		self.stdscr.addstr(self.maxy - 3, 0, 'SP')
 
 	def update(self):
 

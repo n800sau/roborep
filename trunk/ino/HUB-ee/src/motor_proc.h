@@ -4,10 +4,13 @@ extern float motor1Coef, motor2Coef;
 void setup_motors();
 void process_motors();
 
-void mv_forward(int ms);
-void mv_back(int ms);
-void turn_left(int ms);
-void turn_right(int ms);
+void mv_forward(long ms);
+void mv_back(long ms);
+void turn_left(long ms);
+void turn_right(long ms);
+
+void stop();
+bool stopped();
 
 void calibrate_motors();
 

@@ -179,6 +179,49 @@ void serialEvent() {
 	}
 }
 
+class Action {
+	public:
+		virtual bool loop() { return false; }
+};
+
+class Spinning: public Action {
+
+	protected:
+		int heading, stage;
+
+	public:
+		Spinning() {
+			turn_left(10000);
+			heading = headingDegrees;
+			stage = 1;
+		}
+		virtual bool loop() {
+			if(abs(heading-headingDegrees) > 5) {
+				Serial.print("{\"dist\":");
+				Serial.print(distance);
+				Serial.print(",\"head\":");
+				Serial.print(headingDegrees);
+				Serial.println("}");
+				int h = heading;
+				if(abs(h - headingDegrees) > 180) {
+					h += 360;
+				}
+				if(abs(h - headingDegrees) > 90) {
+					heading = headingDegrees;
+					stage++;
+				}
+				if(stage > 4) {
+					stop();
+					return false;
+				}
+			}
+			return true;
+		}
+
+};
+
+Action *cur_action = NULL;
+
 void execute(const char *cmd, JsonObject &data)
 {
 	if(strcmp(cmd, "sensors") == 0) {
@@ -203,6 +246,14 @@ void execute(const char *cmd, JsonObject &data)
 		ok();
 	} else if (strcmp(cmd, "set_acc_zero") == 0) {
 		stop_acc_x = adxl345_state.event.acceleration.x;
+		ok();
+	} else if (strcmp(cmd, "spinning") == 0) {
+		if(cur_action) {
+			delete cur_action;
+			stop();
+			Serial.println(F("Action switched"));
+		}
+		cur_action = new Spinning;
 		ok();
 	}
 }
@@ -260,5 +311,12 @@ void loop()
 	}
 	process_motors();
 	add_vector();
+	if(cur_action) {
+		if((!cur_action->loop()) || stopped()) {
+			Serial.println(F("Action stopped"));
+			delete cur_action;
+			cur_action = NULL;
+		}
+	}
 	delay(20);
 }

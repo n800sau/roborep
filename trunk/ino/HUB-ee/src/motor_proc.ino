@@ -79,6 +79,11 @@ void Motor2quickQEI()
 	motor2OldElapsedTime = microTime;
 }
 
+bool stopped()
+{
+	return !(lDir || rDir);
+}
+
 void stop()
 {
 	lCount = 0;
@@ -89,7 +94,7 @@ void stop()
 	motor2Wheel.stopMotor();
 }
 
-void mv_forward(int ms)
+void mv_forward(long ms)
 {
 	lCount = 10;
 	rCount = 10;
@@ -98,7 +103,7 @@ void mv_forward(int ms)
 	stopTime = millis() + ms;
 }
 
-void mv_back(int ms)
+void mv_back(long ms)
 {
 	lCount = 10;
 	rCount = 10;
@@ -107,7 +112,7 @@ void mv_back(int ms)
 	stopTime = millis() + ms;
 }
 
-void turn_left(int ms)
+void turn_left(long ms)
 {
 	lCount = 10;
 	rCount = 10;
@@ -116,7 +121,7 @@ void turn_left(int ms)
 	stopTime = millis() + ms;
 }
 
-void turn_right(int ms)
+void turn_right(long ms)
 {
 	lCount = 10;
 	rCount = 10;
