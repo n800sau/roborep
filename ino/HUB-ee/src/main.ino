@@ -226,6 +226,8 @@ void execute(const char *cmd, JsonObject &data)
 {
 	if(strcmp(cmd, "s") == 0) {
 		printState();
+	} else if (strcmp(cmd, "st") == 0) {
+		stop();
 	} else if (strcmp(cmd, "sf") == 0) {
 		mv_forward(1000);
 		ok();

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html ng-app="app">
+
+  <head>
+    <meta name="viewport" content="width=device-width; initial-scale=1; maximum-scale=1; user-scalable=no;"/>
+    <meta name="MobileOptimized" content="width" />
+    <meta name="HandheldFriendly" content="true" />
+    <link rel="stylesheet" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.js"></script>
+    <script src="app.js"></script>
+    <script src="cmd.js"></script>
+  </head>
+
+  <body>
+    <table class="cnt">
+      <tr>
+        <td>
+          <span class="brect"></span>
+        </td>
+        <td>
+          <div class="squaredOne">
+            <input type="radio" value="None" id="step_forward" name="main" onclick="command(this)"/>
+            <label for="step_forward"></label>
+          </div>
+        </td>
+        <td>
+          <span class="brect"></span>
+        </td>
+        <td>
+          <span class="brect"></span>
+        </td>
+        <td>
+          <div class="squaredOne">
+            <input type="radio" value="None" id="sh_up" name="level" onclick="command(this)"/>
+            <label for="sh_up"></label>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="squaredOne">
+            <input type="radio" value="None" id="turn_left" name="main" onclick="command(this)"/>
+            <label for="turn_left"></label>
+          </div>
+        </td>
+        <td>
+          <div class="squaredOne red">
+            <input type="radio" value="None" id="stop" name="main" checked="checked" onclick="command(this)"/>
+            <label for="stop"></label>
+          </div>
+        </td>
+        <td>
+          <div class="squaredOne">
+            <input type="radio" value="None" id="turn_right" name="main" onclick="command(this)"/>
+            <label for="turn_right"></label>
+          </div>
+        </td>
+          <span class="brect"></span>
+        <td>
+          <span class="brect"></span>
+        </td>
+        <td>
+          <div class="squaredOne red">
+            <input type="radio" value="None" id="sh_stop" name="level" checked="checked" onclick="command(this)"/>
+            <label for="sh_stop"></label>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="brect"></span>
+        </td>
+        <td>
+          <div class="squaredOne">
+            <input type="radio" value="None" id="step_back" name="main" onclick="command(this)"/>
+            <label for="step_back"></label>
+          </div>
+        </td>
+        <td>
+          <span class="brect"></span>
+        </td>
+        <td>
+          <span class="brect"></span>
+        </td>
+        <td>
+          <div class="squaredOne">
+            <input type="radio" value="None" id="sh_down" name="level" onclick="command(this)"/>
+            <label for="sh_down"></label>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div id="d" ng-controller="moving">
+      <canvas width="300" height="200" id="canvas" drawing style="border: 1px solid green" ng-model="xylist"></canvas>
+    </div>
+
+    <div id="reply"></div>
+
+  </body>
+
+</html>
