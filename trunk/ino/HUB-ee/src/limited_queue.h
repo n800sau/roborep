@@ -31,12 +31,23 @@ class LimitedQueue {
 			return pointer;
 		}
 
+		T get(int index)
+		{
+			return (index>=0 && index<pointer) ? queue[index] : T();
+		}
+
+};
+
+template<typename T, int N>
+class ScalarLimitedQueue: public LimitedQueue<T, N> {
+
+	public:
 		T vmax(T initval)
 		{
 			T rs = initval;
-			for(int i=0; i<pointer; i++) {
-				if(rs < queue[i]) {
-					rs = queue[i];
+			for(int i=0; i<this->pointer; i++) {
+				if(rs < this->queue[i]) {
+					rs = this->queue[i];
 				}
 			}
 			return rs;
@@ -45,9 +56,9 @@ class LimitedQueue {
 		T vmin(T initval)
 		{
 			T rs = initval;
-			for(int i=0; i<pointer; i++) {
-				if(rs > queue[i]) {
-					rs = queue[i];
+			for(int i=0; i<this->pointer; i++) {
+				if(rs > this->queue[i]) {
+					rs = this->queue[i];
 				}
 			}
 			return rs;
@@ -56,14 +67,15 @@ class LimitedQueue {
 		T average(T initval)
 		{
 			T rs = initval;
-			if(pointer > 0) {
-				for(int i=0; i<pointer; i++) {
-					rs += queue[i];
+			if(this->pointer > 0) {
+				for(int i=0; i<this->pointer; i++) {
+					rs += this->queue[i];
 				}
-				rs /= pointer;
+				rs /= this->pointer;
 			}
 			return rs;
 		}
+
 };
 
 #endif //_LIMITEDQUEUE_H

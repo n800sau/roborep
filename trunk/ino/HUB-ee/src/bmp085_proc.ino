@@ -9,7 +9,7 @@ void setup_bmp085()
 	bmp = Adafruit_BMP085_Unified(10085);
 	if(!bmp.begin())
 	{
-		Serial.println(F("Could not connect to ADXL345."));
+		Serial.println(F("Could not connect to BMP085."));
 	}
 }
 

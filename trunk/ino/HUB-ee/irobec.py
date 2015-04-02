@@ -11,63 +11,63 @@ class irobec:
 			{
 				'title': 'L',
 				'key': 'A',
-				'cb': 'turn_left',
+				'cb': 'cmd_turn_left',
 				'y': 1,
 				'x': 0,
 			},
 			{
 				'title': 'R',
 				'key': 'D',
-				'cb': 'turn_right',
+				'cb': 'cmd_turn_right',
 				'y': 1,
 				'x': 2,
 			},
 			{
 				'title': 'F',
 				'key': 'W',
-				'cb': 'step_forward',
+				'cb': 'cmd_step_forward',
 				'y': 0,
 				'x': 1,
 			},
 			{
 				'title': 'B',
 				'key': 'S',
-				'cb': 'step_back',
+				'cb': 'cmd_step_back',
 				'y': 2,
 				'x': 1,
 			},
 			{
 				'title': 'R-RST',
 				'key': 'R',
-				'cb': 'reset',
+				'cb': 'cmd_reset',
 				'y': 1,
 				'x': 5,
 			},
 			{
 				'title': 'Z-res enc',
 				'key': 'Z',
-				'cb': 'reset_encoders',
+				'cb': 'cmd_reset_encoders',
 				'y': 2,
 				'x': 5,
 			},
 			{
 				'title': 'M-cal mot',
 				'key': 'M',
-				'cb': 'calibrate_motors',
+				'cb': 'cmd_calibrate_motors',
 				'y': 3,
 				'x': 5,
 			},
 			{
 				'title': 'C-zacc',
 				'key': 'C',
-				'cb': 'set_acc_zero',
+				'cb': 'cmd_set_acc_zero',
 				'y': 4,
 				'x': 5,
 			},
 			{
 				'title': 'P-spin',
 				'key': 'P',
-				'cb': 'spinning',
+				'cb': 'cmd_spinning',
 				'y': 4,
 				'x': 12,
 			},
@@ -107,13 +107,13 @@ class irobec:
 		self.stdscr.refresh()
 		curses.endwin()
 
-	def show_sensors(self):
+	def cmd_show_sensors(self):
 		self.wait4sensors = True
 		try:
-			self.c.send_command("sensors")
+			self.c.send_command("s")
 			reply = self.c.read_json()
 			if reply:
-				if reply['acc_hit']:
+				if reply['ahit']:
 					self.hit_time = time.time()
 				elif self.hit_time:
 					if time.time() - self.hit_time > 5:
@@ -124,7 +124,7 @@ class irobec:
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, 'V:%.3f' % (reply['V']/1000.))
 				y -= 1
-				self.stdscr.addstr(self.maxy - y, 0, '%.2f -> %d (%g) %s' % (reply['head'], reply['IRdist'], reply['acc_x_max'], ('hit!' if self.hit_time else '')))
+				self.stdscr.addstr(self.maxy - y, 0, '%.2f -> %d (%g) %s' % (reply['head'], reply['dist'], reply['acc_x_max'], ('hit!' if self.hit_time else '')))
 				y -= 1
 				self.stdscr.addstr(self.maxy - y, 0, ' %4d <> %4d' % (reply['LC'], reply['RC']))
 				y -= 1
@@ -150,41 +150,41 @@ class irobec:
 		finally:
 			self.wait4sensors = False
 
-	def turn_left(self):
-		self.c.send_command("turn_left")
+	def cmd_turn_left(self):
+		self.c.send_command("tl")
 		self.stdscr.addstr(self.maxy - 3, 0, 'L')
 
-	def turn_right(self):
-		self.c.send_command("turn_right")
+	def cmd_turn_right(self):
+		self.c.send_command("tr")
 		self.stdscr.addstr(self.maxy - 3, 0, 'R')
 
-	def step_forward(self):
-		self.c.send_command("step_forward")
+	def cmd_step_forward(self):
+		self.c.send_command("sf")
 		self.stdscr.addstr(self.maxy - 3, 0, 'F')
 
-	def step_back(self):
-		self.c.send_command("step_back")
+	def cmd_step_back(self):
+		self.c.send_command("sb")
 		self.stdscr.addstr(self.maxy - 3, 0, 'B')
 
-	def reset(self):
+	def cmd_reset(self):
 		self.c.send_at("IORST")
 		self.stdscr.addstr(self.maxy - 3, 0, 'X')
 
-	def reset_encoders(self):
-		self.c.send_command("reset_encoders")
+	def cmd_reset_encoders(self):
+		self.c.send_command("re")
 		self.stdscr.addstr(self.maxy - 3, 0, 'Z')
 		self.x = self.y = 0
 
-	def calibrate_motors(self):
-		self.c.send_command("calibrate_motors")
+	def cmd_calibrate_motors(self):
+		self.c.send_command("cm")
 		self.stdscr.addstr(self.maxy - 3, 0, 'M')
 
-	def set_acc_zero(self):
-		self.c.send_command("set_acc_zero")
+	def cmd_set_acc_zero(self):
+		self.c.send_command("saz")
 		self.stdscr.addstr(self.maxy - 3, 0, 'C')
 
-	def spinning(self):
-		self.c.send_command("spinning")
+	def cmd_spinning(self):
+		self.c.send_command("sp")
 		self.stdscr.addstr(self.maxy - 3, 0, 'SP')
 
 	def update(self):
@@ -214,10 +214,16 @@ class irobec:
 						break
 				self.update()
 			else:
+				cmd = self.c.check_rcommands()
+				if cmd:
+					self.dbprint('cmd=%s' % (cmd,))
+					cmd = getattr(self, 'cmd_' + cmd[1])
+					if cmd:
+						cmd()
 				self.c.spin()
 				if time.time() - t > 1 and not self.wait4sensors:
 					t = time.time()
-					self.show_sensors()
+					self.cmd_show_sensors()
 					self.update()
 
 def tapp(stdscr):
