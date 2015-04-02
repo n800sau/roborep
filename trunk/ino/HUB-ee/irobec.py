@@ -154,6 +154,10 @@ class irobec:
 		self.c.send_command("tl")
 		self.stdscr.addstr(self.maxy - 3, 0, 'L')
 
+	def cmd_stop(self):
+		self.c.send_command("st")
+		self.stdscr.addstr(self.maxy - 3, 0, '-')
+
 	def cmd_turn_right(self):
 		self.c.send_command("tr")
 		self.stdscr.addstr(self.maxy - 3, 0, 'R')
@@ -217,7 +221,7 @@ class irobec:
 				cmd = self.c.check_rcommands()
 				if cmd:
 					self.dbprint('cmd=%s' % (cmd,))
-					cmd = getattr(self, 'cmd_' + cmd[1])
+					cmd = getattr(self, 'cmd_' + cmd[1], None)
 					if cmd:
 						cmd()
 				self.c.spin()
