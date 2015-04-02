@@ -75,7 +75,7 @@ void printState()
 	Serial.print(acc_x_avg() - stop_acc_x);
 	Serial.print(F(",\"acc_x_max\":"));
 	Serial.print(acc_x_max() - stop_acc_x);
-	Serial.print(F(",\"acc_hit\":"));
+	Serial.print(F(",\"ahit\":"));
 	Serial.print((int)adxl345_state.single_tap);
 
 	adxl345_state.reset();
@@ -102,9 +102,9 @@ void printState()
   // vary with weather and such. If it is 1015 millibars
   // that is equal to 101500 Pascals.
 	// Sydney 1018.1 hPa
-	Serial.print(F(", \"IRdist\":"));
+	Serial.print(F(", \"dist\":"));
 	Serial.print(distance);
-	Serial.print(F(", \"Presence\":"));
+	Serial.print(F(", \"Pr\":"));
 	Serial.println(MVcount);
 
 	Serial.print(F(", \"Lcoef\":"));
@@ -135,7 +135,7 @@ void printState()
 
 	Serial.println(F("}"));
 	Serial.println(F("."));
-		Serial.println(F("JSON sent"));
+	Serial.println(F("JSON sent"));
 }
 
 void ok()
@@ -224,30 +224,30 @@ Action *cur_action = NULL;
 
 void execute(const char *cmd, JsonObject &data)
 {
-	if(strcmp(cmd, "sensors") == 0) {
+	if(strcmp(cmd, "s") == 0) {
 		printState();
-	} else if (strcmp(cmd, "step_forward") == 0) {
+	} else if (strcmp(cmd, "sf") == 0) {
 		mv_forward(1000);
 		ok();
-	} else if (strcmp(cmd, "step_back") == 0) {
+	} else if (strcmp(cmd, "sb") == 0) {
 		mv_back(1000);
 		ok();
-	} else if (strcmp(cmd, "turn_left") == 0) {
+	} else if (strcmp(cmd, "tl") == 0) {
 		turn_left(1000);
 		ok();
-	} else if (strcmp(cmd, "turn_right") == 0) {
+	} else if (strcmp(cmd, "tr") == 0) {
 		turn_right(1000);
 		ok();
-	} else if (strcmp(cmd, "reset_encoders") == 0) {
+	} else if (strcmp(cmd, "re") == 0) {
 		lastLCount = lastRCount = motor1QeiCounts = motor2QeiCounts = 0;
 		ok();
-	} else if (strcmp(cmd, "calibrate_motors") == 0) {
+	} else if (strcmp(cmd, "cm") == 0) {
 		calibrate_motors();
 		ok();
-	} else if (strcmp(cmd, "set_acc_zero") == 0) {
+	} else if (strcmp(cmd, "saz") == 0) {
 		stop_acc_x = adxl345_state.event.acceleration.x;
 		ok();
-	} else if (strcmp(cmd, "spinning") == 0) {
+	} else if (strcmp(cmd, "sp") == 0) {
 		if(cur_action) {
 			delete cur_action;
 			stop();

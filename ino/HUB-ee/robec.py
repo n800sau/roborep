@@ -7,10 +7,27 @@ import errno
 import json
 import time
 import redis
+import threading
+import Queue
 from StringIO import StringIO
 
 # end of json marker
 EOJ = "\n.\n"
+
+def redis_subscriber(q):
+	r = redis.Redis()
+	s = r.pubsub()
+	lsnr = s.listen()
+	s.subscribe('command')
+	print >>sys.stderr, 'subscribed', lsnr.next()
+	while True:
+		try:
+			rs = lsnr.next()
+			print >>sys.stderr, 'rs=', rs
+			if rs['type'] == 'message':
+				q.put((rs['channel'], rs['data']))
+		except Exception, e:
+			print e
 
 class robec:
 
@@ -20,6 +37,12 @@ class robec:
 				socket.AF_INET, socket.SOCK_STREAM)
 		else:
 			self.sock = sock
+
+		self.q = Queue.Queue()
+		self.t = threading.Thread(target=redis_subscriber, args = (self.q,))
+		self.t.setDaemon(True)
+		self.t.start()
+
 		self.recv_data = ''
 		self.dbg_data = ''
 		self.r = redis.Redis()
@@ -121,19 +144,29 @@ class robec:
 				else:
 					raise
 
+	def check_rcommands(self):
+		rs = None
+		try:
+			rs = self.q.get(False)
+#				print '####', d, '###'
+		except Queue.Empty:
+			pass
+		return rs
+
 	def run(self):
 		json_read = False
 		data = ''
 		while True:
 #			print 'waiting...'
-			ready2read, ready2write, in_error = select.select([self.sock, sys.stdin], [], [])
+			self.check_commands()
+			ready2read, ready2write, in_error = select.select([self.sock, sys.stdin], [], [], 1)
 			for s in ready2read:
 				if s == self.sock:
 #					print 'reading'
 					self.spin()
 					jdata = self.read_json()
 					if jdata:
-						self.dbprint('Receivd JSON: %s' % jdata)
+						self.dbprint('Received JSON: %s' % jdata)
 #					else:
 #						self.dbprint('no JSON replied')
 				elif s == sys.stdin:
