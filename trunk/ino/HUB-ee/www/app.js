@@ -1,19 +1,25 @@
 var app = angular.module("app", []);
 
-app.controller("moving", function($scope, $http, $interval) {
-  $interval(function() {
-    $http.get('/rgbframe/src.php'
+app.controller("robostate", ['$scope', '$http', '$interval', function($scope, $http, $interval) {
+  var update_state = function() {
+    $http.get('/rgbframe/state.php'
     ).success(
       function(data, status, headers, config) {
-        $scope.xylist = data;
+        if(data.state) {
+          $scope.state = data.state;
+        }
+        $scope.xylist = data.xy;
       }
     ).error(
       function(data, status, headers, config) {
-        console.log("Data loading failed!");
+        console.log("State data loading failed!");
       }
     );
-  }, 1000);
-});
+  };
+
+  $interval(update_state, 3000);
+  update_state();
+}]);
 
 app.directive("drawing", function(){
   return {
@@ -29,8 +35,8 @@ app.directive("drawing", function(){
             ctx.beginPath();
             ctx.clearRect (0, 0, el.width, el.height);
             ctx.translate(el.width / 2, el.height / 2);
-//            ctx.rotate(90*Math.PI/180);
-            ctx.moveTo(val[0].x,val[0].y);
+            ctx.rotate(270*Math.PI/180);
+            ctx.moveTo(val[0].x, val[0].y);
             for(var i=1; i<val.length; i++) {
   //            console.log(val[i]);
               // to
@@ -42,6 +48,20 @@ app.directive("drawing", function(){
             ctx.stroke();
             ctx.closePath();
             ctx.restore();
+
+            if(scope.state) {
+              ctx.save();
+              ctx.beginPath();
+              ctx.translate(el.width / 2, el.height / 2);
+//              ctx.rotate(360*Math.PI/180);
+              ctx.rotate(scope.state.head*Math.PI/180);
+              ctx.moveTo(0, 0);
+              ctx.lineTo(0, -Math.min(el.width, el.height) / 4);
+              ctx.strokeStyle = "#e00";
+              ctx.stroke();
+              ctx.closePath();
+              ctx.restore();
+            }
           }
         }
       });
