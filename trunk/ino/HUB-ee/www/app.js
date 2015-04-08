@@ -55,8 +55,9 @@ app.directive("drawing", function(){
               ctx.translate(el.width / 2, el.height / 2);
 //              ctx.rotate(360*Math.PI/180);
               ctx.rotate(scope.state.head*Math.PI/180);
-              ctx.moveTo(0, 0);
-              ctx.lineTo(0, -Math.min(el.width, el.height) / 4);
+//              ctx.moveTo(0, 0);
+//              ctx.lineTo(0, -Math.min(el.width, el.height) / 4);
+              drawLineArrow(ctx, 0, 0, 0, -Math.min(el.width, el.height) / 4);
               ctx.strokeStyle = "#e00";
               ctx.stroke();
               ctx.closePath();
