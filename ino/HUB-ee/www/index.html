@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="app">
+<html ng-app="app" ng-cloak>
 
   <head>
     <meta name="viewport" content="width=device-width; initial-scale=1; maximum-scale=1; user-scalable=no;"/>
@@ -91,7 +91,9 @@
       </tr>
     </table>
 
-    <div id="d" ng-controller="moving">
+    <div id="d" ng-controller="robostate">
+      Direction:{{state.head}}<br/>
+      <p/>
       <canvas width="300" height="200" id="canvas" drawing style="border: 1px solid green" ng-model="xylist"></canvas>
     </div>
 
