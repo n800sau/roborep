@@ -57,13 +57,11 @@ void setup()
 
   Wire.pins(12, 13);
   Wire.begin();        // join i2c bus (address optional for master)
+//	pinMode(ESP_PINS_OFFSET + 12, INPUT_PULLUP);
+//	pinMode(ESP_PINS_OFFSET + 13, INPUT_PULLUP);
 
   
   pinMode(INTERRUPTPIN, INPUT); 
-
-  writeTo(DEVICE, R_OFSX, 0); // offset for x
-  writeTo(DEVICE, R_OFSY, 0); // offset for y
-  writeTo(DEVICE, R_OFSZ, 0); // offset for z
 
 	// 10 bit
 //  writeTo(DEVICE, R_DATA_FORMAT, 0); // 00000000
@@ -72,6 +70,10 @@ void setup()
   writeTo(DEVICE, R_DATA_FORMAT, 0x8); // 00001000
   
   
+  writeTo(DEVICE, R_OFSX, 17); // offset for x
+  writeTo(DEVICE, R_OFSY, 0); // offset for y
+  writeTo(DEVICE, R_OFSZ, -0x7f); // offset for z
+
   // interrupts setup
   writeTo(DEVICE, R_INT_MAP, 0); // send all interrupts to ADXL345's INT1 pin
   writeTo(DEVICE, R_INT_ENABLE, B8(1111100)); // enable signle and double tap, activity, inactivity and free fall detection
@@ -198,10 +200,15 @@ void loop()
 //#define RANGE_2G_MULTIPLIER (1./0x200)
 
 // full res
-#define RANGE_2G_MULTIPLIER (0.002)
+#define RANGE_2G_MULTIPLIER (0.004)
 
+#define SENSORS_GRAVITY_EARTH             (9.80665F)              /**< Earth's gravity in m/s^2 */
 
 	float fx, fy, fz;
+//	fx = x * RANGE_2G_MULTIPLIER * SENSORS_GRAVITY_EARTH;
+//	fy = y * RANGE_2G_MULTIPLIER * SENSORS_GRAVITY_EARTH;
+//	fz = z * RANGE_2G_MULTIPLIER * SENSORS_GRAVITY_EARTH;
+
 	fx = x * RANGE_2G_MULTIPLIER;
 	fy = y * RANGE_2G_MULTIPLIER;
 	fz = z * RANGE_2G_MULTIPLIER;
