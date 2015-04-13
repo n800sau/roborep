@@ -13,6 +13,7 @@
 // bmp085 - 0x77
 // l3g4200d - 0x69
 
+// A1 - GPIO13
 
 int led = 6;
 int lon = 0;
@@ -197,11 +198,6 @@ class Spinning: public Action {
 		}
 		virtual bool loop() {
 			if(abs(heading-headingDegrees) > 5) {
-				Serial.print("{\"dist\":");
-				Serial.print(distance);
-				Serial.print(",\"head\":");
-				Serial.print(headingDegrees);
-				Serial.println("}");
 				int h = heading;
 				if(abs(h - headingDegrees) > 180) {
 					h += 360;
@@ -220,43 +216,102 @@ class Spinning: public Action {
 
 };
 
+class TurnToHeading: public Action {
+
+	protected:
+		int heading;
+
+	public:
+		TurnToHeading(int heading) {
+			this->heading = heading % 360;
+			if(this->heading < 0)
+				this->heading += 360;
+		}
+
+		virtual bool loop() {
+			if(abs(heading-headingDegrees) > 5) {
+				int diff = headingDegrees - heading;
+				if((diff > 0 && diff < 180) || (diff < 0 && diff < -180)) {
+					// turn right
+					turn_right(1000);
+				} else {
+					// turn left
+					turn_left(1000);
+				}
+			} else {
+				stop();
+				return false;
+			}
+			return true;
+		}
+
+};
+
 Action *cur_action = NULL;
+const char *action_switched_msg = "Action switched";
+
+#define S_N1(c1) c1
+#define S_N2(c1, c2) (c1 + (c2 << 8))
+#define S_N3(c1, c2, c3) (c1 + (c2 << 8) + (c3 << 16))
 
 void execute(const char *cmd, JsonObject &data)
 {
-	if(strcmp(cmd, "s") == 0) {
-		printState();
-	} else if (strcmp(cmd, "st") == 0) {
-		stop();
-	} else if (strcmp(cmd, "sf") == 0) {
-		mv_forward(1000);
-		ok();
-	} else if (strcmp(cmd, "sb") == 0) {
-		mv_back(1000);
-		ok();
-	} else if (strcmp(cmd, "tl") == 0) {
-		turn_left(1000);
-		ok();
-	} else if (strcmp(cmd, "tr") == 0) {
-		turn_right(1000);
-		ok();
-	} else if (strcmp(cmd, "re") == 0) {
-		lastLCount = lastRCount = motor1QeiCounts = motor2QeiCounts = 0;
-		ok();
-	} else if (strcmp(cmd, "cm") == 0) {
-		calibrate_motors();
-		ok();
-	} else if (strcmp(cmd, "saz") == 0) {
-		stop_acc_x = adxl345_state.event.acceleration.x;
-		ok();
-	} else if (strcmp(cmd, "sp") == 0) {
-		if(cur_action) {
-			delete cur_action;
+	uint32_t ucmd = 0;
+	strncpy((char*)&ucmd, cmd, sizeof(ucmd));
+	switch(ucmd) {
+		case S_N1('s'):
+			printState();
+			break;
+		case S_N2('s', 't'):
 			stop();
-			Serial.println(F("Action switched"));
-		}
-		cur_action = new Spinning;
-		ok();
+			break;
+		case S_N2('s', 'f'):
+			mv_forward(1000);
+			ok();
+			break;
+		case S_N2('s', 'b'):
+			mv_back(1000);
+			ok();
+			break;
+		case S_N2('t', 'l'):
+			turn_left(1000);
+			ok();
+			break;
+		case S_N2('t', 'r'):
+			turn_right(1000);
+			ok();
+			break;
+		case S_N2('r', 'e'):
+			lastLCount = lastRCount = motor1QeiCounts = motor2QeiCounts = 0;
+			ok();
+			break;
+		case S_N2('c', 'm'):
+			calibrate_motors();
+			ok();
+			break;
+		case S_N3('s', 'a', 'z'):
+			stop_acc_x = adxl345_state.event.acceleration.x;
+			ok();
+			break;
+		case S_N2('s', 'p'):
+			if(cur_action) {
+				delete cur_action;
+				stop();
+				Serial.println(action_switched_msg);
+			}
+			cur_action = new Spinning;
+			ok();
+			break;
+		case S_N1('t'):
+			float heading = data["head"];
+			if(cur_action) {
+				delete cur_action;
+				stop();
+				Serial.println(action_switched_msg);
+			}
+			cur_action = new TurnToHeading(heading);
+			ok();
+			break;
 	}
 }
 
