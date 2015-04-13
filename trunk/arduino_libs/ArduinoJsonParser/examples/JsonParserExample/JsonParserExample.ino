@@ -1,94 +1,37 @@
-/*
-* malloc-free JSON parser for Arduino
-* Benoit Blanchon 2014 - MIT License
-*/
+// Copyright Benoit Blanchon 2014
+// MIT License
+//
+// Arduino JSON library
+// https://github.com/bblanchon/ArduinoJson
 
-#include <JsonParser.h>
+#include <ArduinoJson.h>
 
-void ParseAnObject()
-{
-    char json[] = "{\"Name\":\"Blanchon\",\"Skills\":[\"C\",\"C++\",\"C#\"],\"Age\":32,\"Online\":true}";
+void setup() {
+  Serial.begin(9600);
 
-    JsonParser<32> parser;
+  StaticJsonBuffer<200> jsonBuffer;
 
-    Serial.print("Parse ");
-    Serial.println(json);
+  char json[] =
+      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
 
-    JsonHashTable hashTable = parser.parseHashTable(json);
+  JsonObject& root = jsonBuffer.parseObject(json);
 
-    if (!hashTable.success())
-    {
-        Serial.println("JsonParser.parseHashTable() failed");
-        return;
-    }
+  if (!root.success()) {
+    Serial.println("parseObject() failed");
+    return;
+  }
 
-    char* name = hashTable.getString("Name");
-    Serial.print("name=");
-    Serial.println(name);
+  const char* sensor = root["sensor"];
+  long time = root["time"];
+  double latitude = root["data"][0];
+  double longitude = root["data"][1];
 
-    JsonArray skills = hashTable.getArray("Skills");
-    Serial.println("skills:");
-    for (int i = 0; i < skills.getLength(); i++)
-    {
-        char* value = skills.getString(i);
-        Serial.print(i);
-        Serial.print(" ");
-        Serial.println(value);
-    }
-
-    int age = hashTable.getLong("Age");
-    Serial.print("age=");
-    Serial.println(age);
-
-    bool online = hashTable.getBool("Online");
-    Serial.print("online=");
-    Serial.println(online);
+  Serial.println(sensor);
+  Serial.println(time);
+  Serial.println(latitude, 6);
+  Serial.println(longitude, 6);
 }
 
-void ParseAnArray()
-{
-    char json[] = "[[1.2,3.4],[5.6,7.8]]";
-
-    JsonParser<32> parser;
-
-    Serial.print("Parse ");
-    Serial.println(json);
-
-    JsonArray array = parser.parseArray(json);
-
-    if (!array.success())
-    {
-        Serial.println("JsonParser.parseArray() failed");
-        return;
-    }
-
-    for (int i = 0; i < array.getLength(); i++)
-    {
-        Serial.println(i);
-
-        JsonArray innerArray = array.getArray(i);
-
-        for (int j = 0; j < innerArray.getLength(); j++)
-        {
-            double value = innerArray.getDouble(j);
-
-            Serial.print("  ");
-            Serial.print(j);
-            Serial.print("=");
-            Serial.println(value);
-        }
-    }
-}
-
-void setup()
-{
-    Serial.begin(9600);
-
-    ParseAnObject();
-    ParseAnArray();
-}
-
-void loop()
-{
-
+void loop() {
+  // not used in this example
 }
