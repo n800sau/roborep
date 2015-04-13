@@ -8,7 +8,7 @@
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel;
 
-LimitedQueue<float, 50> acc_x;
+ScalarLimitedQueue<float, 50> acc_x;
 
 adxl345_state_t adxl345_state;
 
@@ -23,6 +23,8 @@ void setup_accel()
 	if(!accel.begin())
 	{
 		Serial.println(F("Could not connect to ADXL345."));
+	} else {
+		Serial.println(F("ADXL345 is ready"));
 	}
 
 	// Set the range of the accelerometer to a maximum of 2G.
@@ -50,7 +52,7 @@ void process_accel()
 		int interruptSource = accel.readRegister(ADXL345_REG_INT_SOURCE);
 		if(interruptSource & B8(1000000)) {
 			adxl345_state.single_tap++;
-			Serial.print("### SINGLE_TAP ###");
+			Serial.println("### SINGLE_TAP ###");
 		}
 	}
 
