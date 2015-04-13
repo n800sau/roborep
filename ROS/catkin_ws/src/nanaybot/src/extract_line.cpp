@@ -148,7 +148,7 @@ int main(int argc, char ** argv)
 	image_transport::ImageTransport it(nh);
 	img_pub = it.advertise("/extract_line/image", 1);
 	dynamic_reconfigure::Server<nanaybot::extract_lineConfig> server;
-	dynamic_reconfigure::Server<nanaybo::extract_lineConfig>::CallbackType f;
+	dynamic_reconfigure::Server<nanaybot::extract_lineConfig>::CallbackType f;
 	f = boost::bind(&reconfigure_callback, _1, _2);
 	server.setCallback(f);
 	ros::spin();
