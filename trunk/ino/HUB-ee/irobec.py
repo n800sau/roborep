@@ -150,6 +150,10 @@ class irobec:
 		finally:
 			self.wait4sensors = False
 
+	def cmd_turn(self, rad):
+		self.c.send_command("t", rad=rad)
+		self.stdscr.addstr(self.maxy - 3, 0, 'TR')
+
 	def cmd_turn_left(self):
 		self.c.send_command("tl")
 		self.stdscr.addstr(self.maxy - 3, 0, 'L')
@@ -221,9 +225,11 @@ class irobec:
 				cmd = self.c.check_rcommands()
 				if cmd:
 					self.dbprint('cmd=%s' % (cmd,))
-					cmd = getattr(self, 'cmd_' + cmd[1], None)
-					if cmd:
-						cmd()
+					if cmd[0] == 'command':
+						cmd = json.loads(cmd[1])
+						cmdfunc = getattr(self, 'cmd_' + cmd['name'], None)
+						if cmdfunc:
+							cmdfunc(**cmd.get('params', {}))
 				self.c.spin()
 				if time.time() - t > 1 and not self.wait4sensors:
 					t = time.time()

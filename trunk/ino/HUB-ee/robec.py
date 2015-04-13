@@ -22,10 +22,10 @@ def redis_subscriber(q):
 	print >>sys.stderr, 'subscribed', lsnr.next()
 	while True:
 		try:
-			rs = lsnr.next()
-			print >>sys.stderr, 'rs=', rs
-			if rs['type'] == 'message':
-				q.put((rs['channel'], rs['data']))
+			command = lsnr.next()
+			print >>sys.stderr, 'command=', command
+			if command['type'] == 'message':
+				q.put((command['channel'], command['data']))
 		except Exception, e:
 			print e
 
@@ -103,10 +103,14 @@ class robec:
 					json_read = False
 					try:
 						rs = json.loads(data)
+						state = json.loads(data)
 						self.dbprint('Received %s' % rs)
 						if rs.get('vects', None):
 							for v in rs['vects']:
 								self.r.rpush('vectors', json.dumps(v))
+						if 'vects' in state:
+							del state['vects']
+						self.r.rpush('state', json.dumps(state))
 					except Exception, e:
 						self.dbprint(e)
 						self.dbprint('Received bad json: %s\n' % data)
@@ -158,7 +162,7 @@ class robec:
 		data = ''
 		while True:
 #			print 'waiting...'
-			self.check_commands()
+			self.check_rcommands()
 			ready2read, ready2write, in_error = select.select([self.sock, sys.stdin], [], [], 1)
 			for s in ready2read:
 				if s == self.sock:
