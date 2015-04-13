@@ -93,7 +93,7 @@ void HUBeeBMDWheel::stopMotor()
 	//halt the motor using the current braking mode
 	analogWrite(PWM, 0);
 	digitalWrite(IN1, motorBrakeMode);
-  digitalWrite(IN2, motorBrakeMode);
+	digitalWrite(IN2, motorBrakeMode);
 }
 
 
