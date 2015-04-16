@@ -13,18 +13,19 @@ typedef struct config_commands {
 const config_commands_t config_commands[] = { 
 	{ "HELP", &AtExec::print_help },
 	{ "BAUD", &AtExec::config_baud },
-	{ "NETINFO", &AtExec::show_netinfo },
+	{ "INFO", &AtExec::show_info },
+	{ "SCAN", &AtExec::show_scan },
 	{ "RESET", &AtExec::cmd_reset }, 
-	{ "MODE", &AtExec::config_cmd_mode },
-//	{ "STA", &config_cmd_sta },
-//	{ "AP", &config_cmd_ap },
+	{ "MODE", &AtExec::config_mode },
+	{ "STA", &AtExec::config_sta },
+	{ "AP", &AtExec::config_ap },
 	{ "IORST", &AtExec::io_reset },
 	{ "", &AtExec::unknown_command },
-//	{ "DEBUG", &config_debug_mode },
+	{ "DEBUG", &AtExec::config_debug_mode },
 	{ NULL, NULL }
 };
 
-AtExec::AtExec(WiFiClient client):
+AtExec::AtExec(TelClient *client):
 	client(client),argv(false)
 {
 	pinMode(ARDUINO_RESET_PIN, OUTPUT);
@@ -33,12 +34,12 @@ AtExec::AtExec(WiFiClient client):
 
 void AtExec::ok()
 {
-	client.println("OK");
+	client->conn.println("OK");
 }
 
 void AtExec::error()
 {
-	client.println("ERROR");
+	client->conn.println("ERROR");
 }
 
 bool AtExec::parseCommand(String &line)
@@ -73,8 +74,8 @@ bool AtExec::parseCommand(String &line)
 				}
 			}
 			if(!config_commands[i].command) {
-				client.print("Invalid command:");
-				client.println(line);
+				client->conn.print("Invalid command:");
+				client->conn.println(line);
 				error();
 			}
 		} else {
@@ -86,11 +87,11 @@ bool AtExec::parseCommand(String &line)
 
 void AtExec::print_help(AtExec *self)
 {
-	self->client.println("--- epshttpd_n help ---");
+	self->client->conn.println("--- epshttpd_n help ---");
 	const config_commands_t *p = config_commands;
 	char *buf = NULL;
 	while(p->command) {
-		self->client.println(p->command);
+		self->client->conn.println(p->command);
 		p++;
 	}
 	self->ok();
@@ -107,7 +108,7 @@ void AtExec::config_baud(AtExec *self)
 	}
 }
 
-void AtExec::config_cmd_mode(AtExec *self)
+void AtExec::config_mode(AtExec *self)
 {
 	if(self->argv.count() == 1) {
 		self->error();
@@ -127,7 +128,7 @@ void AtExec::config_cmd_mode(AtExec *self)
 			WiFi.mode(mode);
 			self->ok();
 		} else {
-			self->client.println("Mode should be AP, STA or APSTA");
+			self->client->conn.println("Mode should be AP, STA or APSTA");
 			self->error();
 		}
 	}
@@ -148,10 +149,60 @@ void AtExec::io_reset(AtExec *self)
 	self->ok();
 }
 
-void AtExec::show_netinfo(AtExec *self)
+void AtExec::show_info(AtExec *self)
 {
-	WiFi.printDiag(self->client);
+	WiFi.printDiag(self->client->conn);
 	self->ok();
+}
+
+void AtExec::show_scan(AtExec *self)
+{
+	int n = WiFi.scanNetworks();
+	for(int i=0; i<n; i++) {
+		self->client->conn.println(WiFi.SSID(i));
+	}
+	self->ok();
+}
+
+void AtExec::config_debug_mode(AtExec *self)
+{
+	if(self->argv.count() == 2) {
+		self->client->dbgMode = self->argv.get(1).toInt();
+	}
+	if(self->argv.count() <= 2) {
+		self->client->conn.print("Debug Mode is ");
+		self->client->conn.println((self->client->dbgMode) ? "on" : "off");
+		self->ok();
+	} else {
+		self->error();
+	}
+}
+
+void AtExec::config_sta(AtExec *self)
+{
+	if(self->argv.count() != 2) {
+		self->error();
+	} else {
+		WiFi.begin(self->argv.get(0).c_str(), self->argv.get(1).c_str());
+		self->ok();
+	}
+}
+
+void AtExec::config_ap(AtExec *self)
+{
+	switch(self->argv.count()) {
+		case 2:
+			WiFi.softAP(self->argv.get(0).c_str(), self->argv.get(1).c_str());
+			self->ok();
+			break;
+		case 3:
+			WiFi.softAP(self->argv.get(0).c_str(), self->argv.get(1).c_str(), self->argv.get(2).toInt());
+			self->ok();
+			break;
+		default:
+			self->error();
+			break;
+	}
 }
 
 void AtExec::unknown_command(AtExec *self)

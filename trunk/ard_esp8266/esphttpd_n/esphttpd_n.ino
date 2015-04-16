@@ -3,6 +3,7 @@
 #include <LimitedList.h>
 #include "atexec.h"
 #include "dbgserial.h"
+#include "TelClient.h"
 
 #define MAX_CMD_LENGTH	 25
 
@@ -13,20 +14,16 @@ const char* password = "1,tpGfhjkz2";
 // specify the port to listen on as an argument
 WiFiServer server(23);
 
-struct clientbuf_t {
-	WiFiClient conn;
-	String remains;
-	String dbgBuff;
-};
-
-LimitedPtrList<clientbuf_t, 10> clients(false);
+LimitedPtrList<TelClient, 10> clients(false);
 
 void dbg_write(uint8_t c)
 {
 	if(isgraph(c) || isspace(c)) {
 		for(int i=0; i<clients.count(); i++) {
-			clientbuf_t *client = clients.get(i);
-			client->dbgBuff += (char)c;
+			TelClient *client = clients.get(i);
+			if(client->dbgMode) {
+				client->dbgBuff += (char)c;
+			}
 		}
 	}
 }
@@ -71,7 +68,7 @@ void setup() {
 
 void loop()
 {
-	clientbuf_t *client;
+	TelClient *client;
 	for(int i=0; i<clients.count(); i++) {
 		client = clients.get(i);
 		if(client->conn.connected()) {
@@ -95,7 +92,7 @@ void loop()
 							client->remains = client->remains.substring(eolpos+1);
 							cmd.trim();
 							if(cmd.length() > 0) {
-								AtExec(client->conn).parseCommand(cmd);
+								AtExec(client).parseCommand(cmd);
 							}
 						}
 					} else {
@@ -122,7 +119,7 @@ void loop()
 	}
 	WiFiClient conn = server.available();
 	if(conn) {
-		client = new clientbuf_t;
+		client = new TelClient;
 		client->conn = conn;
 		client->conn.setTimeout(1);
 		client->remains = String();
