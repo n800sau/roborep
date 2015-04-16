@@ -8,11 +8,10 @@ class LimitedList {
 		T queue[N];
 		int _count;
 		bool new_is_priority;
-		static T dummy;
 	public:
 		LimitedList(bool new_is_priority=true):_count(0),new_is_priority(new_is_priority) {}
 
-		bool push(const T &v)
+		bool push(const T v)
 		{
 			bool rs = new_is_priority || _count < N-1;
 			if(rs) {
@@ -37,9 +36,9 @@ class LimitedList {
 			return _count;
 		}
 
-		T &get(int index)
+		T get(int index)
 		{
-			return (index>=0 && index<_count) ? queue[index] : dummy;
+			return (index>=0 && index<_count) ? queue[index] : T();
 		}
 
 		void remove(int index) {
@@ -51,11 +50,7 @@ class LimitedList {
 				queue[_count] = T();
 			}
 		}
-
 };
-
-template<typename T, int N>
-T LimitedList<T, N>::dummy;
 
 template<typename T, int N>
 class ScalarLimitedList: public LimitedList<T, N> {
