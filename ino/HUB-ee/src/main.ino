@@ -1,3 +1,5 @@
+#include "a_spinning.h"
+#include "a_turntoheading.h"
 #include "hmc5883l_proc.h"
 #include "adxl345_proc.h"
 #include "l3g4200d_proc.h"
@@ -180,79 +182,22 @@ void serialEvent() {
 	}
 }
 
-class Action {
-	public:
-		virtual bool loop() { return false; }
-};
-
-class Spinning: public Action {
-
-	protected:
-		int heading, stage;
-
-	public:
-		Spinning() {
-			turn_left(10000);
-			heading = headingDegrees;
-			stage = 1;
-		}
-		virtual bool loop() {
-			if(abs(heading-headingDegrees) > 5) {
-				int h = heading;
-				if(abs(h - headingDegrees) > 180) {
-					h += 360;
-				}
-				if(abs(h - headingDegrees) > 90) {
-					heading = headingDegrees;
-					stage++;
-				}
-				if(stage > 4) {
-					stop();
-					return false;
-				}
-			}
-			return true;
-		}
-
-};
-
-class TurnToHeading: public Action {
-
-	protected:
-		int heading;
-
-	public:
-		TurnToHeading(int heading) {
-			this->heading = heading % 360;
-			if(this->heading < 0)
-				this->heading += 360;
-		}
-
-		virtual bool loop() {
-			if(abs(heading-headingDegrees) > 5) {
-				int diff = headingDegrees - heading;
-				if((diff > 0 && diff < 180) || (diff < 0 && diff < -180)) {
-					// turn right
-					turn_right(1000);
-				} else {
-					// turn left
-					turn_left(1000);
-				}
-			} else {
-				stop();
-				return false;
-			}
-			return true;
-		}
-
-};
-
 Action *cur_action = NULL;
 const char *action_switched_msg = "Action switched";
 
 #define S_N1(c1) c1
 #define S_N2(c1, c2) (c1 + (c2 << 8))
 #define S_N3(c1, c2, c3) (c1 + (c2 << 8) + (c3 << 16))
+
+void start_action(Action *action)
+{
+	if(cur_action) {
+		delete cur_action;
+		stop();
+		Serial.println(action_switched_msg);
+	}
+	cur_action = action;
+}
 
 void execute(const char *cmd, JsonObject &data)
 {
@@ -294,22 +239,11 @@ void execute(const char *cmd, JsonObject &data)
 			ok();
 			break;
 		case S_N2('s', 'p'):
-			if(cur_action) {
-				delete cur_action;
-				stop();
-				Serial.println(action_switched_msg);
-			}
-			cur_action = new Spinning;
+			start_action(new Spinning);
 			ok();
 			break;
 		case S_N1('t'):
-			float heading = data["head"];
-			if(cur_action) {
-				delete cur_action;
-				stop();
-				Serial.println(action_switched_msg);
-			}
-			cur_action = new TurnToHeading(heading);
+			start_action(new TurnToHeading(data["head"]));
 			ok();
 			break;
 	}
