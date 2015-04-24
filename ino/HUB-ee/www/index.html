@@ -7,13 +7,15 @@
     <meta name="HandheldFriendly" content="true" />
     <link rel="stylesheet" href="style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script src="app.js"></script>
     <script src="cmd.js"></script>
     <script src="arrow.js"></script>
   </head>
 
   <body>
-    <table class="cnt">
+
+    <table class="cnt hidden">
       <tr>
         <td>
           <span class="brect"></span>
@@ -95,7 +97,7 @@
     <div id="d" ng-controller="robostate">
       Direction:{{state.head}}<br/>
       <p/>
-      <canvas width="300" height="200" id="canvas" drawing style="border: 1px solid green" ng-model="xylist"></canvas>
+      <canvas width="300" height="200" id="canvas" drawing style="border: 1px solid green" ng-model="xylist" ng-mousedown="set_direction($event)"></canvas>
     </div>
 
     <div id="reply"></div>

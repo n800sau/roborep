@@ -9,6 +9,10 @@ table.cnt {
 	color: green;
 }
 
+.hidden {
+	display: none;
+}
+
 /* SQUARED ONE */
 .squaredOne {
 	width: 68px;

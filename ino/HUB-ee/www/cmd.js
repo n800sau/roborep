@@ -1,4 +1,4 @@
-function send_command(command) {
+function send_command(command, paramobj) {
   var request = new XMLHttpRequest();
   request.onreadystatechange = function() {
     if(request.readyState == 4)
@@ -12,7 +12,11 @@ function send_command(command) {
     }
     setTimeout(reset_buttons, 1000);
   }
-  request.open("GET", '/rgbframe/command.php?cmd=' + command, true);
+  var args = 'cmd=' + command;
+  if(paramobj) {
+    args += '&params=' + encodeURIComponent(JSON.stringify(paramobj));
+  }
+  request.open("GET", '/rgbframe/command.php?' + args, true);
   request.send();
 }
 
