@@ -93,7 +93,6 @@ init = function() {
 	xhr.send();
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', 'data/twdata.json', true);
-	xhr.responseType = 'application/json';
 	xhr.onload = function(e) {
 		if (this.status == 200) {
 			twdata = JSON.parse(this.response);
