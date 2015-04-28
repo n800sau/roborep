@@ -1,6 +1,10 @@
 init = function() {
 	var data = null;
 	var bwdata = null;
+	var twdata = null;
+
+	var xoff = 10;
+	var yoff = 10;
 
 	var draw = function()
 	{
@@ -41,14 +45,24 @@ init = function() {
 					imgDataMasked.data[dp+3] = (msk) ? 255 : 0;
 				}
 			}
-			ctx.putImageData(imgData,10,10);
+			ctx.putImageData(imgData, xoff, yoff);
+			ctx.beginPath();
+			ctx.lineWidth="1";
+			ctx.strokeStyle="green";
+			ctx.rect(xoff+twdata.x1/2, yoff+twdata.y1/2, (twdata.x2-twdata.x1)/2, (twdata.y2-twdata.y1)/2);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.lineWidth="0";
+			ctx.fillStyle="orange";
+			ctx.fillRect(xoff+twdata.mx/2 - 2, yoff+twdata.my/2 - 2, 4, 4);
+			ctx.stroke();
 			// add mask
-			ctx.putImageData(imgDataMasked,10,110);
+			ctx.putImageData(imgDataMasked, xoff, yoff+100);
 		});
 	}
 
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', 'data.bin', true);
+	xhr.open('GET', 'data/data.bin', true);
 	//xhr.responseType = 'blob';
 	xhr.responseType = 'arraybuffer';
 	xhr.onload = function(e) {
@@ -63,7 +77,7 @@ init = function() {
 	};
 	xhr.send();
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', 'bwdata.bin', true);
+	xhr.open('GET', 'data/bwdata.bin', true);
 	//xhr.responseType = 'blob';
 	xhr.responseType = 'arraybuffer';
 	xhr.onload = function(e) {
@@ -77,9 +91,20 @@ init = function() {
 		}
 	};
 	xhr.send();
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', 'data/twdata.json', true);
+	xhr.responseType = 'application/json';
+	xhr.onload = function(e) {
+		if (this.status == 200) {
+			twdata = JSON.parse(this.response);
+		} else {
+			alert('error');
+		}
+	};
+	xhr.send();
 	var count = 10;
 	var try_draw = function() {
-		if(data && bwdata) {
+		if(data && bwdata && twdata) {
 			draw();
 		} else {
 			count--;
