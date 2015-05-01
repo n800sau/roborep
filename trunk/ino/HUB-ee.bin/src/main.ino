@@ -206,7 +206,7 @@ void serialEvent() {
 	Serial.print("In:");
 	Serial.println(inChar, HEX);
 					if(inputPos > 2) {
-						if(inputPos - 2 >= *datasize) {
+						if(inputPos - 3 >= *datasize) {
 		Serial.print("CMP:");
 		Serial.print(inChar, HEX);
 		Serial.print(" with CRC:");
@@ -337,5 +337,5 @@ void loop()
 			cur_action = NULL;
 		}
 	}
-	delay(10);
+	delay(5);
 }

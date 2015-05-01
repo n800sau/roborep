@@ -14,7 +14,7 @@ enum COMMANDS {
 	C_MCALIB,
 	C_SETACC,
 	C_SPIN,
-	C_TURN2HEAD
+	C_TURN2HEAD  // uint16_t n degrese parametre
 };
 
 // reply
