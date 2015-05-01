@@ -80,7 +80,7 @@ class robec:
 		if databytes is None:
 			packet += chr(0)
 		else:
-			packet += chr(len(databytes)-1) + databytes
+			packet += chr(len(databytes)) + databytes
 		return self.send_bytes(packet + chr(self.crc8(packet[1:])))
 
 	def send_at(self, command):
