@@ -55,7 +55,7 @@ void setup()
 {
   Serial.begin(115200);  // start serial for output
 
-  Wire.pins(12, 13);
+  Wire.pins(12, 14);
   Wire.begin();        // join i2c bus (address optional for master)
 //	pinMode(ESP_PINS_OFFSET + 12, INPUT_PULLUP);
 //	pinMode(ESP_PINS_OFFSET + 13, INPUT_PULLUP);
@@ -182,7 +182,7 @@ void loop()
       printTapAxes();
       Serial.println(""); // closing Axes line
     }
-    delay(150);
+    delay(5);
   }
   
   int regAddress = 0x32;    //first axis-acceleration-data register on the ADXL345
@@ -294,7 +294,3 @@ byte readByte(int device, byte address) {
   Wire.endTransmission(); //end transmission
   return readed;
 }
-
-
-
-
