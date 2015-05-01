@@ -6,7 +6,7 @@ import redis
 import json
 
 # 0.2 is average time for reply
-SENSORS_SHOW_PERIOD = 0.2
+SENSORS_SHOW_PERIOD = 0.1
 
 class irobec:
 
@@ -113,7 +113,7 @@ class irobec:
 	def cmd_show_sensors(self):
 		self.wait4sensors = True
 		try:
-			self.c.send_command("s")
+			self.c.send_command("\x01")
 			for i in range(100):
 				reply = self.c.read_json()
 				if reply:
