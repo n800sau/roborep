@@ -59,13 +59,29 @@ class robec:
 		self.dbprint('Sending %s' % line)
 		self.sock.sendall(line + '\n')
 
-	def send_json(self, jsondict):
-		self.dbprint('Sending %s' % jsondict)
-		self.sock.sendall(json.dumps(jsondict) + EOJ)
+	def send_bytes(self, bytes):
+		self.dbprint('Sending %s' % list(bytes))
+		self.sock.sendall(bytes)
 
-	def send_command(self, command, **kwds):
-		kwds['command'] = command
-		return self.send_json(kwds)
+	def crc8(self, bytes):
+		crc = 0
+		for extract in list(bytes):
+			extract = ord(extract)
+			for i in range(8):
+				sm = (crc ^ extract) & 0x01
+				crc >>= 1
+				if sm:
+					crc ^= 0x8C
+				extract >>= 1
+		return crc
+
+	def send_command(self, command, databytes=None):
+		packet = '\x85' + command
+		if databytes is None:
+			packet += chr(0)
+		else:
+			packet += chr(len(databytes)-1) + databytes
+		return self.send_bytes(packet + chr(self.crc8(packet[1:])))
 
 	def send_at(self, command):
 		return self.send_line('+++AT' + command)

@@ -8,7 +8,8 @@
 #include "irdist_proc.h"
 #include "presence_proc.h"
 #include <voltage.h>
-#include <ArduinoJson.h>
+#include <crc.h>
+#include "commands.h"
 
 // hmc5883l - 0x1e
 // adxl345 - 0x53
@@ -57,12 +58,9 @@ void setup()
 	Serial.println(F("Ready"));
 }
 
-void printState()
+void sendState()
 {
-	int i;
 	int v = readVccMv();
-//		Serial.print(vec_pointer);
-//		Serial.println(F(" vectors"));
 	Serial.print(F("JSON:{\"type\":\"sensors\""));
 	Serial.print(F(",\"V\":"));
 	Serial.print(v);
@@ -82,7 +80,7 @@ void printState()
 	Serial.print(F(",\"acc_x_max\":"));
 	Serial.print(acc_x_max() - stop_acc_x);
 
-	Serial.print(F(",\"acc_y\":"));
+/*	Serial.print(F(",\"acc_y\":"));
 	Serial.print(adxl345_state.event.acceleration.y - stop_acc_y);
 	Serial.print(F(",\"acc_y_avg\":"));
 	Serial.print(acc_y_avg() - stop_acc_y);
@@ -95,7 +93,7 @@ void printState()
 	Serial.print(acc_z_avg() - stop_acc_z);
 	Serial.print(F(",\"acc_z_max\":"));
 	Serial.print(acc_z_max() - stop_acc_z);
-
+*/
 	Serial.print(F(",\"ahit\":"));
 	Serial.print((int)adxl345_state.single_tap);
 
@@ -135,6 +133,7 @@ void printState()
 	Serial.print(F(", \"vec_over\":"));
 	Serial.print(vec_overflow);
 	Serial.println(F(", \"vects\": ["));
+	int i;
 	int count = min(vec_pointer, 5);
 	for(i=0; i<count; i++) {
 		if(i > 0) {
@@ -164,37 +163,63 @@ void ok()
 	Serial.println(F("{\"reply\":\"ok\"}"));
 }
 
-static char jsonBuf[256];
-static int inputPos = 0;
-static boolean jsonComplete = false;
+
+// format
+// 1b magic_byte(0x85)
+// 1b command
+// 1b data size without crc
+// <size>b data
+// 1b crc of 
+
+#define MAGIC_BYTE 0x85
+
+static int inputPos = -1;
+// data
+static byte reqBuf[266]; // command,datasize,data
+static byte *command = reqBuf;
+static byte *datasize = reqBuf+1;
+static byte *dataBuf = reqBuf+2;
+
+static boolean reqComplete = false;
+
+void resetInput()
+{
+	// too much of bytes
+	// cancel it
+	inputPos = -1;
+	reqComplete = false;
+}
 
 void serialEvent() {
-	while (Serial.available() && !jsonComplete) {
-		char inChar = (char)Serial.read();
-//		Serial.println((int)inChar);
-		// change 0xd to 0xa
-		if( inChar == 0xd ) inChar = 0xa;
-		// skip double 0xa or the first 0xa
-		if( ! (inChar == 0xa && (inputPos <= 0 || jsonBuf[inputPos-1] == 0xa)) ) {
-			jsonBuf[inputPos] = inChar;
-			jsonBuf[++inputPos] = 0;
-			// check for the end of json
-			if((inputPos >= sizeof(jsonBuf) - 1) ||
-					(inputPos >= 2 &&
-					(inputPos < 3 || jsonBuf[inputPos-3] == 0xa) &&
-					(jsonBuf[inputPos-2] == '.') &&
-					(jsonBuf[inputPos-1] == 0xa))
-			) {
-				// end of json
-				Serial.println(F("json end"));
-				// check for empty json
-				if(inputPos >= 5) {
-					// not empty
-					// remove useless tail
-					jsonBuf[inputPos-3] = 0;
-					jsonComplete = true;
+	while (Serial.available() && !reqComplete) {
+		byte inChar = Serial.read();
+		if( inputPos < 0 && inChar == MAGIC_BYTE ) {
+	Serial.println("New start");
+			inputPos = 0;
+		} else {
+			if(inputPos >= 0) {
+				reqBuf[inputPos++] = inChar;
+				if(inputPos >= sizeof(reqBuf)) {
+					Serial.println(F("Too much bytes in the request"));
+					inputPos = -1;
+				} else {
+	Serial.print("In:");
+	Serial.println(inChar, HEX);
+					if(inputPos > 2) {
+						if(inputPos - 2 >= *datasize) {
+		Serial.print("CMP:");
+		Serial.print(inChar, HEX);
+		Serial.print(" with CRC:");
+		Serial.println(crc8(reqBuf, inputPos-1), HEX);
+							if(inChar != crc8(reqBuf, inputPos-1)) {
+								Serial.println(F("CRC error"));
+							} else {
+								reqComplete = true;
+							}
+							inputPos = -1;
+						}
+					}
 				}
-				inputPos = 0;
 			}
 		}
 	}
@@ -202,10 +227,6 @@ void serialEvent() {
 
 Action *cur_action = NULL;
 const char *action_switched_msg = "Action switched";
-
-#define S_N1(c1) c1
-#define S_N2(c1, c2) (c1 + (c2 << 8))
-#define S_N3(c1, c2, c3) (c1 + (c2 << 8) + (c3 << 16))
 
 void start_action(Action *action)
 {
@@ -217,53 +238,52 @@ void start_action(Action *action)
 	cur_action = action;
 }
 
-void execute(const char *cmd, JsonObject &data)
+void execute()
 {
-	uint32_t ucmd = 0;
-	strncpy((char*)&ucmd, cmd, sizeof(ucmd));
-	switch(ucmd) {
-		case S_N1('s'):
-			printState();
+	switch(*command) {
+		case C_STATE:
+			sendState();
 			break;
-		case S_N2('s', 't'):
+		case C_STOP:
 			stop();
+			ok();
 			break;
-		case S_N2('s', 'f'):
+		case C_FORWARD:
 			mv_forward(1000);
 			ok();
 			break;
-		case S_N2('s', 'b'):
+		case C_BACK:
 			mv_back(1000);
 			ok();
 			break;
-		case S_N2('t', 'l'):
+		case C_TLEFT:
 			turn_left(1000);
 			ok();
 			break;
-		case S_N2('t', 'r'):
+		case C_TRIGHT:
 			turn_right(1000);
 			ok();
 			break;
-		case S_N2('r', 'e'):
+		case C_RESCNT:
 			lastLCount = lastRCount = motor1QeiCounts = motor2QeiCounts = 0;
 			ok();
 			break;
-		case S_N2('c', 'm'):
+		case C_MCALIB:
 			calibrate_motors();
 			ok();
 			break;
-		case S_N3('s', 'a', 'z'):
+		case C_SETACC:
 			stop_acc_x = adxl345_state.event.acceleration.x;
-			stop_acc_y = adxl345_state.event.acceleration.y;
-			stop_acc_z = adxl345_state.event.acceleration.z;
+//			stop_acc_y = adxl345_state.event.acceleration.y;
+//			stop_acc_z = adxl345_state.event.acceleration.z;
 			ok();
 			break;
-		case S_N2('s', 'p'):
+		case C_SPIN:
 			start_action(new Spinning);
 			ok();
 			break;
-		case S_N1('t'):
-			start_action(new TurnToHeading(data["head"]));
+		case C_TURN2HEAD:
+			start_action(new TurnToHeading(*(uint16_t*)dataBuf));
 			ok();
 			break;
 	}
@@ -304,21 +324,9 @@ void loop()
 	process_irdist();
 	process_presence();
 
-	if (jsonComplete) {
-		jsonComplete = false;
-		StaticJsonBuffer<32> parser;
-		JsonObject &data = parser.parseObject(jsonBuf);
-		if (!data.success())
-		{
-			Serial.println(F("JSON parsing failed of"));
-			Serial.println(jsonBuf);
-		} else {
-			Serial.println(jsonBuf);
-			const char* cmd = data["command"];
-			Serial.print(F("command:"));
-			Serial.println(cmd);
-			execute(cmd, data);
-		}
+	if(reqComplete) {
+		reqComplete = false;
+		execute();
 	}
 	process_motors();
 	add_vector();
