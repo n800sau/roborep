@@ -162,27 +162,27 @@ class irobec:
 			self.wait4sensors = False
 
 	def cmd_turn(self, rad):
-		self.c.send_command("t", rad=rad)
+		self.c.send_command(cmd.C_TURN2HEAD, rad=rad)
 		self.stdscr.addstr(self.maxy - 3, 0, 'TR')
 
 	def cmd_turn_left(self):
-		self.c.send_command("tl")
+		self.c.send_command(cmd.C_TLEFT)
 		self.stdscr.addstr(self.maxy - 3, 0, 'L')
 
 	def cmd_stop(self):
-		self.c.send_command("st")
+		self.c.send_command(cmd.C_STOP)
 		self.stdscr.addstr(self.maxy - 3, 0, '-')
 
 	def cmd_turn_right(self):
-		self.c.send_command("tr")
+		self.c.send_command(cmd.C_TRIGHT)
 		self.stdscr.addstr(self.maxy - 3, 0, 'R')
 
 	def cmd_step_forward(self):
-		self.c.send_command("sf")
+		self.c.send_command(cmd.C_FORWARD)
 		self.stdscr.addstr(self.maxy - 3, 0, 'F')
 
 	def cmd_step_back(self):
-		self.c.send_command("sb")
+		self.c.send_command(cmd.C_BACK)
 		self.stdscr.addstr(self.maxy - 3, 0, 'B')
 
 	def cmd_reset(self):
@@ -190,20 +190,20 @@ class irobec:
 		self.stdscr.addstr(self.maxy - 3, 0, 'X')
 
 	def cmd_reset_encoders(self):
-		self.c.send_command("re")
+		self.c.send_command(cmd.C_RESCNT)
 		self.stdscr.addstr(self.maxy - 3, 0, 'Z')
 		self.x = self.y = 0
 
 	def cmd_calibrate_motors(self):
-		self.c.send_command("cm")
+		self.c.send_command(cmd.C_MCALIB)
 		self.stdscr.addstr(self.maxy - 3, 0, 'M')
 
 	def cmd_set_acc_zero(self):
-		self.c.send_command("saz")
+		self.c.send_command(cmd.C_SETACC)
 		self.stdscr.addstr(self.maxy - 3, 0, 'C')
 
 	def cmd_spinning(self):
-		self.c.send_command("sp")
+		self.c.send_command(cmd.C_SPIN)
 		self.stdscr.addstr(self.maxy - 3, 0, 'SP')
 
 	def update(self):
