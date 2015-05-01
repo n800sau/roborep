@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import curses, time, math, sys
+import curses, time, math, sys, traceback
 from robec import robec
 import redis
 import json
+import pycmds as cmd
 
 # 0.2 is average time for reply
 SENSORS_SHOW_PERIOD = 0.1
@@ -113,7 +114,7 @@ class irobec:
 	def cmd_show_sensors(self):
 		self.wait4sensors = True
 		try:
-			self.c.send_command("\x01")
+			self.c.send_command(cmd.C_STATE)
 			for i in range(100):
 				reply = self.c.read_json()
 				if reply:
@@ -155,8 +156,8 @@ class irobec:
 					break
 				else:
 					time.sleep(0.01)
-		except Exception, e:
-			self.dbprint(unicode(e))
+		except:
+			self.dbprint(traceback.format_exc())
 		finally:
 			self.wait4sensors = False
 
