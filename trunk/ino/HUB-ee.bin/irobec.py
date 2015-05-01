@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import curses, time, math, sys, traceback
+import curses, time, math, sys, traceback, struct
 from robec import robec
 import redis
 import json
@@ -162,7 +162,7 @@ class irobec:
 			self.wait4sensors = False
 
 	def cmd_turn(self, rad):
-		self.c.send_command(cmd.C_TURN2HEAD, rad=rad)
+		self.c.send_command(cmd.C_TURN2HEAD, struct.pack('<H', rad))
 		self.stdscr.addstr(self.maxy - 3, 0, 'TR')
 
 	def cmd_turn_left(self):
@@ -220,34 +220,33 @@ class irobec:
 		while True:
 			c = self.stdscr.getch()
 			if c > 0:
-#				print 'c=',c
 				if c in (ord('q'), ord('Q')):
 					self.stdscr.clear()
 					break  # Exit the while()
 				for item in self.mmenu:
 					if c in (ord(item['key'].lower()), ord(item['key'].upper())) :
-#						try:
 						getattr(self, item['cb'])()
-#						except Exception, e:
-#							self.stdscr.addstr(self.maxy - 3, 0, str(e))
 						break
 				self.update()
 			else:
-				cmd = self.c.check_rcommands()
-				if cmd:
-					self.dbprint('cmd=%s' % (cmd,))
-					if cmd[0] == 'command':
-						cmd = json.loads(cmd[1])
-						cmdfunc = getattr(self, 'cmd_' + cmd['name'], None)
-						if cmdfunc:
-							cmdfunc(**cmd.get('params', {}))
-				self.c.spin()
-				tdiff = time.time() - t
-				if tdiff > SENSORS_SHOW_PERIOD and not self.wait4sensors:
-					t = time.time()
-					self.cmd_show_sensors()
-					self.stdscr.addstr(0, 0, '%.2f' % tdiff)
-					self.update()
+				try:
+					cmd = self.c.check_rcommands()
+					if cmd:
+						self.dbprint('cmd=%s' % (cmd,))
+						if cmd[0] == 'command':
+							cmd = json.loads(cmd[1])
+							cmdfunc = getattr(self, 'cmd_' + cmd['name'], None)
+							if cmdfunc:
+								cmdfunc(**cmd.get('params', {}))
+					self.c.spin()
+					tdiff = time.time() - t
+					if tdiff > SENSORS_SHOW_PERIOD and not self.wait4sensors:
+						t = time.time()
+						self.cmd_show_sensors()
+						self.stdscr.addstr(0, 0, '%.2f' % tdiff)
+						self.update()
+				except:
+					self.dbprint(traceback.format_exc())
 
 def tapp(stdscr):
 	r = irobec()
