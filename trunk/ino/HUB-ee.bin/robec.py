@@ -76,7 +76,7 @@ class robec:
 		return crc
 
 	def send_command(self, command, databytes=None):
-		packet = '\x85' + command
+		packet = '\x85' + chr(command)
 		if databytes is None:
 			packet += chr(0)
 		else:
