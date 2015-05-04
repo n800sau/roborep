@@ -1,17 +1,16 @@
-symbol irpin = c.1 ' Define output pin for pulses
-symbol devid = 36
-symbol ledpin = c.2
+symbol onpin = c.1
+symbol irpin = c.2
 
-low ledpin
+Symbol Zero = 240
+Symbol One = 120
 
-main:
+pwmout irpin, 17, 36; Sets a frequency of 56 kHz on Pin c.2
 
-irout irpin, devid, 16
+Main:
 
-nap 5
-high ledpin
-nap 1
-low ledpin
+	Low onpin ;allows current to pass
+	Pause One
+	High onpin ; stops current
+	Pause Zero
 
-
-goto main
+goto Main
