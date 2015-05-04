@@ -75,9 +75,10 @@ public class GaugeView extends View {
 //		canvas.drawLine(centerx, 0, centerx, height, paint);
 //		canvas.drawLine(0, centery, width, centery, paint);
 		// Rotate the canvas with the azimut     
+		paint.setColor(0x2233ff00);
+		paint.setTextAlign(Align.LEFT);
+		canvas.drawText("helli", 1, 10, paint);
 		if (angle != null) {
-			paint.setTextAlign(Align.LEFT);
-			canvas.drawText("helli", 1, 10, paint);
 			canvas.rotate(-angle * 360 / (2 * 3.14159f), centerx, centery);
 		} else if (degrees != null) {
 			canvas.rotate(degrees, centerx, centery);

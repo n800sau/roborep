@@ -19,8 +19,8 @@ symbol USER_MEM = SENDBUF_END_PTR + 1
 symbol REQUEST_END = $0d '"\r"
 
 fl_setup_serial:
-	setfreq m32
-	hsersetup B19200_32 ,%00			; baud 19200 at 32MHz
+	setfreq m16
+	hsersetup B19200_16 ,%00			; baud 19200 at 32MHz
 	gosub fl_reset_cmdbuf
 	return
 

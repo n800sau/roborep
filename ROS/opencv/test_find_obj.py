@@ -120,8 +120,8 @@ class image_converter:
 	def __init__(self):
 		self.image_pub = rospy.Publisher('/image_circle',Image)
 
-#		self.win = "Image window"
-#		cv.NamedWindow(self.win, 1)
+		self.win = "Image window"
+		cv.NamedWindow(self.win, 1)
 #		cv.MoveWindow(self.win, 25, 800)
 #		cv.ResizeWindow(self.win, 160, 120)
 		self.bridge = CvBridge()

@@ -17,6 +17,8 @@ while tot > 0:
 	for m in range(12):
 		add = tot * (p / 12.) / 100.
 		tot = tot + add - mn
+		frac = mn - add
+		print 'weekly percent payment=', add/30*7, 'principal payment', frac/30*7, 'total payment', mn/30*7
 		mpd += mn
 		mpdmr += mn - mrval
 	pd += mpd

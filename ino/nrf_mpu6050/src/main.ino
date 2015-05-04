@@ -118,10 +118,9 @@ unsigned long pcounter = 0;
 //pause between value output (ms)
 const int printDelay = 5000;
 
-const int ACC_THRESHOLD = 200;
-//const int ACC_THRESHOLD = 2700;
-int16_t a_x=0, a_y=0, a_z=0;
+const float Q_THRESHOLD = 0.002;
 
+Quaternion last_q;
 
 void read_cmd()
 {
@@ -234,26 +233,17 @@ void loop()
 			// (this lets us immediately read more without waiting for an interrupt)
 			fifoCount -= packetSize;
 
-			int16_t x, y, z;
-			mpu.getAcceleration(&x, &y, &z);
-//			Serial.println(abs(millis() - ms));
+			Quaternion q;
+			mpu.dmpGetQuaternion(&q, fifoBuffer);
+//			Serial.print("Difference:");
+//			Serial.println(q.w);
+
 			// send if timeout or acceleration change is bigger that threshold
-			if(abs(millis() - ms) > printDelay || abs(x - a_x) > ACC_THRESHOLD || abs(y - a_y) > ACC_THRESHOLD || abs(z - a_z) > ACC_THRESHOLD) {
-				Serial.print(millis() - ms);
-				Serial.print(", Acc diff:");
-				Serial.print(abs(x - a_x));
-				Serial.print(",");
-				Serial.print(abs(y - a_y));
-				Serial.print(",");
-				Serial.println(abs(z - a_z));
-				a_x = x;
-				a_y = y;
-				a_z = z;
+			if(abs(millis() - ms) > printDelay || abs(q.w - last_q.w) > Q_THRESHOLD) {
+				last_q = q;
 
 				payload_t reply;
-				Quaternion q;
 				mpu.dmpGetQuaternion(reply.d.mpu.quaternion, fifoBuffer);
-				mpu.dmpGetQuaternion(&q, fifoBuffer);
 				VectorFloat gravity;
 				mpu.dmpGetGravity(&gravity, &q);
 				reply.d.mpu.gravity[0] = gravity.x * 100;

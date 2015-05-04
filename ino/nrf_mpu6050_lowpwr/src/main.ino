@@ -19,7 +19,7 @@ unsigned long pcounter = 0;
 
 #include <avr/sleep.h>
 
-#define USE_WD
+//#define USE_WD
 
 #ifdef USE_WD
 #include <avr/wdt.h>
@@ -194,8 +194,12 @@ void sleepNow(const byte watchdog_interval)			// here we put the arduino to slee
 	 * choose the according 
 	 * sleep mode: SLEEP_MODE_PWR_DOWN
 	 * 
-	 */	 
+	 */
+
+#ifdef USE_WD
 	wdt_reset();
+#endif
+
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // sleep mode is set here
 
 	sleep_enable();			 // enables the sleep bit in the mcucr register
@@ -309,7 +313,7 @@ void loop() {
 
 			#ifdef OUTPUT_READABLE_ACCELGYRO
 				// display tab-separated accel/gyro x/y/z values
-				Serial.print("a:\t");
+				Serial.print("accel:\t");
 				Serial.print(ax); Serial.print("\t");
 				Serial.print(ay); Serial.print("\t");
 				Serial.print(az); Serial.print("\t");
@@ -328,6 +332,10 @@ void loop() {
 			reply.d.acc.uScale = 1;
 			reply.ms = millis();
 			reply.counter = ++pcounter;
+				Serial.print("\tms\t");
+				Serial.print(reply.ms);
+				Serial.print("\tcounter\t");
+				Serial.println(reply.counter);
 			bool ok = network.write(header,&reply,sizeof(reply));
 #ifdef DEBUG
 			if (ok) {
