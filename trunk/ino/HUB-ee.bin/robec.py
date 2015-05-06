@@ -3,6 +3,7 @@
 import sys
 import socket
 import select
+import array
 import errno
 import json
 import time
@@ -10,6 +11,7 @@ import redis
 import threading
 import Queue
 from StringIO import StringIO
+import pycmds
 
 # end of json marker
 EOJ = "\n.\n"
@@ -146,6 +148,55 @@ class robec:
 				break
 		return rs
 
+	def parametrize(self, data):
+		data['vals'] = [v for v in array.array('f', data['data'])]
+		del data['data']
+		return data
+
+	def read_bin(self):
+		t = time.time()
+		rs = None
+		bin_read = False
+		while rs is None:
+			self.spin()
+			if bin_read:
+				l = len(self.recv_data)
+				if l > 3:
+					cmd,sz = array.array('B', self.recv_data[1:3])
+					# magic byte , cmd, size, (size bytes), crc = 4 + size
+					if l >= sz + 4:
+						self.recv_data[:sz+4]
+						# test crc
+						c_crc = self.crc8(self.recv_data[:sz+3])
+						r_crc = ord(self.recv_data[sz+3])
+						if c_crc == r_crc:
+							# ok
+							rs = self.parametrize({'cmd': cmd, 'data': self.recv_data[3:sz+3]})
+						else:
+							self.dbprint("crc error %s != %s" % (c_crc, r_crc))
+#						self.dbprint(': %s\n' % self.recv_data[0])
+						# discard magic byte and continue
+						self.recv_data = self.recv_data[1:]
+						bin_read = False
+			else:
+				if not self.recv_data:
+					break
+				try:
+					ss = self.recv_data.index(chr(pycmds.MAGIC_BYTE))
+					bin_read = True
+					discarded = self.recv_data[:ss]
+					self.recv_data = self.recv_data[ss:]
+				except ValueError:
+					discarded = self.recv_data
+					self.recv_data = ''
+				if discarded:
+					self.dbprint(': %s\n' % discarded)
+					self.dbg_data += discarded
+			if t + 2 < time.time():
+				self.dbprint('timeout')
+				break
+		return rs
+
 	def spin(self):
 		while True:
 			try:
@@ -184,9 +235,14 @@ class robec:
 				if s == self.sock:
 #					print 'reading'
 					self.spin()
-					jdata = self.read_json()
-					if jdata:
-						self.dbprint('Received JSON: %s' % jdata)
+					data = self.read_bin()
+					if data:
+						self.dbprint('Received BIN: %s' % data)
+					else:
+						self.dbprint('no BIN replied')
+#					jdata = self.read_json()
+#					if jdata:
+#						self.dbprint('Received JSON: %s' % jdata)
 #					else:
 #						self.dbprint('no JSON replied')
 				elif s == sys.stdin:
