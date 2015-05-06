@@ -2,6 +2,8 @@
 
 #define __COMMANDS_H
 
+#define MAGIC_BYTE 0x85
+
 // commands
 enum COMMANDS {
 	C_STATE = 0x01,
@@ -19,7 +21,23 @@ enum COMMANDS {
 
 // reply
 enum REPLY {
-	R_ACC_X = 0x01
+	R_ACC_3F = 0x01,
+	R_VOLTS_1F,
+	R_MCOUNTS_2F,
+	R_HEADING_1F,
+	R_ACCAVG_3F,
+	R_ACCMAX_3F,
+	R_HIT_1F,
+	R_GYRO_3F,
+	R_TEMPERATURE_1F,
+	R_PRESSURE_1F,
+	R_ALT_1F,
+	R_DISTANCE_1F,
+	R_PR_1F,
+	R_MCOEF_2F,
+	R_VEC_OVERFLOW_1F,
+	R_VECTOR_3F,         //lcount, rcount, heading
+	R_END                // end of block marker
 };
 
 

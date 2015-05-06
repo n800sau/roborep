@@ -58,104 +58,88 @@ void setup()
 	Serial.println(F("Ready"));
 }
 
+void sendFloats(byte cmd, float vals[], int count)
+{
+	if( count <= 255 ) {
+		byte bbuf[3 + sizeof(float) * count + 1];
+		bbuf[0] = MAGIC_BYTE;
+		bbuf[1] = cmd;
+		bbuf[2] = sizeof(float) * count;
+		for(int i=0; i<count; i++) {
+			((float*)(bbuf+3))[i] = vals[i];
+		}
+		bbuf[3+bbuf[2]] = crc8(bbuf, 3+bbuf[2]);
+		Serial.write(bbuf, 4+bbuf[2]);
+	} else {
+		Serial.println("Array size is bigger than 255");
+	}
+}
+
 void sendState()
 {
-	int v = readVccMv();
-	Serial.print(F("JSON:{\"type\":\"sensors\""));
-	Serial.print(F(",\"V\":"));
-	Serial.print(v);
-	Serial.print(F(",\"LC\":"));
-	Serial.print(motor1QeiCounts);
-	Serial.print(F(",\"RC\":"));
-	Serial.print(motor2QeiCounts);
-	Serial.println();
+	float vals[3] = {
+		adxl345_state.event.acceleration.x - stop_acc_x,
+		adxl345_state.event.acceleration.y - stop_acc_y,
+		adxl345_state.event.acceleration.z - stop_acc_z
+	};
+	sendFloats(R_ACC_3F, vals, 3);
+	vals[0] = readVccMv();
+	sendFloats(R_VOLTS_1F, vals, 1);
+	Serial.println("Send VO");
+	vals[0] = motor1QeiCounts;
+	vals[1] = motor2QeiCounts;
+	sendFloats(R_MCOUNTS_2F, vals, 2);
+	vals[0] = headingDegrees;
+	sendFloats(R_HEADING_1F, vals, 1);
+	vals[0] = acc_x_avg() - stop_acc_x;
+	vals[1] = acc_y_avg() - stop_acc_y;
+	vals[2] = acc_z_avg() - stop_acc_z;
+	sendFloats(R_ACCAVG_3F, vals, 3);
+	vals[0] = acc_x_max() - stop_acc_x;
+	vals[1] = acc_y_max() - stop_acc_y;
+	vals[2] = acc_z_max() - stop_acc_z;
+	sendFloats(R_ACCMAX_3F, vals, 3);
+	vals[0] = adxl345_state.single_tap;
+	sendFloats(R_HIT_1F, vals, 1);
+	vals[0] = gyro.g.x;
+	vals[1] = gyro.g.y;
+	vals[2] = gyro.g.z;
+	sendFloats(R_GYRO_3F, vals, 3);
+	bmp.getTemperature(vals);
+	sendFloats(R_TEMPERATURE_1F, vals, 1);
+	vals[0] = bmp085_event.pressure;
+	sendFloats(R_PRESSURE_1F, vals, 1);
+	// Calculate altitude assuming 'standard' barometric
+	// pressure of 1013.25 millibar = 101325 Pascal
+	// you can get a more precise measurement of altitude
+	// if you know the current sea level pressure which will
+	// vary with weather and such. If it is 1015 millibars
+	// that is equal to 101500 Pascals.
+	// Sydney 1018.1 hPa
+	vals[0] = bmp.pressureToAltitude(SENSORS_PRESSURE_SEALEVELHPA, bmp085_event.pressure);
+	sendFloats(R_ALT_1F, vals, 1);
+	vals[0] = distance;
+	sendFloats(R_DISTANCE_1F, vals, 1);
+	vals[0] = MVcount;
+	sendFloats(R_PR_1F, vals, 1);
+	vals[0] = motor1Coef;
+	vals[1] = motor2Coef;
+	sendFloats(R_MCOEF_2F, vals, 2);
+	vals[0] = vec_overflow;
+	sendFloats(R_VEC_OVERFLOW_1F, vals, 1);
+	sendFloats(R_END, vals, 0);
 
-	Serial.print(F(",\"head\":"));
-	Serial.print(headingDegrees);
-
-	Serial.print(F(",\"acc_x\":"));
-	Serial.print(adxl345_state.event.acceleration.x - stop_acc_x);
-	Serial.print(F(",\"acc_x_avg\":"));
-	Serial.print(acc_x_avg() - stop_acc_x);
-	Serial.print(F(",\"acc_x_max\":"));
-	Serial.print(acc_x_max() - stop_acc_x);
-
-/*	Serial.print(F(",\"acc_y\":"));
-	Serial.print(adxl345_state.event.acceleration.y - stop_acc_y);
-	Serial.print(F(",\"acc_y_avg\":"));
-	Serial.print(acc_y_avg() - stop_acc_y);
-	Serial.print(F(",\"acc_y_max\":"));
-	Serial.print(acc_y_max() - stop_acc_y);
-
-	Serial.print(F(",\"acc_z\":"));
-	Serial.print(adxl345_state.event.acceleration.z - stop_acc_z);
-	Serial.print(F(",\"acc_z_avg\":"));
-	Serial.print(acc_z_avg() - stop_acc_z);
-	Serial.print(F(",\"acc_z_max\":"));
-	Serial.print(acc_z_max() - stop_acc_z);
-*/
-	Serial.print(F(",\"ahit\":"));
-	Serial.print((int)adxl345_state.single_tap);
+	int i;
+	for(i=0; i<vec_pointer; i++) {
+		vals[0] = vecbuf[i].lCount;
+		vals[1] = vecbuf[i].rCount;
+		vals[2] = vecbuf[i].heading;
+		sendFloats(R_VECTOR_3F, vals, 3);
+	}
+	vec_pointer = 0;
 
 	adxl345_state.reset();
 
-	Serial.print(F(",\"gyro_x\":"));
-	Serial.print((int)gyro.g.x);
-	Serial.println();
-
-	Serial.print(F(", \"T\":"));
-	float temperature;
-	bmp.getTemperature(&temperature);
-	Serial.print(temperature);
-
-	Serial.print(F(", \"P\":"));
-	Serial.print(bmp085_event.pressure);
-
-	// Calculate altitude assuming 'standard' barometric
-	// pressure of 1013.25 millibar = 101325 Pascal
-	Serial.print(F(", \"Alt\":"));
-	Serial.print(bmp.pressureToAltitude(SENSORS_PRESSURE_SEALEVELHPA, bmp085_event.pressure));
-
-  // you can get a more precise measurement of altitude
-  // if you know the current sea level pressure which will
-  // vary with weather and such. If it is 1015 millibars
-  // that is equal to 101500 Pascals.
-	// Sydney 1018.1 hPa
-	Serial.print(F(", \"dist\":"));
-	Serial.print(distance);
-	Serial.print(F(", \"Pr\":"));
-	Serial.println(MVcount);
-
-	Serial.print(F(", \"Lcoef\":"));
-	Serial.print(motor1Coef);
-	Serial.print(F(", \"Rcoef\":"));
-	Serial.print(motor2Coef);
-	Serial.print(F(", \"vec_over\":"));
-	Serial.print(vec_overflow);
-	Serial.println(F(", \"vects\": ["));
-	int i;
-	int count = min(vec_pointer, 5);
-	for(i=0; i<count; i++) {
-		if(i > 0) {
-			Serial.println(F(","));
-		}
-		Serial.print(F("{\"lC\":"));
-		Serial.print(vecbuf[i].lCount);
-		Serial.print(F(",\"rC\":"));
-		Serial.print(vecbuf[i].rCount);
-		Serial.print(F(",\"h\":"));
-		Serial.print(vecbuf[i].heading);
-		Serial.print(F("}"));
-	}
-	Serial.println(F("]"));
-	for(i=0; i<VECBUF_SIZE - count; i++) {
-		vecbuf[i] = vecbuf[i+count];
-	}
-	vec_pointer -= count;
-
-	Serial.println(F("}"));
-	Serial.println(F("."));
-	Serial.println(F("JSON sent"));
 }
 
 void ok()
@@ -170,8 +154,6 @@ void ok()
 // 1b data size without crc
 // <size>b data
 // 1b crc of 
-
-#define MAGIC_BYTE 0x85
 
 static int inputPos = -1;
 // data
@@ -194,7 +176,7 @@ void serialEvent() {
 	while (Serial.available() && !reqComplete) {
 		byte inChar = Serial.read();
 		if( inputPos < 0 && inChar == MAGIC_BYTE ) {
-	Serial.println("New start");
+//	Serial.println("New start");
 			inputPos = 0;
 		} else {
 			if(inputPos >= 0) {
@@ -203,14 +185,14 @@ void serialEvent() {
 					Serial.println(F("Too much bytes in the request"));
 					inputPos = -1;
 				} else {
-	Serial.print("In:");
-	Serial.println(inChar, HEX);
+//	Serial.print("In:");
+//	Serial.println(inChar, HEX);
 					if(inputPos > 2) {
 						if(inputPos - 3 >= *datasize) {
-		Serial.print("CMP:");
-		Serial.print(inChar, HEX);
-		Serial.print(" with CRC:");
-		Serial.println(crc8(reqBuf, inputPos-1), HEX);
+//		Serial.print("CMP:");
+//		Serial.print(inChar, HEX);
+//		Serial.print(" with CRC:");
+//		Serial.println(crc8(reqBuf, inputPos-1), HEX);
 							if(inChar != crc8(reqBuf, inputPos-1)) {
 								Serial.println(F("CRC error"));
 							} else {
@@ -274,8 +256,8 @@ void execute()
 			break;
 		case C_SETACC:
 			stop_acc_x = adxl345_state.event.acceleration.x;
-//			stop_acc_y = adxl345_state.event.acceleration.y;
-//			stop_acc_z = adxl345_state.event.acceleration.z;
+			stop_acc_y = adxl345_state.event.acceleration.y;
+			stop_acc_z = adxl345_state.event.acceleration.z;
 			ok();
 			break;
 		case C_SPIN:
