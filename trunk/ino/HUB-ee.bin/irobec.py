@@ -6,8 +6,8 @@ import redis
 import json
 import pycmds
 
-# 0.2 is average time for reply
-SENSORS_SHOW_PERIOD = 0.01
+# 0.1 is average time for reply
+SENSORS_SHOW_PERIOD = 0.1
 
 class irobec:
 
@@ -79,7 +79,7 @@ class irobec:
 
 	def __init__(self):
 		self.c = robec()
-		self.c.connect('192.168.1.96', 23)
+		self.c.connect('192.168.1.97', 23)
 		self.wait4sensors = False
 		self.x = 0
 		self.y = 0
@@ -113,6 +113,7 @@ class irobec:
 
 	def cmd_show_sensors(self):
 		self.wait4sensors = True
+		self.c.debug = False
 		try:
 			r = {
 				'V': None,
@@ -129,7 +130,7 @@ class irobec:
 			self.c.send_command(pycmds.C_STATE)
 			for i in range(100):
 				data = self.c.read_bin()
-#				self.dbprint('Data=%s' % data)
+				self.dbprint('Data=%s' % data)
 				if data:
 					if data['cmd'] == pycmds.R_HIT_1F:
 						if data['vals'][0]:
@@ -154,7 +155,7 @@ class irobec:
 					elif data['cmd'] == pycmds.R_VECTOR_3F:
 						r['vects'].append({'lC': data['vals'][0], 'rC': data['vals'][1], 'h': data['vals'][2]})
 					elif data['cmd'] == pycmds.R_END:
-						self.dbprint('Done')
+						#self.dbprint('Done')
 						break
 			if r:
 				self.stdscr.clear()
@@ -175,6 +176,7 @@ class irobec:
 				y -= 1
 				if not r['T'] is None:
 					self.stdscr.addstr(self.maxy - y, 0, 'T:%d' % r['T'])
+				y -= 1
 				# north is X
 #				self.dbprint('vectors=%s\n' % r['vects'])
 				for v in r['vects']:
@@ -189,12 +191,20 @@ class irobec:
 					v['y'] = self.y
 					self.r.rpush('xy', json.dumps(v))
 					self.r.rpush('accvec', json.dumps({'x': r['acc_x'], 'y': r['acc_y'], 'z': r['acc_z']}))
-					y -= 1
 					self.stdscr.addstr(self.maxy - y, 0, '%.1f, %.1f' % (self.x, self.y))
 		except:
 			self.dbprint(traceback.format_exc())
 		finally:
+			self.c.debug = True
 			self.wait4sensors = False
+
+	def wait_reply(self):
+		for i in range(100):
+			data = self.c.read_bin()
+			if data and data['cmd'] == pycmds.R_OK_0:
+				self.stdscr.addstr(self.maxy - 3, 0, 'OK')
+				break
+			time.sleep(0.1)
 
 	def cmd_turn(self, rad):
 		self.c.send_command(cmd.C_TURN2HEAD, struct.pack('<H', rad))
@@ -251,6 +261,7 @@ class irobec:
 		self.stdscr.refresh()
 
 	def run(self):
+		self.c.send_at("UPRI")
 		t = time.time()
 		while True:
 			c = self.stdscr.getch()
@@ -261,6 +272,7 @@ class irobec:
 				for item in self.mmenu:
 					if c in (ord(item['key'].lower()), ord(item['key'].upper())) :
 						getattr(self, item['cb'])()
+						#self.wait_reply()
 						break
 				self.update()
 			else:

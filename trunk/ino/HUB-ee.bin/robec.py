@@ -34,6 +34,7 @@ def redis_subscriber(q):
 class robec:
 
 	def __init__(self, sock=None):
+		self.debug = True
 		if sock is None:
 			self.sock = socket.socket(
 				socket.AF_INET, socket.SOCK_STREAM)
@@ -51,7 +52,8 @@ class robec:
 		self.r.delete('vectors')
 
 	def dbprint(self, text):
-		print >>sys.__stderr__, text
+		if self.debug:
+			print >>sys.__stderr__, text
 
 	def connect(self, host, port):
 		self.sock.connect((host, port))
@@ -190,7 +192,11 @@ class robec:
 					discarded = self.recv_data
 					self.recv_data = ''
 				if discarded:
-					self.dbprint(': %s\n' % discarded)
+					for line in discarded.split('\r'):
+						line = line.strip()
+#						if line.startswith('MSG:'):
+#							self.dbprint(': %s\n' % line)
+					self.dbprint(': %s\n' % array.array('B', discarded))
 					self.dbg_data += discarded
 			if t + 2 < time.time():
 				self.dbprint('timeout')

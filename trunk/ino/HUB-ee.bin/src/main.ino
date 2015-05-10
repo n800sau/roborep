@@ -8,8 +8,8 @@
 #include "irdist_proc.h"
 #include "presence_proc.h"
 #include <voltage.h>
-#include <crc.h>
 #include "commands.h"
+#include "SerialProtocol.h"
 
 // hmc5883l - 0x1e
 // adxl345 - 0x53
@@ -38,44 +38,15 @@ Vec vecbuf[VECBUF_SIZE];
 int vec_pointer = 0;
 bool vec_overflow = false;
 
-void setup()
-{
-	pinMode(led, OUTPUT);
-	digitalWrite(led, 1);
-	Serial.begin(115200);
-//	Serial.println(F("Starting the I2C interface."));
-	Serial.println(F("Reloading..."));
-	Wire.begin(); // Start the I2C interface.
 
-	setup_compass();
-	setup_accel();
-	setup_gyro();
-	setup_bmp085();
+class HUB_ee: public SerialProtocol {
+	public:
+		void sendState();
+		void ok();
 
-	setup_irdist();
-	setup_presence();
-	setup_motors();
-	Serial.println(F("Ready"));
-}
+};
 
-void sendFloats(byte cmd, float vals[], int count)
-{
-	if( count <= 255 ) {
-		byte bbuf[3 + sizeof(float) * count + 1];
-		bbuf[0] = MAGIC_BYTE;
-		bbuf[1] = cmd;
-		bbuf[2] = sizeof(float) * count;
-		for(int i=0; i<count; i++) {
-			((float*)(bbuf+3))[i] = vals[i];
-		}
-		bbuf[3+bbuf[2]] = crc8(bbuf, 3+bbuf[2]);
-		Serial.write(bbuf, 4+bbuf[2]);
-	} else {
-		Serial.println("Array size is bigger than 255");
-	}
-}
-
-void sendState()
+void HUB_ee::sendState()
 {
 	float vals[3] = {
 		adxl345_state.event.acceleration.x - stop_acc_x,
@@ -85,7 +56,6 @@ void sendState()
 	sendFloats(R_ACC_3F, vals, 3);
 	vals[0] = readVccMv();
 	sendFloats(R_VOLTS_1F, vals, 1);
-	Serial.println("Send VO");
 	vals[0] = motor1QeiCounts;
 	vals[1] = motor2QeiCounts;
 	sendFloats(R_MCOUNTS_2F, vals, 2);
@@ -142,69 +112,37 @@ void sendState()
 
 }
 
-void ok()
+void HUB_ee::ok()
 {
-	Serial.println(F("{\"reply\":\"ok\"}"));
+	sendSimple(R_OK_0);
 }
 
 
-// format
-// 1b magic_byte(0x85)
-// 1b command
-// 1b data size without crc
-// <size>b data
-// 1b crc of 
+static HUB_ee sp;
 
-static int inputPos = -1;
-// data
-static byte reqBuf[266]; // command,datasize,data
-static byte *command = reqBuf;
-static byte *datasize = reqBuf+1;
-static byte *dataBuf = reqBuf+2;
-
-static boolean reqComplete = false;
-
-void resetInput()
+void setup()
 {
-	// too much of bytes
-	// cancel it
-	inputPos = -1;
-	reqComplete = false;
+	pinMode(led, OUTPUT);
+	digitalWrite(led, 1);
+	Serial.begin(115200);
+//	Serial.println(F("Starting the I2C interface."));
+	Serial.println(F("Reloading..."));
+	Wire.begin(); // Start the I2C interface.
+
+	setup_compass();
+
+	setup_accel();
+	setup_gyro();
+	setup_bmp085();
+
+	setup_irdist();
+	setup_presence();
+	setup_motors();
+	Serial.println(F("Ready"));
 }
 
 void serialEvent() {
-	while (Serial.available() && !reqComplete) {
-		byte inChar = Serial.read();
-		if( inputPos < 0 && inChar == MAGIC_BYTE ) {
-//	Serial.println("New start");
-			inputPos = 0;
-		} else {
-			if(inputPos >= 0) {
-				reqBuf[inputPos++] = inChar;
-				if(inputPos >= sizeof(reqBuf)) {
-					Serial.println(F("Too much bytes in the request"));
-					inputPos = -1;
-				} else {
-//	Serial.print("In:");
-//	Serial.println(inChar, HEX);
-					if(inputPos > 2) {
-						if(inputPos - 3 >= *datasize) {
-//		Serial.print("CMP:");
-//		Serial.print(inChar, HEX);
-//		Serial.print(" with CRC:");
-//		Serial.println(crc8(reqBuf, inputPos-1), HEX);
-							if(inChar != crc8(reqBuf, inputPos-1)) {
-								Serial.println(F("CRC error"));
-							} else {
-								reqComplete = true;
-							}
-							inputPos = -1;
-						}
-					}
-				}
-			}
-		}
-	}
+	sp.serialEvent();
 }
 
 Action *cur_action = NULL;
@@ -222,51 +160,51 @@ void start_action(Action *action)
 
 void execute()
 {
-	switch(*command) {
+	switch(*sp.command) {
 		case C_STATE:
-			sendState();
+			sp.sendState();
 			break;
 		case C_STOP:
 			stop();
-			ok();
+			sp.ok();
 			break;
 		case C_FORWARD:
 			mv_forward(1000);
-			ok();
+			sp.ok();
 			break;
 		case C_BACK:
 			mv_back(1000);
-			ok();
+			sp.ok();
 			break;
 		case C_TLEFT:
 			turn_left(1000);
-			ok();
+			sp.ok();
 			break;
 		case C_TRIGHT:
 			turn_right(1000);
-			ok();
+			sp.ok();
 			break;
 		case C_RESCNT:
 			lastLCount = lastRCount = motor1QeiCounts = motor2QeiCounts = 0;
-			ok();
+			sp.ok();
 			break;
 		case C_MCALIB:
 			calibrate_motors();
-			ok();
+			sp.ok();
 			break;
 		case C_SETACC:
 			stop_acc_x = adxl345_state.event.acceleration.x;
 			stop_acc_y = adxl345_state.event.acceleration.y;
 			stop_acc_z = adxl345_state.event.acceleration.z;
-			ok();
+			sp.ok();
 			break;
 		case C_SPIN:
 			start_action(new Spinning);
-			ok();
+			sp.ok();
 			break;
 		case C_TURN2HEAD:
-			start_action(new TurnToHeading(*(uint16_t*)dataBuf));
-			ok();
+			start_action(new TurnToHeading(*(uint16_t*)sp.dataBuf));
+			sp.ok();
 			break;
 	}
 }
@@ -306,9 +244,9 @@ void loop()
 	process_irdist();
 	process_presence();
 
-	if(reqComplete) {
-		reqComplete = false;
+	if(sp.available()) {
 		execute();
+		sp.resetInput();
 	}
 	process_motors();
 	add_vector();
@@ -319,5 +257,5 @@ void loop()
 			cur_action = NULL;
 		}
 	}
-	delay(5);
+	delay(1);
 }
