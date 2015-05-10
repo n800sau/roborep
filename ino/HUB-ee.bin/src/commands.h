@@ -2,8 +2,6 @@
 
 #define __COMMANDS_H
 
-#define MAGIC_BYTE 0x85
-
 // commands
 enum COMMANDS {
 	C_STATE = 0x01,
@@ -21,7 +19,8 @@ enum COMMANDS {
 
 // reply
 enum REPLY {
-	R_ACC_3F = 0x01,
+	R_OK_0 = 0x01,
+	R_ACC_3F,
 	R_VOLTS_1F,
 	R_MCOUNTS_2F,
 	R_HEADING_1F,
