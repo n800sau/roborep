@@ -50,31 +50,33 @@ void SerialProtocol::serialEvent()
 	}
 }
 
-void SerialProtocol::sendSimple(byte cmd)
+void SerialProtocol::sendBuffer(byte cmd, byte *data, byte size)
 {
-	byte bbuf[4];
+	byte bbuf[3 + 4 + size + 1];
 	bbuf[0] = MAGIC_BYTE;
 	bbuf[1] = cmd;
-	bbuf[2] = 0;
-	bbuf[3] = crc8(bbuf, 3);
-	Serial.write(bbuf, 4);
+	bbuf[2] = size + 4;
+	(*(uint32_t*)(bbuf+3)) = millis();
+	if(size>0) {
+		memcpy(bbuf+7, data, size);
+	}
+	bbuf[3+4+size] = crc8(bbuf, 3+4+size);
+	Serial.write(bbuf, 3 + 4 + size + 1);
+}
+
+
+void SerialProtocol::sendSimple(byte cmd)
+{
+	sendBuffer(cmd, NULL, 0);
 }
 
 void SerialProtocol::sendFloats(byte cmd, float vals[], int count)
 {
-	if( count <= 255 ) {
-		byte bbuf[3 + sizeof(float) * count + 1];
-		bbuf[0] = MAGIC_BYTE;
-		bbuf[1] = cmd;
-		bbuf[2] = sizeof(float) * count;
-		for(int i=0; i<count; i++) {
-			((float*)(bbuf+3))[i] = vals[i];
-		}
-		bbuf[3+bbuf[2]] = crc8(bbuf, 3+bbuf[2]);
-		Serial.write(bbuf, 4+bbuf[2]);
-	} else {
-		Serial.println("Array size is bigger than 255");
+	byte bbuf[sizeof(float) * count];
+	for(int i=0; i<count; i++) {
+		*((float*)(bbuf+sizeof(float)*i)) = vals[i];
 	}
+	sendBuffer(cmd, bbuf, count*sizeof(float));
 }
 
 
