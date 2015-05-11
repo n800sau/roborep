@@ -3,8 +3,8 @@
 #define __SERIALPROTOCOL_H
 
 #include "Arduino.h"
+#include "constants.h"
 
-#define MAGIC_BYTE 0x85
 
 class SerialProtocol {
 
