@@ -30,6 +30,7 @@ class SerialProtocol {
 
 		bool available();
 		void serialEvent();
+		void sendBuffer(byte cmd, byte *data, byte size);
 		void sendSimple(byte cmd);
 		void sendFloats(byte cmd, float vals[], int count);
 		void resetInput();
