@@ -1,1 +1,3 @@
-ino build && ./upload.sh
+ino build &> build.log && \
+echo $? && \
+./upload.sh 
