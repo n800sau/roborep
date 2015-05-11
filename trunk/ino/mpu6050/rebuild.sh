@@ -1,1 +1,1 @@
-ino clean && ino build && ./upload.sh
+ino clean && ./build.sh

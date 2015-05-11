@@ -37,8 +37,9 @@
 // 
 
 #include <Wire.h>
-#include <Servo.h>
-
+#include "stick.h"
+#include <SerialProtocol.h>
+#include "commands.h"
 
 // The name of the sensor is "MPU-6050".
 // For program code, I omit the '-', 
@@ -668,24 +669,32 @@ typedef union accel_t_gyro_union
   } value;
 };
 
-Servo tiltservo;
+static SerialProtocol sp;
 
+void serialEvent() {
+	sp.serialEvent();
+}
+
+int led = 13;
+int lon = 0;
+unsigned long last_time = millis();
 
 void setup()
 {      
   int error;
   uint8_t c;
 
+	pinMode(led, OUTPUT);
+	digitalWrite(led, 1);
 
-  Serial.begin(57600);
+  Serial.begin(115200);
   Serial.println(F("InvenSense MPU-6050"));
   Serial.println(F("June 2012"));
 
   // Initialize the 'Wire' class for the I2C-bus.
   Wire.begin();
 
-	tiltservo.attach(6);
-	tiltservo.write(90);
+	stick_setup();
 
   // default at power-up:
   //    Gyro at 250 degrees second
@@ -715,18 +724,28 @@ void setup()
   MPU6050_write_reg (MPU6050_PWR_MGMT_1, 0);
 }
 
-int spos = 90;
-int soff = 5;
+accel_t_gyro_union accel_t_gyro;
+
+void execute()
+{
+	switch(*sp.command) {
+		case C_STATE:
+			float vals[3] = {
+				accel_t_gyro.value.x_accel,
+				accel_t_gyro.value.y_accel,
+				accel_t_gyro.value.z_accel
+			};
+			sp.sendFloats(R_ACC_3F, vals, 3);
+			sp.sendFloats(R_END, vals, 0);
+			break;
+	}
+}
 
 void loop()
 {
   int error;
   double dT;
-  accel_t_gyro_union accel_t_gyro;
 
-
-//  Serial.println(F(""));
-//  Serial.println(F("MPU-6050"));
 
   // Read the raw values.
   // Read 14 bytes at once, 
@@ -757,14 +776,6 @@ void loop()
 
   // Print the raw acceleration values
 
-						Serial.println("START");
-						Serial.print("areal\t");
-						Serial.print(accel_t_gyro.value.x_accel);
-						Serial.print("\t");
-						Serial.print(accel_t_gyro.value.y_accel);
-						Serial.print("\t");
-						Serial.println(accel_t_gyro.value.z_accel);
-						Serial.println("END");
 //  Serial.print(F("accel x,y,z: "));
 //  Serial.print(accel_t_gyro.value.x_accel, DEC);
 //  Serial.print(F(", "));
@@ -781,10 +792,10 @@ void loop()
   // At 0 degrees: -512 - (340 * 35) = -12412
 
 //  Serial.print(F("temperature: "));
-  dT = ( (double) accel_t_gyro.value.temperature + 12412.0) / 340.0;
+//  dT = ( (double) accel_t_gyro.value.temperature + 12412.0) / 340.0;
 //  Serial.print(dT, 3);
 //  Serial.print(F(" degrees Celsius"));
-//  Serial.println(F(""));
+//  Serial.println();
 
 
   // Print the raw gyro values.
@@ -798,18 +809,20 @@ void loop()
 //  Serial.print(F(", "));
 //  Serial.println(F(""));
 
-	tiltservo.write(spos);
-	spos += soff;
-	if(spos < 0) {
-		spos = 0;
-		soff = 5;
-	}
-	if(spos > 180) {
-		spos = 180;
-		soff = -5;
+	unsigned long t = millis();
+	if(abs(t - last_time) > 100) {
+		last_time = t;
+		digitalWrite(led, lon);
+		lon = !lon;
+		stick_loop();
 	}
 
-  delay(100);
+	if(sp.available()) {
+		execute();
+		sp.resetInput();
+	} else {
+		delay(1);
+	}
 }
 
 
