@@ -13,6 +13,7 @@ from robec import robec
 
 RDATALIST = '6050'
 TIMEOUT = 0.001
+REDIS_LIST_LIMIT = 10000
 
 class d2r(robec):
 
@@ -24,7 +25,7 @@ class d2r(robec):
 #			print >>sys.__stderr__, time.time(), "received"
 			data['t'] = time.time()
 			self.r.lpush(RDATALIST, json.dumps(data))
-			self.r.ltrim(RDATALIST, 0, 99)
+			self.r.ltrim(RDATALIST, 0, REDIS_LIST_LIMIT-1)
 
 	def before_run(self):
 		self.t = time.time()
