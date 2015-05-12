@@ -736,7 +736,7 @@ void execute()
 				accel_t_gyro.value.z_accel
 			};
 			sp.sendFloats(R_ACC_3F, vals, 3);
-			sp.sendFloats(R_END, vals, 0);
+//			sp.sendFloats(R_END, vals, 0);
 			break;
 	}
 }
