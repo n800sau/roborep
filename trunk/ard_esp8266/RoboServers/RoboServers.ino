@@ -1,10 +1,14 @@
-#include <ESP8266WiFi.h>
 #include "rest_service.h"
 #include "www_service.h"
 #include "t2s_service.h"
+#include "uart_utils.h"
+#include <ESP8266WiFi.h>
+#include <Ticker.h>
 
 const char* ssid = "Slow Internet Connection";
 const char* password = "1,tpGfhjkz2";
+
+static Ticker camticker;
 
 void setup() {
 	Serial1.begin(115200);
@@ -24,7 +28,7 @@ void setup() {
 	}
 
 	setupT2Sservice();
-	Serial1.print("Telnet server started");
+	Serial1.println("Telnet server started");
 
 	setupWWWservice();
 	Serial1.println ( "HTTP server started" );
@@ -32,7 +36,12 @@ void setup() {
 	setupRESTservice();
 	Serial1.println("REST server started");
 
-	Serial1.print(WiFi.localIP());
+	Serial1.println(WiFi.localIP());
+
+	setupCAMservice();
+
+	camticker.attach(1, getCamImage);
+
 }
 
 void loop() {
@@ -44,4 +53,13 @@ void loop() {
 
 	// handle REST calls
 	handleRESTservice();
+
 }
+
+static void ICACHE_FLASH_ATTR getCamImage()
+{
+	Serial1.println("start get image");
+	handleCAMservice();
+	Serial1.println("end get image");
+}
+

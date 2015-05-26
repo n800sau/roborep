@@ -2,8 +2,10 @@
 
 #define __REST_SERVICE_H
 
-void setupRESTservice();
+#include <c_types.h>
 
-void handleRESTservice();
+void ICACHE_FLASH_ATTR setupRESTservice();
+
+void ICACHE_FLASH_ATTR handleRESTservice();
 
 #endif //__REST_SERVICE_H

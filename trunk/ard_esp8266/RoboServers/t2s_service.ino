@@ -1,4 +1,5 @@
 #include "t2s_service.h"
+#include "uart_utils.h"
 #include <ESP8266WiFi.h>
 
 //how many clients should be able to telnet to this ESP8266
@@ -7,7 +8,7 @@ static WiFiServer server(23);
 static WiFiClient serverClients[MAX_TELNET_CLIENTS];
 
 
-void setupT2Sservice()
+void ICACHE_FLASH_ATTR setupT2Sservice()
 {
 	//start UART and the server
 	Serial.begin(115200);
@@ -15,7 +16,7 @@ void setupT2Sservice()
 	server.setNoDelay(true);
 }
 
-void handleT2Sservice()
+void ICACHE_FLASH_ATTR handleT2Sservice()
 {
 	uint8_t i;
 	//check if there are any new clients
@@ -39,7 +40,11 @@ void handleT2Sservice()
 		if (serverClients[i] && serverClients[i].connected()){
 			if(serverClients[i].available()){
 				//get data from the telnet client and push it to the UART
-				while(serverClients[i].available()) Serial.write(serverClients[i].read());
+				while(serverClients[i].available()) {
+					if(!uartIsLocked()) {
+						Serial.write(serverClients[i].read());
+					}
+				}
 			}
 		}
 	}

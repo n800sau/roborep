@@ -5,7 +5,7 @@ const int led = 13;
 
 static ESP8266WebServer wserver(80);
 
-static void handleRoot() {
+static void ICACHE_FLASH_ATTR handleRoot() {
 	digitalWrite ( led, 1 );
 	char temp[400];
 	int sec = millis() / 1000;
@@ -36,7 +36,7 @@ static void handleRoot() {
 
 }
 
-static void drawGraph() {
+static void ICACHE_FLASH_ATTR drawGraph() {
 	String out = "";
 	char temp[100];
 	out += "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"400\" height=\"150\">\n";
@@ -54,14 +54,14 @@ static void drawGraph() {
 	wserver.send ( 200, "image/svg+xml", out);
 }
 
-void setupWWWservice()
+void ICACHE_FLASH_ATTR setupWWWservice()
 {
 	wserver.on ( "/", handleRoot );
 	wserver.on ( "/test.svg", drawGraph );
 	wserver.begin();
 }
 
-void handleWWWservice()
+void ICACHE_FLASH_ATTR handleWWWservice()
 {
 	wserver.handleClient();
 }

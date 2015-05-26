@@ -2,8 +2,10 @@
 
 #define __WWW_SERVICE_H
 
-void setupWWWservice();
+#include <c_types.h>
 
-void handleWWWservice();
+void ICACHE_FLASH_ATTR setupWWWservice();
+
+void ICACHE_FLASH_ATTR handleWWWservice();
 
 #endif //__WWW_SERVICE_H
