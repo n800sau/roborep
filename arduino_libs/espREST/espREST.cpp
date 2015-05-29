@@ -76,8 +76,8 @@ void espREST::handle(ESP8266WebServer &server)
 			}
 		}
 	} else if(uri.startsWith("/digital/")) {
-		int mindex = uri.indexOf("/", 6);
-		String pin = uri.substring(6, mindex);
+		int mindex = uri.indexOf("/", 9);
+		String pin = uri.substring(9, mindex);
 		if(isDigit(pin.charAt(0))) {
 			String val = uri.substring(mindex+1);
 			if (val == "") {
@@ -92,8 +92,8 @@ void espREST::handle(ESP8266WebServer &server)
 			}
 		}
 	} else if(uri.startsWith("/analog/")) {
-		int mindex = uri.indexOf("/", 6);
-		String pin = uri.substring(6, mindex);
+		int mindex = uri.indexOf("/", 8);
+		String pin = uri.substring(8, mindex);
 		if(isDigit(pin.charAt(0))) {
 			String val = uri.substring(mindex+1);
 			if (val == "") {
