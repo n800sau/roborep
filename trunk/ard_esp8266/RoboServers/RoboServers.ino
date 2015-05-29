@@ -38,9 +38,9 @@ void setup() {
 
 	Serial1.println(WiFi.localIP());
 
-	setupCAMservice();
+//	setupCAMservice();
 
-	camticker.attach(1, getCamImage);
+//	camticker.attach(1, getCamImage);
 
 }
 
@@ -58,8 +58,8 @@ void loop() {
 
 static void ICACHE_FLASH_ATTR getCamImage()
 {
-	Serial1.println("start get image");
-	handleCAMservice();
-	Serial1.println("end get image");
+//	Serial1.println("start get image");
+//	handleCAMservice();
+//	Serial1.println("end get image");
 }
 
