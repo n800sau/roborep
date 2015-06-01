@@ -1,0 +1,67 @@
+#include <Wire.h>
+#define ESP_CH_EN         13
+#define SLAVE_ADDRESS     0x29
+//#define TWI_FREQ_SETTING  400000L   // 400KHz for I2C
+#define CPU_FREQ          16000000L  // 16MHz
+
+volatile uint8_t command; // which command was requested (if any)
+uint8_t pin;
+uint8_t value;
+
+enum {
+  I2C_CMD_SET_DIGITAL_PIN = 1,
+  I2C_CMD_SET_PWM_PIN = 2
+};
+
+void requestEvent(){
+  if (command > 0) {
+    uint8_t response[2];
+    response[0] = pin;
+    response[1] = value;
+    pinMode(pin, INPUT);
+    pinMode(pin, OUTPUT);
+
+    switch (command) {
+      case I2C_CMD_SET_DIGITAL_PIN:
+        digitalWrite(pin, (value) ? HIGH : LOW);
+        break;
+
+      case I2C_CMD_SET_PWM_PIN:
+        analogWrite(pin, value);
+        break;
+    }
+
+    Wire.write(response, sizeof response);
+    command = 0;
+  }
+}
+
+void receiveEvent(int bytesReceived) {
+  if (bytesReceived == 3) {
+    command = Wire.read();
+    pin = Wire.read();
+    value = Wire.read();
+  }
+}
+
+
+void setup() {
+  command = 0;
+  Serial.begin(115200);
+
+  // Enable esp8266
+  pinMode(ESP_CH_EN, OUTPUT);
+  digitalWrite(ESP_CH_EN, HIGH);
+
+  Wire.begin(SLAVE_ADDRESS);
+//  TWBR = ((CPU_FREQ / TWI_FREQ_SETTING) - 16) / 2;
+  Wire.onRequest(requestEvent);
+  Wire.onReceive(receiveEvent);
+}
+
+
+void loop() {
+	if(command) {
+		Serial.println(command);
+	}
+}
