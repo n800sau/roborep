@@ -1,0 +1,29 @@
+
+int lastA4 = 0;
+int lastA5 = 0;
+
+void setup()
+{
+	Serial.begin(115200);
+	Serial.println("\nPin listener Test");
+
+	pinMode(A4, INPUT_PULLUP);
+	pinMode(A5, INPUT_PULLUP);
+
+}
+
+
+void loop()
+{
+	int val = digitalRead(A4);
+	if(val != lastA4) {
+		Serial.println("A4");
+		lastA4 = val;
+	}
+	val = digitalRead(A5);
+	if(val != lastA5) {
+		Serial.println("A5");
+		lastA5 = val;
+	}
+//	delay(1);
+}
