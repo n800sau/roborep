@@ -1,0 +1,1 @@
+ino build &> build.log && ./upload.sh
