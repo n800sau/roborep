@@ -22,6 +22,8 @@ int lon = 0;
 unsigned long last_time = millis();
 
 float stop_acc_x = 0;
+float stop_acc_y = 0;
+float stop_acc_z = 0;
 
 int lastLCount = 0, lastRCount = 0;
 
@@ -72,12 +74,28 @@ void printState()
 
 	Serial.print(F(",\"head\":"));
 	Serial.print(headingDegrees);
+
 	Serial.print(F(",\"acc_x\":"));
 	Serial.print(adxl345_state.event.acceleration.x - stop_acc_x);
 	Serial.print(F(",\"acc_x_avg\":"));
 	Serial.print(acc_x_avg() - stop_acc_x);
 	Serial.print(F(",\"acc_x_max\":"));
 	Serial.print(acc_x_max() - stop_acc_x);
+
+	Serial.print(F(",\"acc_y\":"));
+	Serial.print(adxl345_state.event.acceleration.y - stop_acc_y);
+	Serial.print(F(",\"acc_y_avg\":"));
+	Serial.print(acc_y_avg() - stop_acc_y);
+	Serial.print(F(",\"acc_y_max\":"));
+	Serial.print(acc_y_max() - stop_acc_y);
+
+	Serial.print(F(",\"acc_z\":"));
+	Serial.print(adxl345_state.event.acceleration.z - stop_acc_z);
+	Serial.print(F(",\"acc_z_avg\":"));
+	Serial.print(acc_z_avg() - stop_acc_z);
+	Serial.print(F(",\"acc_z_max\":"));
+	Serial.print(acc_z_max() - stop_acc_z);
+
 	Serial.print(F(",\"ahit\":"));
 	Serial.print((int)adxl345_state.single_tap);
 
@@ -236,6 +254,8 @@ void execute(const char *cmd, JsonObject &data)
 			break;
 		case S_N3('s', 'a', 'z'):
 			stop_acc_x = adxl345_state.event.acceleration.x;
+			stop_acc_y = adxl345_state.event.acceleration.y;
+			stop_acc_z = adxl345_state.event.acceleration.z;
 			ok();
 			break;
 		case S_N2('s', 'p'):
@@ -293,7 +313,7 @@ void loop()
 			Serial.println(F("JSON parsing failed of"));
 			Serial.println(jsonBuf);
 		} else {
-//			Serial.println(jsonBuf);
+			Serial.println(jsonBuf);
 			const char* cmd = data["command"];
 			Serial.print(F("command:"));
 			Serial.println(cmd);
@@ -309,5 +329,5 @@ void loop()
 			cur_action = NULL;
 		}
 	}
-	delay(20);
+	delay(10);
 }
