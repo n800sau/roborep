@@ -165,7 +165,7 @@ void calc_xy(double l, double r)
 
 void setup()
 {
-	Serial.begin(57600);
+	Serial.begin(115200);
 	printf_begin();
 
 	Serial.println("Starting the I2C interface.");
