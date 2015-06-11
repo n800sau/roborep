@@ -14,3 +14,9 @@ void process_accel();
 
 float acc_x_avg();
 float acc_x_max();
+
+float acc_y_avg();
+float acc_y_max();
+
+float acc_z_avg();
+float acc_z_max();
