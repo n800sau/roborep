@@ -1,1 +1,1 @@
-../../ros_icc_base/src/adxl345_proc.h
+../../common_src/adxl345_proc.h
