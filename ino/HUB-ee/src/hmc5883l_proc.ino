@@ -1,1 +1,1 @@
-../../ros_icc_base/src/hmc5883l_proc.ino
+../../common_src/hmc5883l_proc.ino
