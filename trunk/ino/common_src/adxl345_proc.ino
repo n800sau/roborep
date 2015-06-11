@@ -8,7 +8,9 @@
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel;
 
-ScalarLimitedQueue<float, 50> acc_x;
+ScalarLimitedQueue<float, 10> acc_x;
+ScalarLimitedQueue<float, 10> acc_y;
+ScalarLimitedQueue<float, 10> acc_z;
 
 adxl345_state_t adxl345_state;
 
@@ -47,6 +49,8 @@ void process_accel()
 {
 	accel.getEvent(&adxl345_state.event);
 	acc_x.push(adxl345_state.event.acceleration.x);
+	acc_y.push(adxl345_state.event.acceleration.y);
+	acc_z.push(adxl345_state.event.acceleration.z);
 
 	if(digitalRead(A_INT1_PIN)) {
 		int interruptSource = accel.readRegister(ADXL345_REG_INT_SOURCE);
@@ -66,4 +70,24 @@ float acc_x_avg()
 float acc_x_max()
 {
 	return acc_x.vmax(0);
+}
+
+float acc_y_avg()
+{
+	return acc_y.average(0);
+}
+
+float acc_y_max()
+{
+	return acc_y.vmax(0);
+}
+
+float acc_z_avg()
+{
+	return acc_z.average(0);
+}
+
+float acc_z_max()
+{
+	return acc_z.vmax(0);
 }
