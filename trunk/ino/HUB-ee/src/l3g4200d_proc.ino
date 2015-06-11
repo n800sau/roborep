@@ -1,1 +1,1 @@
-../../ros_icc_base/src/l3g4200d_proc.ino
+../../common_src/l3g4200d_proc.ino

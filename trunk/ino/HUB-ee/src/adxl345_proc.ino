@@ -1,1 +1,1 @@
-../../ros_icc_base/src/adxl345_proc.ino
+../../common_src/adxl345_proc.ino
