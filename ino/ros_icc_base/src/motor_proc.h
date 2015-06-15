@@ -1,3 +1,4 @@
+/*
 extern bool compass_mode;
 
 // left reverse
@@ -12,10 +13,6 @@ extern int RstepSize;
 // turn step size
 extern int TstepSize;
 
-// encoder distance counter
-extern volatile int lCounter;
-extern volatile int rCounter;
-
 extern volatile int lDest;
 extern volatile int lPower;
 
@@ -28,6 +25,16 @@ extern int azimuth_allowance ;
 extern int offset;
 
 extern volatile double fi, x, y;
+*/
+
+// encoder distance counter
+extern volatile int lCounter;
+extern volatile int rCounter;
+
+void mv_forward(long ms);
+void mv_back(long ms);
+void turn_left(long ms);
+void turn_right(long ms);
 
 void motor_setup();
 void motor_process();
