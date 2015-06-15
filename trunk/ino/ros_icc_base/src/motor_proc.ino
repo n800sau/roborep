@@ -186,6 +186,38 @@ void updateMove()
 	}
 }
 
+void mv_forward(long ms)
+{
+	stop();
+	lDest = LstepSize;
+	rDest = RstepSize;
+	lReverse = rReverse = false;
+}
+
+void mv_back(long ms)
+{
+	stop();
+	lDest = LstepSize;
+	rDest = RstepSize;
+	lReverse = rReverse = true;
+}
+
+void turn_left(long ms)
+{
+	stop();
+	lDest = rDest = TstepSize;
+	lReverse = true;
+	rReverse = false;
+}
+
+void turn_right(long ms)
+{
+	stop();
+	lDest = rDest = TstepSize;
+	lReverse = false;
+	rReverse = true;
+}
+
 
 void motor_setup()
 {
@@ -229,3 +261,4 @@ void motor_process()
 		updateMove();
 	}
 }
+

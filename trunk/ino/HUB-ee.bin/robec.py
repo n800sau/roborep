@@ -13,9 +13,6 @@ import Queue
 from StringIO import StringIO
 import pycmds
 
-# end of json marker
-EOJ = "\n.\n"
-
 def redis_subscriber(q):
 	r = redis.Redis()
 	s = r.pubsub()
@@ -80,12 +77,14 @@ class robec:
 		return crc
 
 	def send_command(self, command, databytes=None):
+		self.dbprint('send_command')
 		packet = '\x85' + chr(command)
 		if databytes is None:
 			packet += chr(0)
 		else:
 			packet += chr(len(databytes)) + databytes
-		return self.send_bytes(packet + chr(self.crc8(packet[1:])))
+		self.send_bytes(packet + chr(self.crc8(packet[1:])))
+		return self.read_bin()
 
 	def send_at(self, command):
 		return self.send_line('+++AT' + command)
@@ -137,6 +136,8 @@ class robec:
 						self.dbg_data += str(e)
 						self.dbg_data += 'Received: "%s"' % data
 						rs = ''
+						if isinstance(e, KeyboardInterrupt):
+							raise
 					break
 				elif json_read:
 					data += l
@@ -145,17 +146,18 @@ class robec:
 					self.dbg_data += l
 			elif not json_read:
 				break
-			elif t + 2 < time.time():
-				self.dbprint('timeout')
-				break
+			elif t + 1 < time.time():
+				raise Exception('timeout')
 		return rs
 
 	def parametrize(self, data):
-		data['vals'] = [v for v in array.array('f', data['data'])]
+		data['millis'] = array.array('L', data['data'][:4])[0]
+		data['vals'] = [v for v in array.array('f', data['data'][4:])]
 		del data['data']
 		return data
 
 	def read_bin(self):
+		self.dbprint("read_bin")
 		t = time.time()
 		rs = None
 		bin_read = False
@@ -181,26 +183,26 @@ class robec:
 						self.recv_data = self.recv_data[1:]
 						bin_read = False
 			else:
-				if not self.recv_data:
-					break
-				try:
-					ss = self.recv_data.index(chr(pycmds.MAGIC_BYTE))
-					bin_read = True
-					discarded = self.recv_data[:ss]
-					self.recv_data = self.recv_data[ss:]
-				except ValueError:
-					discarded = self.recv_data
-					self.recv_data = ''
-				if discarded:
-					for line in discarded.split('\r'):
-						line = line.strip()
+#				if not self.recv_data:
+#					break
+				if self.recv_data:
+					try:
+						ss = self.recv_data.index(chr(pycmds.MAGIC_BYTE))
+						bin_read = True
+						discarded = self.recv_data[:ss]
+						self.recv_data = self.recv_data[ss:]
+					except ValueError:
+						discarded = self.recv_data
+						self.recv_data = ''
+					if discarded:
+						for line in discarded.split('\r'):
+							line = line.strip()
 #						if line.startswith('MSG:'):
 #							self.dbprint(': %s\n' % line)
-					self.dbprint(': %s\n' % array.array('B', discarded))
-					self.dbg_data += discarded
-			if t + 2 < time.time():
-				self.dbprint('timeout')
-				break
+						self.dbprint('Discarded: %s\n' % discarded)
+						self.dbg_data += discarded
+			if t + 1 < time.time():
+				raise Exception('timeout')
 		return rs
 
 	def spin(self):

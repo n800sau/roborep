@@ -4,10 +4,62 @@
 #include "hmc5883l_proc.h"
 #include "adxl345_proc.h"
 #include "l3g4200d_proc.h"
+#include "bmp085_proc.h"
 #include "motor_proc.h"
+#include "commands.h"
+#include <SerialProtocol.h>
 
 // time in millisecs to stop if no encoder reading
 #define TIME2STOP 10000
+
+class IccBase: public SerialProtocol {
+	public:
+		void sendState();
+		void ok();
+
+};
+
+void IccBase::sendState()
+{
+	float vals[3];
+	vals[0] = readVccMv();
+	sendFloats(R_VOLTS_1F, vals, 1);
+	vals[0] = lCounter;
+	vals[1] = rCounter;
+	sendFloats(R_MCOUNTS_2F, vals, 2);
+	vals[0] = headingDegrees;
+	sendFloats(R_ACCMAX_3F, vals, 3);
+	vals[0] = adxl345_state.single_tap;
+	sendFloats(R_HIT_1F, vals, 1);
+	vals[0] = gyro.g.x;
+	vals[1] = gyro.g.y;
+	vals[2] = gyro.g.z;
+	sendFloats(R_GYRO_3F, vals, 3);
+	bmp.getTemperature(vals);
+	sendFloats(R_TEMPERATURE_1F, vals, 1);
+	vals[0] = bmp085_event.pressure;
+	sendFloats(R_PRESSURE_1F, vals, 1);
+	// Calculate altitude assuming 'standard' barometric
+	// pressure of 1013.25 millibar = 101325 Pascal
+	// you can get a more precise measurement of altitude
+	// if you know the current sea level pressure which will
+	// vary with weather and such. If it is 1015 millibars
+	// that is equal to 101500 Pascals.
+	// Sydney 1018.1 hPa
+	vals[0] = bmp.pressureToAltitude(SENSORS_PRESSURE_SEALEVELHPA, bmp085_event.pressure);
+	sendFloats(R_ALT_1F, vals, 1);
+
+	adxl345_state.reset();
+
+}
+
+void IccBase::ok()
+{
+	sendSimple(R_OK_0);
+}
+
+
+IccBase base;
 
 void setup()
 {
@@ -24,191 +76,58 @@ void setup()
 	motor_setup();
 }
 
-void printState()
+void execute()
 {
-	Serial.print((compass_mode) ? "C mode" : "D mode");
-	Serial.print(" DATA ");
-	Serial.print("lsteps:");
-	Serial.print(lDest);
-	Serial.print(",rsteps:");
-	Serial.print(rDest);
-	Serial.print(",lpw:");
-	Serial.print(lPower * ((lReverse) ? -1 : 1));
-	Serial.print(",rpw:");
-	Serial.print(rPower * ((rReverse) ? -1 : 1));
-	Serial.print(",lcnt:");
-	Serial.print(lCounter);
-	Serial.print(",rcnt:");
-	Serial.print(rCounter);
-//	Serial.print(",x:");
-//	Serial.print(x);
-//	Serial.print(",y:");
-//	Serial.print(y);
-//	Serial.print(",fi:");
-//	Serial.print(fi);
-	Serial.print(",head:");
-	Serial.print(headingDegrees);
-	Serial.print(",dir:");
-	Serial.print(intentDir);
-	int intentOffset = -1;
-	if(intentDir >= 0) {
-		intentOffset = intentDir - headingDegrees;
-		if(intentOffset > 180) intentOffset = 360 - intentOffset;
-		else if(intentOffset < -180) intentOffset = 360 + intentOffset;
+	switch(*base.command) {
+		case C_STATE:
+			base.sendState();
+			break;
+		case C_STOP:
+			stop();
+			base.ok();
+			break;
+		case C_FORWARD:
+			mv_forward(1000);
+			base.ok();
+			break;
+		case C_BACK:
+			mv_back(1000);
+			base.ok();
+			break;
+		case C_TLEFT:
+			turn_left(1000);
+			base.ok();
+			break;
+		case C_TRIGHT:
+			turn_right(1000);
+			base.ok();
+			break;
 	}
-	Serial.print(",off:");
-	Serial.print(intentOffset);
-	Serial.print(",azim:");
-	Serial.print(azimuth);
-	Serial.print(",off:");
-	Serial.print(offset);
-//	Serial.print(",acc_x:");
-//	Serial.print(accel_scaled.XAxis);
-//	Serial.print(",gyro_x:");
-//	Serial.print((int)gyro.g.x);
-	Serial.println("");
 }
+
+int led = 13;
+int lon = 0;
+unsigned long last_time = millis();
 
 void loop()
 {
-	unsigned long last_millis = 0;
-	unsigned long cur_millis = millis();
+	unsigned long t = millis();
+	if(abs(t - last_time) > 1000) {
+		last_time = t;
+		digitalWrite(led, lon);
+		lon = !lon;
+//		Serial.println(F("tick"));
+	}
 
 	process_compass();
 	process_accel();
 	process_gyro();
+	process_bmp085();
 
-	static int last_lCounter = -1;
-	static int last_rCounter = -1;
-
-	unsigned long millisdiff = (last_millis > cur_millis) ? ((unsigned long) -1) - last_millis + cur_millis : cur_millis - last_millis;
-
-	if( millisdiff > TIME2STOP ) {
-		stop(true);
-	} else {
-		if(last_lCounter != lCounter || last_rCounter != rCounter) {
-			printState();
-			last_lCounter=lCounter;
-			last_rCounter=rCounter;
-		}
-		motor_process();
+	if(base.available()) {
+		execute();
+		base.resetInput();
 	}
 
-//		Serial.print(compass_raw.XAxis);
-//		Serial.print(":");
-//		Serial.print(headingDegrees);
-//		Serial.println("");
-	char val = Serial.read();
-	if(val!=-1)
-	{
-		Serial.println(val);
-		switch(val)
-		{
-			case '`':
-				stop(true);
-				compass_mode = !compass_mode;
-				break;
-			case 'q':
-				LstepSize ++;
-				Serial.print("left step:");
-				Serial.println(LstepSize);
-				break;
-			case 'z':
-				LstepSize --;
-				Serial.print("left step:");
-				Serial.println(LstepSize);
-				break;
-			case 'e':
-				RstepSize ++;
-				Serial.print("right step:");
-				Serial.println(RstepSize);
-				break;
-			case 'c':
-				RstepSize --;
-				Serial.print("right step:");
-				Serial.println(RstepSize);
-				break;
-			case 'v':
-				Serial.print("V:");
-				Serial.println(readVccMv());
-				break;
-			case '0':
-				Serial.println("Position reset");
-				fi = x = y = 0;
-				break;
-			case 's'://stop
-				stop(true);
-				break;
-		}
-		if(compass_mode) {
-			switch(val)
-			{
-				case 'w'://Move ahead
-					stop();
-					lDest = LstepSize;
-					rDest = RstepSize;
-					lReverse = rReverse = false;
-					azimuth = -1;
-					break;
-				case 'x'://move back
-					stop();
-					lDest = LstepSize;
-					rDest = RstepSize;
-					lReverse = rReverse = true;
-					azimuth = -1;
-					break;
-				case 'y': // go north
-					intentDir = 0;
-					break;
-				case 'b': // go south
-					intentDir = 180;
-					break;
-				case 'g': // go west
-					intentDir = 360-90;
-					break;
-				case 'h': // go east
-					intentDir = 90;
-					break;
-				case 'j': // reduce azimuth
-					intentDir = (360 + intentDir - 10) % 360;
-					break;
-				case 'l': // enlarge azimuth
-					intentDir = (360 + intentDir + 10) % 360;
-					break;
-				case 'k': // start direction
-					azimuth = intentDir;
-					break;
-			}
-		} else {
-			switch(val)
-			{
-				case 'w'://Move ahead
-					stop();
-					lDest = LstepSize;
-					rDest = RstepSize;
-					lReverse = rReverse = false;
-					break;
-				case 'x'://move back
-					stop();
-					lDest = LstepSize;
-					rDest = RstepSize;
-					lReverse = rReverse = true;
-					break;
-				case 'a'://turn left
-					stop();
-					lDest = rDest = TstepSize;
-					lReverse = true;
-					rReverse = false;
-					break;
-				case 'd'://turn right
-					stop();
-					lDest = rDest = TstepSize;
-					lReverse = false;
-					rReverse = true;
-					break;
-			}
-		}
-		last_millis = cur_millis;
-		printState();
-	}
 }
+
