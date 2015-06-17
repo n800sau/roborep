@@ -1,0 +1,134 @@
+<html>
+<head>
+
+	<title>Three M web server</title>
+
+	<meta name="viewport" content="width=device-width; initial-scale=1; maximum-scale=1; user-scalable=no;"/>
+	<meta name="MobileOptimized" content="width" />
+	<meta name="HandheldFriendly" content="true" />
+	<link rel="stylesheet" type="text/css" href="style.css">
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.js"></script>
+	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+	<script src="js/angularjs-slider/rzslider.js"></script>
+	<link rel="stylesheet" href="js/angularjs-slider/dist/rzslider.css">
+	<script src="js/spin.js/spin.js"></script>
+	<script src="js/angular-spinner/angular-spinner.js"></script>
+	<script src="app.js"></script>
+
+</head>
+<body ng-cloak ng-app="app">
+	<div ng-controller="rocontrol">
+
+		<span us-spinner="{radius:30, width:8, length: 16}" spinner-key="spinner-busy"></span>
+
+		<table class="cnt">
+			<tr>
+				<td>
+					<span class="brect">
+						<span ng-hide="!busy">Busy</span>
+					</span>
+				</td>
+				<td>
+					<div class="squaredOne">
+						<input type="radio" value="mv_fwd" ng-model="command" id="mv_fwd"/>
+						<label for="mv_fwd"></label>
+					</div>
+				</td>
+				<td>
+					<span class="brect"></span>
+				</td>
+				<td>
+					<span class="brect"></span>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div class="squaredOne">
+						<input type="radio" value="t_left" ng-model="command" id="t_left"/>
+						<label for="t_left"></label>
+					</div>
+				</td>
+				<td>
+					<div class="squaredOne red">
+						<input type="radio" value="stop" ng-model="command" id="stop"/>
+						<label for="stop"></label>
+					</div>
+				</td>
+				<td>
+					<div class="squaredOne">
+						<input type="radio" value="t_right" ng-model="command" id="t_right"/>
+						<label for="t_right"></label>
+					</div>
+				</td>
+					<span class="brect"></span>
+				<td>
+					<span class="brect"></span>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<span class="brect"></span>
+				</td>
+				<td>
+					<div class="squaredOne">
+						<input type="radio" value="mv_back" ng-model="command" id="mv_back"/>
+						<label for="mv_back"></label>
+					</div>
+				</td>
+				<td>
+					<span class="brect"></span>
+				</td>
+				<td>
+					<span class="brect"></span>
+				</td>
+			</tr>
+		</table>
+
+		<div class="reply">{{reply_message}}</div>
+
+		<table>
+			<tr>
+				<td rowspan="4">
+					<img width="160" height="120" alt="image" ng-src="{{imgsrc}}"/>
+				</td>
+				<td>
+					<button ng-click="reload_img()">Reload</button>
+				</td>
+				<td rowspan="4">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<button ng-click="update_img('update_image/')">Update</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<button ng-click="update_img('update_image_in_dark/')">Dark</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<button ng-click="update_img('threshold_image/1')">Threshold</button>
+				</td>
+			</tr>
+		</table>
+
+		<div class="error">
+			{{error_text}}
+		</div>
+
+		<div>
+			Br: <rzslider rz-slider-step="5" rz-slider-precision="1" rz-slider-model="brightness" rz-slider-ceil="100" rz-slider-floor="0">
+		</div>
+		<div>
+			Cont: <rzslider rz-slider-step="5" rz-slider-precision="1" rz-slider-model="contrast" rz-slider-ceil="100" rz-slider-floor="0">
+		</div>
+
+	</div>
+
+</body>
+</html>
