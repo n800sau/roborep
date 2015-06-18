@@ -1,5 +1,7 @@
 (function($) {
 
+	var stop_json = {command: 'stop'};
+
 	var app = angular.module("app", ['rzModule', 'angularSpinner']);
 
 	app.controller("rocontrol", ['$scope', '$http', '$interval', '$timeout', '$element', 'usSpinnerService',
@@ -7,23 +9,20 @@
 
 		$scope.brightness = 50;
 		$scope.contrast = 50;
-		$scope.command = null;
-		$scope.$watch('command', function(newVal, oldVal) {
+		$scope.shutter = 0;
+		$scope.cmd_json = {};
+		$scope.$watch('cmd_json', function(newVal, oldVal) {
 			$scope.send_command()
 		});
-		$scope.command = 'stop';
-		$scope.command_args = {};
+		$scope.cmd_json = stop_json;
 
 		$scope.send_command = function() {
 			$http.get('command.php',{
-				params: {
-					cmd: $scope.command,
-					params: $scope.command_args
-				}
+				params: $scope.cmd_json
 			}).success(function(data) {
-				$scope.reply_message = $scope.command + ':' + (data.result || data);
-				if($scope.command != 'stop') {
-					$timeout(function() { $scope.command = 'stop' }, 1000);
+				$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
+				if($scope.cmd_json.command != stop_json.command) {
+					$timeout(function() { $scope.cmd_json = stop_json }, 1000);
 				}
 			}).error(function(data) {
 				$scope.error_text = data;
@@ -42,7 +41,8 @@
 			$http.get('/app/' + uri, {
 				params: {
 					brightness: $scope.brightness,
-					contrast: $scope.contrast
+					contrast: $scope.contrast,
+					shutter: $scope.shutter
 				}
 			}).success(function(data, status) {
 				usSpinnerService.stop('spinner-busy');

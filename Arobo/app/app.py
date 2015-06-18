@@ -21,13 +21,18 @@ def img_fname():
 	return rs
 
 def the_camera():
-	print 'get'
 	rs = picamera.PiCamera()
 	rs.resolution = (80, 60)
 	if 'brightness' in request.args:
 		rs.brightness = int(request.args['brightness'])
 	if 'contrast' in request.args:
 		rs.contrast = int(request.args['contrast'])
+	shutter = int(request.args.get('shutter', 0))
+	if shutter > 0:
+		rs.framerate = Fraction(1, shutter)
+		rs.shutter_speed = shutter * 1000000
+		rs.exposure_mode = 'off'
+		rs.iso = 800
 	return rs
 
 @app.route('/threshold_image/<int:sti>')
@@ -48,7 +53,7 @@ def process_image(sti=3):
 	# grab an image from the camera
 		camera.capture(rawCapture, format="bgr")
 		img = rawCapture.array
-#		img = cv2.medianBlur(img,5)
+		img = cv2.medianBlur(img,5)
 		ret,img = cv2.threshold(img, 127, 255, style[sti])
 		cv2.imwrite(img_fname(), img)
 		rs = json.dumps({'result': '%s threshold an image at %s' % (titles[sti], time.strftime('%H:%M:%S'))})
@@ -62,20 +67,10 @@ def update_image():
 #		camera.led = False
 #		camera.exposure_mode = 'auto'
 #		time.sleep(1)
-		camera.capture(img_fname(), use_video_port=True)
-		rs = json.dumps({'result': 'Captured an image at %s with %d, %d' % (time.strftime('%H:%M:%S'), camera.brightness, camera.contrast)})
-	return rs
-
-@app.route('/update_image_in_dark/')
-def update_image_in_dark():
-	with the_camera() as camera:
-		camera.framerate = Fraction(1, 6)
-		camera.shutter_speed = 1000000
-		camera.exposure_mode = 'off'
-		camera.iso = 800
-#			time.sleep(1)
-		camera.capture(img_fname())
-		rs = json.dumps({'result': 'Dark captured an image at %s' % time.strftime('%H:%M:%S')})
+		shutter = int(request.args.get('shutter', 0))
+		camera.capture(img_fname(), use_video_port=shutter == 0)
+		rs = json.dumps({'result': 'Captured an image at %s with %d, %d, %d' % (
+			time.strftime('%H:%M:%S'), camera.brightness, camera.contrast, shutter)})
 	return rs
 
 if __name__ == '__main__':

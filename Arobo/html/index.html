@@ -33,7 +33,7 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" value="mv_fwd" ng-model="command" id="mv_fwd"/>
+						<input type="radio" ng-value="{command: 'mv_fwd'}" ng-model="cmd_json" id="mv_fwd"/>
 						<label for="mv_fwd"></label>
 					</div>
 				</td>
@@ -47,19 +47,19 @@
 			<tr>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" value="t_left" ng-model="command" id="t_left"/>
+						<input type="radio" ng-value="{command: 't_left', params: {pwr: 100}}" ng-model="cmd_json" id="t_left"/>
 						<label for="t_left"></label>
 					</div>
 				</td>
 				<td>
 					<div class="squaredOne red">
-						<input type="radio" value="stop" ng-model="command" id="stop"/>
+						<input type="radio" ng-value="{command: 'stop'}" ng-model="cmd_json" id="stop"/>
 						<label for="stop"></label>
 					</div>
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" value="t_right" ng-model="command" id="t_right"/>
+						<input type="radio" ng-value="{command: 't_right', params: {pwr: 100}}" ng-model="cmd_json" id="t_right"/>
 						<label for="t_right"></label>
 					</div>
 				</td>
@@ -74,7 +74,7 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" value="mv_back" ng-model="command" id="mv_back"/>
+						<input type="radio" ng-value="{command: 'mv_back'}" ng-model="cmd_json" id="mv_back"/>
 						<label for="mv_back"></label>
 					</div>
 				</td>
@@ -107,11 +107,6 @@
 			</tr>
 			<tr>
 				<td>
-					<button ng-click="update_img('update_image_in_dark/')">Dark</button>
-				</td>
-			</tr>
-			<tr>
-				<td>
 					<button ng-click="update_img('threshold_image/1')">Threshold</button>
 				</td>
 			</tr>
@@ -122,10 +117,13 @@
 		</div>
 
 		<div>
-			Br: <rzslider rz-slider-step="5" rz-slider-precision="1" rz-slider-model="brightness" rz-slider-ceil="100" rz-slider-floor="0">
+			Brightness: <rzslider rz-slider-step="1" rz-slider-precision="1" rz-slider-model="brightness" rz-slider-ceil="100" rz-slider-floor="0"/>
 		</div>
 		<div>
-			Cont: <rzslider rz-slider-step="5" rz-slider-precision="1" rz-slider-model="contrast" rz-slider-ceil="100" rz-slider-floor="0">
+			Contrast: <rzslider rz-slider-step="1" rz-slider-precision="1" rz-slider-model="contrast" rz-slider-ceil="100" rz-slider-floor="0"/>
+		</div>
+		<div>
+			Shutter: <rzslider rz-slider-step="1" rz-slider-precision="1" rz-slider-model="shutter" rz-slider-ceil="5" rz-slider-floor="0"/>
 		</div>
 
 	</div>
