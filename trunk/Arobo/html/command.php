@@ -2,7 +2,7 @@
 
 $r = new Redis();
 $r->connect('127.0.0.1', 6379);
-$cmd['name'] = $_GET['cmd'];
+$cmd['name'] = $_GET['command'];
 if(!empty($_GET['params'])) {
 	$cmd['params'] = json_decode($_GET['params']);
 }
