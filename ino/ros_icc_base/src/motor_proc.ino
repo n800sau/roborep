@@ -121,9 +121,19 @@ void setLeftMotor(int pwm)
 	if(lPower != pwm && pwm == 0) {
 		printf("Left Stop, Right: %d\r\n", rPower);
 	}
-	analogWrite(lEN, pwm); //set pwm control, 0 for stop, and 255 for maximum speed
+//	printf("Left power: %d\n\r", pwm);
+//	analogWrite(lEN, pwm); //set pwm control, 0 for stop, and 255 for maximum speed
 	lPower = pwm;
-	digitalWrite(lIN, (lReverse) ? LOW : HIGH);
+
+	int in = (lReverse) ? LOW : HIGH;
+//	int en = ((pwm == 0) ? (!lReverse) : lReverse) ? HIGH : LOW;
+	int en = (pwm == 0) ? LOW : HIGH;
+//	printf("Left: %d:%d\n\r", in, en);
+
+	digitalWrite(lIN, in);
+
+	// instead of analogWrite
+	digitalWrite(lEN, en);
 }
 
 void setRightMotor(int pwm)
@@ -133,9 +143,19 @@ void setRightMotor(int pwm)
 	if(rPower != pwm && pwm == 0) {
 		printf("Left: %d, Right Stop\r\n", lPower);
 	}
-	analogWrite(rEN, pwm);
+//	printf("Right power: %d\n\r", pwm);
+//	analogWrite(rEN, pwm);
 	rPower = pwm;
-	digitalWrite(rIN, (rReverse) ? LOW : HIGH);
+
+	int in = (rReverse) ? LOW : HIGH;
+//	int en = ((pwm == 0) ? (!rReverse) : rReverse) ? HIGH : LOW;
+	int en = (pwm == 0) ? LOW : HIGH;
+//	printf("Right: %d:%d\n\r", in, en);
+
+	digitalWrite(rIN, in);
+
+	// instead of analogWrite
+	digitalWrite(rEN, en);
 }
 
 void stop(bool reset_azimuth)
