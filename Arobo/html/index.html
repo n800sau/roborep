@@ -41,7 +41,7 @@
 					<span class="brect"></span>
 				</td>
 				<td>
-					<span class="brect"></span>
+					<font color='white'>{{state.heading| number: 3}}</font>
 				</td>
 			</tr>
 			<tr>
@@ -63,7 +63,6 @@
 						<label for="t_right"></label>
 					</div>
 				</td>
-					<span class="brect"></span>
 				<td>
 					<span class="brect"></span>
 				</td>
@@ -86,6 +85,10 @@
 				</td>
 			</tr>
 		</table>
+
+		<div>
+			Period: <rzslider rz-slider-step="0.5" rz-slider-precision="0.1" rz-slider-model="period" rz-slider-ceil="10" rz-slider-floor="0.5"/>
+		</div>
 
 		<div class="reply">{{reply_message}}</div>
 
