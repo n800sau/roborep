@@ -9,6 +9,7 @@
 
 		$scope.brightness = 50;
 		$scope.contrast = 50;
+		$scope.period = 1;
 		$scope.shutter = 0;
 		$scope.cmd_json = {};
 		$scope.$watch('cmd_json', function(newVal, oldVal) {
@@ -18,11 +19,13 @@
 
 		$scope.send_command = function() {
 			$http.get('command.php',{
-				params: $scope.cmd_json
+				params: {
+					command: $scope.cmd_json
+				}
 			}).success(function(data) {
 				$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
 				if($scope.cmd_json.command != stop_json.command) {
-					$timeout(function() { $scope.cmd_json = stop_json }, 1000);
+					$timeout(function() { $scope.cmd_json = stop_json }, $scope.period * 1000);
 				}
 			}).error(function(data) {
 				$scope.error_text = data;
@@ -86,13 +89,12 @@
 		}
 
 		var update_state = function() {
-			$http.get('/rgbframe/state.php'
+			$http.get('sensors.php'
 			).success(
 				function(data, status, headers, config) {
-					if(data.state) {
-						$scope.state = data.state;
+					if(data.result) {
+						$scope.state = data.result;
 					}
-					$scope.xylist = data.xy;
 				}
 			).error(
 				function(data, status, headers, config) {
@@ -101,8 +103,8 @@
 			);
 		};
 
-//		$interval(update_state, 3000);
-//		update_state();
+		$interval(update_state, 1000);
+		update_state();
 	}]);
 
 	app.directive("drawing", function() {

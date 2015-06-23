@@ -2,12 +2,9 @@
 
 $r = new Redis();
 $r->connect('127.0.0.1', 6379);
-$cmd['name'] = $_GET['command'];
-if(!empty($_GET['params'])) {
-	$cmd['params'] = json_decode($_GET['params']);
-}
-$r->publish("command", json_encode($cmd));
+$cmd_json = $_GET['command'];
+$r->publish("command", $cmd_json);
 $r->close();
-echo json_encode(array('result' => 'Command "'.$_GET['cmd'].'" published'));
+echo json_encode(array('result' => 'Command "'.json_decode($cmd_json)->command.'" published'));
 
 ?>
