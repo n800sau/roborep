@@ -1,11 +1,14 @@
 import sys
 import json
 import time
+import datetime
+import array
 
 class bin2uno_inf:
 
-	def __init__(self):
+	def __init__(self, magic_byte):
 		self.debug = False
+		self.magic_byte = magic_byte
 		self.recv_data = ''
 		self.dbg_data = ''
 
@@ -18,14 +21,9 @@ class bin2uno_inf:
 	def recv(self):
 		return ''
 
-
-	def dbprint(self, text):
-		if self.debug:
-			print >>sys.__stderr__, text
-
-	def send_line(self, line):
-		self.dbprint('Sending %s' % line)
-		self.send2ino(line + '\n')
+	def dbprint(self, text, force=False):
+		if self.debug or force:
+			print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
 
 	def send_bytes(self, bytes):
 		self.dbprint('Sending %s' % list(bytes))
@@ -58,17 +56,6 @@ class bin2uno_inf:
 		self.dbg_data = ''
 		return rs
 
-	def read_line(self):
-		rs = ''
-#		self.dbprint( 'REMAIN: %s' % self.recv_data)
-		self.recv_data = self.recv_data.replace('\x0d', '\x0a')
-		self.recv_data = self.recv_data.replace('\x0a\x0a', '\x0a')
-		nldex = self.recv_data.find('\x0a')
-		if nldex >= 0:
-			rs = self.recv_data[:nldex + 1]
-			self.recv_data = self.recv_data[nldex + 1:]
-		return rs
-
 	def parametrize(self, data):
 		data['millis'] = array.array('L', data['data'][:4])[0]
 		data['vals'] = [v for v in array.array('f', data['data'][4:])]
@@ -86,11 +73,15 @@ class bin2uno_inf:
 				break
 
 	def read_bin(self):
-		self.dbprint("read_bin")
+#		self.dbprint("read_bin")
 		t = time.time()
 		rs = None
 		bin_read = False
 		while rs is None:
+			if t + 1 < time.time():
+				# timeout
+				rs = None
+				break
 			self.spin()
 			if bin_read:
 				l = len(self.recv_data)
@@ -102,21 +93,24 @@ class bin2uno_inf:
 						# test crc
 						c_crc = self.crc8(self.recv_data[:sz+3])
 						r_crc = ord(self.recv_data[sz+3])
+#						self.dbprint('%s vs %s' % (c_crc, r_crc))
 						if c_crc == r_crc:
 							# ok
 							rs = self.parametrize({'cmd': cmd, 'data': self.recv_data[3:sz+3]})
+							self.recv_data = self.recv_data[sz+4:]
+#							self.dbprint('rs = %s' % rs)
 						else:
 							self.dbprint("crc error %s != %s" % (c_crc, r_crc))
-#						self.dbprint(': %s\n' % self.recv_data[0])
-						# discard magic byte and continue
-						self.recv_data = self.recv_data[1:]
+#						self.dbprint(': %2.2X\n' % ord(self.recv_data[0]))
+							# discard magic byte and continue
+							self.recv_data = self.recv_data[1:]
 						bin_read = False
 			else:
 #				if not self.recv_data:
 #					break
 				if self.recv_data:
 					try:
-						ss = self.recv_data.index(chr(pycmds.MAGIC_BYTE))
+						ss = self.recv_data.index(chr(self.magic_byte))
 						bin_read = True
 						discarded = self.recv_data[:ss]
 						self.recv_data = self.recv_data[ss:]
@@ -128,10 +122,10 @@ class bin2uno_inf:
 							line = line.strip()
 #						if line.startswith('MSG:'):
 #							self.dbprint(': %s\n' % line)
+#						self.dbprint('Discarded: %s\n' % ' '.join([('%2.2x' % ord(c)) for c in discarded]))
 						self.dbprint('Discarded: %s\n' % discarded)
 						self.dbg_data += discarded
-			if t + 1 < time.time():
-				raise Exception('timeout')
+#		self.dbprint('returns %s' % rs)
 		return rs
 
 if __name__ == '__main__':
