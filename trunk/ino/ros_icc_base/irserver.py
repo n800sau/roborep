@@ -48,12 +48,15 @@ class irserver(bin2uno_inf):
 		self.ser = Serial(self.s_port, self.s_baud, timeout=5, writeTimeout=5);
 		self.dbprint('Connect %s at %d' % (self.s_port, self.s_baud))
 		self.ser.open()
+		# to skip setup output
+		time.sleep(4)
 		self.r = redis.Redis()
 		self.r.delete('xy')
 		self.hit_time = None
 
 	def send2ino(self, s):
 		self.ser.write(s)
+		self.ser.flush()
 
 	def recv(self):
 		cnt = self.ser.inWaiting()
@@ -90,16 +93,16 @@ class irserver(bin2uno_inf):
 				'heading': None,
 				'dist': None,
 				'acc_x_max': None,
-				'LC': None,
-				'RC': None,
 				'Lcoef': None,
 				'Rcoef': None,
+				'Lcount': None,
+				'Rcount': None,
 				'T': None,
 				'vects': [],
 			}
 			self.send_command(pycmds.C_STATE)
 			processed = []
-			for i in range(30):
+			for i in range(100):
 				data = self.read_bin()
 				if data:
 					self.dbprint('Data=%s' % data)
@@ -122,16 +125,22 @@ class irserver(bin2uno_inf):
 					elif data['cmd'] == pycmds.R_DISTANCE_1F:
 						r['dist'] = data['vals'][0]
 					elif data['cmd'] == pycmds.R_MCOUNTS_2F:
-						r['LC'],r['RC'] = data['vals']
+						r['Lcount'],r['Rcount'] = data['vals']
+					elif data['cmd'] == pycmds.R_POWER_2F:
+						r['Lpower'],r['Rpower'] = data['vals']
 					elif data['cmd'] == pycmds.R_MCOEF_2F:
 						r['Lcoef'],r['Rcoef'] = data['vals']
 					elif data['cmd'] == pycmds.R_TEMPERATURE_1F:
 						r['T'] = data['vals'][0]
+					elif data['cmd'] == pycmds.R_VOLTS_1F:
+						r['V'] = data['vals'][0]
 					elif data['cmd'] == pycmds.R_VECTOR_3F:
 						r['vects'].append({'lC': data['vals'][0], 'rC': data['vals'][1], 'h': data['vals'][2]})
 					elif data['cmd'] == pycmds.R_END:
-						self.dbprint('Done:%s' % (' '.join(processed)), True)
+#						self.dbprint('Done:%s' % (' '.join(processed)), True)
 						break
+				else:
+					time.sleep(0.001)
 			self.r.lpush('sensors', json.dumps(r))
 			self.r.ltrim('sensors', 0, 1000)
 		except Exception, e:
@@ -153,7 +162,8 @@ class irserver(bin2uno_inf):
 		bcmd = s2b.get(cmd['command'], None)
 		if bcmd:
 			self.dbprint('send %s' % cmd['command'])
-			reply = self.send_command(bcmd)
+			self.send_command(bcmd)
+			reply = self.read_bin()
 			if reply and reply['cmd'] == pycmds.R_OK_0:
 				self.dbprint('Ok')
 
