@@ -26,7 +26,7 @@ const int lIN = 4;
 
 // movement
 
-bool compass_mode = true;
+bool compass_mode = false;
 
 
 // left reverse
@@ -122,18 +122,17 @@ void setLeftMotor(int pwm)
 		printf("Left Stop, Right: %d\r\n", rPower);
 	}
 //	printf("Left power: %d\n\r", pwm);
-//	analogWrite(lEN, pwm); //set pwm control, 0 for stop, and 255 for maximum speed
+	analogWrite(lEN, pwm); //set pwm control, 0 for stop, and 255 for maximum speed
 	lPower = pwm;
 
 	int in = (lReverse) ? LOW : HIGH;
-//	int en = ((pwm == 0) ? (!lReverse) : lReverse) ? HIGH : LOW;
-	int en = (pwm == 0) ? LOW : HIGH;
+//	int en = (pwm == 0) ? LOW : HIGH;
 //	printf("Left: %d:%d\n\r", in, en);
 
 	digitalWrite(lIN, in);
 
 	// instead of analogWrite
-	digitalWrite(lEN, en);
+//	digitalWrite(lEN, en);
 }
 
 void setRightMotor(int pwm)
@@ -144,18 +143,17 @@ void setRightMotor(int pwm)
 		printf("Left: %d, Right Stop\r\n", lPower);
 	}
 //	printf("Right power: %d\n\r", pwm);
-//	analogWrite(rEN, pwm);
+	analogWrite(rEN, pwm);
 	rPower = pwm;
 
 	int in = (rReverse) ? LOW : HIGH;
-//	int en = ((pwm == 0) ? (!rReverse) : rReverse) ? HIGH : LOW;
-	int en = (pwm == 0) ? LOW : HIGH;
+//	int en = (pwm == 0) ? LOW : HIGH;
 //	printf("Right: %d:%d\n\r", in, en);
 
 	digitalWrite(rIN, in);
 
 	// instead of analogWrite
-	digitalWrite(rEN, en);
+//	digitalWrite(rEN, en);
 }
 
 void stop(bool reset_azimuth)
@@ -206,34 +204,34 @@ void updateMove()
 	}
 }
 
-void mv_forward(long ms)
+void mv_forward(int steps)
 {
 	stop();
-	lDest = LstepSize;
-	rDest = RstepSize;
+	lDest = LstepSize * steps;
+	rDest = RstepSize * steps;
 	lReverse = rReverse = false;
 }
 
-void mv_back(long ms)
+void mv_back(int steps)
 {
 	stop();
-	lDest = LstepSize;
-	rDest = RstepSize;
+	lDest = LstepSize * steps;
+	rDest = RstepSize * steps;
 	lReverse = rReverse = true;
 }
 
-void turn_left(long ms)
+void turn_left(int steps)
 {
 	stop();
-	lDest = rDest = TstepSize;
+	lDest = rDest = TstepSize * steps;
 	lReverse = true;
 	rReverse = false;
 }
 
-void turn_right(long ms)
+void turn_right(int steps)
 {
 	stop();
-	lDest = rDest = TstepSize;
+	lDest = rDest = TstepSize * steps;
 	lReverse = false;
 	rReverse = true;
 }

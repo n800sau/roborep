@@ -36,6 +36,7 @@ enum REPLY {
 	R_MCOEF_2F,
 	R_VEC_OVERFLOW_1F,
 	R_VECTOR_3F,         //lcount, rcount, heading
+	R_POWER_2F,         //lpwr, rpwr
 	R_END                // end of block marker
 };
 

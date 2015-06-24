@@ -26,7 +26,7 @@ class IccBase: public SerialProtocol {
 void IccBase::sendState()
 {
 	float vals[3];
-	vals[0] = readVccMv();
+	vals[0] = readVccMv() / 1000.;
 	sendFloats(R_VOLTS_1F, vals, 1);
 	vals[0] = lCounter;
 	vals[1] = rCounter;
@@ -60,6 +60,9 @@ void IccBase::sendState()
 	// Sydney 1018.1 hPa
 	vals[0] = bmp.pressureToAltitude(SENSORS_PRESSURE_SEALEVELHPA, bmp085_event.pressure);
 	sendFloats(R_ALT_1F, vals, 1);
+	vals[0] = lPower;
+	vals[1] = rPower;
+	sendFloats(R_POWER_2F, vals, 2);
 	sendFloats(R_END, vals, 0);
 
 	adxl345_state.reset();
@@ -83,6 +86,7 @@ void setup()
 	Wire.begin(); // Start the I2C interface.
 
 	setup_compass();
+	setup_bmp085();
 	setup_accel();
 	setup_gyro();
 
@@ -101,19 +105,19 @@ void execute()
 			base.ok();
 			break;
 		case C_FORWARD:
-			mv_forward(10000);
+			mv_forward();
 			base.ok();
 			break;
 		case C_BACK:
-			mv_back(2000);
+			mv_back();
 			base.ok();
 			break;
 		case C_TLEFT:
-			turn_left(1000);
+			turn_left();
 			base.ok();
 			break;
 		case C_TRIGHT:
-			turn_right(1000);
+			turn_right();
 			base.ok();
 			break;
 	}
