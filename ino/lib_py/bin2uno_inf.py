@@ -49,7 +49,6 @@ class bin2uno_inf:
 		else:
 			packet += chr(len(databytes)) + databytes
 		self.send_bytes(packet + chr(self.crc8(packet[1:])))
-		return self.read_bin()
 
 	def read_dbg(self):
 		rs = self.dbg_data
