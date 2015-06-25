@@ -107,7 +107,7 @@ void rIntCB()
 	if ( intRhistory==intRsignal )
 		return;
 	intRtime = micros();
-	lCounter += (lReverse) ? -1 : 1;
+	rCounter += (rReverse) ? -1 : 1;
 	if(azimuth < 0) {
 		rDest--;
 	}

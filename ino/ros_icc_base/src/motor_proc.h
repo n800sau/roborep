@@ -31,8 +31,8 @@ extern volatile int rPower;
 extern volatile int lCounter;
 extern volatile int rCounter;
 
-void mv_forward(int steps=10);
-void mv_back(int steps=2);
+void mv_forward(int steps=2);
+void mv_back(int steps=1);
 void turn_left(int steps=1);
 void turn_right(int steps=1);
 
