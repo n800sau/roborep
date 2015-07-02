@@ -11,6 +11,7 @@
 		$scope.contrast = 50;
 		$scope.period = 1;
 		$scope.shutter = 0;
+		$scope.power = 255;
 		$scope.cmd_json = {};
 		$scope.$watch('cmd_json', function(newVal, oldVal) {
 			$scope.send_command()
@@ -25,7 +26,13 @@
 			}).success(function(data) {
 				$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
 				if($scope.cmd_json.command != stop_json.command) {
-					$timeout(function() { $scope.cmd_json = stop_json }, $scope.period * 1000);
+					$timeout(
+						function() {
+							$scope.cmd_json = stop_json
+							if($scope.last_img_uri) {
+								$scope.update_img($scope.last_img_uri);
+							}
+						}, $scope.period * 1000);
 				}
 			}).error(function(data) {
 				$scope.error_text = data;
@@ -37,6 +44,7 @@
 		}
 
 		$scope.update_img = function(uri) {
+			$scope.last_img_uri = uri;
 			$scope.busy = true;
 			usSpinnerService.spin('spinner-busy');
 			$scope.reply_message = '';
@@ -103,8 +111,7 @@
 			);
 		};
 
-		$interval(update_state, 1000);
-		update_state();
+		$interval(update_state, 2000);
 	}]);
 
 	app.directive("drawing", function() {

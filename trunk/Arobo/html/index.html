@@ -24,6 +24,10 @@
 
 		<span us-spinner="{radius:30, width:8, length: 16}" spinner-key="spinner-busy"></span>
 
+		<div>
+			MaxP: <rzslider rz-slider-step="2" rz-slider-precision="2" rz-slider-model="power" rz-slider-ceil="255" rz-slider-floor="55"/>
+		</div>
+
 		<table class="cnt">
 			<tr>
 				<td>
@@ -33,7 +37,7 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 'mv_fwd'}" ng-model="cmd_json" id="mv_fwd"/>
+						<input type="radio" ng-value="{command: 'mv_fwd', params: {power: power}}" ng-model="cmd_json" id="mv_fwd"/>
 						<label for="mv_fwd"></label>
 					</div>
 				</td>
@@ -41,13 +45,16 @@
 					<span class="brect"></span>
 				</td>
 				<td>
-					<font color='white'>{{state.heading| number: 3}}</font>
+					<font color='white'>
+						{{state.heading| number: 3}}<br/>
+						{{state.V| number: 3}}<br/>
+					</font>
 				</td>
 			</tr>
 			<tr>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 't_left', params: {pwr: 100}}" ng-model="cmd_json" id="t_left"/>
+						<input type="radio" ng-value="{command: 't_left', 'params': {power: power}}" ng-model="cmd_json" id="t_left"/>
 						<label for="t_left"></label>
 					</div>
 				</td>
@@ -59,12 +66,15 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 't_right', params: {pwr: 100}}" ng-model="cmd_json" id="t_right"/>
+						<input type="radio" ng-value="{command: 't_right', params: {power: power}}" ng-model="cmd_json" id="t_right"/>
 						<label for="t_right"></label>
 					</div>
 				</td>
 				<td>
-					<span class="brect"></span>
+					<font color='white'>
+						Cnt:{{state.Lcount| number: 0}}:{{state.Rcount| number: 0}}<br/>
+						Pwr:{{state.Lpower| number: 0}}:{{state.Rpower| number: 0}}
+					</font>
 				</td>
 			</tr>
 			<tr>
@@ -73,7 +83,7 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 'mv_back'}" ng-model="cmd_json" id="mv_back"/>
+						<input type="radio" ng-value="{command: 'mv_back', params: {power: power}}" ng-model="cmd_json" id="mv_back"/>
 						<label for="mv_back"></label>
 					</div>
 				</td>
@@ -81,7 +91,10 @@
 					<span class="brect"></span>
 				</td>
 				<td>
-					<span class="brect"></span>
+					<font color='white'>
+						T:{{state.T| number: 1}}<br/>
+						AXM:{{state.acc_x_max| number: 2}}
+					</font>
 				</td>
 			</tr>
 		</table>
@@ -95,7 +108,9 @@
 		<table>
 			<tr>
 				<td rowspan="4">
-					<img width="160" height="120" alt="image" ng-src="{{imgsrc}}"/>
+					<label>{{last_img_uri}}
+						<img width="160" height="120" alt="image" ng-src="{{imgsrc}}"/>
+					</label>
 				</td>
 				<td>
 					<button ng-click="reload_img()">Reload</button>
