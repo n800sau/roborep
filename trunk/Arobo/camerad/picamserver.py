@@ -22,7 +22,7 @@ class picamserver:
 		self.camera_busy = False
 		self.camera = picamera.PiCamera()
 		self.camera.resolution = (80, 60)
-		self.use_video_port = True
+		self.settings = {}
 
 	def check_rcommands(self):
 		rs = {}
@@ -34,23 +34,34 @@ class picamserver:
 				if cmd['command'] in REDUCIBLE:
 					rs[cmd['command']] = cmd
 				elif cmd['command'] == 'adjust':
-					for k,v in cmd['params']:
+					for k,v in cmd['params'].items():
 						if k == 'brightness':
-							self.camera.brightness = int(v)
+							self.settings['brightness'] = int(v)
 						elif k == 'contrast':
-							self.camera.contrast = int(v)
+							self.settings['contrast'] = int(v)
 						elif k == 'shutter':
 							v = int(v)
 							if v > 0:
-								self.camera.framerate = Fraction(1, v)
-								self.camera.shutter_speed = v * 1000000
-								self.camera.exposure_mode = 'off'
-								self.camera.iso = 800
-								self.use_video_port = False
+								self.settings['framerate'] = Fraction(1, v)
+								self.settings['shutter_speed'] = v * 1000000
+								self.settings['exposure_mode'] = 'off'
+								self.settings['iso'] = 800
+								self.settings['use_video_port'] = False
 							else:
-								self.camera.exposure_mode = 'auto'
-								self.use_video_port = True
+								self.settings['exposure_mode'] = 'auto'
+								self.settings['use_video_port'] = True
 		return rs.values()
+
+	def pub_image(self):
+		self.camera_busy = True
+		try:
+			for k,v in self.settings.items():
+				if k not in ['use_video_port']:
+					setattr(self.camera, k, v)
+					del self.settings[k]
+			self.camera.capture(self.img_fname(0), use_video_port=settings.get('use_video_port',True))
+		finally:
+			self.camera_busy = False
 
 	def img_fname(self, ndx):
 		return os.path.expanduser('~/public_html/picam_%d.jpg' % ndx)
