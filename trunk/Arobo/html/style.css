@@ -31,6 +31,10 @@ table.cnt {
 	color: red;
 }
 
+.debug {
+	color: blue;
+}
+
 /* SQUARED ONE */
 .squaredOne {
 	width: 68px;
@@ -125,6 +129,10 @@ table.cnt {
 	opacity: 1;
 }
 
-div.unbreakable {
+.unbreakable {
   display:inline-block;
+}
+
+.btn_cell {
+	vertical-align: text-top;
 }
