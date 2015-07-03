@@ -9,11 +9,45 @@
 
 		$scope.brightness = 50;
 		$scope.contrast = 50;
-		$scope.period = 1;
 		$scope.shutter = 0;
+
+		var param_update_timeout;
+
+		var param_update = function() {
+			if(param_update_timeout) {
+				$timeout.cancel(param_update_timeout);
+			}
+			param_update_timeout = $timeout(function() {
+				var cam_json = JSON.stringify({
+					command: 'adjust',
+					params: {
+						brightness: $scope.brightness,
+						contrast: $scope.contrast,
+						shutter: $scope.shutter,
+					}
+				});
+//				$scope.debug_msg = cam_json;
+				$http.get('camera.php',{
+					params: { camera: cam_json }
+				}).success(function(data) {
+					$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
+				}).error(function(data) {
+					$scope.error_text = data;
+				});
+			}, 1000);
+		}
+
+		$scope.$watchGroup(['brightness', 'contrast', 'shutter'],
+			function(newValues, oldValues, scope) {
+				param_update();
+			}
+		);
+
+		$scope.wait_till_stop = 1;
 		$scope.power = 255;
 		$scope.steps = 3;
 		$scope.cmd_json = {};
+		$scope.picam_pfx = 'picam_';
 		$scope.$watch('cmd_json', function(newVal, oldVal) {
 			$scope.send_command()
 		});
@@ -33,7 +67,7 @@
 							if($scope.last_img_uri) {
 								$scope.update_img($scope.last_img_uri);
 							}
-						}, $scope.period * 1000);
+						}, $scope.wait_till_stop * 1000);
 				}
 			}).error(function(data) {
 				$scope.error_text = data;
@@ -42,6 +76,10 @@
 
 		$scope.reload_img = function() {
 			$scope.imgsrc = "image000.jpg?" + new Date().getTime();
+			$scope.picam_img = [];
+			for(var i=0; i<4; i++) {
+				$scope.picam_img.push('picam_' + i + '.jpg?time=' + (new Date()).toString());
+			}
 		}
 
 		$scope.update_img = function(uri) {
