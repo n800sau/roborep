@@ -12,6 +12,7 @@
 		$scope.period = 1;
 		$scope.shutter = 0;
 		$scope.power = 255;
+		$scope.steps = 3;
 		$scope.cmd_json = {};
 		$scope.$watch('cmd_json', function(newVal, oldVal) {
 			$scope.send_command()

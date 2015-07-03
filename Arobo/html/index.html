@@ -28,6 +28,10 @@
 			MaxP: <rzslider rz-slider-step="2" rz-slider-precision="2" rz-slider-model="power" rz-slider-ceil="255" rz-slider-floor="55"/>
 		</div>
 
+		<div>
+			Steps: <rzslider rz-slider-step="1" rz-slider-precision="1" rz-slider-model="steps" rz-slider-ceil="100" rz-slider-floor="1"/>
+		</div>
+
 		<table class="cnt">
 			<tr>
 				<td>
@@ -37,7 +41,7 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 'mv_fwd', params: {power: power}}" ng-model="cmd_json" id="mv_fwd"/>
+						<input type="radio" ng-value="{command: 'mv_fwd', params: {power: power, steps: steps}}" ng-model="cmd_json" id="mv_fwd"/>
 						<label for="mv_fwd"></label>
 					</div>
 				</td>
@@ -54,7 +58,7 @@
 			<tr>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 't_left', 'params': {power: power}}" ng-model="cmd_json" id="t_left"/>
+						<input type="radio" ng-value="{command: 't_left', 'params': {power: power, steps: steps}}" ng-model="cmd_json" id="t_left"/>
 						<label for="t_left"></label>
 					</div>
 				</td>
@@ -66,7 +70,7 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 't_right', params: {power: power}}" ng-model="cmd_json" id="t_right"/>
+						<input type="radio" ng-value="{command: 't_right', params: {power: power, steps: steps}}" ng-model="cmd_json" id="t_right"/>
 						<label for="t_right"></label>
 					</div>
 				</td>
@@ -83,7 +87,7 @@
 				</td>
 				<td>
 					<div class="squaredOne">
-						<input type="radio" ng-value="{command: 'mv_back', params: {power: power}}" ng-model="cmd_json" id="mv_back"/>
+						<input type="radio" ng-value="{command: 'mv_back', params: {power: power, steps: steps}}" ng-model="cmd_json" id="mv_back"/>
 						<label for="mv_back"></label>
 					</div>
 				</td>
