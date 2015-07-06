@@ -13,7 +13,7 @@
 
 		var param_update_timeout;
 
-		var param_update = function() {
+		$scope.param_update = function(cb) {
 			if(param_update_timeout) {
 				$timeout.cancel(param_update_timeout);
 			}
@@ -27,11 +27,17 @@
 					}
 				});
 //				$scope.debug_msg = cam_json;
+				usSpinnerService.spin('spinner-busy');
 				$http.get('camera.php',{
 					params: { camera: cam_json }
 				}).success(function(data) {
+					usSpinnerService.stop('spinner-busy');
 					$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
+					if(cb) {
+						cb();
+					}
 				}).error(function(data) {
+					usSpinnerService.stop('spinner-busy');
 					$scope.error_text = data;
 				});
 			}, 1000);
@@ -39,7 +45,7 @@
 
 		$scope.$watchGroup(['brightness', 'contrast', 'shutter'],
 			function(newValues, oldValues, scope) {
-				param_update();
+				$scope.param_update();
 			}
 		);
 
@@ -54,11 +60,14 @@
 		$scope.cmd_json = stop_json;
 
 		$scope.send_command = function() {
+			$scope.error_text = '';
+			usSpinnerService.spin('spinner-busy');
 			$http.get('command.php',{
 				params: {
 					command: $scope.cmd_json
 				}
 			}).success(function(data) {
+				usSpinnerService.stop('spinner-busy');
 				$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
 				if($scope.cmd_json.command != stop_json.command) {
 					$timeout(
@@ -70,34 +79,32 @@
 						}, $scope.wait_till_stop * 1000);
 				}
 			}).error(function(data) {
+				usSpinnerService.stop('spinner-busy');
 				$scope.error_text = data;
 			});
 		}
 
-		$scope.reload_img = function() {
-			$scope.imgsrc = "image000.jpg?" + new Date().getTime();
+		$scope.reload_imgs = function() {
 			$scope.picam_img = [];
-			for(var i=0; i<4; i++) {
+			for(var i=0; i<6; i++) {
 				$scope.picam_img.push('picam_' + i + '.jpg?time=' + (new Date()).toString());
 			}
 		}
 
-		$scope.update_img = function(uri) {
-			$scope.last_img_uri = uri;
+		$scope.update_imgs = function() {
 			$scope.busy = true;
-			usSpinnerService.spin('spinner-busy');
-			$scope.reply_message = '';
 			$scope.error_text = '';
-			$http.get('/app/' + uri, {
-				params: {
-					brightness: $scope.brightness,
-					contrast: $scope.contrast,
-					shutter: $scope.shutter
-				}
-			}).success(function(data, status) {
-				usSpinnerService.stop('spinner-busy');
+			var cam_json = JSON.stringify({
+				command: 'update',
+			});
+			usSpinnerService.spin('spinner-busy');
+			$http.get('camera.php',{
+				params: { camera: cam_json }
+			}).success(function(data) {
 				$scope.busy = false;
-				$scope.reload_img();
+				usSpinnerService.stop('spinner-busy');
+				$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
+				$timeout($scope.reload_imgs, 1000);
 				try {
 					if(data.result) {
 						$scope.reply_message = data.result;
@@ -107,14 +114,14 @@
 				} catch(err) {
 					$scope.error_text = err;
 				}
-			}).error(function(data, status) {
-				usSpinnerService.stop('spinner-busy');
+			}).error(function(data) {
 				$scope.busy = false;
+				usSpinnerService.stop('spinner-busy');
 				$scope.error_text = data;
 			});
 		}
 
-		$scope.reload_img();
+		$scope.reload_imgs();
 
 		$scope.set_direction = function(event) {
 			 var el = event.currentTarget;

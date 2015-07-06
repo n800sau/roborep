@@ -33,7 +33,6 @@
 		<div>
 			Steps: <rzslider rz-slider-step="1" rz-slider-precision="1" rz-slider-model="steps" rz-slider-ceil="100" rz-slider-floor="1"/>
 		</div>
-
 		<table class="cnt">
 			<tr>
 				<td>
@@ -104,37 +103,34 @@
 				</td>
 			</tr>
 		</table>
-
 		<div>
 			Period: <rzslider rz-slider-step="0.5" rz-slider-precision="0.1" rz-slider-model="wait_till_stop" rz-slider-ceil="10" rz-slider-floor="0.5"/>
 		</div>
 
 		<div class="reply">{{reply_message}}</div>
-
 		<table>
-			<tr>
-				<td>
-					{{last_img_uri}}<br/>
-					<img width="80" height="60" alt="image" ng-src="{{imgsrc}}"/>
-				</td>
-				<td rowspan="4" class="btn-cell">
-					<button ng-click="reload_img()">Reload</button><br/>
-					<button ng-click="update_img('update_image/')">Update</button><br/>
-					<button ng-click="update_img('threshold_image/1')">Threshold</button>
-				</td>
-				<td rowspan="4">
-				</td>
-			</tr>
 			<tr>
 				<td>
 					<img width="80" height="60" alt="image" ng-src="{{picam_img[0]}}"/>
 					<img width="80" height="60" alt="image" ng-src="{{picam_img[1]}}"/>
+				</td>
+				<td rowspan="3" class="btn-cell">
+					<button ng-click="reload_imgs()">Reload</button><br/>
+					<button ng-click="param_update(update_imgs)">Update</button><br/>
+				</td>
+				<td rowspan="3">
 				</td>
 			</tr>
 			<tr>
 				<td>
 					<img width="80" height="60" alt="image" ng-src="{{picam_img[2]}}"/>
 					<img width="80" height="60" alt="image" ng-src="{{picam_img[3]}}"/>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<img width="80" height="60" alt="image" ng-src="{{picam_img[4]}}"/>
+					<img width="80" height="60" alt="image" ng-src="{{picam_img[5]}}"/>
 				</td>
 			</tr>
 		</table>
