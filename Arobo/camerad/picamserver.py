@@ -3,16 +3,20 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 
+import cv2
 import datetime
 import json
 import time
+import shutil
 import redis
 import traceback
+from fractions import Fraction
 import picamera
+from picamera.array import PiRGBArray
 
 COMMAND_QUEUE = 'camera'
 UPDATE_IMG_PERIOD = 1
-REDUCIBLE = ['image']
+REDUCIBLE = ['update']
 
 
 class picamserver:
@@ -20,7 +24,6 @@ class picamserver:
 	def __init__(self):
 		self.debug = True
 		self.r = redis.Redis()
-		self.camera_busy = False
 		self.camera = picamera.PiCamera()
 		self.camera.resolution = (80, 60)
 		self.settings = {}
@@ -63,19 +66,51 @@ class picamserver:
 					self.dbprint('Adjust: %s' % self.settings)
 		return rs.values()
 
-	def pub_image(self, ndx=1):
-		self.camera_busy = True
-		try:
-			for k,v in self.settings.items():
-				if k not in ['use_video_port']:
-					setattr(self.camera, k, v)
-					del self.settings[k]
-			self.camera.capture(self.img_fname(ndx), use_video_port=settings.get('use_video_port',True))
-		finally:
-			self.camera_busy = False
+	def apply_settings(self):
+		for k,v in self.settings.items():
+			if k not in ['use_video_port']:
+				setattr(self.camera, k, v)
+				del self.settings[k]
 
 	def img_fname(self, ndx):
 		return os.path.expanduser('~/public_html/picam_%d.jpg' % ndx)
+
+	def img_fname_tmp(self, ndx):
+		return os.path.expanduser('~/public_html/tmp_picam_%d.jpg' % ndx)
+
+	def threshold_image(self, fname, sti):
+		style = (
+			cv2.THRESH_BINARY,
+			cv2.THRESH_BINARY_INV,
+			cv2.THRESH_TRUNC,
+			cv2.THRESH_TOZERO,
+			cv2.THRESH_TOZERO_INV,
+		)
+		# initialize the camera and grab a reference to the raw camera capture
+		rawCapture = PiRGBArray(self.camera)
+		# grab an image from the camera
+		self.camera.capture(rawCapture, format="bgr", use_video_port=self.settings.get('use_video_port',True))
+		img = rawCapture.array
+		img = cv2.medianBlur(img, 5)
+		ret,img = cv2.threshold(img, 127, 255, style[sti])
+		cv2.imwrite(fname, img)
+		return fname
+
+	def photo_image(self, fname):
+		self.camera.capture(fname, use_video_port=self.settings.get('use_video_port',True))
+		return fname
+
+	def fast_image(self, fname):
+		self.camera.capture(fname, use_video_port=True)
+		return fname
+
+	def pub_update(self):
+		self.apply_settings()
+		shutil.move(self.photo_image(self.img_fname_tmp(1)), self.img_fname(1))
+		shutil.move(self.threshold_image(self.img_fname_tmp(2), 1), self.img_fname(2))
+		shutil.move(self.threshold_image(self.img_fname_tmp(3), 2), self.img_fname(3))
+		shutil.move(self.threshold_image(self.img_fname_tmp(4), 3), self.img_fname(4))
+		shutil.move(self.threshold_image(self.img_fname_tmp(5), 4), self.img_fname(5))
 
 	def execute_cmd(self, cmd):
 		self.dbprint('execute %s' % cmd)
@@ -86,12 +121,9 @@ class picamserver:
 			proc(**params)
 
 	def update_img(self):
-		self.camera_busy = True
-		try:
-			self.camera.capture(self.img_fname(0), use_video_port=True)
-			self.dbprint('image 0 updated at %s' % time.strftime('%c'))
-		finally:
-			self.camera_busy = False
+		self.apply_settings()
+		shutil.move(self.fast_image(self.img_fname_tmp(0)), self.img_fname(0))
+		self.dbprint('image 0 updated at %s' % time.strftime('%c'))
 
 	def run(self):
 		t = time.time()
@@ -100,11 +132,10 @@ class picamserver:
 				cmdlist = self.check_rcommands()
 				if cmdlist:
 					for cmd in cmdlist:
-						self.translate_cmd(cmd)
-				elif not self.camera_busy:
-					if time.time() - t > UPDATE_IMG_PERIOD:
-						self.update_img()
-						t = time.time()
+						self.execute_cmd(cmd)
+				elif time.time() - t > UPDATE_IMG_PERIOD:
+					self.update_img()
+					t = time.time()
 			except Exception, e:
 				self.dbprint(e)
 				time.sleep(2)
