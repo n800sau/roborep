@@ -31,6 +31,12 @@ extern volatile int rPower;
 extern volatile int lCounter;
 extern volatile int rCounter;
 
+// min and max power (0-255)
+// default 255
+extern int max_motor_power;
+// default 200
+extern int min_motor_power;
+
 void mv_forward(int steps=2);
 void mv_back(int steps=1);
 void turn_left(int steps=1);

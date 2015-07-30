@@ -8,8 +8,9 @@
 #define BASELINE 0.14
 
 #define ENC_STEP (WHEEL_DIAMETER * M_PI / COUNT_PER_REV)
-#define MAX_MOTOR_POWER 255
-#define MIN_MOTOR_POWER 200
+
+int max_motor_power = 255;
+int min_motor_power = 200;
 
 // count of encoder ticks until stop
 int LstepSize = 5;
@@ -184,7 +185,7 @@ void updateMove()
 		stop();
 	} else {
 		if(lDest > 0) {
-			setLeftMotor((lDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+			setLeftMotor((lDest > 2) ? max_motor_power : min_motor_power);
 		} else if(lDest < 0) {
 			Serial.println("Left reverse correction");
 			lReverse = !lReverse;
@@ -193,7 +194,7 @@ void updateMove()
 			setLeftMotor(0);
 		}
 		if(rDest > 0) {
-			setRightMotor((rDest > 2) ? MAX_MOTOR_POWER : MIN_MOTOR_POWER);
+			setRightMotor((rDest > 2) ? max_motor_power : min_motor_power);
 		} else if(rDest < 0) {
 			Serial.println("Right reverse correction");
 			rReverse = !rReverse;

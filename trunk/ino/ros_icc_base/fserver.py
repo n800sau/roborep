@@ -6,6 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 from conf_ino import configure
 import json
 import time
+import datetime
 import math
 import signal
 import redis
@@ -43,6 +44,10 @@ RIGHT_MOTOR_2 = 9
 # encoder pins
 ENCODER_L = 2
 ENCODER_R = 3
+encoder_name = {
+	ENCODER_L: "left",
+	ENCODER_R: "right",
+}
 
 # Indices into callback return data list
 DEVICE = 0
@@ -167,6 +172,7 @@ class fserver:
 		self.debug = True
 		self.left_dir = None
 		self.right_dir = None
+		self.target_steps = 0
 		self.bmp085 = None
 		self.q = Queue.Queue()
 		self.t = threading.Thread(target=redis_subscriber, args = (self.q,))
@@ -218,13 +224,16 @@ class fserver:
 			self.board.reset()
 		sys.exit(0)
 
-	def dbprint(self, text):
-		if self.debug:
-			print >>sys.stderr, text
+	def dbprint(self, text, force=False):
+		if self.debug or force:
+			print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
 
 	def reset_counters(self):
 		self.enc_data[ENCODER_L]['count'] = 0
 		self.enc_data[ENCODER_R]['count'] = 0
+
+	def steps_counted(self):
+		return max(abs(self.enc_data[ENCODER_L]['count']), abs(self.enc_data[ENCODER_R]['count']))
 
 	def right_move(self, direct, pwr):
 		if direct:
@@ -237,6 +246,7 @@ class fserver:
 			self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
 			self.board.analog_write(RIGHT_MOTOR_2, pwr)
 			self.board.digital_write(RIGHT_MOTOR_1, 0)
+		self.enc_data[ENCODER_R]['pwr'] = pwr
 		if pwr > 0:
 			self.right_dir = direct
 			self.enc_data[ENCODER_R]['dir'] = direct
@@ -252,6 +262,7 @@ class fserver:
 			self.board.set_pin_mode(LEFT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
 			self.board.analog_write(LEFT_MOTOR_2, pwr)
 			self.board.digital_write(LEFT_MOTOR_1, 0)
+		self.enc_data[ENCODER_L]['pwr'] = pwr
 		if pwr > 0:
 			self.left_dir = direct
 			self.enc_data[ENCODER_L]['dir'] = direct
@@ -265,23 +276,39 @@ class fserver:
 			dt = t-self.enc_data[pin]['tick_time']
 			step = (1 if self.enc_data[pin]['dir'] else -1)
 			self.enc_data[pin]['count'] += step
-			self.dbprint("pin: %d, dt:%s, v:%.2f, cnt:%d" % (pin, dt, step * ENC_STEP / dt, self.enc_data[pin]['count']))
+			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d" % (pin, encoder_name[pin], dt, step * ENC_STEP / dt, self.enc_data[pin]['count']))
 			self.enc_data[pin]['tick_time'] = t
 		self.enc_data[pin]['lvl'] = data[2]
 		self.arm_latch(pin, not data[2])
+		if self.target_steps < abs(self.enc_data[pin]['count']) and self.enc_data[pin]['pwr'] > 0:
+			if pin == ENCODER_L:
+				self.left_move(0, 0)
+			elif pin == ENCODER_R:
+				self.right_move(0, 0)
+			self.dbprint('%s stopped' % encoder_name[pin])
+
+	def is_stopped(self):
+		return self.enc_data[ENCODER_L]['pwr'] == 0 and self.enc_data[ENCODER_R]['pwr'] == 0
+
+	def stop(self):
+		if not self.is_stopped():
+			self.left_move(0, 0)
+			self.right_move(0, 0)
+			self.dbprint('both stopped')
 
 	def execute_cmd(self, cmd):
 		self.dbprint('execute %s' % cmd)
 		command = cmd['command']
 		params = cmd.get('params', {})
 		if command == 'stop':
-			self.right_move(0, 0)
-			self.left_move(0, 0)
-			self.reset_counters()
+			self.stop()
 		else:
 			pwr = params.get('power', 50)
 			if pwr > 0:
 				pwr = int(min(100, pwr) / 100. * (MAX_PWR - MIN_PWR) + MIN_PWR)
+			self.target_steps = params.get('steps', 0)
+			if self.target_steps > 0:
+				self.reset_counters()
 			self.dbprint('pwr: %d' % pwr)
 			if command == 'mv_fwd':
 				self.right_move(1, pwr)
