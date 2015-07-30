@@ -8,6 +8,7 @@ import json
 import time
 import serial
 import redis
+import struct
 import traceback
 import threading
 import Queue
@@ -152,6 +153,9 @@ class irserver(bin2uno_inf):
 			self.wait4sensors = False
 
 	def translate_cmd(self, cmd):
+		self.dbprint('execute %s' % cmd)
+		command = cmd['command']
+		params = cmd.get('params', {})
 		s2b = {
 			'stop': pycmds.C_STOP,
 			'mv_fwd': pycmds.C_FORWARD,
@@ -159,10 +163,10 @@ class irserver(bin2uno_inf):
 			't_left': pycmds.C_TLEFT,
 			't_right': pycmds.C_TRIGHT,
 		}
-		bcmd = s2b.get(cmd['command'], None)
+		bcmd = s2b.get(command, None)
 		if bcmd:
-			self.dbprint('send %s' % cmd['command'])
-			self.send_command(bcmd)
+			self.dbprint('send %s' % command)
+			self.send_command(bcmd, struct.pack('BB', params.get('power', 255), params.get('steps', 1)))
 			reply = self.read_bin()
 			if reply and reply['cmd'] == pycmds.R_OK_0:
 				self.dbprint('Ok')

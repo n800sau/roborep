@@ -1,5 +1,4 @@
 #include <voltage.h>
-#include "../../include/printf.h"
 #include <Wire.h>
 #include "hmc5883l_proc.h"
 #include "adxl345_proc.h"
@@ -80,7 +79,6 @@ IccBase base;
 void setup()
 {
 	Serial.begin(115200);
-	printf_begin();
 
 	Serial.println("Starting the I2C interface.");
 	Wire.begin(); // Start the I2C interface.
@@ -94,6 +92,29 @@ void setup()
 	Serial.println("Setup finished.");
 }
 
+void set_power()
+{
+	// first byte of data is power
+	if(*base.datasize >= 1) {
+		max_motor_power = (unsigned)base.dataBuf[0];
+		min_motor_power = (unsigned)(max_motor_power * 0.8);
+		Serial.print("power=");
+		Serial.println(max_motor_power);
+	}
+}
+
+int get_steps()
+{
+	int rs = 1;
+	// first byte of data is power
+	if(*base.datasize >= 2) {
+		rs = (unsigned)base.dataBuf[1];
+		Serial.print("steps=");
+		Serial.println(rs);
+	}
+	return rs;
+}
+
 void execute()
 {
 	switch(*base.command) {
@@ -105,18 +126,22 @@ void execute()
 			base.ok();
 			break;
 		case C_FORWARD:
-			mv_forward();
+			set_power();
+			mv_forward(get_steps());
 			base.ok();
 			break;
 		case C_BACK:
+			set_power();
 			mv_back();
 			base.ok();
 			break;
 		case C_TLEFT:
+			set_power();
 			turn_left();
 			base.ok();
 			break;
 		case C_TRIGHT:
+			set_power();
 			turn_right();
 			base.ok();
 			break;
