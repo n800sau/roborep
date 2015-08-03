@@ -1,5 +1,8 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/bmp085.pid
-DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/BMP085/bmp085d
-start-stop-daemon -v --start --user n800s --make-pidfile --pidfile ${PIDFILE} --background --no-close --startas ${DAEMON} --chuid n800s -- ${DAEMON_ARGS}
+RUN_AS=n800s
+mkdir ~/run 2>/dev/null
+PIDFILE=~/run/bmp085.pid
+DAEMON=`pwd`/bmp085d
+
+start-stop-daemon -v --start --user ${RUN_AS} --make-pidfile --pidfile "${PIDFILE}" --background --no-close --startas ${DAEMON} --chuid ${RUN_AS} -- ${DAEMON_ARGS}

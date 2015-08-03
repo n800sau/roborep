@@ -1,5 +1,7 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/adxl345.pid
+RUN_AS=n800s
+PIDFILE=~/run/adxl345.pid
+DAEMON=`pwd`/adxl345d
 
-start-stop-daemon -v --stop --user n800s --pidfile ${PIDFILE} --signal 15 --retry 10
+start-stop-daemon -v --stop --user ${RUN_AS} --pidfile ${PIDFILE} --signal 15 --retry 10

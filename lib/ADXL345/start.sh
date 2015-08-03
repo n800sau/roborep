@@ -1,5 +1,8 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/adxl345.pid
-DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/ADXL345/adxl345d
-start-stop-daemon -v --start --user n800s --make-pidfile --pidfile ${PIDFILE} --background --no-close --startas ${DAEMON} --chuid n800s -- ${DAEMON_ARGS}
+RUN_AS=n800s
+mkdir "~/run" 2>/dev/null
+PIDFILE=~/run/adxl345.pid
+DAEMON=`pwd`/adxl345d
+
+start-stop-daemon -v --start --user ${RUN_AS} --make-pidfile --pidfile ${PIDFILE} --background --no-close --startas ${DAEMON} --chuid ${RUN_AS} -- ${DAEMON_ARGS}
