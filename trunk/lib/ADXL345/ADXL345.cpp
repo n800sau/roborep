@@ -8,7 +8,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#define ADXL345_I2C_ADDR 0x53
+#define ADXL345_I2C_ADDR 0x1d
+//#define ADXL345_I2C_ADDR 0x53
 
 #define Register_PowerControl 0x2D
 #define Register_DataFormat 0x31

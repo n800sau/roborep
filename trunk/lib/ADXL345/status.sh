@@ -1,9 +1,10 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/adxl345.pid
-DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/ADXL345/adxl345d
+RUN_AS=n800s
+PIDFILE=~/run/adxl345.pid
+DAEMON="`pwd`/adxl345d"
 
-PPID=`pidof -o %PPID ${DAEMON}`
+PPID=`pidof -o %PPID "${DAEMON}"`
 if [ -z "$PPID" ]; then
                      echo "Not running"
                      exit 1

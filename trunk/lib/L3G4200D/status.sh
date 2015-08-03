@@ -1,7 +1,8 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/l3g4200d.pid
-DAEMON=/home/n800s/work/sourceforge/robotarr-code/lib/L3G4200D/l3g4200dd
+RUN_AS=n800s
+PIDFILE=~${RUN_AS}/run/l3g4200dd.pid
+DAEMON=`pwd`/l3g4200dd
 
 PPID=`pidof -o %PPID ${DAEMON}`
 if [ -z "$PPID" ]; then

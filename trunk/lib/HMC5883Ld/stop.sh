@@ -1,5 +1,6 @@
 #!/bin/sh
 
-PIDFILE=/home/n800s/run/hmc5883l.pid
+RUN_AS=n800s
+PIDFILE=~/run/hmc5883l.pid
 
-start-stop-daemon -v --stop --user n800s --pidfile ${PIDFILE} --signal 15 --retry 10
+start-stop-daemon -v --stop --user ${RUN_AS} --pidfile ${PIDFILE} --signal 15 --retry 10
