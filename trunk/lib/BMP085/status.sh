@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd `dirname $0`
+
 RUN_AS=n800s
 PIDFILE=~/run/bmp085.pid
 DAEMON=`pwd`/bmp085d

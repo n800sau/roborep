@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd `dirname $0`
+
 RUN_AS=n800s
 PIDFILE=~${RUN_AS}/run/l3g4200dd.pid
 DAEMON=`pwd`/l3g4200dd
