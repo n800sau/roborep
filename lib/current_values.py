@@ -21,9 +21,9 @@ def get_last(sname, no_older_than=None):
 	return rs
 
 for s in snames:
-	ts = r.get('hmc5883l.timestamp')
+	ts = r.get(s + '.timestamp')
 	print s, ts
-	vs = get_last('hmc5883l', 10)
+	vs = get_last(s, 3)
 	print vs
 #	print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(vs['timestamp'])), time.strftime('%Y-%m-%d %H:%M:%S'), r.get('hmc5883l.timestamp')
 #	print ts

@@ -1,7 +1,9 @@
 #!/bin/sh
 
+cd `dirname $0`
+
 RUN_AS=n800s
-mkdir "~/run" 2>/dev/null
+mkdir ~/run 2>/dev/null
 PIDFILE=~/run/adxl345.pid
 DAEMON=`pwd`/adxl345d
 

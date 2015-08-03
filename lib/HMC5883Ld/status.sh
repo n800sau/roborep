@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd `dirname $0`
+
 RUN_AS=n800s
 PIDFILE=~/run/hmc5883l.pid
 DAEMON=`pwd`/hmc5883ld
