@@ -44,10 +44,6 @@ RIGHT_MOTOR_2 = 9
 # encoder pins
 ENCODER_L = 2
 ENCODER_R = 3
-encoder_name = {
-	ENCODER_L: "left",
-	ENCODER_R: "right",
-}
 
 # Indices into callback return data list
 DEVICE = 0
@@ -173,24 +169,28 @@ class fserver:
 		self.left_dir = None
 		self.right_dir = None
 		self.target_steps = 0
-		self.bmp085 = None
 		self.q = Queue.Queue()
 		self.t = threading.Thread(target=redis_subscriber, args = (self.q,))
 		self.t.setDaemon(True)
 		self.t.start()
+		self.maxAccX = 0
 
 		self.enc_data = {
 			ENCODER_L: {
+				'name': 'left',
 				'lvl': 0,
 				'dir': 0,
 				'tick_time': time.time(),
 				'count': 0,
+				'pwr': 0,
 			},
 			ENCODER_R: {
+				'name': 'right',
 				'lvl': 0,
 				'dir': 0,
 				'tick_time': time.time(),
 				'count': 0,
+				'pwr': 0,
 			},
 		}
 
@@ -276,7 +276,7 @@ class fserver:
 			dt = t-self.enc_data[pin]['tick_time']
 			step = (1 if self.enc_data[pin]['dir'] else -1)
 			self.enc_data[pin]['count'] += step
-			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d" % (pin, encoder_name[pin], dt, step * ENC_STEP / dt, self.enc_data[pin]['count']))
+			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d" % (pin, self.enc_data[pin]['name'], dt, step * ENC_STEP / dt, self.enc_data[pin]['count']))
 			self.enc_data[pin]['tick_time'] = t
 		self.enc_data[pin]['lvl'] = data[2]
 		self.arm_latch(pin, not data[2])
@@ -285,7 +285,7 @@ class fserver:
 				self.left_move(0, 0)
 			elif pin == ENCODER_R:
 				self.right_move(0, 0)
-			self.dbprint('%s stopped' % encoder_name[pin])
+			self.dbprint('%s stopped' % self.enc_data[pin]['name'])
 
 	def is_stopped(self):
 		return self.enc_data[ENCODER_L]['pwr'] == 0 and self.enc_data[ENCODER_R]['pwr'] == 0
@@ -323,17 +323,38 @@ class fserver:
 				self.right_move(0, pwr)
 				self.left_move(1, pwr)
 
+	def get_last(self, sname, no_older_than=None):
+		rs = self.r.lrange('%s.js.obj' % sname, 0, 0)
+		if rs:
+			rs = json.loads(rs[0])
+			if not no_older_than is None:
+#			print float(rs['timestamp']) + no_older_than, time.time()
+				if float(rs['timestamp']) + no_older_than < time.time():
+					rs = None
+		return rs
+
 	def cmd_show_sensors(self):
 		r = {}
-#		if self.bmp085 is None:
-#			from Adafruit_BMP.BMP085 import BMP085
-#			self.bmp085 = BMP085(i2c=self.Fi2c)
-#		try:
-#			r['T'] = self.bmp085.read_temperature()
-#		except:
-#			traceback.print_exc()
-#		self.r.lpush('sensors', json.dumps(r))
-#		self.r.ltrim('sensors', 0, 1000)
+		try:
+			compass = self.get_last('hmc5883l', 2)
+			if compass:
+				r['heading'] = compass['heading_degrees']
+			r['Rcount'] = self.enc_data[ENCODER_R]['count']
+			r['Rpower'] = self.enc_data[ENCODER_R]['pwr']
+			r['Lcount'] = self.enc_data[ENCODER_L]['count']
+			r['Lpower'] = self.enc_data[ENCODER_L]['pwr']
+			bmp085 = self.get_last('bmp085', 5)
+			if bmp085:
+				r['T'] = bmp085['temperature']
+			adxl345 = self.get_last('adxl345', 2)
+			if adxl345:
+				if self.maxAccX < abs(adxl345['scaled']['x']):
+					self.maxAccX = abs(adxl345['scaled']['x'])
+			r['acc_x_max'] = self.maxAccX
+		except:
+			traceback.print_exc()
+		self.r.lpush('sensors', json.dumps(r))
+		self.r.ltrim('sensors', 0, 1000)
 
 
 	def check_rcommands(self):
