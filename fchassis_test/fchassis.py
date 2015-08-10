@@ -20,6 +20,7 @@ import picamera
 import picamera.array
 from PIL import Image
 import cv2
+from hmc5883l import hmc5883l
 
 import logging
 logging.basicConfig(filename='fchassis_bmp.log',level=logging.DEBUG)
@@ -160,34 +161,48 @@ class fchassis:
 		return int(min(100, pwr) / 100. * (MAX_PWR - MIN_PWR) + MIN_PWR)
 
 	def right_move(self, direct, pwr):
-		lpwr = self.lpwr(pwr)
-		if direct:
-			self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.PWM, self.board.DIGITAL)
-			self.board.set_pin_mode(RIGHT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
-			self.board.analog_write(RIGHT_MOTOR_1, lpwr)
-			self.board.digital_write(RIGHT_MOTOR_2, 0)
+		if pwr == 0:
+				self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.set_pin_mode(RIGHT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.digital_write(RIGHT_MOTOR_1, 0)
+				self.board.digital_write(RIGHT_MOTOR_2, 0)
+#				self.dbprint('right PWM stopped')
 		else:
-			self.board.set_pin_mode(RIGHT_MOTOR_2, self.board.PWM, self.board.DIGITAL)
-			self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
-			self.board.analog_write(RIGHT_MOTOR_2, lpwr)
-			self.board.digital_write(RIGHT_MOTOR_1, 0)
+			lpwr = self.lpwr(pwr)
+			if direct:
+				self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.PWM, self.board.DIGITAL)
+				self.board.set_pin_mode(RIGHT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.analog_write(RIGHT_MOTOR_1, lpwr)
+				self.board.digital_write(RIGHT_MOTOR_2, 0)
+			else:
+				self.board.set_pin_mode(RIGHT_MOTOR_2, self.board.PWM, self.board.DIGITAL)
+				self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.analog_write(RIGHT_MOTOR_2, lpwr)
+				self.board.digital_write(RIGHT_MOTOR_1, 0)
 		self.enc_data[ENCODER_R]['pwr'] = pwr
 		if pwr > 0:
 			self.right_dir = direct
 			self.enc_data[ENCODER_R]['dir'] = direct
 
 	def left_move(self, direct, pwr):
-		lpwr = self.lpwr(pwr)
-		if direct:
-			self.board.set_pin_mode(LEFT_MOTOR_1, self.board.PWM, self.board.DIGITAL)
-			self.board.set_pin_mode(LEFT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
-			self.board.analog_write(LEFT_MOTOR_1, lpwr)
-			self.board.digital_write(LEFT_MOTOR_2, 0)
+		if pwr == 0:
+				self.board.set_pin_mode(LEFT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.set_pin_mode(LEFT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.digital_write(LEFT_MOTOR_1, 0)
+				self.board.digital_write(LEFT_MOTOR_2, 0)
+#				self.dbprint('left PWM stopped')
 		else:
-			self.board.set_pin_mode(LEFT_MOTOR_2, self.board.PWM, self.board.DIGITAL)
-			self.board.set_pin_mode(LEFT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
-			self.board.analog_write(LEFT_MOTOR_2, lpwr)
-			self.board.digital_write(LEFT_MOTOR_1, 0)
+			lpwr = self.lpwr(pwr)
+			if direct:
+				self.board.set_pin_mode(LEFT_MOTOR_1, self.board.PWM, self.board.DIGITAL)
+				self.board.set_pin_mode(LEFT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.analog_write(LEFT_MOTOR_1, lpwr)
+				self.board.digital_write(LEFT_MOTOR_2, 0)
+			else:
+				self.board.set_pin_mode(LEFT_MOTOR_2, self.board.PWM, self.board.DIGITAL)
+				self.board.set_pin_mode(LEFT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
+				self.board.analog_write(LEFT_MOTOR_2, lpwr)
+				self.board.digital_write(LEFT_MOTOR_1, 0)
 		self.enc_data[ENCODER_L]['pwr'] = pwr
 		if pwr > 0:
 			self.left_dir = direct
@@ -238,6 +253,7 @@ class ImageProcess(picamera.array.PiRGBAnalysis):
 		self.cv_det = cv2.FeatureDetector_create(DETECTOR)
 		self.cv_desc = cv2.DescriptorExtractor_create(EXTRACTOR)
 		self.matcher = cv2.DescriptorMatcher_create(MATCHER)
+		self.compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 #		self.cv = cv2.SURF(400)
 #		self.matcher = cv2.BFMatcher(cv2.NORM_L2)
 
@@ -254,17 +270,19 @@ class ImageProcess(picamera.array.PiRGBAnalysis):
 		return zip( mkp1, mkp2 )
 
 	def analyse(self, frame):
-		if self.skipped < 10:
+		if self.skipped < 5:
 			self.skipped += 1
 			return
 #		frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+#		compass = c.get_last('hmc5883l', 10)
 		if self.img is None:
 			self.img = frame
 			self.kp = self.cv_det.detect(self.img)
 			self.kp, self.desc = self.cv_desc.compute(self.img, self.kp)
 #			self.kp, self.desc = self.cv.detectAndCompute(self.img, None)
 			self.kpl = len(self.kp)
-			cv2.imwrite('init.jpg', self.img)
+			self.dbprint('init: %s' % (self.compass.degrees(self.compass.heading()),))
+#			cv2.imwrite('init.jpg', self.img)
 		else:
 			kp = self.cv_det.detect(frame)
 			kp, desc = self.cv_desc.compute(frame, kp)
@@ -274,9 +292,10 @@ class ImageProcess(picamera.array.PiRGBAnalysis):
 			pairs = self.filterMatches(kp, matches)
 			lp = len(pairs)
 			r = (lp * 100) / self.kpl
-			heading = c.measure()
 			self.plist.append(r)
-			self.dbprint('%s%% >%s' % (r, int(heading)))
+			self.dbprint('%s%% - %s' % (r, self.compass.degrees(self.compass.heading())))
+#			self.dbprint('%s%% - %s (%s)' % (r, int(compass['rawX']), time.strftime('%H:%M:%S', time.localtime(compass['timestamp']))))
+#			self.dbprint('%s%% - %s (%s)' % (r, int(compass['heading_degrees']), time.strftime('%H:%M:%S', time.localtime(compass['timestamp']))))
 #			self.dbprint('MX %s' % (np.diff(self.plist)))
 #			self.dbprint('MX %s' % ((np.diff(np.sign(np.diff(self.plist))) < 0).nonzero()[0] + 1))
 
@@ -301,10 +320,14 @@ def experiment1(c, camera):
 	camera.start_recording(output, format='bgr', splitter_port=1)
 #	camera.start_recording('/dev/null', format='h264', splitter_port=2, motion_output=moutput)
 	try:
-		c.right_move(True, 20)
-		c.left_move(False, 20)
+#		for i in range(30):
+		c.right_move(False, 30)
+		c.left_move(True, 30)
+#			time.sleep(0.2)
+#			c.stop()
+#			time.sleep(1)
 #		camera.wait_recording(10)
-		time.sleep(10)
+		time.sleep(4)
 	finally:
 		c.dbprint('finish')
 		c.stop()
