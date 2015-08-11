@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python fchassis.py 2> fchassis.log
+python frun.py 2> frun.log
