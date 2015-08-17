@@ -6,27 +6,36 @@ import picamera
 from lib.hmc5883l import hmc5883l
 from lib.utils import dbprint
 from lib.camera import update_img
-from lib.pids import Pid
 
 from lib.fchassis import fchassis
 
+AZIM = 90
+ERR = 10
 
-def fwd(c):
+# angle difference in degrees
+def angle_diff(a1, a2):
+	return ((a1 - a2) + 180) % 360 - 180
+
+def turn(c, azim):
 	compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 	dbprint('%s' % (compass.degrees(compass.heading())[0]))
-	pid = Pid()
-	pid.range(-50.0, 50.0)
-	pid.tune(.8,.1,.1)
-	pid.set(compass.heading())
-	offset = 0
 	try:
-		for i in range(5):
-			dbprint('offset=%d' % offset)
-			c.left_move(True, 50 + offset)
-			c.right_move(True, 50 - offset)
-			time.sleep(0.2)
-			pid.step(input=compass.heading())
-			offset = pid.get()
+		heading = compass.degrees(compass.heading())[0]
+		diff = angle_diff(azim, heading)
+		if abs(diff) > ERR:
+			if diff > 0:
+				c.left_move(True, 50)
+				c.right_move(False, 50)
+			else:
+				c.left_move(False, 50)
+				c.right_move(True, 50)
+			for i in range(100):
+				heading = compass.degrees(compass.heading())[0]
+				diff = abs(angle_diff(azim, heading))
+				dbprint("diff=%d" % diff)
+				if diff < ERR:
+					break
+				time.sleep(0.01)
 	finally:
 		c.stop()
 		dbprint('%s' % (compass.degrees(compass.heading())[0]))
@@ -42,6 +51,6 @@ if __name__ == '__main__':
 		with picamera.PiCamera() as camera:
 
 			try:
-				fwd(c)
+				turn(c, AZIM)
 			finally:
 				update_img(camera)

@@ -8,6 +8,7 @@ import time
 import datetime
 import math
 import traceback
+import glob
 
 import numpy as np
 import picamera
@@ -40,6 +41,7 @@ MATCHER = 'BruteForce-Hamming'
 REDIS_CHANNEL = 'command'
 SENSORS_SHOW_PERIOD = 1
 
+HTML_PATH = os.path.expanduser('~/public_html')
 
 class ImageProcess(picamera.array.PiRGBAnalysis):
 
@@ -144,24 +146,31 @@ def experiment2(c, camera):
 		return zip(mkp1, mkp2)
 
 	try:
+		clear_img()
 		camera.resolution = (160, 120)
 		camera.framerate = 5
 		cv_det = cv2.FeatureDetector_create(DETECTOR)
 		cv_desc = cv2.DescriptorExtractor_create(EXTRACTOR)
 		matcher = cv2.DescriptorMatcher_create(MATCHER)
+		was_below = False
+
 		compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 		old_heading = init_heading = compass.heading()
 		hbase_diff = 0
 		h_dir = 1
+
 		with picamera.array.PiRGBArray(camera) as stream:
 			camera.capture(stream, format='bgr', use_video_port=True)
 			base_frame = stream.array
+			cv2.imwrite(html_path('start.jpg'), base_frame)
+			circle_count = 0
+			found_count = 0
 			base_kp = cv_det.detect(base_frame)
 			base_kp, base_desc = cv_desc.compute(base_frame, base_kp)
 			base_kpl = len(base_kp)
-			for i in range(70):
-				c.right_move(True, 30)
-				c.left_move(False, 30)
+			for i in range(200):
+				c.right_move(True, 40)
+				c.left_move(False, 40)
 				time.sleep(0.1)
 				c.stop()
 				time.sleep(0.2)
@@ -173,23 +182,35 @@ def experiment2(c, camera):
 				matches = matcher.knnMatch(base_desc, trainDescriptors=desc, k=2)
 				pairs = filterMatches(base_kp, kp, matches)
 				lp = len(pairs)
-				r = (lp * 100) / base_kpl
+				rperc = (lp * 100) / base_kpl
+
 				heading = compass.heading()
 				hdiff = abs(heading - init_heading)
 				if h_dir > 0:
-					if hbase_diff <= hdiff:
+					if hbase_diff + 5 <= hdiff:
 						hbase_diff = hdiff
-					else:
+					elif hbase_diff >= hdiff + 5:
 						h_dir = -1
 				else:
-					if hbase_diff >= hdiff:
+					if hbase_diff >= hdiff + 5:
 						hbase_diff = hdiff
-					else:
+					elif hbase_diff + 5 <= hdiff:
 						# found
 						dbprint('Circle!!!')
+						circle_count += 1
+						cv2.imwrite(html_path('circle%03d.jpg' % circle_count), frame)
 						h_dir = 1
-						break
-				dbprint('%.2f%% - %.2f (%.2f, dh: %.2f)' % (r, heading, hdiff, abs(old_heading - heading) ))
+
+				dbprint('%.2f%% - %.2f (%.2f, dh: %.2f)' % (rperc, heading, hdiff, abs(old_heading - heading) ))
+				if was_below:
+					if rperc > 60:
+						dbprint('Found close')
+						was_below = False
+						found_count += 1
+						cv2.imwrite(html_path('found%03d.jpg' % found_count), frame)
+				else:
+					if rperc < 10:
+						was_below = True
 				old_heading = heading
 	finally:
 		c.stop()
@@ -205,7 +226,23 @@ def update_img(camera):
 	camera.exposure_mode = 'off'
 	camera.brightness = 50
 	camera.contrast = 50
-	camera.capture(os.path.expanduser('~/public_html/picam_0.jpg'), use_video_port=True)
+	camera.capture(html_path('picam_0.jpg'), use_video_port=True)
+
+def unlink(fname):
+	try:
+		os.unlink(fname)
+	except OSError:
+		pass
+
+def clear_img():
+	unlink(html_path('start.jpg'))
+	for f in glob.glob(html_path('found*.jpg')):
+		unlink(f)
+	for f in glob.glob(html_path('circle*.jpg')):
+		unlink(f)
+
+def html_path(fname):
+	return os.path.join(HTML_PATH, fname)
 
 def dbprint(text, force=False):
 	print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
