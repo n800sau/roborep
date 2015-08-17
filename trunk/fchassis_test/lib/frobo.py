@@ -1,0 +1,66 @@
+import time
+from hmc5883l import hmc5883l
+from fchassis import fchassis
+from utils import angle_diff
+from pids import Pid
+
+STEP_TIME = 0.1
+
+class frobo(fchassis):
+
+	def __init__(self, *args, **kwds):
+		super(frobo, self).__init__(*args, **kwds)
+		self.compass = hmc5883l(gauss = 4.7, declination = (12, 34))
+
+	def heading_diff(self, azim, err=10):
+		heading = self.compass.heading()
+		diff = angle_diff(azim, heading)
+		return diff if abs(diff) > err else 0
+
+	def turn(self, azim, err=10):
+		self.dbprint('%s' % (self.compass.degrees(self.compass.heading())[0]))
+		try:
+			diff = self.heading_diff(azim, err=err)
+			if diff:
+				if diff > 0:
+					self.left_move(True, 50)
+					self.right_move(False, 50)
+				else:
+					self.left_move(False, 50)
+					self.right_move(True, 50)
+				# maximum 1000 steps ~ 100 sec
+				for i in range(1000):
+					diff = self.heading_diff(azim, err=err)
+					self.dbprint("diff=%d" % diff)
+					if not diff:
+						break
+					time.sleep(STEP_TIME)
+		finally:
+			self.stop()
+			self.dbprint('%s' % (self.compass.degrees(self.compass.heading())[0]))
+
+
+	def fwd_straightly(self, max_steps=5, max_secs=1, heading=None):
+		self.dbprint('%s' % (self.compass.degrees(self.compass.heading())[0]))
+		pid = Pid(4., .1, .1)
+		pid.range(-50.0, 50.0)
+		if heading is None:
+			heading = self.compass.heading()
+		pid.set(heading)
+		offset = 0
+		try:
+			for i in range(int(max_secs/STEP_TIME)):
+				self.dbprint('offset=%d (%d:%d)' % (offset, self.mleft['count'], self.mright['count']))
+				steps = self.steps_counted()
+				if steps > max_steps:
+					self.dbprint('Max steps reached (%d > %d)' % (steps, max_steps))
+					break
+				self.left_move(True, 50 + offset)
+				self.right_move(True, 50 - offset)
+				time.sleep(STEP_TIME)
+				pid.step(input=self.compass.heading())
+				offset = pid.get()
+		finally:
+			self.stop()
+			self.dbprint('%s' % (self.compass.degrees(self.compass.heading())[0]))
+

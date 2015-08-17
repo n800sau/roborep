@@ -6,6 +6,7 @@ import datetime
 import math
 import signal
 import traceback
+from threading import RLock
 from PyMata.pymata import PyMata
 
 COUNT_PER_REV = 20.0
@@ -32,9 +33,11 @@ DEVICE = 0
 PIN = 1
 DATA = 2
 
-class fchassis:
+class fchassis(object):
 
 	def __init__(self, s_dev):
+
+		self.lock = RLock()
 
 		self.debug = True
 		self.left_dir = None
@@ -88,6 +91,16 @@ class fchassis:
 			pass
 		time.sleep(1)
 
+	@property
+	def mleft(self):
+		return self.enc_data[ENCODER_L]
+
+	@property
+	def mright(self):
+		return self.enc_data[ENCODER_R]
+
+
+
 	def signal_handler(self, sig, frame):
 		print('You pressed Ctrl+C!!!!')
 		if self.board is not None:
@@ -96,7 +109,11 @@ class fchassis:
 
 	def dbprint(self, text, force=False):
 		if self.debug or force:
-			print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
+			self.lock.acquire()
+			try:
+				print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
+			finally:
+				self.lock.release()
 
 	def reset_counters(self):
 		self.enc_data[ENCODER_L]['count'] = 0

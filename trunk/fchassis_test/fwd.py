@@ -3,45 +3,31 @@
 import sys, os, time
 
 import picamera
-from lib.hmc5883l import hmc5883l
 from lib.utils import dbprint
 from lib.camera import update_img
-from lib.pids import Pid
 
-from lib.fchassis import fchassis
-
-
-def fwd(c):
-	compass = hmc5883l(gauss = 4.7, declination = (12, 34))
-	dbprint('%s' % (compass.degrees(compass.heading())[0]))
-	pid = Pid()
-	pid.range(-50.0, 50.0)
-	pid.tune(.8,.1,.1)
-	pid.set(compass.heading())
-	offset = 0
-	try:
-		for i in range(5):
-			dbprint('offset=%d' % offset)
-			c.left_move(True, 50 + offset)
-			c.right_move(True, 50 - offset)
-			time.sleep(0.2)
-			pid.step(input=compass.heading())
-			offset = pid.get()
-	finally:
-		c.stop()
-		dbprint('%s' % (compass.degrees(compass.heading())[0]))
-
+from lib.frobo import frobo
 
 if __name__ == '__main__':
 
 	s_port = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AH00ZTCM-if00-port0'
 
-	with fchassis(s_port) as c:
-		c.debug = False
+	with frobo(s_port) as c:
+		#c.debug = False
 
 		with picamera.PiCamera() as camera:
 
 			try:
-				fwd(c)
+				c.turn(0)
+				c.fwd_straightly(max_secs=1, max_steps=20)
+				update_img(camera)
+				c.turn(90)
+				c.fwd_straightly(max_secs=1, max_steps=20)
+				update_img(camera)
+				c.turn(180)
+				c.fwd_straightly(max_secs=1, max_steps=20)
+				update_img(camera)
+				c.turn(270)
+				c.fwd_straightly(max_secs=1, max_steps=20)
 			finally:
 				update_img(camera)
