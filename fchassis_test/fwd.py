@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, time
+import sys, os, time, json
 
 import picamera
 from lib.utils import dbprint
@@ -18,6 +18,7 @@ if __name__ == '__main__':
 		with picamera.PiCamera() as camera:
 
 			try:
-				c.fwd_straightly(max_secs=3, max_steps=100)
+				c.fwd_straightly(max_secs=3, max_steps=50)
+				dbprint('dots=%s' % json.dumps(c.dots, indent=2))
 			finally:
 				update_img(camera)

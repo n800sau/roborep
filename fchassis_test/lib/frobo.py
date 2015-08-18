@@ -12,14 +12,30 @@ class frobo(fchassis):
 		self.dots = []
 		self.compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 		super(frobo, self).__init__(*args, **kwds)
+		self.current_heading()
+
+	def current_heading(self):
+		self.last_heading = self.compass.heading()
+		return self.last_heading
 
 	def heading_diff(self, azim, err=10):
-		heading = self.compass.heading()
+		heading = self.current_heading()
 		diff = angle_diff(azim, heading)
 		return diff if abs(diff) > err else 0
 
+	def count_change(self, pin, step, t, dt):
+		super(frobo, self).count_change(pin, step, t, dt)
+		dot = {
+			'heading': self.last_heading,
+			'pin': pin,
+			'step': step,
+			'dt': dt,
+			't': t,
+		}
+		self.dots.append(dot)
+
 	def turn(self, azim, err=10):
-		self.dbprint('%s' % (self.compass.degrees(self.compass.heading())[0]))
+		self.dbprint('%d' % int(self.current_heading()))
 		try:
 			diff = self.heading_diff(azim, err=err)
 			if diff:
@@ -39,21 +55,21 @@ class frobo(fchassis):
 					time.sleep(STEP_TIME)
 		finally:
 			self.stop()
-			self.dbprint('%s' % (self.compass.degrees(self.compass.heading())[0]))
+			self.dbprint('%d' % int(self.current_heading()))
 
 
 	def fwd_straightly(self, max_steps=5, max_secs=1, heading=None, power=70):
 		pid = Pid(2., .1, .1)
 		pid.range(-power, power)
 		if heading is None:
-			heading = self.compass.heading()
+			heading = self.current_heading()
 		pid.set(heading)
 		offset = 0
 		try:
 			for i in range(int(max_secs/STEP_TIME)):
 				lpwr = power + offset
 				rpwr = power -offset
-				self.dbprint('^%d [%d<>%d] (%d:%d)' % (int(self.compass.heading()), lpwr, rpwr, self.mleft['count'], self.mright['count']))
+				self.dbprint('^%d [%d<>%d] (%d:%d)' % (int(self.current_heading()), lpwr, rpwr, self.mleft['count'], self.mright['count']))
 				steps = self.steps_counted()
 				if steps > max_steps:
 					self.dbprint('Max steps reached (%d > %d)' % (steps, max_steps))
@@ -62,9 +78,9 @@ class frobo(fchassis):
 				self.right_move(True, rpwr)
 				self.db_state()
 				time.sleep(STEP_TIME)
-				pid.step(input=self.compass.heading())
+				pid.step(input=self.current_heading())
 				offset = pid.get()
 		finally:
 			self.stop()
-			self.dbprint('%s' % (self.compass.degrees(self.compass.heading())[0]))
+			self.dbprint('%d' % int(self.current_heading()))
 

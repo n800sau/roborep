@@ -9,7 +9,7 @@ from lib.camera import update_img
 
 from lib.frobo import frobo
 
-AZIM = 180
+AZIM = 270
 
 if __name__ == '__main__':
 
