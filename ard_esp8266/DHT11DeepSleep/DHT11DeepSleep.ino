@@ -4,13 +4,13 @@
 #define DHTTYPE DHT11
 #define DHTPIN	12
 
-const char *thingspeak_server = "api.thingspeak.com";
+const char *thingspeak_server = "184.106.153.149";
 
-#include "apikey.h"
+#include "config.h"
 const char *apiKey = API_KEY;
 
-const char* ssid	 = "Slow Internet Connection";
-const char* password = "1,tpGfhjkz2";
+const char* ssid	 = SSID;
+const char* password = PASSWORD;
 
 int ledPin = 5; // LED is attached to ESP8266 pin 5.
 
@@ -49,20 +49,21 @@ void setup()
 	dht.begin();		   // initialize temperature sensor
 
 	pinMode(ledPin, OUTPUT); // Set LED pin (5) as an output
-	digitalWrite(ledPin, HIGH);
+	digitalWrite(ledPin, LOW);
+	delay(3000);
 
 }
 
 void loop() 
 {
 	digitalWrite(ledPin, HIGH);
-	delay(3000);
 	// Reading temperature for humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
 	float humidity = dht.readHumidity();		  // Read humidity (percent)
 	float temp_c = dht.readTemperature(false);	   // Read temperature as Fahrenheit
 	if(isnan(humidity) || isnan(temp_c)) {
 		Serial1.println("Failed to read from DHT sensor!");
+		delay(1000);
 	} else {
 		Serial1.print("T:");
 		Serial1.print(temp_c);
@@ -87,10 +88,11 @@ void loop()
 			client.stop();
 
 			Serial1.println("Data send to Thingspeak");
+			ESP.deepSleep(300000000L, WAKE_RF_DEFAULT); // Sleep for 300 seconds
 		} else {
 			Serial1.println("Http connection failed");
+			delay(1000);
 		}
 	}
 	digitalWrite(ledPin, LOW);
-	ESP.deepSleep(6000000, WAKE_RF_DEFAULT); // Sleep for 6 seconds
 }
