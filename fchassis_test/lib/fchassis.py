@@ -42,13 +42,16 @@ class fchassis(object):
 		self.debug = True
 		self.left_dir = None
 		self.right_dir = None
+		self.last_tick = time.time()
 
 		self.enc_data = {
 			ENCODER_L: {
 				'name': 'left',
 				'lvl': 0,
 				'dir': 0,
-				'tick_time': time.time(),
+				'tick_time': self.last_tick,
+				'last_dt': 0,
+				'last_step': 0,
 				'count': 0,
 				'pwr': 0,
 			},
@@ -56,7 +59,9 @@ class fchassis(object):
 				'name': 'right',
 				'lvl': 0,
 				'dir': 0,
-				'tick_time': time.time(),
+				'tick_time': self.last_tick,
+				'last_dt': 0,
+				'last_step': 0,
 				'count': 0,
 				'pwr': 0,
 			},
@@ -99,8 +104,6 @@ class fchassis(object):
 	def mright(self):
 		return self.enc_data[ENCODER_R]
 
-
-
 	def signal_handler(self, sig, frame):
 		print('You pressed Ctrl+C!!!!')
 		if self.board is not None:
@@ -125,7 +128,7 @@ class fchassis(object):
 	def adjust_pwr(self, pwr):
 		self.dbprint('output=%f' % self.get())
 
-	def lpwr(self, pwr):
+	def pwr2bin(self, pwr):
 		return int(min(100, pwr) / 100. * (MAX_PWR - MIN_PWR) + MIN_PWR)
 
 	def right_move(self, direct, pwr):
@@ -136,16 +139,16 @@ class fchassis(object):
 				self.board.digital_write(RIGHT_MOTOR_2, 0)
 #				self.dbprint('right PWM stopped')
 		else:
-			lpwr = self.lpwr(pwr)
+			bpwr = self.pwr2bin(pwr)
 			if direct:
 				self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.PWM, self.board.DIGITAL)
 				self.board.set_pin_mode(RIGHT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
-				self.board.analog_write(RIGHT_MOTOR_1, lpwr)
+				self.board.analog_write(RIGHT_MOTOR_1, bpwr)
 				self.board.digital_write(RIGHT_MOTOR_2, 0)
 			else:
 				self.board.set_pin_mode(RIGHT_MOTOR_2, self.board.PWM, self.board.DIGITAL)
 				self.board.set_pin_mode(RIGHT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
-				self.board.analog_write(RIGHT_MOTOR_2, lpwr)
+				self.board.analog_write(RIGHT_MOTOR_2, bpwr)
 				self.board.digital_write(RIGHT_MOTOR_1, 0)
 		self.enc_data[ENCODER_R]['pwr'] = pwr
 		if pwr > 0:
@@ -160,16 +163,16 @@ class fchassis(object):
 				self.board.digital_write(LEFT_MOTOR_2, 0)
 #				self.dbprint('left PWM stopped')
 		else:
-			lpwr = self.lpwr(pwr)
+			bpwr = self.pwr2bin(pwr)
 			if direct:
 				self.board.set_pin_mode(LEFT_MOTOR_1, self.board.PWM, self.board.DIGITAL)
 				self.board.set_pin_mode(LEFT_MOTOR_2, self.board.OUTPUT, self.board.DIGITAL)
-				self.board.analog_write(LEFT_MOTOR_1, lpwr)
+				self.board.analog_write(LEFT_MOTOR_1, bpwr)
 				self.board.digital_write(LEFT_MOTOR_2, 0)
 			else:
 				self.board.set_pin_mode(LEFT_MOTOR_2, self.board.PWM, self.board.DIGITAL)
 				self.board.set_pin_mode(LEFT_MOTOR_1, self.board.OUTPUT, self.board.DIGITAL)
-				self.board.analog_write(LEFT_MOTOR_2, lpwr)
+				self.board.analog_write(LEFT_MOTOR_2, bpwr)
 				self.board.digital_write(LEFT_MOTOR_1, 0)
 		self.enc_data[ENCODER_L]['pwr'] = pwr
 		if pwr > 0:
@@ -179,14 +182,18 @@ class fchassis(object):
 	def arm_latch(self, pin, high):
 		self.board.set_digital_latch(pin, self.board.DIGITAL_LATCH_HIGH if high else self.board.DIGITAL_LATCH_LOW, lambda data, pin=pin: self.cb_encoder(data, pin))
 
+	def count_change(self, pin, step, t, dt):
+		self.enc_data[pin]['count'] += step
+		self.enc_data[pin]['last_step'] = step
+		self.enc_data[pin]['last_dt'] = dt
+		self.enc_data[pin]['tick_time'] = t
+
 	def cb_encoder(self, data, pin):
 		if data[2] != self.enc_data[pin]['lvl'] and data[2]:
 			t = time.time()
 			dt = t-self.enc_data[pin]['tick_time']
 			step = (1 if self.enc_data[pin]['dir'] else -1)
-			self.enc_data[pin]['count'] += step
-			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d" % (pin, self.enc_data[pin]['name'], dt, step * ENC_STEP / dt, self.enc_data[pin]['count']))
-			self.enc_data[pin]['tick_time'] = t
+			self.count_change(pin, step, t, dt)
 		self.enc_data[pin]['lvl'] = data[2]
 		self.arm_latch(pin, not data[2])
 
@@ -199,6 +206,13 @@ class fchassis(object):
 			self.left_move(0, 0)
 			self.right_move(0, 0)
 			self.dbprint('both stopped')
+
+	def db_state(self):
+		pin = ENCODER_L if self.enc_data[ENCODER_L]['tick_time'] > self.enc_data[ENCODER_R]['tick_time'] else ENCODER_R
+		d = self.enc_data[pin]
+		if d['tick_time'] > self.last_tick:
+			self.last_tick = d['tick_time']
+			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d" % (pin, d['name'], d['last_dt'], d['last_step'] * ENC_STEP / d['last_dt'], d['count']))
 
 if __name__ == '__main__':
 
