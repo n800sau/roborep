@@ -91,11 +91,11 @@ static FTYPE ICACHE_FLASH_ATTR executeRESTCommand(String command, String &result
 		root["auto_connect"] = (bool)wifi_station_get_auto_connect();
 		root["ssid"] = WiFi.SSID();
 		pmsg.begin();
-		WiFi.localIP().printTo(pmsg);
-		root["ip"] = String(msgbuf).c_str();
-		pmsg.begin();
 		WiFi.gatewayIP().printTo(pmsg);
 		root["gateway"] = String(msgbuf).c_str();
+		pmsg.begin();
+		WiFi.localIP().printTo(pmsg);
+		root["ip"] = String(msgbuf).c_str();
 		rs = FT_JSON;
 	}
 	if(rs == FT_JSON) {

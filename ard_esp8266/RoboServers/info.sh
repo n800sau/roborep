@@ -1,4 +1,5 @@
-esp=192.168.1.97
+#esp=192.168.1.97
+esp=192.168.1.155
 wget --quiet http://${esp}:8080/command?params=info -O -
 echo
 echo FREE

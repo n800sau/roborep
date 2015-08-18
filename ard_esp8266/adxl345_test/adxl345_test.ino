@@ -7,7 +7,8 @@
 #include "binary_const.h" // with this we can use something B8(01010101) that it will convert to 85 at compile time
 // the above cames really handy and readable when doing per bit configuration in the ADXL345 registers
 
-#define DEVICE (0x1D)    //ADXL345 device address (with SDO tied to ground)
+#define DEVICE (0x53)    //ADXL345 device address (with SDO tied to ground)
+//#define DEVICE (0x1D)    //ADXL345 device address (with SDO tied to ground)
 #define TO_READ (6)      //num of bytes we are going to read each time (two bytes for each axis)
 
 #define INTERRUPTPIN 5   // Arduino pin which is connected to INT1 from the ADXL345
@@ -55,6 +56,7 @@ void setup()
 {
   Serial.begin(115200);  // start serial for output
 
+	//sda scl
   Wire.pins(12, 14);
   Wire.begin();        // join i2c bus (address optional for master)
 //	pinMode(ESP_PINS_OFFSET + 12, INPUT_PULLUP);
