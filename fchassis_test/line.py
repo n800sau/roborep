@@ -4,7 +4,7 @@ import sys, os, time
 
 import picamera
 from lib.utils import dbprint
-from lib.camera import update_img
+from lib.camera import update_img, FeatureProcess, capture_cvimage
 
 from lib.frobo import frobo
 
@@ -17,24 +17,30 @@ if __name__ == '__main__':
 
 		with picamera.PiCamera() as camera:
 
-			try:
-				c.turn(0)
-				update_img(camera, 'pic0.jpg')
-				c.turn(90)
-				c.fwd_straightly(max_secs=3, max_steps=100)
-				c.turn(0)
-				update_img(camera, 'pic1.jpg')
-				c.turn(90)
-				c.fwd_straightly(max_secs=3, max_steps=100)
-				c.turn(0)
-				update_img(camera, 'pic2.jpg')
-				c.turn(90)
-				c.fwd_straightly(max_secs=3, max_steps=100)
-				c.turn(0)
-				update_img(camera, 'pic3.jpg')
-				c.turn(90)
-				c.fwd_straightly(max_secs=3, max_steps=100)
-				c.turn(0)
-				update_img(camera, 'pic4.jpg')
-			finally:
-				update_img(camera)
+				fp = FeatureProcess(camera)
+				try:
+					c.turn(0)
+					update_img(camera, 'pic0.jpg')
+					dbprint('%s%%' % fp.percent())
+					c.turn(90)
+					c.fwd_straightly(max_secs=3, max_steps=100)
+					c.turn(0)
+					dbprint('%s%%' % fp.percent())
+					update_img(camera, 'pic1.jpg')
+					c.turn(90)
+					c.fwd_straightly(max_secs=3, max_steps=100)
+					c.turn(0)
+					dbprint('%s%%' % fp.percent())
+					update_img(camera, 'pic2.jpg')
+					c.turn(90)
+					c.fwd_straightly(max_secs=3, max_steps=100)
+					c.turn(0)
+					dbprint('%s%%' % fp.percent())
+					update_img(camera, 'pic3.jpg')
+					c.turn(90)
+					c.fwd_straightly(max_secs=3, max_steps=100)
+					c.turn(0)
+					dbprint('%s%%' % fp.percent())
+					update_img(camera, 'pic4.jpg')
+				finally:
+					update_img(camera)

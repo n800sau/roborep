@@ -1,6 +1,6 @@
 import time
 from hmc5883l import hmc5883l
-from fchassis import fchassis
+from fchassis import fchassis, ENC_STEP, ENCODER_L, ENCODER_R
 from utils import angle_diff
 from pids import Pid
 
@@ -9,7 +9,7 @@ STEP_TIME = 0.1
 class frobo(fchassis):
 
 	def __init__(self, *args, **kwds):
-		self.dots = []
+		self.dots = {ENCODER_L: [], ENCODER_R: []}
 		self.compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 		super(frobo, self).__init__(*args, **kwds)
 		self.current_heading()
@@ -27,12 +27,12 @@ class frobo(fchassis):
 		super(frobo, self).count_change(pin, step, t, dt)
 		dot = {
 			'heading': self.last_heading,
-			'pin': pin,
 			'step': step,
 			'dt': dt,
+			'v': ENC_STEP * step / dt,
 			't': t,
 		}
-		self.dots.append(dot)
+		self.dots[pin].append(dot)
 
 	def turn(self, azim, err=10):
 		self.dbprint('%d' % int(self.current_heading()))
