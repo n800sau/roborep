@@ -2,9 +2,14 @@
 #include <WiFiClient.h>
 #include <DHT.h>
 #define DHTTYPE DHT11
-#define DHTPIN  12
+#define DHTPIN	12
 
-const char* ssid     = "Slow Internet Connection";
+const char *thingspeak_server = "api.thingspeak.com";
+
+#include "apikey.h"
+const char *apiKey = API_KEY;
+
+const char* ssid	 = "Slow Internet Connection";
 const char* password = "1,tpGfhjkz2";
 
 int ledPin = 5; // LED is attached to ESP8266 pin 5.
@@ -14,7 +19,7 @@ int ledPin = 5; // LED is attached to ESP8266 pin 5.
 // you need to increase the threshold for cycle counts considered a 1 or 0.
 // You can do this by passing a 3rd parameter for this threshold.  It's a bit
 // of fiddling to find the right value, but in general the faster the CPU the
-// higher the value.  The default for a 16mhz AVR is a value of 6.  For an
+// higher the value.  The default for a 16mhz AVR is a value of 6.	For an
 // Arduino Due that runs at 84mhz a value of 30 works.
 // This is for the ESP8266 processor on ESP-01 
 DHT dht(DHTPIN, DHTTYPE, 11); // 11 works fine for ESP8266
@@ -41,7 +46,7 @@ void setup()
 	Serial1.print("IP address: ");
 	Serial1.println(WiFi.localIP());
 
-	dht.begin();           // initialize temperature sensor
+	dht.begin();		   // initialize temperature sensor
 
 	pinMode(ledPin, OUTPUT); // Set LED pin (5) as an output
 	digitalWrite(ledPin, HIGH);
@@ -54,8 +59,8 @@ void loop()
 	delay(3000);
 	// Reading temperature for humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
-	float humidity = dht.readHumidity();          // Read humidity (percent)
-	float temp_c = dht.readTemperature(false);     // Read temperature as Fahrenheit
+	float humidity = dht.readHumidity();		  // Read humidity (percent)
+	float temp_c = dht.readTemperature(false);	   // Read temperature as Fahrenheit
 	if(isnan(humidity) || isnan(temp_c)) {
 		Serial1.println("Failed to read from DHT sensor!");
 	} else {
@@ -63,6 +68,28 @@ void loop()
 		Serial1.print(temp_c);
 		Serial1.print(", H:");
 		Serial1.println(humidity);
+		WiFiClient client;
+		if (client.connect(thingspeak_server,80)) {  //   "184.106.153.149" or api.thingspeak.com
+			String postStr = String(apiKey) +
+				"&field1=" + String(temp_c) +
+				"&field2=" + String(humidity) +
+				"\r\n\r\n";
+
+			client.print("POST /update HTTP/1.1\n");
+			client.print("Host: api.thingspeak.com\n");
+			client.print("Connection: close\n");
+			client.print("X-THINGSPEAKAPIKEY: "+String(apiKey)+"\n");
+			client.print("Content-Type: application/x-www-form-urlencoded\n");
+			client.print("Content-Length: ");
+			client.print(postStr.length());
+			client.print("\n\n");
+			client.print(postStr);
+			client.stop();
+
+			Serial1.println("Data send to Thingspeak");
+		} else {
+			Serial1.println("Http connection failed");
+		}
 	}
 	digitalWrite(ledPin, LOW);
 	ESP.deepSleep(6000000, WAKE_RF_DEFAULT); // Sleep for 6 seconds
