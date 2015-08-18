@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, time
+import sys, os, time, json
 
 import picamera
 from lib.utils import dbprint
@@ -31,5 +31,6 @@ if __name__ == '__main__':
 				c.turn(270)
 				c.fwd_straightly(max_secs=3, max_steps=100)
 				update_img(camera, 'pic4.jpg')
+				json.dump(c.dots, file('dots.json', 'w'), indent=2)
 			finally:
 				update_img(camera)
