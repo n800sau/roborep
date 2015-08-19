@@ -13,6 +13,7 @@ const char* ssid	 = SSID;
 const char* password = PASSWORD;
 
 int ledPin = 5; // LED is attached to ESP8266 pin 5.
+int ledState = HIGH;
 
 // Initialize DHT sensor 
 // NOTE: For working with a faster than ATmega328p 16 MHz Arduino chip, like an ESP8266,
@@ -56,21 +57,25 @@ void setup()
 
 void loop() 
 {
-	digitalWrite(ledPin, HIGH);
-	// Reading temperature for humidity takes about 250 milliseconds!
-	// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
-	float humidity = dht.readHumidity();		  // Read humidity (percent)
-	float temp_c = dht.readTemperature(false);	   // Read temperature as Fahrenheit
-	if(isnan(humidity) || isnan(temp_c)) {
-		Serial1.println("Failed to read from DHT sensor!");
-		delay(1000);
-	} else {
-		Serial1.print("T:");
-		Serial1.print(temp_c);
-		Serial1.print(", H:");
-		Serial1.println(humidity);
-		WiFiClient client;
-		if (client.connect(thingspeak_server,80)) {  //   "184.106.153.149" or api.thingspeak.com
+	digitalWrite(ledPin, ledState);
+	ledState = !ledState;
+
+	WiFiClient client;
+	if (client.connect(thingspeak_server,80)) {  //   "184.106.153.149" or api.thingspeak.com
+
+		// Reading temperature for humidity takes about 250 milliseconds!
+		// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
+		float humidity = dht.readHumidity();		  // Read humidity (percent)
+		float temp_c = dht.readTemperature(false);	   // Read temperature as Fahrenheit
+		if(isnan(humidity) || isnan(temp_c)) {
+			Serial1.println("Failed to read from DHT sensor!");
+			delay(500);
+		} else {
+			Serial1.print("T:");
+			Serial1.print(temp_c);
+			Serial1.print(", H:");
+			Serial1.println(humidity);
+
 			String postStr = String(apiKey) +
 				"&field1=" + String(temp_c) +
 				"&field2=" + String(humidity) +
@@ -89,10 +94,9 @@ void loop()
 
 			Serial1.println("Data send to Thingspeak");
 			ESP.deepSleep(300000000L, WAKE_RF_DEFAULT); // Sleep for 300 seconds
-		} else {
-			Serial1.println("Http connection failed");
-			delay(1000);
 		}
+	} else {
+		Serial1.println("Http connection failed");
+		delay(500);
 	}
-	digitalWrite(ledPin, LOW);
 }
