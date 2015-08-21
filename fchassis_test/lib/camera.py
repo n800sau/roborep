@@ -50,9 +50,6 @@ class FeatureProcess(object):
 		self.cv_desc = cv2.DescriptorExtractor_create(EXTRACTOR)
 		self.matcher = cv2.DescriptorMatcher_create(MATCHER)
 
-	def __exit__(self, type, value, traceback):
-		pass
-
 	def filterMatches(self, kp, matches, ratio = 0.75):
 		mkp1, mkp2 = [], []
 		for m in matches:

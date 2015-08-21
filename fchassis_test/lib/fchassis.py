@@ -33,6 +33,9 @@ DEVICE = 0
 PIN = 1
 DATA = 2
 
+SONAR_TRIGGER = 11
+SONAR_ECHO = 12
+
 class fchassis(object):
 
 	def __init__(self, s_dev):
@@ -75,6 +78,9 @@ class fchassis(object):
 
 		# configure firmata for i2c on an UNO
 		self.board.i2c_config(0, self.board.ANALOG, 4, 5)
+
+		# Configure the trigger and echo pins
+		self.board.sonar_config(SONAR_TRIGGER, SONAR_ECHO)
 
 		self.board.set_pin_mode(ENCODER_L, self.board.INPUT, self.board.DIGITAL)
 		# Arm the digital latch to detect when the button is pressed
@@ -210,9 +216,10 @@ class fchassis(object):
 	def db_state(self):
 		pin = ENCODER_L if self.enc_data[ENCODER_L]['tick_time'] > self.enc_data[ENCODER_R]['tick_time'] else ENCODER_R
 		d = self.enc_data[pin]
+		dist = self.board.get_sonar_data()[SONAR_TRIGGER]
 		if d['tick_time'] > self.last_tick:
 			self.last_tick = d['tick_time']
-			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d" % (pin, d['name'], d['last_dt'], d['last_step'] * ENC_STEP / d['last_dt'], d['count']))
+			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d, dist:%s" % (pin, d['name'], d['last_dt'], d['last_step'] * ENC_STEP / d['last_dt'], d['count'], dist[1]))
 
 if __name__ == '__main__':
 

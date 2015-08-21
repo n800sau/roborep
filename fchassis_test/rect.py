@@ -4,7 +4,7 @@ import sys, os, time, json
 
 import picamera
 from lib.utils import dbprint
-from lib.camera import update_img
+from lib.camera import update_img, FeatureProcess, capture_cvimage
 
 from lib.frobo import frobo
 
@@ -17,20 +17,30 @@ if __name__ == '__main__':
 
 		with picamera.PiCamera() as camera:
 
+			fp = FeatureProcess(camera)
 			try:
 				c.turn(0)
+				time.sleep(1)
 				update_img(camera, 'pic0.jpg')
-				c.fwd_straightly(max_secs=3, max_steps=100)
+				fp.percent()
+				c.fwd_straightly(max_secs=1, max_steps=100)
 				update_img(camera, 'pic1.jpg')
+				time.sleep(1)
 				c.turn(90)
-				c.fwd_straightly(max_secs=3, max_steps=100)
+				time.sleep(1)
+				c.fwd_straightly(max_secs=1, max_steps=100)
 				update_img(camera, 'pic2.jpg')
+				time.sleep(1)
 				c.turn(180)
-				c.fwd_straightly(max_secs=3, max_steps=100)
+				time.sleep(1)
+				c.fwd_straightly(max_secs=1, max_steps=100)
 				update_img(camera, 'pic3.jpg')
+				time.sleep(1)
 				c.turn(270)
-				c.fwd_straightly(max_secs=3, max_steps=100)
+				time.sleep(1)
+				c.fwd_straightly(max_secs=1, max_steps=100)
 				update_img(camera, 'pic4.jpg')
+				dbprint('Matches %s%%' % fp.percent())
 				json.dump(c.dots, file('dots.json', 'w'), indent=2)
 			finally:
 				update_img(camera)
