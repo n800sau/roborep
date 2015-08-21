@@ -30,7 +30,7 @@ for k in dots.keys():
 print 'x=[%s:%s] y=[%s:%s]' % (xmin, xmax, ymin, ymax)
 json.dump(dots, file('dots_processed.json', 'w'), indent=2)
 
-im = Image.new('RGBA', (200, 200), (255, 255, 255, 0))
+im = Image.new('RGBA', (200, 200), (240, 240, 240, 0))
 draw = ImageDraw.Draw(im)
 colors = ('red', 'blue')
 ci = 0

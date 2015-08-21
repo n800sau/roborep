@@ -1,3 +1,6 @@
 #!/bin/bash
 
-python turn2azim.py 2> turn2azim.log
+AZIM=289
+
+python turn2azim.py ${AZIM} &> turn2azim.log
+echo $?
