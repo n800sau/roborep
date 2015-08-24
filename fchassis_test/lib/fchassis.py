@@ -43,6 +43,7 @@ class fchassis(object):
 		self.lock = RLock()
 
 		self.debug = True
+		self.curr_dist = None
 		self.left_dir = None
 		self.right_dir = None
 		self.last_tick = time.time()
@@ -217,6 +218,7 @@ class fchassis(object):
 		pin = ENCODER_L if self.enc_data[ENCODER_L]['tick_time'] > self.enc_data[ENCODER_R]['tick_time'] else ENCODER_R
 		d = self.enc_data[pin]
 		dist = self.board.get_sonar_data()[SONAR_TRIGGER]
+		self.curr_dist = dist[1]
 		if d['tick_time'] > self.last_tick:
 			self.last_tick = d['tick_time']
 			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d, dist:%s" % (pin, d['name'], d['last_dt'], d['last_step'] * ENC_STEP / d['last_dt'], d['count'], dist[1]))

@@ -37,6 +37,7 @@ class frobo(fchassis):
 			'step': step,
 			'dt': dt,
 			'v': ENC_STEP * step / dt,
+			'dist': self.curr_dist,
 			't': t,
 		}
 		self.dots[pin].append(dot)
@@ -45,11 +46,61 @@ class frobo(fchassis):
 		self.reset_counters()
 		pwr = 30
 		lpwr = 0
-		lpid = Pid(20., 1., 1.)
+		lpid = Pid(10., 1, 2)
 		lpid.range(-pwr, pwr)
 		lsz = len(self.dots[ENCODER_L])
 		rpwr = 0
-		rpid = Pid(20., 1., 1.)
+		rpid = Pid(10., 1, 2)
+		rpid.range(-pwr, pwr)
+		rsz = len(self.dots[ENCODER_R])
+		self.dbprint('%d' % int(self.current_heading()))
+		try:
+			# maximum ~ 100 sec
+			for i in range(int(100/STEP_TIME)):
+				diff = self.heading_diff(azim, err=err)
+				self.dbprint("azim diff=%d (h:%d), acc:%s" % (diff, self.last_heading, self.last_acc))
+				if abs(diff) < err:
+					break
+				if diff > 0:
+					ldir = True
+					rdir = False
+				else:
+					ldir = False
+					rdir = True
+				lpid.set(vel * (1 if ldir else -1))
+				rpid.set(vel * (1 if rdir else -1))
+				self.dbprint("lpwr=%s, rpwr=%s" % (pwr-lpwr, pwr-rpwr))
+				self.left_move(ldir, pwr - lpwr)
+				self.right_move(rdir, pwr - rpwr)
+				clsz = len(self.dots[ENCODER_L])
+				crsz = len(self.dots[ENCODER_R])
+				if lsz < clsz and rsz < crsz:
+					lsz = clsz
+					lvel = self.dots[ENCODER_L][-1]['v']
+					ldt = self.dots[ENCODER_L][-1]['dt']
+					lpid.step(dt=ldt, input=lvel)
+					lpwr = lpid.get()
+					rsz = crsz
+					rvel = self.dots[ENCODER_R][-1]['v']
+					rdt = self.dots[ENCODER_R][-1]['dt']
+					rpid.step(dt=rdt, input=rvel)
+					rpwr = rpid.get()
+					self.dbprint("lvel=%s, rvel=%s" % (lvel, rvel))
+				self.db_state()
+				time.sleep(STEP_TIME)
+		finally:
+			self.stop()
+			self.dbprint('%d' % int(self.current_heading()))
+
+	def turn1(self, azim, vel=0.2, err=5):
+		self.reset_counters()
+		pwr = 30
+		lpwr = 0
+		lpid = Pid(10., 1, 2)
+		lpid.range(-pwr, pwr)
+		lsz = len(self.dots[ENCODER_L])
+		rpwr = 0
+		rpid = Pid(10., 1, 2)
 		rpid.range(-pwr, pwr)
 		rsz = len(self.dots[ENCODER_R])
 		self.dbprint('%d' % int(self.current_heading()))
@@ -83,8 +134,8 @@ class frobo(fchassis):
 						rpid.step(dt=rdt, input=rvel)
 						rpwr = rpid.get()
 						self.dbprint("lvel=%s, rvel=%s" % (lvel, rvel))
-					diff = self.heading_diff(azim, err=err)
-					self.dbprint("azim diff=%d (h:%d)" % (diff, self.last_heading))
+					diff = self.heading_diff(azim, err=0)
+					self.dbprint("azim diff=%d (h:%d), acc:%s" % (diff, self.last_heading, self.last_acc))
 					if not diff:
 						break
 					self.db_state()
@@ -96,7 +147,7 @@ class frobo(fchassis):
 
 	def fwd_straightly(self, max_steps=5, max_secs=1, heading=None, power=50):
 		self.reset_counters()
-		pid = Pid(5., 1., 1.)
+		pid = Pid(5., 0, 1)
 		pid.range(-power, power)
 		if heading is None:
 			heading = self.current_heading()
@@ -117,6 +168,9 @@ class frobo(fchassis):
 				time.sleep(STEP_TIME)
 				pid.step(input=self.current_heading())
 				offset = pid.get()
+				if self.curr_dist > 0 and self.curr_dist < 20:
+					self.dbprint('STOP distance=%s' % self.curr_dist)
+					break
 		finally:
 			self.stop()
 			self.dbprint('%d' % int(self.current_heading()))

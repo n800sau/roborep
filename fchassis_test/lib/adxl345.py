@@ -104,7 +104,7 @@ class ADXL345:
 if __name__ == "__main__":
     # if run directly we'll just create an instance of the class and output 
     # the current readings
-    adxl345 = ADXL345()
+    adxl345 = ADXL345(0x1d)
     
     axes = adxl345.getAxes(True)
     print "ADXL345 on address 0x%x:" % (adxl345.address)

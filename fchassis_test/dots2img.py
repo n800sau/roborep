@@ -30,17 +30,22 @@ for k in dots.keys():
 print 'x=[%s:%s] y=[%s:%s]' % (xmin, xmax, ymin, ymax)
 json.dump(dots, file('dots_processed.json', 'w'), indent=2)
 
-im = Image.new('RGBA', (200, 200), (240, 240, 240, 0))
+im = Image.new('RGBA', (800, 800), (240, 240, 240, 0))
 draw = ImageDraw.Draw(im)
 colors = ('red', 'blue')
 ci = 0
+zoom = 3
 for k in dots.keys():
 	clr = colors[ci]
 	ci += 1 
-	x = 100
-	y = 100
-	for d in dots[k]:
-		draw.line((x, y, d['x'], d['y']), fill=clr)
-		x = d['x']
-		y = d['y']
+	x = dots[k][0]['x']*zoom
+	y = dots[k][0]['y']*zoom
+	draw.ellipse((x-5, y-5, x+5, y+5), fill=clr, outline=clr)
+	for d in dots[k][1:]:
+		draw.line((x, y, d['x']*zoom, d['y']*zoom), fill=clr)
+		x = d['x']*zoom
+		y = d['y']*zoom
+		a_x = d['acc']['x']
+		a_y = d['acc']['y']
+		draw.line((x, y, x + a_x, y + a_y), fill='green')
 im.save('/home/n800s/public_html/drawing.jpg')
