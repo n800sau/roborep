@@ -61,20 +61,23 @@ class FeatureProcess(object):
 
 	def percent(self, frame=None):
 		rs = None
-		if frame is None and self.camera:
-			frame = capture_cvimage(self.camera)
-		if not frame is None:
+		try:
+			if frame is None and self.camera:
+				frame = capture_cvimage(self.camera)
+			if not frame is None:
 #			frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-			if self.img is None:
-				self.img = frame
-				self.kp = self.cv_det.detect(self.img)
-				self.kp, self.desc = self.cv_desc.compute(self.img, self.kp)
-				self.kpl = len(self.kp)
-			else:
-				kp = self.cv_det.detect(frame)
-				kp, desc = self.cv_desc.compute(frame, kp)
-				matches = self.matcher.knnMatch(self.desc, trainDescriptors=desc, k=2)
-				pairs = self.filterMatches(kp, matches)
-				lp = len(pairs)
-				rs = (lp * 100) / self.kpl
+				if self.img is None:
+					self.img = frame
+					self.kp = self.cv_det.detect(self.img)
+					self.kp, self.desc = self.cv_desc.compute(self.img, self.kp)
+					self.kpl = len(self.kp)
+				else:
+					kp = self.cv_det.detect(frame)
+					kp, desc = self.cv_desc.compute(frame, kp)
+					matches = self.matcher.knnMatch(self.desc, trainDescriptors=desc, k=2)
+					pairs = self.filterMatches(kp, matches)
+					lp = len(pairs)
+					rs = (lp * 100) / self.kpl
+		except cv2.error, e:
+			dbprint('cv2 error: %s' % e)
 		return rs
