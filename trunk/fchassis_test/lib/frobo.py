@@ -42,23 +42,19 @@ class frobo(fchassis):
 		}
 		self.dots[pin].append(dot)
 
-	def turn(self, azim, vel=0.2, err=5):
+	def turn(self, azim, err=5):
 		self.reset_counters()
-		pwr = 30
-		lpwr = 0
-		lpid = Pid(10., 1, 2)
-		lpid.range(-pwr, pwr)
-		lsz = len(self.dots[ENCODER_L])
-		rpwr = 0
-		rpid = Pid(10., 1, 2)
-		rpid.range(-pwr, pwr)
-		rsz = len(self.dots[ENCODER_R])
+		pwr = 100
 		self.dbprint('%d' % int(self.current_heading()))
 		try:
 			# maximum ~ 100 sec
 			for i in range(int(100/STEP_TIME)):
 				diff = self.heading_diff(azim, err=err)
-				self.dbprint("azim diff=%d (h:%d), acc:%s" % (diff, self.last_heading, self.last_acc))
+				self.dbprint("azim diff=%d (h:%d), acc:%s cnt:%s(%s)<>%s(%s)" % (
+					diff, self.last_heading, self.last_acc,
+					self.enc_data[ENCODER_L]['count'],self.enc_data[ENCODER_L]['pwr'],
+					self.enc_data[ENCODER_R]['count'], self.enc_data[ENCODER_R]['pwr']
+				))
 				if abs(diff) < err:
 					break
 				if diff > 0:
@@ -67,25 +63,19 @@ class frobo(fchassis):
 				else:
 					ldir = False
 					rdir = True
-				lpid.set(vel * (1 if ldir else -1))
-				rpid.set(vel * (1 if rdir else -1))
-				self.dbprint("lpwr=%s, rpwr=%s" % (pwr-lpwr, pwr-rpwr))
-				self.left_move(ldir, pwr - lpwr)
-				self.right_move(rdir, pwr - rpwr)
-				clsz = len(self.dots[ENCODER_L])
-				crsz = len(self.dots[ENCODER_R])
-				if lsz < clsz and rsz < crsz:
-					lsz = clsz
-					lvel = self.dots[ENCODER_L][-1]['v']
-					ldt = self.dots[ENCODER_L][-1]['dt']
-					lpid.step(dt=ldt, input=lvel)
-					lpwr = lpid.get()
-					rsz = crsz
-					rvel = self.dots[ENCODER_R][-1]['v']
-					rdt = self.dots[ENCODER_R][-1]['dt']
-					rpid.step(dt=rdt, input=rvel)
-					rpwr = rpid.get()
-					self.dbprint("lvel=%s, rvel=%s" % (lvel, rvel))
+				adiff = abs(diff)
+				if adiff < 20:
+					p = pwr * 0.2
+				elif adiff < 30:
+					p = pwr * 0.3
+				elif adiff < 50:
+					p = pwr * 0.5
+				elif adiff < 100:
+					p = pwr * 0.7
+				else:
+					p = pwr
+				self.left_move(ldir, p)
+				self.right_move(rdir, p)
 				self.db_state()
 				time.sleep(STEP_TIME)
 		finally:

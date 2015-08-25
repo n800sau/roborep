@@ -1,6 +1,6 @@
 #!/bin/bash
 
-AZIM=20
+AZIM=10
 
 python turn2azim.py ${AZIM} &> turn2azim.log
 echo $?

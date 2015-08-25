@@ -21,9 +21,9 @@ if __name__ == '__main__':
 		with picamera.PiCamera() as camera:
 
 			try:
-				dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.mleft['count'], c.mright['count']))
+				dbprint('BEFORE %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.mleft['count'], c.mright['count'], azim))
 				c.turn(azim)
-				dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.mleft['count'], c.mright['count']))
+				dbprint('AFTER %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.mleft['count'], c.mright['count'], azim))
 				json.dump(c.dots, file('dots.json', 'w'), indent=2)
 			finally:
 				update_img(camera)
