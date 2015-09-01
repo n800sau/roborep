@@ -3,8 +3,11 @@
 import os, json, math
 
 from PIL import Image, ImageDraw
+import scipy.interpolate as sp
+import numpy as np
 
 dots = json.load(file('dots.json'))
+
 for k in dots.keys():
 	x = 100
 	y = 100
@@ -30,11 +33,12 @@ for k in dots.keys():
 print 'x=[%s:%s] y=[%s:%s]' % (xmin, xmax, ymin, ymax)
 json.dump(dots, file('dots_processed.json', 'w'), indent=2)
 
+
 im = Image.new('RGBA', (800, 800), (240, 240, 240, 0))
 draw = ImageDraw.Draw(im)
 colors = ('red', 'blue')
 ci = 0
-zoom = 3
+zoom = 4
 for k in dots.keys():
 	clr = colors[ci]
 	ci += 1 
@@ -48,4 +52,8 @@ for k in dots.keys():
 		a_x = d['acc']['x']
 		a_y = d['acc']['y']
 		draw.line((x, y, x + a_x, y + a_y), fill='green')
+		if d['dist'] > 0 and d['dist'] < 20:
+			draw.ellipse((x-2, y-2, x+2, y+2), fill='orange', outline='orange')
+		if d.get('hit_warn', None):
+			draw.ellipse((x-4, y-4, x+4, y+4), fill='yellow', outline='red')
 im.save('/home/n800s/public_html/drawing.jpg')

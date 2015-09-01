@@ -10,6 +10,7 @@ STEP_TIME = 0.01
 class frobo(fchassis):
 
 	def __init__(self, *args, **kwds):
+		self.hit_warn = None
 		self.dots = {ENCODER_L: [], ENCODER_R: []}
 		self.compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 		self.acc = ADXL345(0x1d)
@@ -40,23 +41,25 @@ class frobo(fchassis):
 			'dist': self.curr_dist,
 			't': t,
 		}
+		if self.hit_warn:
+			dot['hit_warn'] = self.hit_warn
+			self.hit_warn = None
 		self.dots[pin].append(dot)
 
-	def turn(self, azim, err=5):
+	def turn(self, azim, err=5, stop_if=None):
 		self.reset_counters()
 		pwr = 100
-		self.dbprint('%d' % int(self.current_heading()))
+		self.dbprint('start turn h %d' % int(self.current_heading()))
 		try:
-			# maximum ~ 100 sec
-			for i in range(int(100/STEP_TIME)):
+			# maximum ~ 10 sec
+			last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
+			for i in range(int(10/STEP_TIME)):
 				diff = self.heading_diff(azim, err=err)
 				self.dbprint("azim diff=%d (h:%d), acc:%s cnt:%s(%s)<>%s(%s)" % (
 					diff, self.last_heading, self.last_acc,
-					self.enc_data[ENCODER_L]['count'],self.enc_data[ENCODER_L]['pwr'],
+					self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_L]['pwr'],
 					self.enc_data[ENCODER_R]['count'], self.enc_data[ENCODER_R]['pwr']
 				))
-				if abs(diff) < err:
-					break
 				if diff > 0:
 					ldir = True
 					rdir = False
@@ -64,9 +67,7 @@ class frobo(fchassis):
 					ldir = False
 					rdir = True
 				adiff = abs(diff)
-				if adiff < 20:
-					p = pwr * 0.2
-				elif adiff < 30:
+				if adiff < 30:
 					p = pwr * 0.3
 				elif adiff < 50:
 					p = pwr * 0.5
@@ -74,13 +75,33 @@ class frobo(fchassis):
 					p = pwr * 0.7
 				else:
 					p = pwr
-				self.left_move(ldir, p)
-				self.right_move(rdir, p)
+				if adiff < err:
+					self.dbprint('Reversing...')
+					self.left_move(not ldir, p)
+					self.right_move(not rdir, p)
+					pwr /= 2
+					time.sleep(0.5)
+					adiff = abs(self.heading_diff(azim, err=err))
+					if adiff < err:
+						break
+				else:
+					self.left_move(ldir, p)
+					self.right_move(rdir, p)
 				self.db_state()
 				time.sleep(STEP_TIME)
+				if last_counts[0] == self.enc_data[ENCODER_L]['count'] and last_counts[1] == self.enc_data[ENCODER_R]['count']:
+					last_counts[2] += 1
+					if last_counts[2] > int(2/STEP_TIME):
+						self.dbprint('Stopped moving')
+						break
+				else:
+					last_counts[2] = 0
+				if stop_if:
+					if stop_if(self):
+						break
 		finally:
 			self.stop()
-			self.dbprint('%d' % int(self.current_heading()))
+			self.dbprint('end turn h %d' % int(self.current_heading()))
 
 	def turn1(self, azim, vel=0.2, err=5):
 		self.reset_counters()
@@ -137,7 +158,7 @@ class frobo(fchassis):
 
 	def fwd_straightly(self, max_steps=5, max_secs=1, heading=None, power=50):
 		self.reset_counters()
-		pid = Pid(5., 0, 1)
+		pid = Pid(2., 0, 1)
 		pid.range(-power, power)
 		if heading is None:
 			heading = self.current_heading()
@@ -159,9 +180,26 @@ class frobo(fchassis):
 				pid.step(input=self.current_heading())
 				offset = pid.get()
 				if self.curr_dist > 0 and self.curr_dist < 20:
+					self.hit_warn = self.curr_dist
 					self.dbprint('STOP distance=%s' % self.curr_dist)
 					break
 		finally:
 			self.stop()
 			self.dbprint('%d' % int(self.current_heading()))
 
+	def stop_if_cb(self, stop_dist):
+		n = 10
+		self.update_dist()
+		while (self.curr_dist == [127] or self.curr_dist == 0) and n > 0:
+			time.sleep(0.01)
+			self.update_dist()
+			n -= 1
+		return self.curr_dist > stop_dist if self.curr_dist != [127] and self.curr_dist != 0 else False
+
+	def find_distance(self, min_dist=100, clockwise=True):
+		self.stop_if_cb(1)
+		# 10 attempt to turn
+		i = 10
+		while self.curr_dist < min_dist and i>0:
+			self.turn(self.current_heading() + (45 if clockwise else -45), stop_if=lambda c: c.stop_if_cb(min_dist))
+			i -= 1

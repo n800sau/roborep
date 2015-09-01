@@ -71,6 +71,7 @@ class FeatureProcess(object):
 					self.kp = self.cv_det.detect(self.img)
 					self.kp, self.desc = self.cv_desc.compute(self.img, self.kp)
 					self.kpl = len(self.kp)
+					dbprint('kp type:%s, desc type=%s' % (type(self.kp), type(self.desc)))
 				else:
 					kp = self.cv_det.detect(frame)
 					kp, desc = self.cv_desc.compute(frame, kp)
