@@ -19,14 +19,10 @@ if __name__ == '__main__':
 
 				fp = FeatureProcess(camera)
 				try:
-					c.turn(0)
 					update_img(camera, 'pic0.jpg')
-					fp.percent()
-					c.turn(90)
-					c.fwd_straightly(max_secs=1, max_steps=100)
 					c.turn(0)
-					dbprint('Matches %s%%' % fp.percent())
 					update_img(camera, 'pic1.jpg')
+					fp.percent()
 					c.turn(90)
 					c.fwd_straightly(max_secs=1, max_steps=100)
 					c.turn(0)
@@ -42,6 +38,11 @@ if __name__ == '__main__':
 					c.turn(0)
 					dbprint('Matches %s%%' % fp.percent())
 					update_img(camera, 'pic4.jpg')
+					c.turn(90)
+					c.fwd_straightly(max_secs=1, max_steps=100)
+					c.turn(0)
+					dbprint('Matches %s%%' % fp.percent())
+					update_img(camera, 'pic5.jpg')
 					json.dump(c.dots, file('dots.json', 'w'), indent=2)
 				finally:
 					update_img(camera)

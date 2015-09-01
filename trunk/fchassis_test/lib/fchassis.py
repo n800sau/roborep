@@ -73,7 +73,7 @@ class fchassis(object):
 
 		# Create a PyMata instance
 		#self.board = PyMata(s_dev)
-		self.board = PyMata(s_dev, verbose=False)
+		self.board = PyMata(s_dev, bluetooth=False, verbose=False)
 
 		signal.signal(signal.SIGINT, self.signal_handler)
 
@@ -214,14 +214,17 @@ class fchassis(object):
 			self.right_move(0, 0)
 			self.dbprint('both stopped')
 
+	def update_dist(self):
+		dist = self.board.get_sonar_data()[SONAR_TRIGGER]
+		self.curr_dist = dist[1]
+
 	def db_state(self):
 		pin = ENCODER_L if self.enc_data[ENCODER_L]['tick_time'] > self.enc_data[ENCODER_R]['tick_time'] else ENCODER_R
 		d = self.enc_data[pin]
-		dist = self.board.get_sonar_data()[SONAR_TRIGGER]
-		self.curr_dist = dist[1]
+		self.update_dist()
 		if d['tick_time'] > self.last_tick:
 			self.last_tick = d['tick_time']
-			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d, dist:%s" % (pin, d['name'], d['last_dt'], d['last_step'] * ENC_STEP / d['last_dt'], d['count'], dist[1]))
+			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d, dist:%s" % (pin, d['name'], d['last_dt'], d['last_step'] * ENC_STEP / d['last_dt'], d['count'], self.curr_dist))
 
 if __name__ == '__main__':
 
