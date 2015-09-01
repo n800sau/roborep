@@ -1,0 +1,3 @@
+ino serial >serial.log
+
+
