@@ -7,9 +7,10 @@
 #AZIM=350
 
 #to wall
-#AZIM=210
+AZIM=210
 
-AZIM=250
+#to balcon
+#AZIM=270
 
 python turn2azim.py ${AZIM} &> turn2azim.log
 echo $?
