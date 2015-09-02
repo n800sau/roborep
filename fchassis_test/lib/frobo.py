@@ -91,11 +91,11 @@ class frobo(fchassis):
 				time.sleep(STEP_TIME)
 				if last_counts[0] == self.enc_data[ENCODER_L]['count'] and last_counts[1] == self.enc_data[ENCODER_R]['count']:
 					last_counts[2] += 1
-					if last_counts[2] > int(2/STEP_TIME):
+					if last_counts[2] > int(1/STEP_TIME):
 						self.dbprint('Stopped moving')
 						break
 				else:
-					last_counts[2] = 0
+					last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
 				if stop_if:
 					if stop_if(self):
 						break
