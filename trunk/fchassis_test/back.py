@@ -14,7 +14,7 @@ def back(c):
 	dbprint('%s' % (compass.degrees(compass.heading())[0]))
 	try:
 		c.left_move(False, 50)
-#		c.right_move(False, 50)
+		c.right_move(False, 50)
 		time.sleep(1)
 	finally:
 		c.stop()
