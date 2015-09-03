@@ -46,8 +46,9 @@ class frobo(fchassis):
 			self.hit_warn = None
 		self.dots[pin].append(dot)
 
-	def turn(self, azim, err=5, stop_if=None):
+	def turn(self, azim, err=5, stop_if=None, move_cb=None):
 		self.reset_counters()
+		min_pwr = 10
 		pwr = 100
 		self.dbprint('start turn h %d' % int(self.current_heading()))
 		try:
@@ -75,6 +76,9 @@ class frobo(fchassis):
 					p = pwr * 0.7
 				else:
 					p = pwr
+				# to make p bigger if it is too small
+				if p < min_pwr:
+					p = min_pwr
 				if adiff < err:
 					self.dbprint('Reversing...')
 					self.left_move(not ldir, p)
@@ -93,8 +97,15 @@ class frobo(fchassis):
 					last_counts[2] += 1
 					if last_counts[2] > int(1/STEP_TIME):
 						self.dbprint('Stopped moving')
+#						if adiff > err:
+#							min_pwr += 1
+#							if min_pwr > 30:
+#								min_pwr = 30
+#						else:
 						break
 				else:
+					if move_cb:
+						move_cb(self)
 					last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
 				if stop_if:
 					if stop_if(self):
