@@ -30,10 +30,12 @@
 DHT dht(DHTPIN, DHTTYPE);
 
 // nRF24L01(+) radio attached
-RF24 radio(9, 10);
+RF24 radio(8, 9);
 
 byte master_address[6] = "ESPma";
 byte my_address[6] = "DHT11";
+
+#define LED_PIN 10
 
 // watchdog interrupt
 ISR(WDT_vect) 
@@ -51,38 +53,59 @@ void myWatchdogEnable(const byte interval)
 
 	wdt_reset();
 	set_sleep_mode (SLEEP_MODE_PWR_DOWN);
-	sleep_mode();						 // now goes to Sleep and waits for the interrupt
+	sleep_mode();						 // now goes to sleep and waits for the interrupt
 	delay(200);
 } 
+
+void blink(int times=1)
+{
+	for(int i=0; i<times; i++) {
+		digitalWrite(LED_PIN, HIGH);
+		delay(100);
+		digitalWrite(LED_PIN, LOW);
+		if(i < times) {
+			delay(200);
+		}
+	}
+}
 
 void setup() {
 	Serial.begin(115200);
 	Serial.println("DHT nrf24 trasnmitter");
-
+	pinMode(LED_PIN, OUTPUT);
 	dht.begin();
 	SPI.begin();
 	radio.begin();
+
+	// Set the PA Level low to prevent power supply related issues since this is a
+	// getting_started sketch, and the likelihood of close proximity of the devices. RF24_PA_MAX is default.
+	radio.setPALevel(RF24_PA_MAX);
+
 	radio.openWritingPipe(my_address);
 	radio.openReadingPipe(1, master_address);
+
+	radio.startListening();
+}
+
+void sleep20()
+{
+	radio.powerDown();
+
+	// sleep for a total of 20 seconds
+	myWatchdogEnable (0b100001);	// 8 seconds
+	myWatchdogEnable (0b100001);	// 8 seconds
+	myWatchdogEnable (0b100000);	// 4 seconds
+
+	// Wait a few seconds between measurements.
+//	delay(2000);
 }
 
 void loop()
 {
 
-	radio.powerDown();
-//	Serial.println("wait for 8 secs");
-	// sleep for a total of 20 seconds
-	myWatchdogEnable (0b100001);	// 8 seconds
-//	Serial.println("wait again for 8 secs");
-	myWatchdogEnable (0b100001);	// 8 seconds
-//	Serial.println("wait again for 4 secs");
-	myWatchdogEnable (0b100000);	// 4 seconds
-
 	radio.powerUp();
-	delay(5);
 
-	// Wait a few seconds between measurements.
-//	delay(2000);
+	radio.stopListening();                                    // First, stop listening so we can talk.
 
 	// Reading temperature or humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
@@ -93,64 +116,64 @@ void loop()
 	// Check if any reads failed and exit early (to try again).
 	if (isnan(h) || isnan(t)) {
 		Serial.println("Failed to read from DHT sensor!");
-		return;
-	}
-
-	// Compute heat index in Celsius (isFahreheit = false)
-	float hic = dht.computeHeatIndex(t, h, false);
-
-	int v = readVccMv();
-
-	Serial.print("H: ");
-	Serial.print(h);
-	Serial.print(" %\t");
-	Serial.print("T: ");
-	Serial.print(t);
-	Serial.print(" *C ");
-	Serial.print("Heat: ");
-	Serial.print(hic);
-	Serial.print(" *C ");
-	Serial.print("V:");
-	Serial.println(v);
-
-	radio.stopListening();                                    // First, stop listening so we can talk.
-
-	char buf[32];
-	("H" + String(int(h*1000)) + "T" + String(int(t*1000)) + "I" + String(int(hic * 1000)) + "V" + String(v)).toCharArray(buf, sizeof(buf));
-
-	if (!radio.write(buf, sizeof(buf) )){
-		Serial.println(F("Radio failed"));
+		blink(5);
 	} else {
-		Serial.println(F("Written"));
+
+		// Compute heat index in Celsius (isFahreheit = false)
+		float hic = dht.computeHeatIndex(t, h, false);
+
+		int v = readVccMv();
+
+		Serial.print("H: ");
+		Serial.print(h);
+		Serial.print(" %\t");
+		Serial.print("T: ");
+		Serial.print(t);
+		Serial.print(" *C ");
+		Serial.print("Heat: ");
+		Serial.print(hic);
+		Serial.print(" *C ");
+		Serial.print("V:");
+		Serial.println(v);
+
+
+		char buf[32];
+		("H" + String(long(h*1000)) + "T" + String(long(t*1000)) + "I" + String(long(hic * 1000)) + "V" + String(v)).toCharArray(buf, sizeof(buf));
+
+//		Serial.print(F("Sending:"));
+//		Serial.println(buf);
+
+		if (!radio.write(buf, sizeof(buf))){
+			Serial.println(F("Radio failed"));
+			blink(4);
+		} else {
+			Serial.println(F("Written"));
+
+			radio.startListening();									// Now, continue listening
+
+			unsigned long started_waiting_at = micros();			   // Set up a timeout period, get the current microseconds
+			boolean timeout = false;								   // Set up a variable to indicate if a response was received or not
+
+			while ( ! radio.available() ){							 // While nothing is received
+				if (micros() - started_waiting_at > 200000 ){			// If waited longer than 200ms, indicate timeout and exit while loop
+					timeout = true;
+					break;
+				}
+			}
+
+			if ( timeout ){											 // Describe the results
+				Serial.println(F("Failed, response timed out."));
+				blink(3);
+			}else{
+				char buf[3];
+				radio.read(buf, sizeof(buf));
+
+				Serial.print(F("Got response:"));
+				Serial.println(buf);
+				blink();
+			}
+		}
 	}
 
-//	radio.startListening();									// Now, continue listening
-
-//	unsigned long started_waiting_at = micros();			   // Set up a timeout period, get the current microseconds
-//	boolean timeout = false;								   // Set up a variable to indicate if a response was received or not
-
-//	while ( ! radio.available() ){							 // While nothing is received
-//	  if (micros() - started_waiting_at > 200000 ){			// If waited longer than 200ms, indicate timeout and exit while loop
-//		  timeout = true;
-//		  break;
-//	  }
-//	}
-
-//	if ( timeout ){											 // Describe the results
-//		Serial.println(F("Failed, response timed out."));
-//	}else{
-//		unsigned long got_time;								 // Grab the response, compare, and send to debugging spew
-//		radio.read( &got_time, sizeof(unsigned long) );
-//		unsigned long time = micros();
-
-//		// Spew it
-//		Serial.print(F("Sent "));
-//		Serial.print(time);
-//		Serial.print(F(", Got response "));
-//		Serial.print(got_time);
-//		Serial.print(F(", Round-trip delay "));
-//		Serial.print(time-got_time);
-//		Serial.println(F(" microseconds"));
-//	}
-
+	sleep20();
 }
