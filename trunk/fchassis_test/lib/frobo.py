@@ -114,7 +114,7 @@ class frobo(fchassis):
 			self.stop()
 			self.dbprint('end turn h %d' % int(self.current_heading()))
 
-	def turn1(self, azim, vel=0.2, err=5):
+	def turn_pid(self, azim, vel=0.2, err=5):
 		self.reset_counters()
 		pwr = 30
 		lpwr = 0
@@ -167,7 +167,8 @@ class frobo(fchassis):
 			self.dbprint('%d' % int(self.current_heading()))
 
 
-	def fwd_straightly(self, max_steps=5, max_secs=1, heading=None, power=50):
+	def fwd_straight(self, max_steps=5, max_secs=1, heading=None, power=50):
+		offs = self.pwr_offsets()
 		self.reset_counters()
 		pid = Pid(2., 0, 1)
 		pid.range(-power, power)
@@ -184,8 +185,8 @@ class frobo(fchassis):
 				if steps > max_steps:
 					self.dbprint('Max steps reached (%d > %d)' % (steps, max_steps))
 					break
-				self.left_move(True, lpwr)
-				self.right_move(True, rpwr)
+				self.left_move(True, offs['lmin'] + lpwr)
+				self.right_move(True, offs['rmin'] + rpwr)
 				self.db_state()
 				time.sleep(STEP_TIME)
 				pid.step(input=self.current_heading())
@@ -230,13 +231,35 @@ class frobo(fchassis):
 
 	def find_pwr_minimum(self, enc_index, fwd_dir):
 		count = self.enc_data[enc_index]['count']
+		h = self.current_heading()
 		for pwr in range(0, 100, 2):
-			self.dbprint('%s: %d' % (self.enc_data[enc_index]['name'], pwr))
-			self.left_move(fwd_dir, pwr)
+			self.dbprint('%s: %d, h: %d' % (self.enc_data[enc_index]['name'], pwr, self.current_heading()))
+			if enc_index == ENCODER_R:
+				self.right_move(fwd_dir, pwr)
+			else:
+				self.left_move(fwd_dir, pwr)
 			time.sleep(0.2)
 			self.db_state()
-			if count != self.enc_data[enc_index]['count']:
+			if count != self.enc_data[enc_index]['count'] or self.heading_diff(h, err=2):
 				break
 		self.stop()
 		return pwr
 
+	def is_really_stopped(self, secs=1.5):
+		h = self.current_heading()
+		lcount = self.enc_data[ENCODER_L]['count']
+		rcount = self.enc_data[ENCODER_R]['count']
+		self.db_state()
+		time.sleep(secs)
+		return lcount == self.enc_data[ENCODER_L]['count'] and \
+			rcount == self.enc_data[ENCODER_R]['count'] and \
+			not self.heading_diff(h, err=2)
+
+	def pwr_offsets(self):
+		lpwr = self.find_left_minimum(False)
+		while not self.is_really_stopped():
+			pass
+		rpwr = self.find_right_minimum(False)
+		while not self.is_really_stopped():
+			pass
+		return {'lmin': lpwr, 'rmin': rpwr}
