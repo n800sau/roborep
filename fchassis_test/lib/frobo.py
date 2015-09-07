@@ -214,3 +214,29 @@ class frobo(fchassis):
 		while self.curr_dist < min_dist and i>0:
 			self.turn(self.current_heading() + (45 if clockwise else -45), stop_if=lambda c: c.stop_if_cb(min_dist))
 			i -= 1
+
+	def search_around(self, stop_if_cb, clockwise=True):
+		# 36 attempt to turn 10 degree
+		for i in range(36):
+			self.turn(self.current_heading() + (10 if clockwise else -10))
+			if stop_if_cb(self):
+				break
+
+	def find_left_minimum(self, fwd_dir=True):
+		return self.find_pwr_minimum(ENCODER_L, fwd_dir)
+
+	def find_right_minimum(self, fwd_dir=True):
+		return self.find_pwr_minimum(ENCODER_R, fwd_dir)
+
+	def find_pwr_minimum(self, enc_index, fwd_dir):
+		count = self.enc_data[enc_index]['count']
+		for pwr in range(0, 100, 2):
+			self.dbprint('%s: %d' % (self.enc_data[enc_index]['name'], pwr))
+			self.left_move(fwd_dir, pwr)
+			time.sleep(0.2)
+			self.db_state()
+			if count != self.enc_data[enc_index]['count']:
+				break
+		self.stop()
+		return pwr
+

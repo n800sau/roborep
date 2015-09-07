@@ -13,9 +13,9 @@ def back(c):
 	compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 	dbprint('%s' % (compass.degrees(compass.heading())[0]))
 	try:
-		c.left_move(False, 50)
-		c.right_move(False, 50)
-		time.sleep(1)
+		c.left_move(False, 100)
+		c.right_move(False, 100)
+		time.sleep(3)
 	finally:
 		c.stop()
 		dbprint('%s' % (compass.degrees(compass.heading())[0]))

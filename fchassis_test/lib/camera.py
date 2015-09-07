@@ -23,21 +23,21 @@ EXTRACTOR = 'BRIEF'
 
 MATCHER = 'BruteForce-Hamming'
 
-def set_params(camera):
-	camera.resolution = (320, 240)
+def set_params(camera, **params):
+	camera.resolution = params.get('resolution', (320, 240))
 	camera.exposure_mode = 'auto'
 	camera.brightness = 70
 	camera.contrast = 70
 
-def update_img(camera, fname=None):
+def update_img(camera, fname=None, **params):
 	fname = os.path.join(os.path.expanduser('~/public_html'), fname or 'picam_0.jpg')
-	set_params(camera)
+	set_params(camera, **params)
 	camera.capture(fname, use_video_port=False)
 
-def capture_cvimage(camera):
+def capture_cvimage(camera, **params):
 	# initialize the camera and grab a reference to the raw camera capture
 	stream = PiRGBArray(camera)
-	set_params(camera)
+	set_params(camera, **params)
 	# grab an image from the camera
 	camera.capture(stream, format="bgr", use_video_port=True)
 	return stream.array
@@ -103,6 +103,9 @@ class ImageSearch(object):
 			'kpl': len(kp),
 		}
 
+	def image_names(self):
+		return self.idata.keys()
+
 	def filter_matches(self, name, kp, matches, ratio = 0.75):
 		ikp = self.idata[name]['kp']
 		mkp1, mkp2 = [], []
@@ -119,7 +122,8 @@ class ImageSearch(object):
 		rs = None
 		if frame is None and self.camera:
 			frame = capture_cvimage(self.camera)
-			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+#			frame = capture_cvimage(self.camera, resolution=(1280, 960))
+		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		if not frame is None:
 			kp = self.cv_det.detect(gray)
 			kp, desc = self.cv_desc.compute(gray, kp)

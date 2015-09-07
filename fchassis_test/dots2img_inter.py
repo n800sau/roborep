@@ -52,15 +52,16 @@ colors = ('red', 'blue')
 ci = 0
 zoom = 4
 for k in dots.keys():
-	clr = colors[ci]
-	ci += 1 
-	x = dots[k][0]['x']*zoom
-	y = dots[k][0]['y']*zoom
-	draw.ellipse((x-5, y-5, x+5, y+5), fill=clr, outline=clr)
-	for d in dots[k][1:]:
-		draw.line((x, y, d['x']*zoom, d['y']*zoom), fill=clr)
-		x = d['x']*zoom
-		y = d['y']*zoom
+	if dots[k]:
+		clr = colors[ci]
+		ci += 1 
+		x = dots[k][0]['x']*zoom
+		y = dots[k][0]['y']*zoom
+		draw.ellipse((x-5, y-5, x+5, y+5), fill=clr, outline=clr)
+		for d in dots[k][1:]:
+			draw.line((x, y, d['x']*zoom, d['y']*zoom), fill=clr)
+			x = d['x']*zoom
+			y = d['y']*zoom
 #		a_x = d['acc']['x']
 #		a_y = d['acc']['y']
 #		draw.line((x, y, x + a_x, y + a_y), fill='green')
