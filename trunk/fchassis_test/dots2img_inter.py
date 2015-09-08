@@ -41,7 +41,7 @@ for k in dots.keys():
 	ylist = [d['y'] for d in dots[k]]
 	fx = sp.interp1d(tlist, xlist, kind='linear')
 	fy = sp.interp1d(tlist, ylist, kind='linear')
-	tnew = np.linspace(min(tlist), max(tlist), 50)
+	tlist = np.linspace(min(tlist), max(tlist), 50)
 	dots[k] = []
 	for i in range(len(tlist)):
 		dots[k].append({'t': tlist[i], 'x': fx(tlist[i]), 'y': fy(tlist[i])})

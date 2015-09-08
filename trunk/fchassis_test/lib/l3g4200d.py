@@ -68,7 +68,7 @@ class l3g4200:
 
 		# CTRL_REG5 controls high-pass filtering of outputs, use it
 		# if you'd like:
-		self.bus.write_byte_data(self.address, self.CTRL_REG5, 0)
+		self.bus.write_byte_data(self.address, self.CTRL_REG5, 0x10)
 
 
 	def getWhoAmI(self):

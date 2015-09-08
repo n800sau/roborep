@@ -131,7 +131,7 @@ class ImageSearch(object):
 			matches = self.matcher.knnMatch(idesc, trainDescriptors=desc, k=2)
 			p1, p2, kp_pairs = self.filter_matches(name, kp, matches)
 			if len(p1) >= 4:
-				H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 3.0)
+				H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 2.0)
 				dbprint('%d / %d  inliers/matched' % (np.sum(status), len(status)))
 				pg = [p[0] for p in zip(p2, status) if p[1][0]]
 				pnt = np.average(pg, axis=0)

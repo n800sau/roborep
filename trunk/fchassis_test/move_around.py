@@ -23,7 +23,7 @@ if __name__ == '__main__':
 			try:
 				print 'BEFORE %s cm to %s' % (c.curr_dist, c.compass.heading())
 				for i in range(5):
-					c.fwd_straightly(max_secs=20, max_steps=10000)
+					c.fwd_straight(max_secs=20, max_steps=10000)
 					c.find_distance(60, clockwise=clockwise)
 				print 'AFTER %s cm to %s' % (c.curr_dist, c.compass.heading())
 				json.dump(c.dots, file('dots.json', 'w'), indent=2)

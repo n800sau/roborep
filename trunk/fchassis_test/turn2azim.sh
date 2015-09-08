@@ -13,7 +13,7 @@
 #AZIM=270
 
 
-AZIM=350
+AZIM=210
 
 python turn2azim.py ${AZIM} &> turn2azim.log
 echo $?

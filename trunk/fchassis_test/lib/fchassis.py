@@ -226,6 +226,9 @@ class fchassis(object):
 			self.last_tick = d['tick_time']
 			self.dbprint("pin: %d (%s), dt:%s, v:%.2f, cnt:%d, dist:%s" % (pin, d['name'], d['last_dt'], d['last_step'] * ENC_STEP / d['last_dt'], d['count'], self.curr_dist))
 
+	def m2steps(self, m):
+		return int(m / ENC_STEP)
+
 if __name__ == '__main__':
 
 	s_port = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AH00ZTCM-if00-port0'
