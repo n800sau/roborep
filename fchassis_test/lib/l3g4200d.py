@@ -3,6 +3,7 @@
 import math
 import smbus
 from time import *
+import struct
 
 class l3g4200:
 
@@ -74,14 +75,18 @@ class l3g4200:
 		return self.bus.read_byte_data(self.address, self.WHO_AM_I)
 
 	def getDieTemperature(self):
-		temp = self.bus.read_word_data(self.address, self.OUT_TEMP)
-		return round(35 + (temp + 13200) / 280, 2)
+		temp = self.bus.read_word_data(self.address, self.OUT_TEMP | 0x80)
+		return temp
+#		return round(35 + (temp + 13200.) / 280, 2)
 
 	def getAxes(self):
-		gyro_x = self.bus.read_word_data(self.address, self.OUT_X_L)
-		gyro_y = self.bus.read_word_data(self.address, self.OUT_Y_L)
-		gyro_z = self.bus.read_word_data(self.address, self.OUT_Z_L)
-		return (gyro_x, gyro_y, gyro_z)
+		data = self.bus.read_i2c_block_data(self.address, self.OUT_X_L | 0x80, 6)
+		data = struct.pack('BBBBBB', *data)
+		x, y, z = struct.unpack('<hhh', data)
+#		x = struct.unpack('>h', struct.pack('>H', self.bus.read_word_data(self.address, self.OUT_X_L | 0x80)))
+#		y = struct.unpack('>h', struct.pack('>H', self.bus.read_word_data(self.address, self.OUT_Y_L | 0x80)))
+#		z = struct.unpack('>h', struct.pack('>H', self.bus.read_word_data(self.address, self.OUT_Z_L | 0x80)))
+		return (x, y, z)
 
 	def getDegPerSecAxes(self):
 		(gyro_x, gyro_y, gyro_z) = self.getAxes()
@@ -92,10 +97,14 @@ if __name__ == "__main__":
 	import time
 	# http://magnetic-declination.com/Great%20Britain%20(UK)/Harrogate#
 	gyro = l3g4200(1)
+	print 'Who:%s' % gyro.getWhoAmI()
 	while True:
-		sys.stdout.write("\r%d %d %d          " % gyro.getDegPerSecAxes())
-		sys.stdout.flush()
-		time.sleep(0.5)
+		st = gyro.bus.read_byte_data(gyro.address, gyro.STATUS_REG)
+		if st:
+			x,y,z = gyro.getDegPerSecAxes()
+			sys.stdout.write("\rT:%d, %g %g %g          " % (gyro.getDieTemperature(), x, y, z))
+			sys.stdout.flush()
+#			time.sleep(0.5)
 
 
 
