@@ -217,9 +217,33 @@ class frobo(fchassis):
 			i -= 1
 
 	def search_around(self, stop_if_cb, clockwise=True):
+		offs = {True: self.pwr_offsets(fwd_dir=True), False: self.pwr_offsets(fwd_dir=False)}
+		ldir,rdir = (True, False) if clockwise else (False, True)
+		ih = self.compass.heading()
+		last_diff = 0
+		growing = True
+		while True:
+			self.left_move(ldir, offs[ldir]['lmin'] + 20)
+			self.right_move(rdir, offs[rdir]['rmin'] + 20)
+			time.sleep(0.3)
+			self.wait_for_stop()
+			h = self.compass.heading()
+			adiff = abs(angle_diff(ih, h))
+			if growing:
+				if adiff < last_diff - 5:
+					growing = False
+			else:
+				if adiff > last_diff + 5:
+					break
+			last_diff = adiff
+			if stop_if_cb(self):
+				break
+
+	def search_around1(self, stop_if_cb, clockwise=True):
 		# 36 attempt to turn 10 degree
 		for i in range(36):
 			self.turn(self.current_heading() + (10 if clockwise else -10))
+			self.wait_for_stop()
 			if stop_if_cb(self):
 				break
 
@@ -245,6 +269,11 @@ class frobo(fchassis):
 		self.stop()
 		return pwr
 
+	def wait_for_stop(self):
+		self.stop()
+		while not self.is_really_stopped(secs=1):
+			pass
+
 	def is_really_stopped(self, secs=1.5):
 		h = self.current_heading()
 		lcount = self.enc_data[ENCODER_L]['count']
@@ -255,11 +284,12 @@ class frobo(fchassis):
 			rcount == self.enc_data[ENCODER_R]['count'] and \
 			not self.heading_diff(h, err=2)
 
-	def pwr_offsets(self):
-		lpwr = self.find_left_minimum(False)
+	def pwr_offsets(self, fwd_dir=True):
+		lpwr = self.find_left_minimum(fwd_dir=fwd_dir)
 		while not self.is_really_stopped():
 			pass
-		rpwr = self.find_right_minimum(False)
-		while not self.is_really_stopped():
-			pass
+		rpwr = self.find_right_minimum(fwd_dir=fwd_dir)
+		for i in range(10):
+			if self.is_really_stopped():
+				break
 		return {'lmin': lpwr, 'rmin': rpwr}
