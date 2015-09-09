@@ -32,10 +32,13 @@ DHT dht(DHTPIN, DHTTYPE);
 // nRF24L01(+) radio attached
 RF24 radio(8, 9);
 
+int failed_radio_count = 0;
+
 byte master_address[6] = "ESPma";
 byte my_address[6] = "DHT11";
 
 #define LED_PIN 10
+#define RESET_PIN 5
 
 // watchdog interrupt
 ISR(WDT_vect) 
@@ -70,6 +73,7 @@ void blink(int times=1)
 }
 
 void setup() {
+	pinMode(RESET_PIN, INPUT);
 	Serial.begin(115200);
 	Serial.println("DHT nrf24 trasnmitter");
 	pinMode(LED_PIN, OUTPUT);
@@ -145,9 +149,11 @@ void loop()
 
 		if (!radio.write(buf, sizeof(buf))){
 			Serial.println(F("Radio failed"));
+			failed_radio_count++;
 			blink(4);
 		} else {
 			Serial.println(F("Written"));
+			failed_radio_count = 0;
 
 			radio.startListening();									// Now, continue listening
 
@@ -173,6 +179,17 @@ void loop()
 				blink();
 			}
 		}
+	}
+
+	if(failed_radio_count > 10) {
+		// reset
+		Serial.println("Reset");
+		pinMode(RESET_PIN, OUTPUT);
+		digitalWrite(RESET_PIN, HIGH);
+		delay(500);
+		digitalWrite(RESET_PIN, LOW);
+		delay(1000);
+		pinMode(RESET_PIN, INPUT);
 	}
 
 	sleep20();
