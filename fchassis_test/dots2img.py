@@ -8,6 +8,9 @@ import numpy as np
 
 dots = json.load(file('dots.json'))
 
+kleft = "2"
+kright = "3"
+
 for k in dots.keys():
 	x = 100
 	y = 100
@@ -15,21 +18,25 @@ for k in dots.keys():
 	xmax = 0
 	ymin = 0
 	ymax = 0
-	for d in dots[k]:
-		d['dX'] = math.sin(math.radians(d['heading']))
-		d['dY'] = math.cos(math.radians(d['heading']))
-		x += d['dX']
-		y += d['dY']
-		d['x'] = x
-		d['y'] = y
-		if x < xmin:
-			xmin = x
-		if x > xmax:
-			xmax = x
-		if y < ymin:
-			ymin = y
-		if y > ymax:
-			ymax = y
+	if dots[k]:
+		d = dots[k][0]
+		x += (-1 if k == kleft else 1) * math.sin(math.radians(d['heading']))
+		y += (-1 if k == kleft else 1) * 20 * math.cos(math.radians(d['heading']))
+		for d in dots[k]:
+			d['dX'] = math.sin(math.radians(d['heading']))
+			d['dY'] = math.cos(math.radians(d['heading']))
+			x += d['dX']
+			y += d['dY']
+			d['x'] = x
+			d['y'] = y
+			if x < xmin:
+				xmin = x
+			if x > xmax:
+				xmax = x
+			if y < ymin:
+				ymin = y
+			if y > ymax:
+				ymax = y
 print 'x=[%s:%s] y=[%s:%s]' % (xmin, xmax, ymin, ymax)
 json.dump(dots, file('dots_processed.json', 'w'), indent=2)
 
