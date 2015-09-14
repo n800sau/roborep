@@ -2,7 +2,7 @@
 #include <WiFiClient.h>
 #include <DHT.h>
 #define DHTTYPE DHT11
-#define DHTPIN	12
+#define DHTPIN	5
 
 const char *thingspeak_server = "184.106.153.149";
 
@@ -12,8 +12,7 @@ const char *apiKey = API_KEY;
 const char* ssid	 = SSID;
 const char* password = PASSWORD;
 
-int ledPin = 5; // LED is attached to ESP8266 pin 5.
-int ledState = HIGH;
+int LED_PIN = 4; // LED is attached to ESP8266 pin 5.
 
 // Initialize DHT sensor 
 // NOTE: For working with a faster than ATmega328p 16 MHz Arduino chip, like an ESP8266,
@@ -25,40 +24,49 @@ int ledState = HIGH;
 // This is for the ESP8266 processor on ESP-01 
 DHT dht(DHTPIN, DHTTYPE, 11); // 11 works fine for ESP8266
 
+void blink(int times=1)
+{
+	for(int i=0; i<times; i++) {
+		digitalWrite(LED_PIN, HIGH);
+		delay(100);
+		digitalWrite(LED_PIN, LOW);
+		if(i < times) {
+			delay(200);
+		}
+	}
+}
+
 
 void setup() 
 {
 	Serial.begin(115200);
-	Serial1.begin(115200);
 
 	// Connect to WiFi network
 	WiFi.begin(ssid, password);
-	Serial1.print("\n\r \n\rWorking to connect");
+	Serial.print("\n\r \n\rWorking to connect");
 
 	// Wait for connection
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(500);
-		Serial1.print(".");
+		Serial.print(".");
 	}
-	Serial1.println("");
-	Serial1.println("DHT Weather Reading Server");
-	Serial1.print("Connected to ");
-	Serial1.println(ssid);
-	Serial1.print("IP address: ");
-	Serial1.println(WiFi.localIP());
+	Serial.println("");
+	Serial.println("DHT Weather Reading Server");
+	Serial.print("Connected to ");
+	Serial.println(ssid);
+	Serial.print("IP address: ");
+	Serial.println(WiFi.localIP());
 
 	dht.begin();		   // initialize temperature sensor
 
-	pinMode(ledPin, OUTPUT); // Set LED pin (5) as an output
-	digitalWrite(ledPin, LOW);
+	pinMode(LED_PIN, OUTPUT); // Set LED pin (5) as an output
+	digitalWrite(LED_PIN, LOW);
 	delay(3000);
 
 }
 
 void loop() 
 {
-	digitalWrite(ledPin, ledState);
-	ledState = !ledState;
 
 	WiFiClient client;
 	if (client.connect(thingspeak_server,80)) {  //   "184.106.153.149" or api.thingspeak.com
@@ -67,18 +75,22 @@ void loop()
 		// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
 		float humidity = dht.readHumidity();		  // Read humidity (percent)
 		float temp_c = dht.readTemperature(false);	   // Read temperature as Fahrenheit
+		float v = ESP.getVcc() / 1000.;
 		if(isnan(humidity) || isnan(temp_c)) {
-			Serial1.println("Failed to read from DHT sensor!");
+			Serial.println("Failed to read from DHT sensor!");
+			blink(2);
 			delay(500);
 		} else {
-			Serial1.print("T:");
-			Serial1.print(temp_c);
-			Serial1.print(", H:");
-			Serial1.println(humidity);
+			blink();
+			Serial.print("T:");
+			Serial.print(temp_c);
+			Serial.print(", H:");
+			Serial.println(humidity);
 
 			String postStr = String(apiKey) +
 				"&field1=" + String(temp_c) +
 				"&field2=" + String(humidity) +
+				"&field3=" + String(v) +
 				"\r\n\r\n";
 
 			client.print("POST /update HTTP/1.1\n");
@@ -92,11 +104,12 @@ void loop()
 			client.print(postStr);
 			client.stop();
 
-			Serial1.println("Data send to Thingspeak");
-			ESP.deepSleep(300000000L, WAKE_RF_DEFAULT); // Sleep for 300 seconds
+			Serial.println("Data send to Thingspeak");
+			ESP.deepSleep(10000000L, WAKE_RF_DEFAULT); // Sleep for 10 seconds
 		}
 	} else {
-		Serial1.println("Http connection failed");
+		blink(3);
+		Serial.println("Http connection failed");
 		delay(500);
 	}
 }
