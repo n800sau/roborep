@@ -35,12 +35,14 @@ const char *s_timestamp(const double *dt)
 	static char rs[50];
 	if(dt) {
 		tv.tv_sec = (time_t)*dt;
-		tv.tv_usec = (suseconds_t)(long(((*dt) * 1000000)) % 1000000);
+		tv.tv_usec = suseconds_t(int64_t(*dt * 1000000) % 1000000);
 	} else {
 		gettimeofday(&tv, NULL);
 	}
+//	syslog(LOG_NOTICE, "ts2 = %d . %d", tv.tv_sec, tv.tv_usec);
 	struct tm *st = localtime(&tv.tv_sec);
 	sprintf(rs, "%.4d.%.2d.%.2d %.2d:%.2d:%.2d.%6.6ld", st->tm_year+1900, st->tm_mon+1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec, tv.tv_usec);
+//	syslog(LOG_NOTICE, "ts3 = %s", rs);
 	return rs;
 }
 
@@ -508,6 +510,7 @@ void ReServant::json2redislist(int list_id)
 {
 	double t = dtime();
 	json_t *js = json_object();
+//	syslog(LOG_NOTICE, "ts1 = %f", t);
 	json_object_set_new(js, "timestamp", json_real(t));
 	if(fill_json(js, list_id)) {
 		char *jstr = json_dumps(js, JSON_INDENT(4));

@@ -1,10 +1,14 @@
+I2CDEV=/dev/i2c-1
+
+
 CC=g++
-CCOPTS=-L.
+CCOPTS=-L. -DI2CDEV=\"$(I2CDEV)\"
 STRIP=-strip
 SRCS=I2CWire.cpp
 OBJECTS=I2CWire.o
 HEADERS=I2CWire.h
 NAME=libi2cwire.a
+
 
 .cpp.o: $(HEADERS)
 	$(CC) $(CCOPTS) -c $<

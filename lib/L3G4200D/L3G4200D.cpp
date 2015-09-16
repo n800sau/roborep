@@ -82,10 +82,6 @@ void L3G4200D::stop_state(json_t *js)
 void L3G4200D::enableDefault(int scale)
 {
 	i2cwire.selectDevice(m_Address, "L3G4200D");
-  // 0x0F = 0b00001111
-  // Normal power mode, all axes enabled
-	i2cwire.writeToDevice(L3G4200D_CTRL_REG1, 0x0F);
-
   //From  Jim Lindblom of Sparkfun's code
 
   // Enable x, y, z and turn off power down:
@@ -124,7 +120,7 @@ bool L3G4200D::read(vector &g)
 	// assert the MSB of the address to get the gyro 
 	// to do slave-transmit subaddress updating.
 	i2cwire.selectDevice(m_Address, "L3G4200D");
-	rs = i2cwire.requestFromDevice(L3G4200D_OUT_X_L | (1 << 7), 6, (uint8_t*)buf) == 6;
+	rs = i2cwire.requestFromDevice(L3G4200D_OUT_X_L | 0x80, 6, (uint8_t*)buf) == 6;
 
 	g.x = buf[0];
 	g.y = buf[1];
