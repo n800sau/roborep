@@ -21,37 +21,20 @@ raspiCamServant::raspiCamServant(const char *cam_yml):ReServant("raspiCamServant
 {
 	const static pRASPICAM_CMD_FUNC cmdlist[] = {
 		new RASPICAM_CMD_FUNC("find_markers", &raspiCamServant::find_markers),
+		new RASPICAM_CMD_FUNC("start_camera", &raspiCamServant::start_camera),
+		new RASPICAM_CMD_FUNC("stop_camera", &raspiCamServant::stop_camera),
 	};
 	this->setCmdList((pCMD_FUNC *)cmdlist, sizeof(cmdlist)/sizeof(cmdlist[0]));
 }
 
 bool raspiCamServant::create_servant()
 {
-	bool rs = ReServant::create_servant();
-	if(rs) {
-		//set camera params
-		camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
-		camera.set(CV_CAP_PROP_BRIGHTNESS, 70);
-//			camera.set(CV_CAP_PROP_FRAME_WIDTH, 2592);
-//			camera.set(CV_CAP_PROP_FRAME_HEIGHT, 1944);
-		camera.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-		camera.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-		if(cam_yml) {
-			syslog(LOG_NOTICE, "Use %s", cam_yml);
-			camParam.readFromXMLFile(cam_yml);
-		}
-		if (!camera.open()) {
-			syslog(LOG_ERR, "Error opening the camera");
-		} else {
-			sleep(4);
-		}
-	}
-	return rs;
+	return ReServant::create_servant();
 }
 
 void raspiCamServant::destroy_servant()
 {
-	camera.release();
+	stop_camera();
 	ReServant::destroy_servant();
 }
 
@@ -94,8 +77,41 @@ void raspiCamServant::loop()
 	ReServant::loop();
 }
 
+void raspiCamServant::start_camera(json_t *js)
+{
+	stop_camera();
+	//set camera params
+	camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
+	camera.set(CV_CAP_PROP_BRIGHTNESS, 70);
+//			camera.set(CV_CAP_PROP_FRAME_WIDTH, 2592);
+//			camera.set(CV_CAP_PROP_FRAME_HEIGHT, 1944);
+	camera.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+	camera.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+	if(cam_yml) {
+		syslog(LOG_NOTICE, "Use %s", cam_yml);
+		camParam.readFromXMLFile(cam_yml);
+	}
+	if (!camera.open()) {
+		syslog(LOG_ERR, "Error opening the camera");
+	} else {
+		sleep(4);
+		syslog(LOG_NOTICE, "Camera started");
+	}
+}
+
+void raspiCamServant::stop_camera(json_t *js)
+{
+	if(camera.isOpened()) {
+		camera.release();
+		syslog(LOG_NOTICE, "Camera stopped");
+	}
+}
+
 void raspiCamServant::find_markers(json_t *js)
 {
+	if(!camera.isOpened()) {
+		start_camera();
+	}
 	const char *imgpath = json_string_value(json_object_get(js, "path"));
 	bool draw_markers = json_is_true(json_object_get(js, "draw_markers"));
 	cv::Mat image;
