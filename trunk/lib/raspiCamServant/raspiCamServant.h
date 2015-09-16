@@ -21,6 +21,8 @@ class raspiCamServant:public ReServant
 		virtual bool fill_json(json_t *js, int list_id);
 		void call_cmd(const pCMD_FUNC cmd, json_t *js);
 		void find_markers(json_t *js);
+		void start_camera(json_t *js=NULL);
+		void stop_camera(json_t *js=NULL);
 
 	public:
 		raspiCamServant(const char *cam_yml=NULL);
