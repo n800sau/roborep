@@ -50,26 +50,23 @@ void raspiCamServant::call_cmd(const pCMD_FUNC cmd, json_t *js)
 
 bool raspiCamServant::fill_json(json_t *js, int list_id)
 {
-	bool rs = markers.size() > 0;
 	syslog(LOG_NOTICE, "has %d markers", markers.size());
-	if(rs) {
-		json_t *mjsl = json_array();
-		for(std::vector<aruco::Marker>::iterator m = markers.begin(); m != markers.end(); m++) {
-			json_t *mjs = json_object();
-			json_t *rjsl = json_array();
-			for (int i=0; i<4; i++) {
-				json_t *rjs = json_object();
-				json_object_set_new(rjs, "x", json_real((*m)[i].x));
-				json_object_set_new(rjs, "y", json_real((*m)[i].y));
-				json_array_append(rjsl, rjs);
-			}
-			json_object_set_new(mjs, "coords", rjsl);
-			json_object_set_new(mjs, "id", json_integer((*m).id));
-			json_array_append(mjsl, mjs);
+	json_t *mjsl = json_array();
+	for(std::vector<aruco::Marker>::iterator m = markers.begin(); m != markers.end(); m++) {
+		json_t *mjs = json_object();
+		json_t *rjsl = json_array();
+		for (int i=0; i<4; i++) {
+			json_t *rjs = json_object();
+			json_object_set_new(rjs, "x", json_real((*m)[i].x));
+			json_object_set_new(rjs, "y", json_real((*m)[i].y));
+			json_array_append(rjsl, rjs);
 		}
-		json_object_set_new(js, "markers", mjsl);
+		json_object_set_new(mjs, "coords", rjsl);
+		json_object_set_new(mjs, "id", json_integer((*m).id));
+		json_array_append(mjsl, mjs);
 	}
-	return rs;
+	json_object_set_new(js, "markers", mjsl);
+	return true;
 }
 
 void raspiCamServant::loop()
