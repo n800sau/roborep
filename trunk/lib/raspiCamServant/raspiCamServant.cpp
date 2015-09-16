@@ -1,4 +1,7 @@
 #include "raspiCamServant.h"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <aruco/cvdrawingutils.h>
 #include <unistd.h>
 #include <math.h>
 #include <syslog.h>
@@ -26,21 +29,21 @@ bool raspiCamServant::create_servant()
 {
 	bool rs = ReServant::create_servant();
 	if(rs) {
+		//set camera params
+		camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
+		camera.set(CV_CAP_PROP_BRIGHTNESS, 70);
+//			camera.set(CV_CAP_PROP_FRAME_WIDTH, 2592);
+//			camera.set(CV_CAP_PROP_FRAME_HEIGHT, 1944);
+		camera.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+		camera.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+		if(cam_yml) {
+			syslog(LOG_NOTICE, "Use %s", cam_yml);
+			camParam.readFromXMLFile(cam_yml);
+		}
 		if (!camera.open()) {
 			syslog(LOG_ERR, "Error opening the camera");
 		} else {
-			//set camera params
-			camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
-			camera.set(CV_CAP_PROP_BRIGHTNESS, 70);
-//			camera.set(CV_CAP_PROP_FRAME_WIDTH, 2592);
-//			camera.set(CV_CAP_PROP_FRAME_HEIGHT, 1944);
-			camera.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-			camera.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
 			sleep(4);
-			if(cam_yml) {
-				syslog(LOG_NOTICE, "Use %s", cam_yml);
-				camParam.readFromXMLFile(cam_yml);
-			}
 		}
 	}
 	return rs;
@@ -64,16 +67,67 @@ void raspiCamServant::call_cmd(const pCMD_FUNC cmd, json_t *js)
 
 bool raspiCamServant::fill_json(json_t *js, int list_id)
 {
-	return false;
+	bool rs = markers.size() > 0;
+	syslog(LOG_NOTICE, "has %d markers", markers.size());
+	if(rs) {
+		json_t *mjsl = json_array();
+		for(std::vector<aruco::Marker>::iterator m = markers.begin(); m != markers.end(); m++) {
+			json_t *mjs = json_object();
+			json_t *rjsl = json_array();
+			for (int i=0; i<4; i++) {
+				json_t *rjs = json_object();
+				json_object_set_new(rjs, "x", json_real((*m)[i].x));
+				json_object_set_new(rjs, "y", json_real((*m)[i].y));
+				json_array_append(rjsl, rjs);
+			}
+			json_object_set_new(mjs, "coords", rjsl);
+			json_object_set_new(mjs, "id", json_integer((*m).id));
+			json_array_append(mjsl, mjs);
+		}
+		json_object_set_new(js, "markers", mjsl);
+	}
+	return rs;
 }
 
 void raspiCamServant::loop()
 {
-	json2redislist();
 	ReServant::loop();
 }
 
 void raspiCamServant::find_markers(json_t *js)
 {
-	syslog(LOG_DEBUG, "find markers requested");
+	const char *imgpath = json_string_value(json_object_get(js, "path"));
+	bool draw_markers = json_is_true(json_object_get(js, "draw_markers"));
+	cv::Mat image;
+	markers.clear();
+	try
+	{
+
+		camera.grab();
+		camera.retrieve(image);
+
+		syslog(LOG_NOTICE, "captured dim: %dx%d", image.cols, image.rows);
+		//resizes the parameters to fit the size of the input image
+		camParam.resize(image.size());
+
+		aruco::MarkerDetector mDetector;
+		//read the input image
+		//Ok, let's detect
+		mDetector.detect(image, markers, camParam, markerSize);
+
+		if(imgpath) {
+			if(draw_markers) {
+				cv::cvtColor(image, image, CV_GRAY2BGR);
+				//for each marker, draw info and its boundaries in the image
+				for (unsigned int i=0; i<markers.size(); i++) {
+					markers[i].draw(image, cv::Scalar(0,0,255), 2);
+				}
+			}
+			cv::imwrite(imgpath, image);
+		}
+		// push markers to redis queue
+		json2redislist();
+	} catch (std::exception &ex) {
+		syslog(LOG_ERR, "Exception : %s", ex.what());
+	}
 }
