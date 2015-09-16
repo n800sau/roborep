@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
 			try:
 				dbprint('BEFORE %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.mleft['count'], c.mright['count'], azim))
-				c.turn(azim, err=2)
+				c.turn_fast(azim, err=2)
 				dbprint('AFTER %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.mleft['count'], c.mright['count'], azim))
 				time.sleep(3)
 				dbprint('AFTER WAIT %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.mleft['count'], c.mright['count'], azim))

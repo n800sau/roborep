@@ -12,8 +12,9 @@ i = 0
 def stop_cb(c, so, camera):
 	global i
 	rs = False
-	frame = capture_cvimage(camera)
-#	frame = capture_cvimage(camera, resolution=(1280, 960))
+#	frame = capture_cvimage(camera)
+	frame = capture_cvimage(camera, resolution=(1280, 960))
+#	frame = capture_cvimage(camera, resolution=(2592,1944))
 	for n in so.image_names():
 		fdata = so.find_image(n, frame=frame)
 		if not fdata is None:
@@ -37,10 +38,14 @@ if __name__ == '__main__':
 		with picamera.PiCamera() as camera:
 
 			so = ImageSearch(camera)
-			so.add_image('owl', 'images/1sm.png')
-			so.add_image('elephant', 'images/2sm.png')
-			so.add_image('cat', 'images/3sm.png')
-			so.add_image('goat', 'images/4sm.png')
+			data = (
+				('a', 'images/a.png'),
+				('b', 'images/b.png'),
+				('c', 'images/c.png'),
+				('d', 'images/d.png'),
+				('f', 'images/f.png'),
+				('g', 'images/g.png'),
+			)
 
 			try:
 				c.update_dist()

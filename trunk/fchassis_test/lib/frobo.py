@@ -46,7 +46,130 @@ class frobo(fchassis):
 			self.hit_warn = None
 		self.dots[pin].append(dot)
 
-	def turn(self, azim, err=5, stop_if=None, move_cb=None):
+	# turn in steps
+	def turn_in_steps(self, azim, err=5, stop_if=None, move_cb=None, power_offsets=None):
+		PWR_STEP = 2
+		MOVE_STEP_TIME = 0.3
+		self.wait_until_stop()
+		if power_offsets is None:
+			power_offsets = self.pwr_offsets()
+		lpwr = power_offsets['lmin']
+		rpwr = power_offsets['rmin']
+		self.reset_counters()
+		self.dbprint('start turn h %d' % int(self.current_heading()))
+		try:
+			last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
+			last_adiff = abs(self.heading_diff(azim, err=err))
+			for i in range(100):
+				diff = self.heading_diff(azim, err=err)
+				self.dbprint("azim diff=%d (h:%d), acc:%s cnt:%s(%s)<>%s(%s)" % (
+					diff, self.last_heading, self.last_acc,
+					self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_L]['pwr'],
+					self.enc_data[ENCODER_R]['count'], self.enc_data[ENCODER_R]['pwr']
+				))
+				if diff > 0:
+					ldir = True
+					rdir = False
+				else:
+					ldir = False
+					rdir = True
+				adiff = abs(diff)
+				if adiff < err:
+					# reverse
+					self.dbprint('Break!!!')
+					self.left_move(not ldir, 100)
+					self.right_move(not rdir, 100)
+					time.sleep(0.4)
+					break
+				if last_adiff < adiff:
+					# too fast, slow down
+					lpwr -= POWER_STEP
+					rpwr -= POWER_STEP
+					if lpwr <= 0:
+						lpwr = 1
+					if rpwr <= 0:
+						rpwr = 1
+				self.left_move(ldir, lpwr)
+				self.right_move(rdir, rpwr)
+				time.sleep(MOVE_STEP_TIME)
+				self.stop()
+				self.wait_until_stop()
+				self.db_state()
+				if last_counts[0] == self.enc_data[ENCODER_L]['count'] and last_counts[1] == self.enc_data[ENCODER_R]['count']:
+					last_counts[2] += 1
+					if last_counts[2] > int(1/STEP_TIME):
+						self.dbprint('Stopped moving')
+						lpwr += POWER_STEP
+						rpwr += POWER_STEP
+						if lpwr >= 100 or rpwr >= 100:
+							break
+						last_counts[2] = 0
+				else:
+					if move_cb:
+						move_cb(self)
+					last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
+				if stop_if:
+					if stop_if(self):
+						break
+		finally:
+			self.stop()
+			self.dbprint('end turn h %d' % int(self.current_heading()))
+
+	def turn(self, azim, err=5, stop_if=None, move_cb=None, power_offsets=None):
+		if power_offsets is None:
+			power_offsets = self.pwr_offsets()
+		lpwr = power_offsets['lmin']
+		rpwr = power_offsets['rmin']
+		self.reset_counters()
+		self.dbprint('start turn h %d' % int(self.current_heading()))
+		try:
+			last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
+			for i in range(int(10/STEP_TIME)):
+				diff = self.heading_diff(azim, err=err)
+				self.dbprint("azim diff=%d (h:%d), acc:%s cnt:%s(%s)<>%s(%s)" % (
+					diff, self.last_heading, self.last_acc,
+					self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_L]['pwr'],
+					self.enc_data[ENCODER_R]['count'], self.enc_data[ENCODER_R]['pwr']
+				))
+				if diff > 0:
+					ldir = True
+					rdir = False
+				else:
+					ldir = False
+					rdir = True
+				adiff = abs(diff)
+				if adiff < err:
+					# reverse
+					self.dbprint('Break!!!')
+					self.left_move(not ldir, 100)
+					self.right_move(not rdir, 100)
+					time.sleep(0.4)
+					break
+				self.left_move(ldir, lpwr)
+				self.right_move(rdir, rpwr)
+				self.db_state()
+				time.sleep(STEP_TIME)
+				if last_counts[0] == self.enc_data[ENCODER_L]['count'] and last_counts[1] == self.enc_data[ENCODER_R]['count']:
+					last_counts[2] += 1
+					if last_counts[2] > int(1/STEP_TIME):
+						self.dbprint('Stopped moving')
+						lpwr += 2
+						rpwr += 2
+						if lpwr >= 100 or rpwr >= 100:
+							break
+						last_counts[2] = 0
+				else:
+					if move_cb:
+						move_cb(self)
+					last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
+				if stop_if:
+					if stop_if(self):
+						break
+		finally:
+			self.stop()
+			self.dbprint('end turn h %d' % int(self.current_heading()))
+
+	def turn_fast(self, azim, err=5, stop_if=None, move_cb=None):
 		self.reset_counters()
 		min_pwr = 10
 		pwr = 100
@@ -167,8 +290,9 @@ class frobo(fchassis):
 			self.dbprint('%d' % int(self.current_heading()))
 
 
-	def fwd_straight(self, max_steps=5, max_secs=1, heading=None, power=50):
-		offs = self.pwr_offsets()
+	def fwd_straight(self, max_steps=5, max_secs=1, heading=None, power=50, power_offsets=None):
+		if power_offsets is None:
+			power_offsets = self.pwr_offsets()
 		self.reset_counters()
 		pid = Pid(2., 0, 1)
 		pid.range(-power, power)
@@ -185,8 +309,8 @@ class frobo(fchassis):
 				if steps > max_steps:
 					self.dbprint('Max steps reached (%d > %d)' % (steps, max_steps))
 					break
-				self.left_move(True, offs['lmin'] + lpwr)
-				self.right_move(True, offs['rmin'] + rpwr)
+				self.left_move(True, power_offsets['lmin'] + lpwr)
+				self.right_move(True, power_offsets['rmin'] + rpwr)
 				self.db_state()
 				time.sleep(STEP_TIME)
 				pid.step(input=self.current_heading())
@@ -226,7 +350,7 @@ class frobo(fchassis):
 			self.left_move(ldir, offs[ldir]['lmin'] + 20)
 			self.right_move(rdir, offs[rdir]['rmin'] + 20)
 			time.sleep(0.3)
-			self.wait_for_stop()
+			self.wait_until_stop()
 			h = self.compass.heading()
 			adiff = abs(angle_diff(ih, h))
 			if growing:
@@ -243,7 +367,7 @@ class frobo(fchassis):
 		# 36 attempt to turn 10 degree
 		for i in range(36):
 			self.turn(self.current_heading() + (10 if clockwise else -10))
-			self.wait_for_stop()
+			self.wait_until_stop()
 			if stop_if_cb(self):
 				break
 
@@ -269,7 +393,7 @@ class frobo(fchassis):
 		self.stop()
 		return pwr
 
-	def wait_for_stop(self):
+	def wait_until_stop(self):
 		self.stop()
 		while not self.is_really_stopped(secs=1):
 			pass

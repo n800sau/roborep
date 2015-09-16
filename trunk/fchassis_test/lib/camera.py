@@ -4,6 +4,37 @@ import cv2
 from utils import dbprint
 import numpy as np
 
+# "FAST"
+# "STAR"
+# "SIFT"
+# "SURF"
+# "ORB"
+# "MSER"
+# "GFTT"
+# "HARRIS"
+# "Dense"
+# "SimpleBlob"
+# "GridFAST"
+# "GridSTAR"
+# "GridSIFT"
+# "GridSURF"
+# "GridORB"
+# "GridMSER"
+# "GridGFTT"
+# "GridHARRIS"
+# "GridDense"
+# "GridSimpleBlob"
+# "PyramidFAST"
+# "PyramidSTAR"
+# "PyramidSIFT"
+# "PyramidSURF"
+# "PyramidORB"
+# "PyramidMSER"
+# "PyramidGFTT"
+# "PyramidHARRIS"
+# "PyramidDense"
+# "PyramidSimpleBlob"
+
 # "FAST/0" - FastFeatureDetector
 # "STAR" - StarFeatureDetector
 # "SIFT"* - SIFT (nonfree module)
@@ -15,13 +46,26 @@ import numpy as np
 # "HARRIS" - GoodFeaturesToTrackDetector with Harris detector enabled
 # "Dense" - DenseFeatureDetector
 # "SimpleBlob" - SimpleBlobDetector
-DETECTOR = 'GFTT'
+DETECTOR = 'GridORB'
+#DETECTOR = 'GFTT'
+NORM = cv2.NORM_HAMMING
+
+#for sift, surf
+#NORM = cv2.NORM_L2
+
+
 
 # SIFT/0, SURF*, BRIEF+, BRISK*, ORB+, FREAK*
-EXTRACTOR = 'BRIEF'
+EXTRACTOR = 'ORB'
+#EXTRACTOR = 'BRIEF'
+
+
+FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
+FLANN_INDEX_LSH    = 6
 
 
 MATCHER = 'BruteForce-Hamming'
+#MATCHER = 'Flann'
 
 def set_params(camera, **params):
 	camera.resolution = params.get('resolution', (320, 240))
@@ -49,7 +93,14 @@ class FeatureProcess(object):
 		self.img = None
 		self.cv_det = cv2.FeatureDetector_create(DETECTOR)
 		self.cv_desc = cv2.DescriptorExtractor_create(EXTRACTOR)
-		self.matcher = cv2.DescriptorMatcher_create(MATCHER)
+#		self.matcher = cv2.DescriptorMatcher_create(MATCHER)
+		#flann_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+		flann_params= dict(algorithm = FLANN_INDEX_LSH,
+			table_number = 6, # 12
+			key_size = 12,     # 20
+			multi_probe_level = 1) #2
+		self.matcher = cv2.FlannBasedMatcher(flann_params, {})  # bug : need to pass empty dict (#1329)
+
 
 	def filterMatches(self, kp, matches, ratio = 0.75):
 		mkp1, mkp2 = [], []
@@ -79,7 +130,7 @@ class FeatureProcess(object):
 					matches = self.matcher.knnMatch(self.desc, trainDescriptors=desc, k=2)
 					pairs = self.filterMatches(kp, matches)
 					lp = len(pairs)
-					rs = (lp * 100) / self.kpl
+					rs = ((lp * 100) / self.kpl) if self.kpl else 0
 		except cv2.error, e:
 			dbprint('cv2 error: %s' % e)
 		return rs
@@ -118,26 +169,55 @@ class ImageSearch(object):
 		p2 = np.float32([kp.pt for kp in mkp2])
 		return p1, p2, zip(mkp1, mkp2)
 
+	def _find_image(self, name, gray):
+		rs = None
+		idesc = self.idata[name]['desc']
+		kp = self.cv_det.detect(gray)
+		kp, desc = self.cv_desc.compute(gray, kp)
+		matches = self.matcher.knnMatch(idesc, trainDescriptors=desc, k=2)
+		p1, p2, kp_pairs = self.filter_matches(name, kp, matches)
+		if len(p1) >= 4:
+			H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 2.0)
+			dbprint('%d / %d  inliers/matched' % (np.sum(status), len(status)))
+			pg = [p[0] for p in zip(p2, status) if p[1][0]]
+			rs = np.average(pg, axis=0)
+		return rs
+
 	def find_image(self, name, frame=None):
 		rs = None
 		if frame is None and self.camera:
 			frame = capture_cvimage(self.camera)
 #			frame = capture_cvimage(self.camera, resolution=(1280, 960))
-		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		if not frame is None:
-			kp = self.cv_det.detect(gray)
-			kp, desc = self.cv_desc.compute(gray, kp)
-			idesc = self.idata[name]['desc']
-			matches = self.matcher.knnMatch(idesc, trainDescriptors=desc, k=2)
-			p1, p2, kp_pairs = self.filter_matches(name, kp, matches)
-			if len(p1) >= 4:
-				H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 2.0)
-				dbprint('%d / %d  inliers/matched' % (np.sum(status), len(status)))
-				pg = [p[0] for p in zip(p2, status) if p[1][0]]
-				pnt = np.average(pg, axis=0)
-				cv2.circle(frame, (pnt[0], pnt[1]), 20, (0, 0, 255), -1)
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			pnt = self._find_image(name, gray)
+			if pnt is None:
+				dbprint('tot shape=%s, %s' % (gray.shape, gray.dtype))
+				n = 10
+				dw = gray.shape[1] / n
+				dh = gray.shape[0] / n
+				for i in range(n-1):
+					for j in range(n-1):
+						x0 = i*dw
+						y0 = j*dh
+						x1 = (i+2)*dw
+						y1 = (j+2)*dh
+						f = gray[y0: y1, x0: x1]
+						dbprint('%d,%d rect=%s shape=%s' % (i, j, (x0, y0, x1, y1), f.shape))
+						pnt = self._find_image(name, f)
+						if not pnt is None:
+							break
+					if not pnt is None:
+						pnt[0] += x0
+						pnt[1] += y0
+						break
+			if not pnt is None:
+				cv2.circle(frame, (pnt[0], pnt[1]), max(20, frame.shape[0] / 20), (0, 0, 255), -1)
 				rs = {
 					'point': pnt,
 					'frame': frame,
 				}
 		return rs
+
+	def extract_black(self, frame):
+		return frame

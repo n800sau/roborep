@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
 			try:
 				dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.mleft['count'], c.mright['count']))
-				c.fwd_straight(max_secs=2, max_steps=c.m2steps(0.5), power=100)
+				c.fwd_straight(max_secs=2, max_steps=c.m2steps(0.2), power=100)
 				dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.mleft['count'], c.mright['count']))
 				json.dump(c.dots, file('dots.json', 'w'), indent=2)
 			finally:
