@@ -4,8 +4,6 @@
 
 #include <reservant.h>
 #include <aruco/aruco.h>
-#include <aruco/cvdrawingutils.h>
-#include <opencv2/highgui/highgui.hpp>
 #include <raspicam/raspicam_cv.h>
 #include <raspicam/raspicam_still_cv.h>
 
@@ -16,6 +14,7 @@ class raspiCamServant:public ReServant
 		aruco::CameraParameters camParam;
 		float markerSize;
 		const char *cam_yml;
+		vector<aruco::Marker> markers;
 
 	protected:
 		virtual void loop();

@@ -15,7 +15,7 @@ clean:
 	rm -f $(OBJECTS) $(NAME)
 
 $(NAME):	$(OBJECTS) $(LIBS)
-	$(CC) -o $(NAME) $(OBJECTS) $(LIBS) $(CCOPTS) -lhiredis -levent -ljansson -lraspicam -lraspicam_cv -lmmal -lmmal_core -lmmal_util -lopencv_core -lopencv_highgui -laruco
+	$(CC) -o $(NAME) $(OBJECTS) $(LIBS) $(CCOPTS) -lhiredis -levent -ljansson -lraspicam -lraspicam_cv -lmmal -lmmal_core -lmmal_util -lopencv_core -lopencv_imgproc -lopencv_highgui -laruco
 #	$(STRIP) -s $(NAME)
 
 # what are the source dependencies
