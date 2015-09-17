@@ -6,6 +6,12 @@
 #include <math.h>
 #include <syslog.h>
 
+//#define CAMERA_WIDTH 2592
+//#define CAMERA_HEIGHT 1944
+
+#define CAMERA_WIDTH 640
+#define CAMERA_HEIGHT 480
+
 struct RASPICAM_CMD_FUNC:public CMD_FUNC {
 	public:
 		RASPICAM_CMD_FUNC(const char *cmd, raspiCamServant::tFunction ptr) {
@@ -63,6 +69,8 @@ bool raspiCamServant::fill_json(json_t *js, int list_id)
 		}
 		json_object_set_new(mjs, "coords", rjsl);
 		json_object_set_new(mjs, "id", json_integer((*m).id));
+		json_object_set_new(mjs, "width", json_integer(CAMERA_WIDTH));
+		json_object_set_new(mjs, "height", json_integer(CAMERA_HEIGHT));
 		json_array_append(mjsl, mjs);
 	}
 	json_object_set_new(js, "markers", mjsl);
@@ -79,11 +87,9 @@ void raspiCamServant::start_camera(json_t *js)
 	stop_camera();
 	//set camera params
 	camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
-	camera.set(CV_CAP_PROP_BRIGHTNESS, 70);
-//			camera.set(CV_CAP_PROP_FRAME_WIDTH, 2592);
-//			camera.set(CV_CAP_PROP_FRAME_HEIGHT, 1944);
-	camera.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-	camera.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+	camera.set(CV_CAP_PROP_BRIGHTNESS, 60);
+	camera.set(CV_CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH);
+	camera.set(CV_CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT);
 	if(cam_yml) {
 		syslog(LOG_NOTICE, "Use %s", cam_yml);
 		camParam.readFromXMLFile(cam_yml);
