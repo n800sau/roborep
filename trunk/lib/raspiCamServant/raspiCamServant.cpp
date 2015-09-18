@@ -9,8 +9,11 @@
 //#define CAMERA_WIDTH 2592
 //#define CAMERA_HEIGHT 1944
 
-#define CAMERA_WIDTH 640
-#define CAMERA_HEIGHT 480
+#define CAMERA_WIDTH 1920
+#define CAMERA_HEIGHT 1080
+
+//#define CAMERA_WIDTH 640
+//#define CAMERA_HEIGHT 480
 
 struct RASPICAM_CMD_FUNC:public CMD_FUNC {
 	public:
@@ -94,6 +97,8 @@ void raspiCamServant::start_camera(json_t *js)
 	if(cam_yml) {
 		syslog(LOG_NOTICE, "Use %s", cam_yml);
 		camParam.readFromXMLFile(cam_yml);
+		//resizes the parameters to fit the size of the input image
+		camParam.resize(cv::Size(CAMERA_WIDTH, CAMERA_HEIGHT));
 	}
 	if (!camera.open()) {
 		syslog(LOG_ERR, "Error opening the camera");
@@ -127,8 +132,6 @@ void raspiCamServant::find_markers(json_t *js)
 		camera.retrieve(image);
 
 		syslog(LOG_NOTICE, "captured dim: %dx%d", image.cols, image.rows);
-		//resizes the parameters to fit the size of the input image
-		camParam.resize(image.size());
 
 		aruco::MarkerDetector mDetector;
 		//read the input image
