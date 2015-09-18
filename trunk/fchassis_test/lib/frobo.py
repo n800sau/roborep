@@ -1,6 +1,7 @@
 import time
 from hmc5883l import hmc5883l
 from adxl345 import ADXL345
+from l3g4200d import l3g4200
 from fchassis import fchassis, ENC_STEP, ENCODER_L, ENCODER_R
 from utils import angle_diff
 from pids import Pid
@@ -14,6 +15,7 @@ class frobo(fchassis):
 		self.dots = {ENCODER_L: [], ENCODER_R: []}
 		self.compass = hmc5883l(gauss = 4.7, declination = (12, 34))
 		self.acc = ADXL345(0x1d)
+		self.gyro = l3g4200(1)
 		self.read_sensors()
 		super(frobo, self).__init__(*args, **kwds)
 
@@ -48,7 +50,7 @@ class frobo(fchassis):
 
 	# turn in steps
 	def turn_in_steps(self, azim, err=5, stop_if=None, move_cb=None, power_offsets=None):
-		PWR_STEP = 2
+		POWER_STEP = 2
 		MOVE_STEP_TIME = 0.3
 		self.wait_until_stop()
 		if power_offsets is None:
@@ -349,7 +351,7 @@ class frobo(fchassis):
 		while True:
 			self.left_move(ldir, offs[ldir]['lmin'] + 20)
 			self.right_move(rdir, offs[rdir]['rmin'] + 20)
-			time.sleep(0.3)
+			time.sleep(0.2)
 			self.wait_until_stop()
 			h = self.compass.heading()
 			adiff = abs(angle_diff(ih, h))
