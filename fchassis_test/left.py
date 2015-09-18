@@ -4,6 +4,7 @@ import sys, os, time
 
 import picamera
 from lib.hmc5883l import hmc5883l
+from lib.l3g4200d import l3g4200
 from lib.utils import dbprint
 from lib.camera import update_img
 
@@ -11,14 +12,26 @@ from lib.fchassis import fchassis
 
 def left(c):
 	compass = hmc5883l(gauss = 4.7, declination = (12, 34))
-	dbprint('%s' % (compass.degrees(compass.heading())[0]))
+	gyro = l3g4200(1)
+	init_h = compass.heading()
+	dbprint('init h: %d' % init_h)
 	try:
-		c.left_move(False, 30)
-		c.right_move(True, 30)
-		time.sleep(0.2)
+		c.left_move(False, 35)
+		c.right_move(True, 35)
+		for i in range(100):
+			st = gyro.bus.read_byte_data(gyro.address, gyro.STATUS_REG)
+			if st:
+				x,y,z = gyro.getDegPerSecAxes()
+				h = compass.heading()
+				dbprint('g:%g %g %g, h:%d' % (x, y, z, h))
+				if abs(z) > 15:
+					dbprint('it moves')
+					break
+			time.sleep(0.001)
 	finally:
 		c.stop()
-		dbprint('%s' % (compass.degrees(compass.heading())[0]))
+		h = compass.heading()
+		dbprint('last h: %d, change: %g' % (h, init_h - h))
 
 
 if __name__ == '__main__':
@@ -28,9 +41,7 @@ if __name__ == '__main__':
 	with fchassis(s_port) as c:
 #		c.debug = False
 
-		with picamera.PiCamera() as camera:
-
-			try:
-				left(c)
-			finally:
-				update_img(camera)
+		try:
+			left(c)
+		finally:
+			update_img(picamera.PiCamera())
