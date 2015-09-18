@@ -69,6 +69,7 @@ bool raspiCamServant::fill_json(json_t *js, int list_id)
 		}
 		json_object_set_new(mjs, "coords", rjsl);
 		json_object_set_new(mjs, "id", json_integer((*m).id));
+		json_object_set_new(mjs, "size", json_real((*m).ssize));
 		json_object_set_new(mjs, "width", json_integer(CAMERA_WIDTH));
 		json_object_set_new(mjs, "height", json_integer(CAMERA_HEIGHT));
 		json_array_append(mjsl, mjs);

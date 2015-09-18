@@ -10,7 +10,12 @@
 class raspiCamServant:public ReServant
 {
 	private:
+		// video camera
 		raspicam::RaspiCam_Cv camera;
+
+		// still camera
+//		raspicam::RaspiCamStill_Cv camera;
+
 		aruco::CameraParameters camParam;
 		float markerSize;
 		const char *cam_yml;
