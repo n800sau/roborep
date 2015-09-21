@@ -14,6 +14,13 @@ const char* password = PASSWORD;
 
 int LED_PIN = 4; // LED is attached to ESP8266 pin 5.
 
+#define SLEEP_SECS 600
+
+
+// To read VCC voltage
+// TOUT pin has to be disconnected in this mode.
+ADC_MODE(ADC_VCC);
+
 // Initialize DHT sensor 
 // NOTE: For working with a faster than ATmega328p 16 MHz Arduino chip, like an ESP8266,
 // you need to increase the threshold for cycle counts considered a 1 or 0.
@@ -75,17 +82,19 @@ void loop()
 		// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
 		float humidity = dht.readHumidity();		  // Read humidity (percent)
 		float temp_c = dht.readTemperature(false);	   // Read temperature as Fahrenheit
-		float v = ESP.getVcc() / 1000.;
 		if(isnan(humidity) || isnan(temp_c)) {
 			Serial.println("Failed to read from DHT sensor!");
 			blink(2);
 			delay(500);
 		} else {
+			float v = ESP.getVcc() / 1000.;
 			blink();
 			Serial.print("T:");
 			Serial.print(temp_c);
 			Serial.print(", H:");
-			Serial.println(humidity);
+			Serial.print(humidity);
+			Serial.print(", V:");
+			Serial.println(v);
 
 			String postStr = String(apiKey) +
 				"&field1=" + String(temp_c) +
@@ -105,7 +114,7 @@ void loop()
 			client.stop();
 
 			Serial.println("Data send to Thingspeak");
-			ESP.deepSleep(10000000L, WAKE_RF_DEFAULT); // Sleep for 10 seconds
+			ESP.deepSleep(SLEEP_SECS * 1000000L, WAKE_RF_DEFAULT);
 		}
 	} else {
 		blink(3);
