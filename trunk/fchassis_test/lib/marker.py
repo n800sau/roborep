@@ -26,47 +26,55 @@ def release_camera(r):
 		'cmd': 'stop_camera',
 	}))
 
-
-def get_marker(r, marker_id):
-	rs = None
+def collect_markers(r, fpath=None):
+	rs = []
 	r.delete(QUEUE)
-	fpath = os.path.join(os.path.expanduser('~/public_html'), 'pic0.jpg')
-	r.publish(SERVANT, json.dumps({
+	params = {
 		'cmd': 'find_markers',
-		'path': fpath,
 		'draw_markers': True
-	}))
-	v = r.blpop(QUEUE, timeout=2)
+	}
+	if fpath:
+		params['path'] = fpath
+	r.publish(SERVANT, json.dumps(params))
+	v = r.blpop(QUEUE, timeout=5)
 	if v:
 		v = json.loads(v[1])
 		dbprint('DATA=%s' % (json.dumps(v, indent=2),))
-		if v['markers']:
-			dbprint('FOUND %d markers' % len(v['markers']))
-			for m in v['markers']:
-				dbprint('\t%s' % m['id'])
-#				os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
-				if m['id'] == marker_id:
-					rs = {'coords': m['coords']}
-					for c in rs['coords']:
-						c['x'] /= m['width']
-						c['y'] /= m['height']
-					xmin = xmax = m['coords'][0]['x']
-					ymin = ymax = m['coords'][0]['y']
-					for c in m['coords'][1:]:
-						xmin = min(xmin, c['x'])
-						xmax = max(xmax, c['x'])
-						ymin = min(ymin, c['y'])
-						ymax = max(ymax, c['y'])
-					rs['dot'] = {'x': (xmax+xmin)/2, 'y': (ymax+ymin)/2}
-					rs['fpath'] = fpath
-					break
+		dbprint('FOUND %d markers' % len(v['markers']))
+		rs = v['markers']
 	else:
 		dbprint('No answer')
 	return rs
 
-def marker_offset(r, marker_id):
+
+def get_marker(r, marker_id, fpath=None):
 	rs = None
-	marker = get_marker(r, marker_id)
+	markers = collect_markers(r, fpath=fpath)
+	for m in markers:
+		dbprint('\t%s' % m['id'])
+#		os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
+		if m['id'] == marker_id:
+			rs = {'coords': m['coords']}
+			for c in rs['coords']:
+				c['x'] /= m['width']
+				c['y'] /= m['height']
+			xmin = xmax = m['coords'][0]['x']
+			ymin = ymax = m['coords'][0]['y']
+			for c in m['coords'][1:]:
+				xmin = min(xmin, c['x'])
+				xmax = max(xmax, c['x'])
+				ymin = min(ymin, c['y'])
+				ymax = max(ymax, c['y'])
+			rs['dot'] = {'x': (xmax+xmin)/2, 'y': (ymax+ymin)/2}
+			rs['fpath'] = fpath
+			break
+	return rs
+
+def marker_offset(r, marker_id, fpath=None):
+	rs = None
+	if fpath is None:
+		fpath = os.path.join(os.path.expanduser('~/public_html'), 'pic0.jpg')
+	marker = get_marker(r, marker_id, fpath=fpath)
 	if marker:
 		dbprint('Marker: %s' % json.dumps(marker, indent=2))
 		frame = cv2.imread(marker['fpath'])

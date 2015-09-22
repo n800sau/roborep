@@ -1,4 +1,6 @@
 #!/bin/bash
 
-python fwd.py 2> fwd.log
+DISTANCE=0.10
+
+python fwd.py $DISTANCE 2> fwd.log
 echo $?
