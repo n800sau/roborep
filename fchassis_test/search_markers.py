@@ -10,7 +10,7 @@ from lib.frobo import frobo
 servant = 'raspiCamServant'
 queue = 'raspiCamServant.js.obj'
 
-TARGET = 618
+#TARGET = 618
 target_loc = None
 
 i = 0
@@ -32,7 +32,7 @@ def stop_cb(c, r):
 			dbprint('FOUND %d markers' % len(v['markers']))
 			for m in v['markers']:
 				dbprint('\t%s' % m['id'])
-#				os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
+				os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
 			#	if m['id'] == TARGET:
 			#		target_loc = m
 			#		rs = True

@@ -117,6 +117,45 @@ class frobo(fchassis):
 			self.stop()
 			self.dbprint('end turn h %d' % int(self.current_heading()))
 
+	def turn_in_ticks(self, azim, err=3, stop_if=None, move_cb=None):
+		self.wait_until_stop()
+		self.reset_counters()
+		self.dbprint('start turn h %d' % int(self.current_heading()))
+		try:
+			last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
+			last_adiff = abs(self.heading_diff(azim, err=err))
+			for i in range(360):
+				diff = self.heading_diff(azim, err=err)
+				self.dbprint("azim diff=%d (h:%d), acc:%s cnt:%s(%s)<>%s(%s)" % (
+					diff, self.last_heading, self.last_acc,
+					self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_L]['pwr'],
+					self.enc_data[ENCODER_R]['count'], self.enc_data[ENCODER_R]['pwr']
+				))
+				adiff = abs(diff)
+				if adiff < err:
+					break
+				if diff > 0:
+					self.tick_right(min_angle=1)
+				else:
+					self.tick_left(min_angle=1)
+				self.wait_until_stop()
+				self.db_state()
+				if last_counts[0] == self.enc_data[ENCODER_L]['count'] and last_counts[1] == self.enc_data[ENCODER_R]['count']:
+					last_counts[2] += 1
+					if last_counts[2] > int(1/STEP_TIME):
+						self.dbprint('Stopped moving')
+						break
+				else:
+					if move_cb:
+						move_cb(self)
+					last_counts = [self.enc_data[ENCODER_L]['count'], self.enc_data[ENCODER_R]['count'], 0]
+				if stop_if:
+					if stop_if(self):
+						break
+		finally:
+			self.stop()
+			self.dbprint('end turn h %d' % int(self.current_heading()))
+
 	def turn(self, azim, err=5, stop_if=None, move_cb=None, power_offsets=None):
 		if power_offsets is None:
 			power_offsets = self.pwr_offsets()
@@ -419,3 +458,38 @@ class frobo(fchassis):
 			if self.is_really_stopped():
 				break
 		return {'lmin': lpwr, 'rmin': rpwr}
+
+	def tick_move(self, clockwise, min_angle=None, pwr=40):
+		init_h = self.compass.heading()
+		self.dbprint('init h: %d' % init_h)
+		try:
+			self.left_move(clockwise, pwr)
+			self.right_move(not clockwise, pwr)
+			for i in range(100):
+				st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
+				if st:
+					x,y,z = self.gyro.getDegPerSecAxes()
+					h = self.compass.heading()
+					self.dbprint('g:%d %d %d, h:%d' % (x, y, z, h))
+					if abs(z) > 15:
+						if min_angle is None:
+							self.dbprint('it moves')
+							break
+						else:
+							hdiff = abs(angle_diff(h, init_h))
+							if hdiff > min_angle:
+								self.dbprint('it has moved %d degrees' % hdiff)
+								break
+				time.sleep(0.001)
+		finally:
+			self.stop()
+			time.sleep(2)
+			h = self.compass.heading()
+			self.dbprint('last h: %d, change: %g' % (h, init_h - h))
+
+	def tick_left(self, min_angle=None, pwr=40):
+		self.tick_move(False, min_angle=min_angle, pwr=pwr)
+
+	def tick_right(self, min_angle=None, pwr=40):
+		self.tick_move(True, min_angle=min_angle, pwr=pwr)
+
