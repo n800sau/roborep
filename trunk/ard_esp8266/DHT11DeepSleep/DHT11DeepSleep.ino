@@ -4,15 +4,14 @@
 #define DHTTYPE DHT11
 #define DHTPIN	5
 
-const char *thingspeak_server = "184.106.153.149";
+const char *master_server = "gate.local";
 
 #include "config.h"
-const char *apiKey = API_KEY;
 
 const char* ssid	 = SSID;
 const char* password = PASSWORD;
 
-int LED_PIN = 4; // LED is attached to ESP8266 pin 5.
+int LED_PIN = 4; // LED is attached to ESP8266 pin 4.
 
 #define SLEEP_SECS 600
 
@@ -58,7 +57,7 @@ void setup()
 		Serial.print(".");
 	}
 	Serial.println("");
-	Serial.println("DHT Weather Reading Server");
+	Serial.println("DHT Weather Reader");
 	Serial.print("Connected to ");
 	Serial.println(ssid);
 	Serial.print("IP address: ");
@@ -76,7 +75,8 @@ void loop()
 {
 
 	WiFiClient client;
-	if (client.connect(thingspeak_server,80)) {  //   "184.106.153.149" or api.thingspeak.com
+//	if (client.connect(master_server, 80)) {
+	if (client.connect("192.168.4.1", 80)) {
 
 		// Reading temperature for humidity takes about 250 milliseconds!
 		// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
@@ -96,24 +96,22 @@ void loop()
 			Serial.print(", V:");
 			Serial.println(v);
 
-			String postStr = String(apiKey) +
-				"&field1=" + String(temp_c) +
-				"&field2=" + String(humidity) +
-				"&field3=" + String(v) +
-				"\r\n\r\n";
+			String postStr = "T=" + String(temp_c) +
+				"&H=" + String(humidity) +
+				"&V=" + String(v);
 
-			client.print("POST /update HTTP/1.1\n");
-			client.print("Host: api.thingspeak.com\n");
+			client.print("POST /dht11 HTTP/1.1\n");
+			client.print("Host: " + String(master_server) + "\n");
 			client.print("Connection: close\n");
-			client.print("X-THINGSPEAKAPIKEY: "+String(apiKey)+"\n");
 			client.print("Content-Type: application/x-www-form-urlencoded\n");
 			client.print("Content-Length: ");
 			client.print(postStr.length());
-			client.print("\n\n");
-			client.print(postStr);
+			client.print("\r\n\r\n");
+			client.print(postStr + "\r\n\r\n");
 			client.stop();
 
-			Serial.println("Data send to Thingspeak");
+			Serial.print(postStr);
+			Serial.println(" sent to the master");
 			ESP.deepSleep(SLEEP_SECS * 1000000L, WAKE_RF_DEFAULT);
 		}
 	} else {
