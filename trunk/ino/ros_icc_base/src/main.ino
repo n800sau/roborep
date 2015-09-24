@@ -64,6 +64,11 @@ volatile uint8_t intRhistory = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
 
+void resetCounters()
+{
+	lCounter = rCounter = 0;
+}
+
 class IccBase: public SerialProtocol {
 	public:
 		void sendState();
@@ -83,8 +88,7 @@ void IccBase::sendState()
 	vals[0] = count2dist(lCounter);
 	vals[1] = count2dist(rCounter);
 	sendFloats(R_MDIST_2F, vals, 2);
-	lCounter = rCounter = 0;
-	vals[0] = distance / 100.;
+	vals[0] = (distance > 0) ? distance / 100. : distance;
 	sendFloats(R_DIST_1F, vals, 1);
 	sendFloats(R_END, NULL, 0);
 }
@@ -243,6 +247,10 @@ void execute()
 			} else {
 				base.error();
 			}
+			break;
+		case C_RESET_COUNTERS:
+			resetCounters();
+			base.ok();
 			break;
 		case C_STATE:
 			base.sendState();
