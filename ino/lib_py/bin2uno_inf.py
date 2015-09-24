@@ -4,6 +4,13 @@ import time
 import datetime
 import array
 
+def buf2hex(buf):
+	line = []
+	for c in array.array('B', buf):
+		line.append('%2.2X' % c)
+	return ' '.join(line)
+
+
 class bin2uno_inf:
 
 	def __init__(self, magic_byte):
@@ -26,7 +33,7 @@ class bin2uno_inf:
 			print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
 
 	def send_bytes(self, bytes):
-		self.dbprint('Sending %s' % list(bytes))
+		self.dbprint('Sending %s' % buf2hex(bytes))
 		self.send2ino(bytes)
 
 	def crc8(self, bytes):
@@ -43,7 +50,7 @@ class bin2uno_inf:
 
 	def send_command(self, command, databytes=None):
 		self.dbprint('send_command')
-		packet = '\x85' + chr(command)
+		packet = chr(self.magic_byte) + chr(command)
 		if databytes is None:
 			packet += chr(0)
 		else:
