@@ -8,7 +8,8 @@ enum COMMANDS {
 	C_MLEFT,
 	C_MRIGHT,
 	C_MBOTH,
-	C_MSTOP
+	C_MSTOP,
+	C_RESET_COUNTERS
 };
 
 // reply
