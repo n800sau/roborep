@@ -14,7 +14,7 @@
 
 
 #AZIM=232
-AZIM=180
+AZIM=210
 
 python turn2azim.py ${AZIM} &> turn2azim.log
 echo $?

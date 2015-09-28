@@ -5,7 +5,7 @@ import sys, os, time, json, redis, picamera
 from lib.utils import dbprint
 from lib.camera import update_img
 
-from lib.frobo import frobo
+from lib.frobo_ng import frobo_ng
 
 servant = 'raspiCamServant'
 queue = 'raspiCamServant.js.obj'
@@ -27,12 +27,12 @@ def stop_cb(c, r):
 	v = r.blpop(queue, timeout=2)
 	if v:
 		v = json.loads(v[1])
-		dbprint('DATA=%s' % (v,))
+#		dbprint('DATA=%s' % (v,))
 		if v['markers']:
 			dbprint('FOUND %d markers' % len(v['markers']))
 			for m in v['markers']:
 				dbprint('\t%s' % m['id'])
-				os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
+			#	os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
 			#	if m['id'] == TARGET:
 			#		target_loc = m
 			#		rs = True
@@ -44,29 +44,27 @@ if __name__ == '__main__':
 
 	clockwise = int(sys.argv[1])
 
-	s_port = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AH00ZTCM-if00-port0'
-
 	r = redis.Redis()
 
-	with frobo(s_port) as c:
-		#c.debug = False
+	c = frobo_ng()
+#	c.debug = True
 
-		try:
-			r.publish(servant, json.dumps({
-				'cmd': 'start_camera',
-			}))
-			c.update_dist()
-			dbprint('BEFORE %s cm to %s' % (c.curr_dist, c.compass.heading()))
-			c.search_around(lambda c, r=r: stop_cb(c, r), clockwise=clockwise)
-			dbprint('AFTER %s cm to %s (%d steps)' % (c.curr_dist, c.compass.heading(), i))
-			json.dump(c.dots, file('dots.json', 'w'), indent=2)
-		finally:
-			r.publish(servant, json.dumps({
-				'cmd': 'stop_camera',
-			}))
-			c.stop()
-			time.sleep(6)
-			update_img(picamera.PiCamera())
+	try:
+		r.publish(servant, json.dumps({
+			'cmd': 'start_camera',
+		}))
+		c.update_state()
+		dbprint('BEFORE %s m to %s' % (c.state['sonar'], c.compass.heading()))
+		c.search_around(lambda c, r=r: stop_cb(c, r), clockwise=clockwise)
+		dbprint('AFTER %s m to %s (%d steps)' % (c.state['sonar'], c.compass.heading(), i))
+		json.dump(c.dots, file('dots.json', 'w'), indent=2)
+	finally:
+		r.publish(servant, json.dumps({
+			'cmd': 'stop_camera',
+		}))
+		c.cmd_mstop()
+		time.sleep(6)
+		update_img(picamera.PiCamera())
 
-		dbprint('TARGET: %s' % target_loc)
+	dbprint('TARGET: %s' % target_loc)
 
