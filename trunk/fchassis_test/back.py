@@ -1,36 +1,20 @@
 #!/usr/bin/env python
 
-import sys, os, time
-
+import time, json
+from lib.frobo_ng import frobo_ng
 import picamera
-from lib.hmc5883l import hmc5883l
-from lib.utils import dbprint
 from lib.camera import update_img
+from lib.utils import dbprint
 
-from lib.fchassis import fchassis
+debug = False
+c = frobo_ng(debug=debug)
+try:
+	dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
+	c.move_straight(fwd=False, max_steps=50, max_secs=1)
+	dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
 
-def back(c):
-	compass = hmc5883l(gauss = 4.7, declination = (12, 34))
-	dbprint('%s' % (compass.degrees(compass.heading())[0]))
-	try:
-		c.left_move(False, 100)
-		c.right_move(False, 100)
-		time.sleep(0.4)
-	finally:
-		c.stop()
-		dbprint('%s' % (compass.degrees(compass.heading())[0]))
-
-
-if __name__ == '__main__':
-
-	s_port = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AH00ZTCM-if00-port0'
-
-	with fchassis(s_port) as c:
-#		c.debug = False
-
-		with picamera.PiCamera() as camera:
-
-			try:
-				back(c)
-			finally:
-				update_img(camera)
+	json.dump(c.dots, file('dots.json', 'w'), indent=2)
+finally:
+	update_img(picamera.PiCamera())
+	c.update_state()
+	dbprint('EVENTUALLY %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))

@@ -6,19 +6,14 @@ import picamera
 from lib.utils import dbprint
 from lib.camera import update_img
 
-from lib.frobo import frobo
+from lib.frobo_ng import frobo_ng
 
 
-if __name__ == '__main__':
-
-	s_port = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AH00ZTCM-if00-port0'
-
-	with frobo(s_port) as c:
-#		c.debug = False
-
-		with picamera.PiCamera() as camera:
-
-			try:
-				c.tick_right()
-			finally:
-				update_img(camera)
+try:
+	debug = True
+	c = frobo_ng(debug=debug)
+	dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
+	c.tick_right()
+	dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
+finally:
+	update_img(picamera.PiCamera())
