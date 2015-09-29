@@ -24,11 +24,11 @@ void loop() {
 	if (Serial.available() > 0) {
 		// read the oldest byte in the serial buffer:
 		int incomingByte = Serial.read();
-		if (incomingByte == '1' || incomingByte == '3') {
+		if (incomingByte == '8' || incomingByte == '0') {
 			io8mode = OUTPUT;
 			pinMode(io8, io8mode);
 		} 
-		if (incomingByte == '2' || incomingByte == '3') {
+		if (incomingByte == '9' || incomingByte == '0') {
 			io9mode = OUTPUT;
 			pinMode(io9, io9mode);
 		} 
