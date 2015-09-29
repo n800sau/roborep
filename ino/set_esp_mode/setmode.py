@@ -20,6 +20,8 @@ for i in range(5):
 	if ser.readline().strip() == 'Ready':
 
 		val = raw_input('Input:')
+		if not val:
+			val = "#"
 		ser.write(val)
 		ser.flush()
 
