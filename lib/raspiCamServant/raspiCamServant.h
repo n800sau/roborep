@@ -7,6 +7,8 @@
 #include <raspicam/raspicam_cv.h>
 #include <raspicam/raspicam_still_cv.h>
 
+enum RTYPE { RT_NONE, RT_MARKERS, RT_SHOT };
+
 class raspiCamServant:public ReServant
 {
 	private:
@@ -20,6 +22,7 @@ class raspiCamServant:public ReServant
 		float markerSize;
 		const char *cam_yml;
 		vector<aruco::Marker> markers;
+		RTYPE reply_type;
 
 	protected:
 		virtual void loop();
@@ -28,6 +31,7 @@ class raspiCamServant:public ReServant
 		void find_markers(json_t *js);
 		void start_camera(json_t *js=NULL);
 		void stop_camera(json_t *js=NULL);
+		void make_shot(json_t *js=NULL);
 
 	public:
 		raspiCamServant(const char *cam_yml=NULL);
