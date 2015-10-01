@@ -1,4 +1,6 @@
 #!/bin/bash
 
-python back.py 2> back.log
+DISTANCE=0.50
+
+python back.py $DISTANCE 2> back.log
 echo $?

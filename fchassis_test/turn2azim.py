@@ -12,8 +12,8 @@ if __name__ == '__main__':
 
 	azim = float(sys.argv[1])
 
-	debug = False
-	c = frobo_ng(debug=debug)
+	c = frobo_ng()
+	c.debug = True
 
 	try:
 		dbprint('BEFORE %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], azim))
@@ -23,4 +23,6 @@ if __name__ == '__main__':
 		dbprint('AFTER WAIT %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], azim))
 		json.dump(c.dots, file('dots.json', 'w'), indent=2)
 	finally:
+		c.cmd_mstop()
 		update_img(picamera.PiCamera())
+

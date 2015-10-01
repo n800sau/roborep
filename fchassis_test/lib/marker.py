@@ -16,6 +16,9 @@ QUEUE = SERVANT + '.js.obj'
 V_ANGLE = 22
 H_ANGLE = 39
 
+def make_fpath(fname=None):
+	return os.path.join(os.path.expanduser('~/public_html'), fname or 'picam_0.jpg')
+
 def use_camera(r):
 	r.publish(SERVANT, json.dumps({
 		'cmd': 'start_camera',
@@ -88,3 +91,19 @@ def marker_offset(r, marker_id, fpath=None):
 		rs = h_off
 	return rs
 
+def make_shot(r, fpath=None):
+	if fpath is None:
+		fpath = make_fpath()
+	r.delete(QUEUE)
+	params = {
+		'cmd': 'make_shot',
+		'path': fpath,
+	}
+	r.publish(SERVANT, json.dumps(params))
+	v = r.blpop(QUEUE, timeout=5)
+	if v:
+		v = json.loads(v[1])
+		dbprint('DATA=%s' % (json.dumps(v, indent=2),))
+	else:
+		raise Exception('make_shot: answer queue timeout')
+	
