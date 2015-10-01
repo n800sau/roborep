@@ -12,17 +12,19 @@ if __name__ == '__main__':
 	c.debug = True
 
 	try:
-		dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.mleft['count'], c.mright['count']))
+		dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['lcount']))
+
 		lpwr = c.find_left_minimum(True)
 		dbprint('Min left: %d' % lpwr)
-		time.sleep(2)
+		c.wait_until_stop()
 		dbprint('stopped=%s' % c.is_really_stopped())
+
 		rpwr = c.find_right_minimum(True)
 		dbprint('Min right: %d' % rpwr)
-		time.sleep(2)
+		c.wait_until_stop()
 		dbprint('stopped=%s' % c.is_really_stopped())
-		dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.mleft['count'], c.mright['count']))
+
+		dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['lcount']))
 	finally:
-		c.stop()
-		time.sleep(1)
+		c.cmd_mstop()
 		json.dump(c.dots, file('dots.json', 'w'), indent=2)

@@ -7,6 +7,7 @@ from utils import angle_diff
 from pids import Pid
 
 STEP_TIME = 0.01
+TICK_MOVE_TIME = 1
 
 class frobo_ng(fchassis_ng):
 
@@ -120,7 +121,7 @@ class frobo_ng(fchassis_ng):
 		self.dbprint('init h: %d' % init_h)
 		try:
 			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
-			for i in range(100):
+			for i in range(int(TICK_MOVE_TIME/STEP_TIME)):
 				st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
 				if st:
 					x,y,z = self.gyro.getDegPerSecAxes()
@@ -251,3 +252,29 @@ class frobo_ng(fchassis_ng):
 			self.turn_in_ticks(self.current_heading() + (45 if clockwise else -45), stop_if=lambda c: c.stop_if_cb(min_dist))
 			i -= 1
 
+	def find_left_minimum(self, fwd=True):
+		return self.find_pwr_minimum('left', fwd)
+
+	def find_right_minimum(self, fwd=True):
+		return self.find_pwr_minimum('right', fwd)
+
+	def find_pwr_minimum(self, motor, fwd):
+		rs = None
+		func = self.cmd_mright if motor[0] == 'r' else self.cmd_mleft
+		try:
+			for pwr in range(100):
+				func(pwr, fwd)
+				for i in range(int(0.2 / STEP_TIME)):
+					time.sleep(STEP_TIME)
+					st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
+					if st:
+						x,y,z = self.gyro.getDegPerSecAxes()
+						if abs(z) > 10:
+							self.dbprint('it moves')
+							rs = pwr
+							break
+				if not rs is None:
+					break
+		finally:
+			self.cmd_mstop()
+		return rs
