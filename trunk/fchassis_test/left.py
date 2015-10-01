@@ -7,9 +7,9 @@ from lib.utils import dbprint
 from lib.camera import update_img
 from lib.frobo_ng import frobo_ng
 
+c = frobo_ng()
+#c.debug = True
 try:
-	debug = True
-	c = frobo_ng(debug=debug)
 	dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
 	c.tick_left()
 	dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))

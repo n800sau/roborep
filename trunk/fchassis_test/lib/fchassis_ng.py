@@ -8,10 +8,17 @@ from conf_ino import configure
 import json
 import time
 import struct
+import math
 import traceback
 import pycmds
 from bin2uno_inf import bin2uno_inf
 from serial import Serial
+
+COUNT_PER_REV = 20.0
+WHEEL_DIAMETER = 0.065
+BASELINE = 0.14
+
+ENC_STEP = WHEEL_DIAMETER * math.pi / COUNT_PER_REV
 
 SENSORS_SHOW_PERIOD = 1
 
@@ -33,7 +40,7 @@ class fchassis_ng(bin2uno_inf):
 		self.s_port = cfg['serial_port']
 		self.s_baud = int(cfg.get('baud_rate', 115200))
 
-		self.ser = Serial(self.s_port, self.s_baud, timeout=5, writeTimeout=5);
+		self.ser = Serial(self.s_port, self.s_baud, timeout=5, writeTimeout=5)
 		self.dbprint('Connected %s at %d' % (self.s_port, self.s_baud))
 
 		for i in range(50):
@@ -66,7 +73,7 @@ class fchassis_ng(bin2uno_inf):
 	def recv(self):
 		cnt = self.ser.inWaiting()
 		if cnt > 0:
-			self.dbprint('%d bytes available' % cnt)
+#			self.dbprint('%d bytes available' % cnt)
 			rs = self.ser.read(cnt)
 		else:
 			rs = ''
@@ -84,10 +91,10 @@ class fchassis_ng(bin2uno_inf):
 		rs = None
 		for i in range(4):
 			data = self.read_bin()
-			self.dbprint('Data=%s' % data)
+#			self.dbprint('Reply=%s' % data)
 			if data:
 				if data['cmd'] == pycmds.R_OK_0:
-					self.dbprint('Ok')
+#					self.dbprint('Ok')
 					rs = True
 					break
 				elif data['cmd'] == pycmds.R_ERROR_0:
@@ -107,7 +114,7 @@ class fchassis_ng(bin2uno_inf):
 			for i in range(10):
 				data = self.read_bin()
 				if data:
-					self.dbprint('Data=%s' % data)
+					self.dbprint('State data=%s' % data)
 					if 'cmd' in data:
 						rs = True
 						if data['cmd'] == pycmds.R_DIST_1F:
@@ -137,7 +144,7 @@ class fchassis_ng(bin2uno_inf):
 		finally:
 			self.debug = old_debug
 			self.wait4sensors = False
-#		return rs
+		return rs
 
 	def flush(self):
 		if self.ser.inWaiting() > 0:
@@ -170,6 +177,9 @@ class fchassis_ng(bin2uno_inf):
 			self.dbprint("v:%.2f, lcnt:%d, rcnt:%s, dist:%s" % (
 				self.state['v'], self.state['lcount'], self.state['rcount'], self.state['sonar']
 			))
+
+	def m2steps(self, m):
+		return int(m / ENC_STEP)
 
 	def run(self):
 		data = ''

@@ -22,9 +22,9 @@ if __name__ == '__main__':
 		try:
 			update_img(camera, 'pic0.jpg')
 			h = c.compass.heading()
-			c.turn_in_steps((h + (1 if right else -1) * 90) % 360)
+			c.turn((h + (1 if right else -1) * 90) % 360)
 			c.fwd_straight(max_secs=1, max_steps=c.m2steps(0.4))
-			c.turn_in_steps(h)
+			c.turn(h)
 			update_img(camera, 'pic1.jpg')
 			json.dump(c.dots, file('dots.json', 'w'), indent=2)
 		finally:
