@@ -63,6 +63,8 @@ volatile uint8_t intLhistory = 0;
 volatile uint8_t intRhistory = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
+volatile int lPower = 0;
+volatile int rPower = 0; 
 
 void resetCounters()
 {
@@ -85,6 +87,9 @@ void IccBase::sendState()
 	vals[0] = lCounter;
 	vals[1] = rCounter;
 	sendFloats(R_MCOUNTS_2F, vals, 2);
+	vals[0] = lPower;
+	vals[1] = rPower;
+	sendFloats(R_MPOWER_2F, vals, 2);
 	vals[0] = count2dist(lCounter);
 	vals[1] = count2dist(rCounter);
 	sendFloats(R_MDIST_2F, vals, 2);
@@ -131,7 +136,7 @@ void rIntCB()
 	}
 }
 
-int power2pwm(float power)
+int power2pwm(int power)
 {
 	int rs = MIN_PWM + (MAX_PWM-MIN_PWM) / 100. * power;
 	if(rs < MIN_PWM) {
@@ -144,6 +149,7 @@ int power2pwm(float power)
 
 void setLeftMotor(int power, bool fwd)
 {
+	lPower = power;
 	if(power == 0) {
 		digitalWrite(LEFT_MOTOR_1, LOW);
 		digitalWrite(LEFT_MOTOR_2, LOW);
@@ -165,6 +171,7 @@ void setLeftMotor(int power, bool fwd)
 
 void setRightMotor(int power, bool fwd)
 {
+	rPower = power;
 	if(power == 0) {
 		digitalWrite(RIGHT_MOTOR_1, LOW);
 		digitalWrite(RIGHT_MOTOR_2, LOW);
@@ -200,11 +207,10 @@ void sonar()
 	//Calculate the distance (in cm) based on the speed of sound.
 	distance = duration/58.2;
 
-	if (distance >= maximumRange || distance <= minimumRange)
-	{
-		// Send a negative number to computer
-		// to indicate "out of range"
-		distance = -1;
+	if(distance < minimumRange) {
+		distance = minimumRange - 1;
+	} else if(distance > maximumRange) {
+		distance = maximumRange + 1;
 	}
 }
 
@@ -254,6 +260,9 @@ void execute()
 			break;
 		case C_STATE:
 			base.sendState();
+			break;
+		case C_PING:
+			base.ok();
 			break;
 	}
 }
