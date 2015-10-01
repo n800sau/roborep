@@ -170,6 +170,14 @@ class fchassis_ng(bin2uno_inf):
 		self.send_command(pycmds.C_MBOTH, struct.pack('BBBB', lpwm, lfwd, rpwm, rfwd))
 		self.wait_reply()
 
+	def cmd_mleft(self, lpwm, lfwd):
+		self.send_command(pycmds.C_MLEFT, struct.pack('BB', lpwm, lfwd))
+		self.wait_reply()
+
+	def cmd_mright(self, rpwm, rfwd):
+		self.send_command(pycmds.C_MRIGHT, struct.pack('BB', rpwm, rfwd))
+		self.wait_reply()
+
 	def db_state(self):
 		self.update_state()
 		if self.state['tick_time'] > self.last_tick:
