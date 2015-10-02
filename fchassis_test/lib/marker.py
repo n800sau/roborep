@@ -42,8 +42,8 @@ def collect_markers(r, fpath=None):
 	v = r.blpop(QUEUE, timeout=5)
 	if v:
 		v = json.loads(v[1])
-		dbprint('DATA=%s' % (json.dumps(v, indent=2),))
-		dbprint('FOUND %d markers' % len(v['markers']))
+#		dbprint('DATA=%s' % (json.dumps(v, indent=2),))
+		dbprint('FOUND %d markers: %s' % (len(v['markers']), ','.join([str(m['id']) for m in v['markers']])))
 		rs = v['markers']
 	else:
 		dbprint('No answer')
@@ -79,7 +79,7 @@ def marker_offset(r, marker_id, fpath=None):
 		fpath = os.path.join(os.path.expanduser('~/public_html'), 'pic0.jpg')
 	marker = get_marker(r, marker_id, fpath=fpath)
 	if marker:
-		dbprint('Marker: %s' % json.dumps(marker, indent=2))
+#		dbprint('Marker: %s' % json.dumps(marker, indent=2))
 		frame = cv2.imread(marker['fpath'])
 		h,w = frame.shape[:2]
 		x = int(w * marker['dot']['x'])
@@ -103,7 +103,7 @@ def make_shot(r, fpath=None):
 	v = r.blpop(QUEUE, timeout=5)
 	if v:
 		v = json.loads(v[1])
-		dbprint('DATA=%s' % (json.dumps(v, indent=2),))
+#		dbprint('DATA=%s' % (json.dumps(v, indent=2),))
 	else:
 		raise Exception('make_shot: answer queue timeout')
 	

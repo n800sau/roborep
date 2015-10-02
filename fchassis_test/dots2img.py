@@ -46,17 +46,19 @@ xmax = min(xmax, 1000)
 ymin = max(ymin, -1000)
 ymax = min(ymax, 1000)
 
-im = Image.new('RGBA', (int(xmax-xmin), int(ymax-ymin)), (240, 240, 240, 0))
+padding = 20
+zoom = 0.5
+
+im = Image.new('RGBA', (int((xmax-xmin)*zoom)+2*padding, int((ymax-ymin)*zoom)+2*padding), (240, 240, 240, 0))
 draw = ImageDraw.Draw(im)
 ci = 0
-zoom = 1
 clr = 'blue'
-x = (dots[0]['x'] - xmin) *zoom
-y = (dots[0]['y'] - ymin) *zoom
+x = (dots[0]['x'] - xmin) *zoom + padding
+y = (dots[0]['y'] - ymin) *zoom + padding
 draw.ellipse((x-5, y-5, x+5, y+5), fill=clr, outline=clr)
 for d in dots[1:]:
-	x1 = (d['x'] - xmin) * zoom
-	y1 = (d['y'] - ymin) * zoom
+	x1 = (d['x'] - xmin) * zoom + padding
+	y1 = (d['y'] - ymin) * zoom + padding
 	draw.line((x, y, x1, y1), fill=clr)
 	x = x1
 	y = y1
