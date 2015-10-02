@@ -292,13 +292,22 @@ void setup()
 	Serial.println("Setup finished.");
 }
 
+unsigned long last_ping = millis();
+
 void loop()
 {
 	sonar();
 	if(base.available()) {
 //		Serial.println('available');
+		last_ping = millis();
 		execute();
 		base.resetInput();
+	} else {
+		if(last_ping + 60000 < millis()) {
+			Serial.println("Control timeout. Stopping");
+			setLeftMotor(0, false);
+			setRightMotor(0, false);
+		}
 	}
 	delay(50);
 }
