@@ -5,9 +5,12 @@ from l3g4200d import l3g4200
 from fchassis_ng import fchassis_ng
 from utils import angle_diff
 from pids import Pid
+from lib.marker import collect_markers
 
 STEP_TIME = 0.01
-TICK_MOVE_TIME = 1
+TICK_MOVE_TIME = 0.5
+
+MIN_DISTANCE = 0.1
 
 class frobo_ng(fchassis_ng):
 
@@ -99,7 +102,7 @@ class frobo_ng(fchassis_ng):
 				lpwr = power + offset
 				rpwr = power - offset
 				self.dbprint('^%d [%d<>%d] (%d:%d)' % (int(self.current_heading()), lpwr, rpwr, self.state['lcount'], self.state['rcount']))
-				if self.state['sonar'] >= 0 and self.state['sonar'] < 0.2:
+				if self.state['sonar'] >= 0 and self.state['sonar'] < MIN_DISTANCE:
 					self.hit_warn = self.state['sonar']
 					self.dbprint('STOP distance=%s' % self.state['sonar'])
 					break
@@ -115,10 +118,12 @@ class frobo_ng(fchassis_ng):
 		finally:
 			self.cmd_mstop()
 
+	# return turn degrees
 	def tick_move(self, clockwise, min_angle=None, pwr=50):
+		rs = 0
 		init_t = time.time()
 		init_h = self.compass.heading()
-		self.dbprint('init h: %d' % init_h)
+		self.dbprint('start h: %d, pwr: %s' % (init_h, pwr))
 		try:
 			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
 			for i in range(int(TICK_MOVE_TIME/STEP_TIME)):
@@ -144,18 +149,21 @@ class frobo_ng(fchassis_ng):
 			self.wait_until_stop()
 			h = self.compass.heading()
 			self.add_memory(abs(init_h - h), pwr, pwr, time.time() - init_t)
-			self.dbprint('last h: %d, change: %g' % (h, init_h - h))
+			rs = init_h - h
+			self.dbprint('last h: %d, change: %g' % (h, rs))
+		return rs
 
 	def tick_left(self, min_angle=None, pwr=40):
-		self.tick_move(False, min_angle=min_angle, pwr=pwr)
+		return self.tick_move(False, min_angle=min_angle, pwr=pwr)
 
 	def tick_right(self, min_angle=None, pwr=40):
-		self.tick_move(True, min_angle=min_angle, pwr=pwr)
+		return self.tick_move(True, min_angle=min_angle, pwr=pwr)
 
 	def turn(self, azim, err=3, stop_if=None, move_cb=None):
 		diff = self.heading_diff(azim, err=err)
 		if diff:
-			data = self.find_memory_closest(azim)
+#			data = self.find_memory_closest(azim)
+			data = None
 			if data is None:
 				self.turn_in_ticks(azim, err=err, stop_if=stop_if, move_cb=move_cb)
 			else:
@@ -175,7 +183,7 @@ class frobo_ng(fchassis_ng):
 					self.turn_in_ticks(azim, err=err, stop_if=stop_if, move_cb=move_cb)
 
 	def turn_in_ticks(self, azim, err=3, stop_if=None, move_cb=None):
-		min_pwr = 25
+		min_pwr = 15
 		max_pwr = 100
 		self.dbprint('start turn h %d' % int(self.current_heading()))
 		try:
@@ -194,9 +202,13 @@ class frobo_ng(fchassis_ng):
 				pwr = min_pwr + (max_pwr - min_pwr) * min(1, (adiff / 180.))
 				self.dbprint("power=%g" % pwr)
 				if diff > 0:
-					self.tick_right(min_angle=1, pwr = pwr)
+					change = self.tick_right(min_angle=1, pwr = pwr)
 				else:
-					self.tick_left(min_angle=1, pwr = pwr)
+					change = self.tick_left(min_angle=1, pwr = pwr)
+				if change == 0:
+					min_pwr += 5
+					if min_pwr > max_pwr - 10:
+						min_pwr = max_pwr - 10
 				self.wait_until_stop()
 				self.db_state()
 				if last_counts[0] == self.state['lcount'] and last_counts[1] == self.state['rcount']:
@@ -278,3 +290,35 @@ class frobo_ng(fchassis_ng):
 		finally:
 			self.cmd_mstop()
 		return rs
+
+
+	def search_marker(self, r, clockwise=True, marker_id=None):
+
+		def collect_markers_cb(r, marker_id):
+			class do_it:
+
+				def __init__(self):
+					self.i = 0;
+					self.target_loc = None
+
+				def __call__(self, c):
+					rs = False
+					fname = os.path.join(os.path.expanduser('~/public_html'), 'pic%d.jpg' % self.i)
+					markers = collect_markers(r, fpath=fname)
+					if markers:
+						c.dbprint('FOUND %d markers:' % len(markers))
+						for m in markers:
+							c.dbprint('\t%s' % m['id'])
+							#	os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
+							if marker_id and m['id'] == marker_id:
+								self.target_loc = m
+								rs = True
+								break
+						self.i += 1
+					return rs
+
+			return do_it()
+
+		cb = collect_markers_cb(r, marker_id)
+		self.search_around(cb, clockwise=clockwise)
+		return cb.target_loc
