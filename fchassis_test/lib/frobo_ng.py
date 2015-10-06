@@ -205,7 +205,7 @@ class frobo_ng(fchassis_ng):
 					change = self.tick_right(min_angle=1, pwr = pwr)
 				else:
 					change = self.tick_left(min_angle=1, pwr = pwr)
-				if change == 0:
+				if abs(change) < 1:
 					min_pwr += 5
 					if min_pwr > max_pwr - 10:
 						min_pwr = max_pwr - 10
@@ -227,13 +227,20 @@ class frobo_ng(fchassis_ng):
 			self.cmd_mstop()
 			self.dbprint('end turn h %d' % int(self.current_heading()))
 
-	def search_around(self, stop_if_cb, clockwise=True, pwr=30, step_angle=10):
+	def search_around(self, stop_if_cb, clockwise=True, pwr=30, step_angle=10, max_pwr=100):
+		min_pwr = pwr
 		ih = self.compass.heading()
 		last_diff = 0
 		growing = True
 		n_steps = 360 / step_angle
 		for step in range(n_steps):
-			self.tick_move(clockwise, pwr=pwr, min_angle=step_angle)
+			change = self.tick_move(clockwise, pwr=pwr, min_angle=step_angle)
+			if abs(change) < 1:
+				pwr += 5
+				if pwr > max_pwr - 10:
+					pwr = max_pwr - 10
+			else:
+				pwr = min_pwr
 			self.wait_until_stop()
 			h = self.compass.heading()
 			adiff = abs(angle_diff(ih, h))
@@ -308,7 +315,10 @@ class frobo_ng(fchassis_ng):
 					if markers:
 						c.dbprint('FOUND %d markers:' % len(markers))
 						for m in markers:
-							c.dbprint('\t%s' % m['id'])
+							if marker_id is None:
+								c.dbprint('\t%s' % (m['id'], ))
+							else:
+								c.dbprint('\t%s vs %s' % (m['id'], marker_id))
 							#	os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
 							if marker_id and m['id'] == marker_id:
 								self.target_loc = m
