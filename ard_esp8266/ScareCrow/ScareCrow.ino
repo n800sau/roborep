@@ -122,27 +122,27 @@ void switch_motors()
 	if(n_loops > 0) {
 		switch(stage) {
 			case 0:
-				digitalWrite(MOTO_PIN_1, LOW);
+				digitalWrite(MOTO_PIN_1, HIGH);
 				digitalWrite(MOTO_PIN_2, LOW);
 				break;
 			case 1:
-				digitalWrite(MOTO_PIN_1, HIGH);
+				digitalWrite(MOTO_PIN_1, LOW);
 				digitalWrite(MOTO_PIN_2, LOW);
 				break;
 			case 2:
 				digitalWrite(MOTO_PIN_1, LOW);
-				digitalWrite(MOTO_PIN_2, LOW);
+				digitalWrite(MOTO_PIN_2, HIGH);
 				break;
 			case 3:
 				digitalWrite(MOTO_PIN_1, LOW);
-				digitalWrite(MOTO_PIN_2, HIGH);
+				digitalWrite(MOTO_PIN_2, LOW);
 				break;
 		}
 		Serial.print("Stage ");
 		Serial.println(stage);
 		stage++;
 		if(stage >= 4) {
-			stage = 0;	
+			stage = 0;
 			n_loops--;
 		}
 	}
