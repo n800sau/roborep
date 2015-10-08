@@ -74,6 +74,7 @@ class frobo_ng(fchassis_ng):
 		self.cmd_mstop()
 		while not self.is_really_stopped(secs=1):
 			pass
+		self.dbprint("stopped")
 
 	def is_really_stopped(self, secs=1.5):
 		h = self.current_heading()
@@ -89,7 +90,7 @@ class frobo_ng(fchassis_ng):
 
 	def move_straight(self, fwd=True, max_steps=5, max_secs=1, heading=None, power=50):
 		self.cmd_reset_counters()
-		pid = Pid(2., 0, 1)
+		pid = Pid(2., 0, 0)
 		pid.range(-power, power)
 		if heading is None:
 			heading = self.current_heading()
@@ -99,10 +100,17 @@ class frobo_ng(fchassis_ng):
 			t = time.time()
 			while (t + max_secs) > time.time():
 				self.update_state()
-				lpwr = power + offset
-				rpwr = power - offset
-				self.dbprint('^%d [%d<>%d] (%d:%d)' % (int(self.current_heading()), lpwr, rpwr, self.state['lcount'], self.state['rcount']))
-				if self.state['sonar'] >= 0 and self.state['sonar'] < MIN_DISTANCE:
+				hdiff = angle_diff(self.current_heading(), heading)
+				if hdiff > 1:
+					offset = 20 if fwd else -20
+				elif hdiff < -1:
+					offset = -20 if fwd else 20
+				else:
+					offset = 0
+				lpwr = power - offset
+				rpwr = power + offset
+				self.dbprint('^%d hdiff:%g off:%d pw:%d<>%d cnt:%d<>%d' % (int(self.current_heading()), hdiff, offset, lpwr, rpwr, self.state['lcount'], self.state['rcount']))
+				if fwd and self.state['sonar'] >= 0 and self.state['sonar'] < MIN_DISTANCE:
 					self.hit_warn = self.state['sonar']
 					self.dbprint('STOP distance=%s' % self.state['sonar'])
 					break
@@ -138,9 +146,9 @@ class frobo_ng(fchassis_ng):
 							self.dbprint('it moves')
 							break
 						else:
-							hdiff = abs(angle_diff(h, init_h))
-							if hdiff > min_angle:
-								self.dbprint('it has moved %d degrees' % hdiff)
+							hdiff = angle_diff(h, init_h)
+							if abs(hdiff) > min_angle:
+								self.dbprint('it has moved %d degrees before stopping' % hdiff)
 								break
 				self.update_state()
 				time.sleep(STEP_TIME)
@@ -200,7 +208,6 @@ class frobo_ng(fchassis_ng):
 				if adiff < err:
 					break
 				pwr = min_pwr + (max_pwr - min_pwr) * min(1, (adiff / 180.))
-				self.dbprint("power=%g" % pwr)
 				if diff > 0:
 					change = self.tick_right(min_angle=1, pwr = pwr)
 				else:
@@ -209,7 +216,6 @@ class frobo_ng(fchassis_ng):
 					min_pwr += 5
 					if min_pwr > max_pwr - 10:
 						min_pwr = max_pwr - 10
-				self.wait_until_stop()
 				self.db_state()
 				if last_counts[0] == self.state['lcount'] and last_counts[1] == self.state['rcount']:
 					last_counts[2] += 1

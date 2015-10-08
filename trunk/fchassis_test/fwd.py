@@ -11,16 +11,19 @@ dist = float(sys.argv[1])
 c = frobo_ng()
 c.debug = True
 try:
-	dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
-	c.move_straight(fwd=True, max_steps=c.m2steps(dist), max_secs=1)
-	dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
+	h = c.compass.heading()
+	dbprint('BEFORE %d (%d:%d) dist=%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
+	c.move_straight(fwd=True, max_steps=c.m2steps(dist), max_secs=5)
+	dbprint('AFTER %d (%d:%d) dist=%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
 	if not c.hit_warn is None:
 		dbprint("Slide back")
 		c.move_straight(fwd=False, max_steps=c.m2steps(0.1), max_secs=5)
-		dbprint('AFTER slide %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
+		dbprint('AFTER slide %d (%d:%d) dist:%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
 
 	json.dump(c.dots, file('dots.json', 'w'), indent=2)
 finally:
+	c.cmd_mstop()
 	update_img(picamera.PiCamera())
 	c.update_state()
-	dbprint('EVENTUALLY %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['rcount']))
+	change = c.compass.heading() - h
+	dbprint('EVENTUALLY %d (%d:%d) dist=%g, turn=%d' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar'], change))

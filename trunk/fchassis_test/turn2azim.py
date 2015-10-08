@@ -19,8 +19,8 @@ if __name__ == '__main__':
 		dbprint('BEFORE %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], azim))
 		c.turn_in_ticks(azim, err=2)
 		dbprint('AFTER %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], azim))
-		time.sleep(3)
-		dbprint('AFTER WAIT %d (%d:%d), TARGET: %d' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], azim))
+		c.wait_until_stop()
+		dbprint('EVENTUALLY %d (%d:%d), TARGET: %d dist:%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], azim, c.state['sonar']))
 		json.dump(c.dots, file('dots.json', 'w'), indent=2)
 	finally:
 		c.cmd_mstop()
