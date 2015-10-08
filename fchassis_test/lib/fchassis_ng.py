@@ -182,7 +182,7 @@ class fchassis_ng(bin2uno_inf):
 		self.update_state()
 		if self.state['tick_time'] > self.last_tick:
 			self.last_tick = self.state['tick_time']
-			self.dbprint("v:%.2f, lcnt:%d, rcnt:%s, dist:%s" % (
+			self.dbprint("v:%.2f, lcnt:%d, rcnt:%d, dist:%s" % (
 				self.state['v'], self.state['lcount'], self.state['rcount'], self.state['sonar']
 			))
 

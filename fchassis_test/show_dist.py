@@ -16,4 +16,4 @@ if __name__ == '__main__':
 			break
 		else:
 			time.sleep(1)
-	print '%d cm to %s' % (c.state['sonar'] * 100, c.compass.heading())
+	print '%g m to %s' % (c.state['sonar'], c.compass.heading())
