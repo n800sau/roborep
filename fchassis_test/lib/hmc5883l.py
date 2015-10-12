@@ -34,7 +34,8 @@ class hmc5883l:
 		self.__declination = (degrees + minutes / 60) * math.pi / 180
 
 		(reg, self.__scale) = self.__scales[gauss]
-		self.bus.write_byte_data(self.address, 0x00, 0x70) # 8 Average, 15 Hz, normal measurement
+#		self.bus.write_byte_data(self.address, 0x00, 0x70) # 8 Average (11), 15 Hz (100), normal measurement(00)
+		self.bus.write_byte_data(self.address, 0x00, 0x78) # 8 Average (11), 75 Hz (110), normal measurement(00)
 		self.bus.write_byte_data(self.address, 0x01, reg << 5) # Scale
 		self.bus.write_byte_data(self.address, 0x02, 0x00) # Continuous measurement
 

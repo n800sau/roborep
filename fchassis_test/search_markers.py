@@ -31,6 +31,7 @@ if __name__ == '__main__':
 		c.wait_until_stop()
 		make_shot(r)
 		release_camera(r)
+		dbprint('EVENTUALLY %d dist=%g' % (c.compass.heading(), c.state['sonar']))
 
 	dbprint('TARGET: %s' % found)
 
