@@ -13,7 +13,7 @@ c.debug = True
 try:
 	h = c.compass.heading()
 	dbprint('BEFORE %d (%d:%d) dist=%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
-	c.move_straight(fwd=True, max_steps=c.m2steps(dist), max_secs=5)
+	c.move_straight(fwd=True, max_steps=c.m2steps(dist), max_secs=10)
 	dbprint('AFTER %d (%d:%d) dist=%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
 	if not c.hit_warn is None:
 		dbprint("Slide back")

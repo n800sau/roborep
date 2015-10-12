@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python right.py 2> right.log
+python step_turn.py 0 2> right.log
 echo $?

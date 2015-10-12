@@ -459,7 +459,7 @@ class frobo(fchassis):
 				break
 		return {'lmin': lpwr, 'rmin': rpwr}
 
-	def tick_move(self, clockwise, min_angle=None, pwr=40):
+	def tick_turn(self, clockwise, min_angle=None, pwr=40):
 		init_h = self.compass.heading()
 		self.dbprint('init h: %d' % init_h)
 		try:
@@ -488,8 +488,8 @@ class frobo(fchassis):
 			self.dbprint('last h: %d, change: %g' % (h, init_h - h))
 
 	def tick_left(self, min_angle=None, pwr=40):
-		self.tick_move(False, min_angle=min_angle, pwr=pwr)
+		self.tick_turn(False, min_angle=min_angle, pwr=pwr)
 
 	def tick_right(self, min_angle=None, pwr=40):
-		self.tick_move(True, min_angle=min_angle, pwr=pwr)
+		self.tick_turn(True, min_angle=min_angle, pwr=pwr)
 
