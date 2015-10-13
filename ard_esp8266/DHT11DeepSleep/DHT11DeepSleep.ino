@@ -6,8 +6,13 @@
 #include <Wire.h>
 #include <DS1307.h>
 #include <Time.h>
+#include <HttpClient.h>
 
 #include "config.h"
+
+// To read VCC voltage
+// TOUT pin has to be disconnected in this mode.
+ADC_MODE(ADC_VCC);
 
 #define DHTTYPE DHT11
 #define DHTPIN	5
@@ -24,12 +29,13 @@ const char* password = PASSWORD;
 
 int LED_PIN = 4; // LED is attached to ESP8266 pin 4.
 
-#define SLEEP_SECS 6
+// time to sleep between measurements
+#define SLEEP_SECS 10
 
-
-// To read VCC voltage
-// TOUT pin has to be disconnected in this mode.
-ADC_MODE(ADC_VCC);
+// Number of milliseconds to wait without receiving any data before we give up
+const int kNetworkTimeout = 30*1000;
+// Number of milliseconds to wait if no data is available before trying again
+const int kNetworkDelay = 1000;
 
 // Initialize DHT sensor 
 // NOTE: For working with a faster than ATmega328p 16 MHz Arduino chip, like an ESP8266,
@@ -98,12 +104,13 @@ void setup()
 		RTC.set(DS1307_DOW, weekday());       //set the day of the week
 		RTC.set(DS1307_DATE, day());       //set the date
 		RTC.set(DS1307_MTH, month());        //set the month
-		RTC.set(DS1307_YR, year());         //set the year
+		RTC.set(DS1307_YR, year() - 2000);         //set the year
 		RTC.start();
 	}
 
 	fs_ok = SPIFFS.begin();
 	if(!fs_ok) {
+		Serial.println("Formatting storage");
 		SPIFFS.format();
 		fs_ok = SPIFFS.begin();
 	}
@@ -116,31 +123,89 @@ void setup()
 
 }
 
+// return true if sent
 bool send_sensor_data(DATA_T &data)
 {
+	bool rs = false;
 	WiFiClient client;
-	String url = "/dht11";
-	bool rs = client.connect(master_server, 80);
-	if (rs) {
-		String postStr = "T=" + String(data.temp_c) +
-			"&H=" + String(data.humidity) +
-			"&V=" + String(data.v) +
-			"&TIME=" + String(data.timestamp);
+	HttpClient http(client);
 
-		client.print("POST "+url+" HTTP/1.1\n");
-		client.print("Host: " + String(master_server) + "\n");
-		client.print("Connection: close\n");
-		client.print("Content-Type: application/x-www-form-urlencoded\n");
-		client.print("Content-Length: ");
-		client.print(postStr.length());
-		client.print("\r\n\r\n");
-		client.print(postStr + "\r\n\r\n");
-		client.stop();
-		Serial.print(postStr);
-		Serial.println(" sent to " + String(master_server));
+	String postStr = "T=" + String(data.temp_c) +
+		"&H=" + String(data.humidity) +
+		"&V=" + String(data.v) +
+		"&TIME=" + String(data.timestamp);
+
+	http.beginRequest();
+	int err = http.post(master_server, "/dht11");
+	if (err == 0)
+	{
+		http.sendHeader("Content-Type", "application/x-www-form-urlencoded");
+		http.sendHeader("Content-Length", postStr.length());
+		http.println(postStr);
+		http.endRequest();
+		err = http.responseStatusCode();
+		if (err >= 0)
+		{
+			Serial.print("Got status code: ");
+			Serial.println(err);
+
+			rs = err < 300;
+
+			// Usually you'd check that the response code is 200 or a
+			// similar "success" code (200-299) before carrying on,
+			// but we'll print out whatever response we get
+
+			err = http.skipResponseHeaders();
+			if (err >= 0)
+			{
+				int bodyLen = http.contentLength();
+//				Serial.print("Content length is: ");
+//				Serial.println(bodyLen);
+//				Serial.println();
+				Serial.println("/dht11 response body:");
+
+				// Now we've got to the body, so we can print it out
+				unsigned long timeoutStart = millis();
+				char body[50];
+				int bptr = 0;
+				// Whilst we haven't timed out & haven't reached the end of the body
+				while((http.connected() || http.available()) && ((millis() - timeoutStart) < kNetworkTimeout))
+				{
+					if (http.available())
+					{
+						body[bptr++] = http.read();
+						if(bptr >= sizeof(body)) {
+							break;
+						}
+						// We read something, reset the timeout counter
+						timeoutStart = millis();
+					}
+					else
+					{
+						// We haven't got any data, so let's pause to allow some to
+						// arrive
+						delay(kNetworkDelay);
+					}
+				}
+				body[bptr] = 0;
+				Serial.println(body);
+			}
+			else
+			{
+				Serial.print("Failed to skip response headers: ");
+				Serial.println(err);
+			}
+		}
+		else
+		{
+			Serial.print("Getting response failed: ");
+			Serial.println(err);
+		}
 	} else {
-		Serial.println("Http connection failed (\"/epoch\")");
+		Serial.print("Connect failed: ");
+		Serial.println(err);
 	}
+	http.stop();
 	return rs;
 }
 
@@ -148,32 +213,73 @@ time_t request_time()
 {
 	time_t rs = 0;
 	WiFiClient client;
-	String url = "/epoch";
-	for(int i=0; i<5; i++) {
-		if(client.connect(master_server, 80)) {
-			client.print("GET "+url+" HTTP/1.1\n");
-			client.print("Host: " + String(master_server) + "\n");
-			client.print("Accept: */*\n");
-			client.print("Connection: close\n");
-			client.print("\r\n\r\n");
-			// Read all the lines of the reply from server and print them to Serial
-			while(client.connected()){
-				String line = client.readStringUntil('\r\n\r\n');
-				Serial.print("Headers:");
-				Serial.println(line);
-				line = client.readStringUntil('\r');
-				Serial.print("Reply:");
-				Serial.println(line);
-				rs = line.toInt();
-	  		}
-			Serial.println("client stop");
-			client.stop();
-			break;
-		} else {
-			Serial.println("Http connection failed (\"/epoch\")");
-			delay(1000);
+	HttpClient http(client);
+
+	int err = http.get(master_server, "/epoch");
+	if (err == 0)
+	{
+		err = http.responseStatusCode();
+		if (err >= 0)
+		{
+//			Serial.print("Got status code: ");
+//			Serial.println(err);
+
+			// Usually you'd check that the response code is 200 or a
+			// similar "success" code (200-299) before carrying on,
+			// but we'll print out whatever response we get
+
+			err = http.skipResponseHeaders();
+			if (err >= 0)
+			{
+				int bodyLen = http.contentLength();
+//				Serial.print("Content length is: ");
+//				Serial.println(bodyLen);
+//				Serial.println();
+//				Serial.println("/epoch response body:");
+
+				// Now we've got to the body, so we can print it out
+				unsigned long timeoutStart = millis();
+				char body[20];
+				int bptr = 0;
+				// Whilst we haven't timed out & haven't reached the end of the body
+				while((http.connected() || http.available()) && ((millis() - timeoutStart) < kNetworkTimeout))
+				{
+					if (http.available())
+					{
+						body[bptr++] = http.read();
+						if(bptr >= sizeof(body)) {
+							break;
+						}
+						// We read something, reset the timeout counter
+						timeoutStart = millis();
+					}
+					else
+					{
+						// We haven't got any data, so let's pause to allow some to
+						// arrive
+						delay(kNetworkDelay);
+					}
+				}
+				body[bptr] = 0;
+//				Serial.println(body);
+				rs = String(body).toInt();
+			}
+			else
+			{
+				Serial.print("Failed to skip response headers: ");
+				Serial.println(err);
+			}
 		}
+		else
+		{
+			Serial.print("Getting response failed: ");
+			Serial.println(err);
+		}
+	} else {
+		Serial.print("Connect failed: ");
+		Serial.println(err);
 	}
+	http.stop();
 	return rs;
 }
 
@@ -181,7 +287,7 @@ void loop()
 {
 
 
-  Serial.print(RTC.get(DS1307_HR, true)); //read the hour and also update all the values by pushing in true
+  Serial.print(RTC.get(DS1307_HR, false)); //read the hour and also update all the values by pushing in true
   Serial.print(":");
   Serial.print(RTC.get(DS1307_MIN, false));//read minutes without update (false)
   Serial.print(":");
@@ -221,37 +327,73 @@ void loop()
 
 		DATA_T odata;
 		// send first what is in storage if any
-		bool ok = false;
-		File storage = SPIFFS.open(STORAGE_NAME, "r");
+		bool sent_all = false, ok;
+		// file structure:
+		// record size = sizeof(odata)
+		File storage = SPIFFS.open(STORAGE_NAME, "a");
 		if(!storage) {
-			Serial.println("Failed to open storage file for reading");
+			Serial.println("Failed to open storage file for reading/writing");
+			SPIFFS.format();
+			SPIFFS.begin();
+			// just send current data
+			send_sensor_data(data);
 		} else {
-			ok = true;
-			while(storage.available()) {
-				storage.read((uint8_t*)&odata, sizeof(odata));
-				ok = send_sensor_data(odata);
-				if(!ok) {
-					break;
+			int pos;
+			sent_all = true;
+			storage.seek(0, SeekSet);
+			Serial.print("Storage size:");
+			Serial.println(storage.size());
+			if(storage.size() > 0) {
+				int magic = storage.read();
+				Serial.print("Magic=");
+				Serial.println(magic, 16);
+				if(magic == DATA_T_MAGIC && ((storage.size() - 1) % sizeof(DATA_T)) == 0) {
+					// read file and send unsent data
+					while(storage.available()) {
+						pos = storage.position();
+						storage.read((uint8_t*)&odata, sizeof(odata));
+						if(!odata.sent) {
+							ok = send_sensor_data(odata);
+							if(ok) {
+								odata.sent = true;
+								storage.seek(pos, SeekSet);
+								storage.write((uint8_t*)&odata, sizeof(data));
+							} else {
+								sent_all = false;
+							}
+						}
+					}
 				}
 			}
-			storage.close();
-		}
-		if(ok) {
-			// remove fully read file
-			if(!SPIFFS.remove(STORAGE_NAME)) {
-				Serial.println("Error removing storage file");
-			}
-		}
-		ok = send_sensor_data(data);
-		if(!ok) {
-			// save to temporary file
-			File storage = SPIFFS.open(STORAGE_NAME, "a+");
-			if(!storage) {
-				Serial.println("Failed to open storage file for appending");
-			} else {
-				storage.write((uint8_t*)&data, sizeof(data));
+			if(sent_all) {
 				storage.close();
+				storage = SPIFFS.open(STORAGE_NAME, "w");
+				if(!storage) {
+					Serial.println("Failed to open storage file for rewriting");
+					if(!SPIFFS.remove(STORAGE_NAME)) {
+						Serial.println("Error removing storage file");
+					}
+					storage = SPIFFS.open(STORAGE_NAME, "w");
+					if(!storage) {
+						Serial.println("Still failed to open storage file for rewriting");
+					}
+				} else {
+					storage.write(DATA_T_MAGIC);
+					Serial.print("New storage size:");
+					Serial.println(storage.size());
+					pos = storage.position();
+				}
 			}
+			ok = send_sensor_data(data);
+			if(!ok) {
+				// save to temporary file
+				storage.write((uint8_t*)&data, sizeof(data));
+			}
+			Serial.print("File size:");
+			Serial.println(storage.size());
+			Serial.print("Data count:");
+			Serial.println((storage.size()-1.) / sizeof(data));
+			storage.close();
 			blink(3);
 			delay(500);
 		}
