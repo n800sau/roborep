@@ -13,11 +13,11 @@ c.debug = True
 try:
 	h = c.compass.heading()
 	dbprint('BEFORE %d (%d:%d) dist=%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
-	c.move_straight(fwd=True, max_steps=c.m2steps(dist), max_secs=10)
+	c.move_straight(fwd=True, max_steps=c.m2steps(dist), max_secs=20)
 	dbprint('AFTER %d (%d:%d) dist=%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
 	if not c.hit_warn is None:
 		dbprint("Slide back")
-		c.move_straight(fwd=False, max_steps=c.m2steps(0.1), max_secs=5)
+		c.move_straight(fwd=False, max_steps=c.m2steps(0.2), max_secs=5)
 		dbprint('AFTER slide %d (%d:%d) dist:%g' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar']))
 
 	json.dump(c.dots, file('dots.json', 'w'), indent=2)

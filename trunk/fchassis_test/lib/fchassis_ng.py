@@ -167,15 +167,15 @@ class fchassis_ng(bin2uno_inf):
 		self.state['rcount'] = 0
 
 	def cmd_mboth(self, lpwm, lfwd, rpwm, rfwd):
-		self.send_command(pycmds.C_MBOTH, struct.pack('BBBB', lpwm, lfwd, rpwm, rfwd))
+		self.send_command(pycmds.C_MBOTH, struct.pack('BBBB', min(255, lpwm), lfwd, min(255, rpwm), rfwd))
 		self.wait_reply()
 
 	def cmd_mleft(self, lpwm, lfwd):
-		self.send_command(pycmds.C_MLEFT, struct.pack('BB', lpwm, lfwd))
+		self.send_command(pycmds.C_MLEFT, struct.pack('BB', min(255, lpwm), lfwd))
 		self.wait_reply()
 
 	def cmd_mright(self, rpwm, rfwd):
-		self.send_command(pycmds.C_MRIGHT, struct.pack('BB', rpwm, rfwd))
+		self.send_command(pycmds.C_MRIGHT, struct.pack('BB', min(255, rpwm), rfwd))
 		self.wait_reply()
 
 	def db_state(self):
