@@ -79,7 +79,7 @@ class frobo_ng(fchassis_ng):
 			pass
 		self.dbprint("stopped")
 
-	def is_really_stopped(self, secs=1.5):
+	def is_really_stopped(self, secs=0.5):
 		h = self.current_heading()
 		self.update_state()
 		lcount = self.state['lcount']
@@ -93,6 +93,7 @@ class frobo_ng(fchassis_ng):
 
 	def move_straight(self, fwd=True, max_steps=5, max_secs=1, heading=None, power=50):
 		self.cmd_reset_counters()
+		counted_offset = 0
 		pid = Pid(2., 0, 0)
 		pid.range(-power, power)
 		if heading is None:
@@ -109,7 +110,10 @@ class frobo_ng(fchassis_ng):
 				if abs(hdiff) > 20:
 					self.dbprint("STOP and CORRECT")
 					tt = time.time()
+					counted = self.steps_counted()
 					self.turn_in_ticks(heading, err=5)
+					counted_offset = counted - self.steps_counted()
+					self.dbprint("COUNTER OFFSET=%d" % counted_offset)
 					hdiff = angle_diff(self.current_heading(), heading)
 					max_secs += time.time() - tt
 				if hdiff > 1:
@@ -125,9 +129,13 @@ class frobo_ng(fchassis_ng):
 					self.hit_warn = self.state['sonar']
 					self.dbprint('STOP distance=%s' % self.state['sonar'])
 					break
-				steps = self.steps_counted()
+				steps = self.steps_counted() + counted_offset
 				if steps > max_steps:
 					self.dbprint('Max steps reached (%d > %d)' % (steps, max_steps))
+					hdiff = angle_diff(self.current_heading(), heading)
+					if abs(hdiff) > 3:
+						self.dbprint("FINAL CORRECTION")
+						self.turn_in_ticks(heading, err=5)
 					break
 				self.cmd_mboth(lpwr, fwd, rpwr, fwd)
 				time.sleep(STEP_TIME)
@@ -177,56 +185,71 @@ class frobo_ng(fchassis_ng):
 		return rs
 
 	# return turn degrees
-	def tick_turn(self, clockwise, min_angle=None, pwr=50):
+	def tick_turn(self, clockwise, min_angle=None, pwr=50, mleft=True, mright=True):
 		rs = 0
 		max_pwr = pwr
 		in_t = time.time()
 		in_h = self.compass.heading()
-		azim = (in_h + min_angle) if clockwise else (in_h - min_angle)
+		if not min_angle is None:
+			azim = (in_h + min_angle) if clockwise else (in_h - min_angle)
 		in_x,in_y,in_z = self.gyro.getDegPerSecAxes()
 		self.dbprint('start h: %.2f, z: %.2f, pwr: %s' % (in_h, in_z, pwr))
+		moved = False
 		try:
-			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
-			for i in range(int(TICK_TURN_TIME/STEP_TIME)):
-#				time.sleep(STEP_TIME)
-				dt = time.time() - in_t
-				h = self.compass.heading()
-				st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
-				if st:
-					x,y,z = self.gyro.getDegPerSecAxes()
-#					self.dbprint('dh: %.2f, dz: %.2f, dt:%.2f' % (h - in_h, z - in_z, dt))
-					if min_angle is None:
-						if st:
-							self.dbprint('g:%d %d %d, h:%d' % (x, y, z, h))
-							if abs(z) > 15:
-								self.dbprint('it moves')
-								break
-					else:
-						# remaining angle
-						adiff = angle_diff(azim, h)
-						# passed angle
-						pdiff = angle_diff(h, in_h)
-						# f(dt, pwr, z) = 
-						# remain distance depends on z, mass and friction
-						# f((z, dt) - friction?
-						# (z / dt) - acceleration = K * (pwr - friction)
-						# time to finish
-						# curr angle velocity (with offset)
-						if z - in_z != 0:
-							rt = abs(adiff / (z - in_z))
-							if rt < dt:
-								# stop
-								self.dbprint('Moved FAST enough %.2f < %.2f' % (rt, dt))
-								self.cmd_mstop()
-								self.wait_until_stop()
-								h = self.compass.heading()
-								adiff = min_angle - abs(h - in_h)
-								break
-# update_state takes too long
-#				self.update_state()
+			while not moved:
+				if mleft and mright:
+					self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
+				elif mleft:
+					self.cmd_mleft(pwr, clockwise)
+				elif mright:
+					self.cmd_mright(pwr, not clockwise)
+				for i in range(int(TICK_TURN_TIME/STEP_TIME)):
+	#				time.sleep(STEP_TIME)
+					dt = time.time() - in_t
+					h = self.compass.heading()
+					st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
+					if st:
+						x,y,z = self.gyro.getDegPerSecAxes()
+	#					self.dbprint('dh: %.2f, dz: %.2f, dt:%.2f' % (h - in_h, z - in_z, dt))
+						if min_angle is None:
+							if st:
+								self.dbprint('g:%d %d %d, h:%.2f' % (x, y, z, h))
+								if abs(z) >= 3:
+									self.dbprint('it moves')
+									moved = True
+									break
+						else:
+							# remaining angle
+							adiff = angle_diff(azim, h)
+							# passed angle
+							pdiff = angle_diff(h, in_h)
+							# f(dt, pwr, z) = 
+							# remain distance depends on z, mass and friction
+							# f((z, dt) - friction?
+							# (z / dt) - acceleration = K * (pwr - friction)
+							# time to finish
+							# curr angle velocity (with offset)
+							if z - in_z != 0:
+								rt = abs(adiff / (z - in_z))
+								if rt < dt:
+									moved = True
+									# stop
+									self.dbprint('Moved FAST enough %.2f < %.2f' % (rt, dt))
+									self.cmd_mstop()
+									self.wait_until_stop()
+									h = self.compass.heading()
+									adiff = min_angle - abs(h - in_h)
+									break
+				if not moved:
+					pwr += 5
+					if pwr > 100:
+						self.dbprint('NOT MOVED and STUCK')
+						break
+					self.dbprint('NOT MOVED power now gets: %s' % (pwr,))
 		finally:
-			self.update_state()
 			self.cmd_mstop()
+# update_state takes too long
+			self.update_state()
 			self.wait_until_stop()
 			self.update_state()
 			h = self.compass.heading()
@@ -265,7 +288,7 @@ class frobo_ng(fchassis_ng):
 					self.turn_in_ticks(azim, err=err, stop_if=stop_if, move_cb=move_cb)
 
 	def turn_in_ticks(self, azim, err=3, stop_if=None, move_cb=None):
-		min_pwr = 10
+		min_pwr = 30
 		max_pwr = 100
 		slow_coef = 1
 		change_list = []
@@ -290,11 +313,17 @@ class frobo_ng(fchassis_ng):
 					self.dbprint('SIGN CHANGE, coef=%g' % slow_coef)
 				pwr = (min_pwr + (max_pwr - min_pwr) * (adiff / 180.)) * max(0.1, slow_coef)
 				self.dbprint('######################### POWER %g , diff=%g' % (pwr, diff))
-				if diff > 0:
-					change = self.tick_right(min_angle=adiff, pwr = pwr)
+				if adiff < 30:
+					if diff > 0:
+						change = self.tick_right(pwr = pwr)
+					else:
+						change = self.tick_left(pwr = pwr)
 				else:
-					change = self.tick_left(min_angle=adiff, pwr = pwr)
-				if abs(change) < 1:
+					if diff > 0:
+						change = self.tick_right(min_angle=adiff, pwr = pwr)
+					else:
+						change = self.tick_left(min_angle=adiff, pwr = pwr)
+				if abs(change) < 1 and slow_coef < 1:
 					slow_coef += 0.1
 #					min_pwr += 5
 #					if min_pwr > max_pwr - 10:
