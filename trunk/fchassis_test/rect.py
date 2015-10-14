@@ -4,7 +4,7 @@ import sys, os, time, json
 
 import picamera
 from lib.utils import dbprint
-from lib.camera import update_img, FeatureProcess, capture_cvimage
+from lib.camera import update_img, FeatureProcess
 
 from lib.frobo_ng import frobo_ng
 

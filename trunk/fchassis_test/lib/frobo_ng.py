@@ -214,7 +214,7 @@ class frobo_ng(fchassis_ng):
 						if min_angle is None:
 							if st:
 								self.dbprint('g:%d %d %d, h:%.2f' % (x, y, z, h))
-								if abs(z) >= 3:
+								if abs(z) >= 2:
 									self.dbprint('it moves')
 									moved = True
 									break
