@@ -21,14 +21,14 @@ if __name__ == '__main__':
 	use_camera(r)
 	time.sleep(4)
 	try:
-		dbprint('BEFORE %s cm to %s' % (c.curr_dist, c.compass.heading()))
-		for i in range(5):
+		dbprint('BEFORE %s cm to %s' % (c.state['sonar'], c.compass.heading()))
+		for i in range(30):
 			c.move_straight(fwd=True, max_secs=20, max_steps=c.m2steps(random.randint(10, 100)/100.), power=100)
 			c.find_distance(60, clockwise=random.choice((True, False)))
 			markers = collect_markers(r, fpath = os.path.join(os.path.expanduser('~/public_html'), 'pic%d.jpg' % i))
 			if markers:
 				dbprint('Step %d. Found %d markers' % (i, len(markers)))
-		dbprint('AFTER %s cm to %s' % (c.curr_dist, c.compass.heading()))
+		dbprint('AFTER %s cm to %s' % (c.state['sonar'], c.compass.heading()))
 		json.dump(c.dots, file('dots.json', 'w'), indent=2)
 	finally:
 		make_shot(r)

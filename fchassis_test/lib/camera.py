@@ -221,3 +221,42 @@ class ImageSearch(object):
 
 	def extract_black(self, frame):
 		return frame
+
+class ShapeSearch:
+
+	def __init__(self, camera=None):
+		self.camera = camera
+
+	def find_shapes(self, frame=None):
+		rs = None
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera)
+#			frame = capture_cvimage(self.camera, resolution=(1280, 960))
+		if not frame is None:
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			ret,thresh = cv2.threshold(gray, 127, 255, 1)
+			contours,h = cv2.findContours(thresh, 1, 2)
+			for cnt in contours:
+				approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt,True), True)
+				prefix = 'found %d ' % len(approx)
+				if len(approx)==5:
+					dbprint(prefix + ":pentagon")
+					cv2.drawContours(frame, [cnt], 0, 255, -1) # w
+				elif len(approx)==3:
+					dbprint(prefix + ":triangle")
+					cv2.drawContours(frame, [cnt], 0, (0, 255, 0), -1) # green
+				elif len(approx)==4:
+					dbprint(prefix + ":square")
+					cv2.drawContours(frame, [cnt], 0, (0, 0, 255), -1) # blue
+				elif len(approx) == 9:
+					dbprint(prefix + ":half-circle")
+					cv2.drawContours(frame, [cnt], 0, (255, 255, 0), -1) # red-green
+				elif len(approx) > 15:
+					dbprint(prefix + ":circle")
+					cv2.drawContours(frame, [cnt], 0, (0, 255, 255), -1) # cyan (green-blue)
+				dbprint(prefix)
+			rs = {
+				'contours': contours,
+				'frame': frame,
+			}
+		return rs
