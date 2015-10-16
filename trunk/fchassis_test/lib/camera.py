@@ -227,6 +227,9 @@ class ShapeSearch:
 	def __init__(self, camera=None):
 		self.camera = camera
 
+	def polyArea(self, poly):
+		return 0.5*np.abs(np.dot(poly[:,0],np.roll(poly[:,1],1))-np.dot(poly[:,1],np.roll(poly[:,0],1)))
+
 	def find_shapes(self, frame=None):
 		rs = None
 		if frame is None and self.camera:
@@ -234,29 +237,40 @@ class ShapeSearch:
 #			frame = capture_cvimage(self.camera, resolution=(1280, 960))
 		if not frame is None:
 			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			kernel = np.ones((5,5),np.float32)/25
+			gray = cv2.filter2D(gray, -1, kernel)
 			ret,thresh = cv2.threshold(gray, 127, 255, 1)
-			contours,h = cv2.findContours(thresh, 1, 2)
+			contours,h = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+			i = 0
 			for cnt in contours:
-				approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt,True), True)
-				prefix = 'found %d ' % len(approx)
-				if len(approx)==5:
-					dbprint(prefix + ":pentagon")
-					cv2.drawContours(frame, [cnt], 0, 255, -1) # w
-				elif len(approx)==3:
-					dbprint(prefix + ":triangle")
-					cv2.drawContours(frame, [cnt], 0, (0, 255, 0), -1) # green
-				elif len(approx)==4:
-					dbprint(prefix + ":square")
-					cv2.drawContours(frame, [cnt], 0, (0, 0, 255), -1) # blue
-				elif len(approx) == 9:
-					dbprint(prefix + ":half-circle")
-					cv2.drawContours(frame, [cnt], 0, (255, 255, 0), -1) # red-green
-				elif len(approx) > 15:
-					dbprint(prefix + ":circle")
-					cv2.drawContours(frame, [cnt], 0, (0, 255, 255), -1) # cyan (green-blue)
+				approx = cv2.approxPolyDP(cnt, 0.1*cv2.arcLength(cnt,True), True)
+				prefix = '%3d found %d' % (i, len(approx),)
+				area = self.polyArea(approx[:, 0, :])
+				if area > 5:
+					if len(approx)==5:
+						dbprint("%s:pentagon: A:%s" % (prefix, area))
+						cv2.drawContours(frame, [approx], 0, (255, 255 - i, 155), -1) # w
+					elif len(approx)==3:
+						dbprint("%s:triangle: A:%s" % (prefix, area))
+						cv2.drawContours(frame, [approx], 0, (0, 255, i), -1) # green
+					elif len(approx)==4:
+						dbprint("%s:square: A:%s" % (prefix, area))
+						cv2.drawContours(frame, [approx], 0, (i, 0, 255), -1) # blue
+					elif len(approx) == 9:
+						dbprint("%s:half-circle: A:%s" % (prefix, area))
+						cv2.drawContours(frame, [approx], 0, (255, 255 - i, 0), -1) # red-green
+					elif len(approx) > 15:
+						dbprint("%s:circle: A:%s" % (prefix, area))
+						cv2.drawContours(frame, [approx], 0, (0, 255, 255 - i), -1) # cyan (green-blue)
+					else:
+						i = i - 30
+					i += 30
+					if i > 100:
+						i = 0
 				dbprint(prefix)
 			rs = {
 				'contours': contours,
 				'frame': frame,
+				'thresh': thresh,
 			}
 		return rs
