@@ -1,11 +1,12 @@
-import time, copy, os, sys, json, pickle
+import time, copy, os, sys, json, pickle, cv2
 from hmc5883l import hmc5883l
 from adxl345 import ADXL345
 from l3g4200d import l3g4200
 from fchassis_ng import fchassis_ng
-from utils import angle_diff
+from utils import angle_diff, html_path
 from pids import Pid
 from lib.marker import collect_markers
+from lib.camera import ShapeSearch
 
 STEP_TIME = 0.01
 TICK_TURN_TIME = 0.5
@@ -463,3 +464,30 @@ class frobo_ng(fchassis_ng):
 		cb = collect_markers_cb(r, marker_id)
 		self.search_around(cb, clockwise=clockwise)
 		return cb.target_loc
+
+	def search_shapes(self, camera, clockwise=True):
+
+		ss = ShapeSearch(camera)
+
+		def search_cb():
+			class do_it:
+
+				def __init__(self):
+					self.i = 0;
+
+				def __call__(self, c):
+					data = ss.find_shapes()
+					if data:
+						if os.environ.get('RASPICAM_ROTATE', ''):
+							angle = int(os.environ['RASPICAM_ROTATE'])
+							rows,cols,depth = data['frame'].shape
+							M = cv2.getRotationMatrix2D((cols/2,rows/2), 180, 1)
+							data['frame'] = cv2.warpAffine(data['frame'], M, (cols,rows))
+						cv2.imwrite(html_path('shapes_%03d.jpg' % self.i), data['frame'])
+						cv2.imwrite(html_path('thresh_%03d.jpg' % self.i), data['thresh'])
+						self.i += 1
+
+			return do_it()
+
+		cb = search_cb()
+		self.search_around(cb, clockwise=clockwise)

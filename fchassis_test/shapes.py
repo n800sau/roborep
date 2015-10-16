@@ -20,5 +20,6 @@ if __name__ == '__main__':
 					M = cv2.getRotationMatrix2D((cols/2,rows/2), 180, 1)
 					data['frame'] = cv2.warpAffine(data['frame'], M, (cols,rows))
 				cv2.imwrite(html_path('shapes.jpg'), data['frame'])
+				cv2.imwrite(html_path('thresh.jpg'), data['thresh'])
 		finally:
 			update_img(camera)
