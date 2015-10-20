@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DISTANCE=1.10
+DISTANCE=0.50
 
 python fwd.py $DISTANCE 2> fwd.log
 echo $?

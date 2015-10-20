@@ -1,4 +1,4 @@
-import time, copy, os, sys, json, pickle, cv2
+import time, copy, os, sys, json, pickle, cv2, random
 from hmc5883l import hmc5883l
 from adxl345 import ADXL345
 from l3g4200d import l3g4200
@@ -476,7 +476,7 @@ class frobo_ng(fchassis_ng):
 					self.i = 0;
 
 				def __call__(self, c):
-					data = ss.find_shapes()
+					data = ss.find_shapes(resolution=(160, 120))
 					if data:
 						if os.environ.get('RASPICAM_ROTATE', ''):
 							angle = int(os.environ['RASPICAM_ROTATE'])
@@ -485,9 +485,30 @@ class frobo_ng(fchassis_ng):
 							data['frame'] = cv2.warpAffine(data['frame'], M, (cols,rows))
 						cv2.imwrite(html_path('shapes_%03d.jpg' % self.i), data['frame'])
 						cv2.imwrite(html_path('thresh_%03d.jpg' % self.i), data['thresh'])
+						c.dbprint('Written set %d' % self.i)
 						self.i += 1
 
 			return do_it()
 
 		cb = search_cb()
 		self.search_around(cb, clockwise=clockwise)
+		json.dump({'imgcount': cb.i}, file(html_path('shapes.json'), 'w'), indent=2)
+
+	def collect_turn_data(self, cnt=100, clockwise=None, dT=None, pwr=None):
+		data = []
+		random.seed()
+		for i in range(cnt):
+			_clockwise = random.choice((True, False)) if clockwise is None else clockwise
+			_pwr = random.randint(1, 100) if pwr is None else pwr
+			_dT = random.uniform(0.1, 3) if dT is None else dT
+			h = self.compass.heading()
+			self.dbprint('Test pwr:%d, dT:%.1f, cw: %s' % (_pwr, _dT, _clockwise))
+			self.cmd_mboth(_pwr, _clockwise, _pwr, not _clockwise)
+			time.sleep(_dT)
+			self.cmd_mstop()
+			self.wait_until_stop()
+			h1 = self.compass.heading()
+			adiff = abs(angle_diff(h, self.compass.heading()))
+			self.dbprint('Result:%.2f' % adiff)
+			data.append({'output': {'adiff': adiff}, 'input': {'pwr': _pwr, 'dT': _dT, 'clockwise': _clockwise}})
+		return data
