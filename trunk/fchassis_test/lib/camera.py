@@ -230,10 +230,10 @@ class ShapeSearch:
 	def polyArea(self, poly):
 		return 0.5*np.abs(np.dot(poly[:,0],np.roll(poly[:,1],1))-np.dot(poly[:,1],np.roll(poly[:,0],1)))
 
-	def find_shapes(self, frame=None):
+	def find_shapes(self, frame=None, **params):
 		rs = None
 		if frame is None and self.camera:
-			frame = capture_cvimage(self.camera)
+			frame = capture_cvimage(self.camera, **params)
 #			frame = capture_cvimage(self.camera, resolution=(1280, 960))
 		if not frame is None:
 			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -244,7 +244,7 @@ class ShapeSearch:
 			i = 0
 			for cnt in contours:
 				approx = cv2.approxPolyDP(cnt, 0.1*cv2.arcLength(cnt,True), True)
-				prefix = '%3d found %d' % (i, len(approx),)
+				prefix = 'found %d' % (len(approx),)
 				area = self.polyArea(approx[:, 0, :])
 				if area > 5:
 					if len(approx)==5:
@@ -267,7 +267,8 @@ class ShapeSearch:
 					i += 30
 					if i > 100:
 						i = 0
-				dbprint(prefix)
+				else:
+					dbprint('%s (too small)' % prefix)
 			rs = {
 				'contours': contours,
 				'frame': frame,
