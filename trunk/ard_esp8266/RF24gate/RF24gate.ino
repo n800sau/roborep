@@ -8,12 +8,13 @@
 #include <SPI.h>
 #include "RF24.h"
 #include <HttpClient.h>
+#include "Time.h"
 
-const char *thingspeak_server = "184.106.153.149";
+const char *dest_server = "192.168.2.80";
+const int dest_server_port = 5580;
+const char *dest_path = "/sensors/accept.php";
 
 #include "config.h"
-const char *apiKey = API_KEY;
-
 const char* ssid	 = SSID;
 const char* password = PASSWORD;
 
@@ -33,7 +34,7 @@ const int RF24g_pipe = 2;
 byte myaddress[6] = "ESPma";
 byte addresses[][6] = {"DHT11", "RF24g", "PICAX" };
 
-ESP8266WebServer server(80);
+ESP8266WebServer server(81);
 
 
 // NTP stuff
@@ -74,25 +75,29 @@ void handleRoot() {
 
 void handleDHT11()
 {
+	Serial.println("dht11 handler start");
 	String t = server.arg("T");
 	String h = server.arg("H");
 	String v = server.arg("V");
 	String time = server.arg("TIME");
+	time_t itime = time.toInt();
 	if(t == "" || h == "" || v == "") {
 		server.send(500, "text/plain", "No data received");
 		blink(3);
 	} else {
 		Serial.print("Data timestamp:");
-		Serial.println(time);
-		if(send_dht11_data(t, h, v)) {
+		Serial.println(String(year(itime)) + "-" + String(month(itime)) + "-" + String(day(itime)) + " " +
+			String(hour(itime)) + ":" + String(minute(itime)) + ":" + String(second(itime)));
+		if(send_dht11_data(t, h, v, time)) {
 			server.send(200, "text/plain", "Ok");
 			blink(1);
 		} else {
-			server.send(500, "text/plain", "Thingspeak connection failed");
-			Serial.println("Thingspeak connection failed");
+			server.send(500, "text/plain", "Destination connection failed");
+			Serial.println("Destination connection failed");
 			blink(3);
 		}
 	}
+	Serial.println("dht11 handler end");
 }
 
 void handleEpoch()
@@ -240,7 +245,7 @@ void loop() {
 			Serial.print(heat);
 			Serial.print(" V:");
 			Serial.println(v);
-			send_dht11_data(String(t), String(h), String(v));
+			send_dht11_data(String(t), String(h), String(v), String(millis()));
 		}
 	}
 
@@ -248,22 +253,22 @@ void loop() {
 } // Loop
 
 
-bool send_dht11_data(String temp_c, String humidity, String v)
+bool send_dht11_data(String temp_c, String humidity, String v, String timestamp)
 {
 	bool rs = false;
 	WiFiClient client;
 	HttpClient http(client);
-	String postStr = String(apiKey) +
-		"&field1=" + temp_c +
-		"&field2=" + humidity +
-		"&field3=" + v + "\r\n\r\n";
+	String postStr =
+		"TIME=" + timestamp +
+		"&T=" + temp_c +
+		"&H=" + humidity +
+		"&V=" + v;
 
 	Serial.println(postStr);
 	http.beginRequest();
-	int err = http.post(thingspeak_server, "/update");
+	int err = http.post(dest_server, dest_server_port, dest_path);
 	if (err == 0)
 	{
-		http.sendHeader("X-THINGSPEAKAPIKEY", apiKey);
 		http.sendHeader("Content-Type", "application/x-www-form-urlencoded");
 		http.sendHeader("Content-Length", postStr.length());
 		http.println(postStr);
