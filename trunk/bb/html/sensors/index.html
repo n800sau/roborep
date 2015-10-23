@@ -1,0 +1,95 @@
+<html>
+<head>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
+<script type="text/javascript" src="http://cdn.jsdelivr.net/angular.chartjs/latest/angular-chart.min.js"></script>
+<link rel="stylesheet" href="http://cdn.jsdelivr.net/angular.chartjs/latest/angular-chart.min.css"/>
+
+<title>The Plot</title>
+
+<script type="text/javascript">
+(function () {
+
+	'use strict';
+
+	angular.module("app", ["chart.js"])
+	// Optional configuration
+	.config(['ChartJsProvider', function (ChartJsProvider) {
+		// Configure all charts
+		ChartJsProvider.setOptions({
+			colours: ['#FF5252', '#FF8A80'],
+			responsive: false
+		});
+		// Configure all line charts
+		ChartJsProvider.setOptions('Line', {
+			datasetFill: false
+		});
+	}])
+	.controller("LineCtrl", ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
+
+		$scope.labels = []
+		$scope.series = ['T', 'H', 'V'];
+		$scope.tdata = [];
+		$scope.hdata = [];
+		$scope.vdata = [];
+		$scope.error = '';
+
+		$scope.onClick = function (points, evt) {
+			console.log(points, evt);
+		};
+
+		var reload = function () {
+			$http.get('plot.php').success(
+				function(data) {
+					var t = [];
+					var h = [];
+					var v = [];
+					var l = [];
+					for(var ts in data) {
+						t.push(data[ts].t);
+						h.push(data[ts].h);
+						v.push(data[ts].v);
+						l.push(data[ts].l);
+					}
+					$scope.tdata = [t];
+					$scope.hdata = [h];
+					$scope.vdata = [v];
+					$scope.labels = l;
+				}
+			).error(
+				function(data) {
+					$scope.error = 'Error while loading data';
+				}
+			)
+		}
+
+		// Simulate async data update
+		$interval(reload, 60000);
+
+		reload();
+	}]);
+})();
+
+</script>
+
+</head>
+<body ng-app="app">
+	<div class="container" ng-controller="LineCtrl">
+		T:<br/>
+		<canvas class="chart chart-line" chart-data="tdata" chart-labels="labels"
+			chart-legend="false" chart-series="series" chart-click="onClick"
+			chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+		<br/>
+		H:<br/>
+		<canvas class="chart chart-line" chart-data="hdata" chart-labels="labels"
+			chart-legend="false" chart-series="series" chart-click="onClick"
+			chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+		<br/>
+		V:<br/>
+		<canvas class="chart chart-line" chart-data="vdata" chart-labels="labels"
+			chart-legend="false" chart-series="series" chart-click="onClick"
+			chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+		<div class="error">{{error}}</div>
+	</div>
+</body>
+</html>
