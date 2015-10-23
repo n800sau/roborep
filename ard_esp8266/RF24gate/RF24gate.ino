@@ -34,7 +34,7 @@ const int RF24g_pipe = 2;
 byte myaddress[6] = "ESPma";
 byte addresses[][6] = {"DHT11", "RF24g", "PICAX" };
 
-ESP8266WebServer server(81);
+ESP8266WebServer server(80);
 
 
 // NTP stuff
