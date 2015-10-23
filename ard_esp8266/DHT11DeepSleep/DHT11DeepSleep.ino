@@ -4,7 +4,7 @@
 #include <EEPROM.h>
 #include <DHT.h>
 #include <Wire.h>
-#include <DS1307.h>
+#include <DS1307RTC.h>
 #include <Time.h>
 #include <HttpClient.h>
 
@@ -30,7 +30,7 @@ const char* password = PASSWORD;
 int LED_PIN = 4; // LED is attached to ESP8266 pin 4.
 
 // time to sleep between measurements
-#define SLEEP_SECS 10
+#define SLEEP_SECS 600
 
 // Number of milliseconds to wait without receiving any data before we give up
 const int kNetworkTimeout = 30*1000;
@@ -109,30 +109,20 @@ void setup()
 	pinMode(LED_PIN, OUTPUT); // Set LED pin (5) as an output
 	digitalWrite(LED_PIN, LOW);
 
-	int t = request_time();
-	if(t > 1000000) {
-		setTime(t);
-	}
-
 	setSyncProvider(request_time);  //set function to call when sync required
-
-	if (timeStatus()!= timeNotSet) {
-
-		Serial.println("Setting time...");
-		RTC.stop();
-		RTC.set(DS1307_SEC, second());        //set the seconds
-		RTC.set(DS1307_MIN, minute());     //set the minutes
-		RTC.set(DS1307_HR, hour());       //set the hours
-		RTC.set(DS1307_DOW, weekday());       //set the day of the week
-		RTC.set(DS1307_DATE, day());       //set the date
-		RTC.set(DS1307_MTH, month());        //set the month
-		RTC.set(DS1307_YR, year() - 2000);         //set the year
-		RTC.start();
-	}
 
 	delay(3000);
 
 }
+
+void printDigits(int digits){
+  // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
+
 
 // return true if sent
 bool send_sensor_data(DATA_T &data)
@@ -275,6 +265,7 @@ time_t request_time()
 				body[bptr] = 0;
 //				Serial.println(body);
 				rs = String(body).toInt();
+				RTC.set(rs);
 			}
 			else
 			{
@@ -292,25 +283,27 @@ time_t request_time()
 		Serial.println(err);
 	}
 	http.stop();
-	return rs;
+	return (rs == 0) ? RTC.get() : rs;
 }
+
+void digitalClockDisplay(){
+	// digital clock display of the time
+	Serial.print(hour());
+	printDigits(minute());
+	printDigits(second());
+	Serial.print(" ");
+	Serial.print(day());
+	Serial.print(" ");
+	Serial.print(month());
+	Serial.print(" ");
+	Serial.print(year()); 
+	Serial.println(); 
+}
+
 
 void loop()
 {
-
-
-	Serial.print(RTC.get(DS1307_HR, false)); //read the hour and also update all the values by pushing in true
-	Serial.print(":");
-	Serial.print(RTC.get(DS1307_MIN, false));//read minutes without update (false)
-	Serial.print(":");
-	Serial.print(RTC.get(DS1307_SEC, false));//read seconds
-	Serial.print("      ");                 // some space for a more happy life
-	Serial.print(RTC.get(DS1307_DATE, false));//read date
-	Serial.print("/");
-	Serial.print(RTC.get(DS1307_MTH, false));//read month
-	Serial.print("/");
-	Serial.print(RTC.get(DS1307_YR, false)); //read year
-	Serial.println();
+	digitalClockDisplay();
 
 	// Reading temperature for humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
