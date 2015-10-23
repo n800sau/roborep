@@ -1,0 +1,241 @@
+/***************************************************************************//**
+* @mainpage How to use the interface library
+*
+* @section S0 Downloading and installing the interface library
+*
+* You need to install the Arduino Interface Library first before being able
+* to use it with your Arduino Environment. To do so, go to the @a files web
+* page by clicking <A HREF="http://cmucam.org/projects/cmucam4/files"> @b here
+* </A> and download the @a CMUcam4-Arduino-Interface-Library-100 file and unzip
+* it. You should see a single folder inside called @a %CMUcam4.
+*
+* Next, find and open your Arduino sketchbook folder. If there is already a
+* folder inside of your sketchbook folder called @a libraries, then place the
+* @a %CMUcam4 folder inside of the @a libraries folder. Otherwise, create a
+* folder called @a libraries inside of your sketchbook folder and place the
+* @a %CMUcam4 folder inside of the @a libraries folder.
+*
+* Finally, if you currently have the Arduino IDE open, restart it. Then, if you
+* go to the <b> Sketch > Import Library </b> menu you should see @a %CMUcam4
+* listed there. Click on the @a %CMUcam4 menu item to include the interface
+* library at the top of your sketch.
+*
+* We recommend that you check out the example code included with the interface
+* library before you begin programming. You can check out our example code by
+* going to <b> File > Examples > %CMUcam4 </b> and clicking on the examples
+* listed there.
+*
+* Please refer to the <A HREF="http://cmucam.org/documents/11"><b> %CMUcam4
+* Manual </b></A> for more information about %CMUcam4 commands, data packets,
+* and error codes. This documentation assumes that you have read through the
+* command list users manual. Additionally, please refer to the
+* <A HREF="http://cmucam.org/documents/17"><b> Electrical and Component
+* Characteristics </b></A> documentation for more information about the
+* %CMUcam4's power consumption and the %CMUcam4's specifications.
+*
+* @section S1 Connecting the CMUcam4 to your Arduino
+*
+* To use the %CMUcam4 with your Arduino you need to connect the %CMUcam4 to one
+* of the Arduino's serial ports. You can connect the %CMUcam4 to the Arduino
+* from either the <b> 4-Pin Prop Clip/Plug Port </b>, the
+* <b> 6-Pin Arduino Adapter Port </b>, or the
+* <b> 2-Pin Arduino Shield Port </b> located on the %CMUcam4. Please see the
+* <A HREF="http://cmucam.org/documents/16"><b> Board Layout and Ports </b></A>
+* documentation for more information about these serial ports.
+*
+* For serial communication to work you need to connect one and only one @b RXI
+* pin from the %CMUcam4 to a @b TXO pin on your Arduino, one and only one
+* @b TXO pin from the %CMUcam4 to a @b RXI pin on your Arduino (the @b RXI and
+* @b TXO pins must be from the same serial port on your Arduino), and the
+* %CMUcam4 and your Arduino must share a common ground. Additionally, you need
+* to power the %CMUcam4 with a power supply capable of delivering at least
+* <b> 250 mA </b> at between <b> 4V to 9V DC </b>.
+*
+* <b> Because the %CMUcam4 connects to the Arduino's serial port it may
+* interfere with programming your Arduino. Some Arduino boards put current
+* limiting resistors between the %CMUcam4's serial port and the Ardunio's
+* serial port - like the Arduino Pro. This configuration allows the Arduino Pro
+* to be reprogrammed when a serial programmer is connected and communicate
+* with the %CMUcam4 when a serial programmer is not connected. However, the
+* Arduino Pro cannot communicate with the %CMUcam4 while a serial programmer
+* is connected. Other types of Arduino boards, like the Arduino Uno, put
+* current limiting resistors between the serial programmer and the Arduino, but
+* not between the %CMUcam4 and the Arduino. This configuration allows the
+* Arduino to be able to always communicate with the %CMUcam4. However, if a
+* serial programmer is connected to the Arduino while the %CMUcam4 is connected
+* to the Arduino then the serial programmer will not be able to communicate
+* with the Arduino. </b>
+*
+* <b> If you cannot reprogram your Arduino when the %CMUcam4 is connected to
+* your Arduino you can either disconnect the %CMUcam4 from your Arduino or you
+* can put the %CMUcam4 into halt mode. </b>
+*
+* Halt mode allows you to halt the %CMUcam4 while still connected to an
+* Arduino. In halt mode, the %CMUcam4 draws very little power and does not
+* prevent an Arduino from being programmed by blocking the Arduino's serial
+* port. Halt mode is only necessary if the %CMUcam4 interferes with the Arduino
+* programming process. If it does not then halt mode is unnecessary - this is
+* usually the case. Once the %CMUcam4 enters halt mode it will not exit halt
+* mode until it is reset. Follow the steps below to enter halt mode:
+*
+* 1. Press and hold the <b> reset button </b> on the %CMUcam4
+* 2. Press and hold the <b> user button </b> on the %CMUcam4
+* 3. Release the <b> reset button </b> (do not release the <b>user button</b>)
+* 4. Wait until the red auxiliary LED turns on (<b>2 seconds</b>)
+* 5. Release the <b> user button </b>
+* 6. The %CMUcam4 is now halted indefinitely
+*
+* Press the <b> reset button </b> to exit halt mode.
+*
+* @section S2 Initializing the interface library and the CMUcam4
+*
+* To use the %CMUcam4 interface library you must first include the CMUcam4.h
+* file at the top of your code. Next, you need to instantiate a CMUcam4
+* interface library object in your code. You can pass either nothing when
+* instantiating the CMUcam4 interface library object or you can pass a serial
+* port number for the serial port the CMUcam4 interface library object should
+* use. The serial port number can be either CMUCOM4_SERIAL, CMUCOM4_SERIAL1,
+* CMUCOM4_SERIAL2, or CMUCOM4_SERIAL3 for serial ports Serial, Serial1,
+* Serial2, and Serial3 on the Arduino and Arduino Mega (only the Arduino Mega
+* supports serial ports Serial1, Serial2, and Serial3). If you do not pass a
+* serial port number, or an invalid serial port number, then the interface
+* library will use the serial port Serial by default. DO NOT use the serial
+* port that you pass the %CMUcam4 interface library after calling
+* CMUcam4::begin() and before calling CMUcam4::end(). Sending or receiving
+* data on the serial port while the %CMUcam4 interface library is using the
+* serial port will cause the interface library and the %CMUcam4 to become
+* confused.
+*
+* Calling the CMUcam4::begin() function initializes the interface library and
+* the %CMUcam4. It changes the communication baud rate from 19,200 BPS to
+* 115,200 BPS for CMUcam4s with firmware version 1.01 or less and changes the
+* communication baud rate from 19,200 BPS to 250,000 BPS for CMUcam4s with
+* firmware version 1.02 or greater. Additionally, the function changes the
+* number of stop bits to one. If the CMUcam4::begin() function is not called
+* all %CMUcam4 wrapper functions in the interface library will return the
+* CMUCAM4_NOT_ACTIVATED error number (%CMUcam4 wrapper functions are the
+* functions in the %CMUcam4 interface library that have the same name as the
+* %CMUcam4 commands).
+*
+* Call the CMUcam4::end() function to finalize the %CMUcam4 interface library
+* and release the serial port the interface library was using for use. Before
+* using the serial port the interface library was using you should physically
+* disconnect the %CMUcam4 from the serial port the interface library was using.
+*
+* Once the %CMUcam4 interface library has been initialized by calling the
+* CMUcam4::begin() function you can call other functions inside the %CMUcam4
+* interface library. For example, if you want to put the %CMUcam4 to sleep to
+* save power you can call either the CMUcam4::sleepLightly() or
+* CMUcam4::sleepDeeply() functions. These functions are wrappers for the
+* %CMUcam4 "SD" (sleep deeply) and "SL" (sleep lightly) commands. The interface
+* library has a wrapper function for every %CMUcam4 command and helper
+* functions for working with %CMUcam4 data structures.
+*
+* @section S3 Color tracking with the interface library
+*
+* The CMUcam4::trackColor(), CMUcam4::trackWindow(), CMUcam4::getHistogram(),
+* and CMUcam4::getMean() functions are used to track colors with the %CMUcam4
+* and get image statistics with the %CMUcam4. When you call any one of the
+* above functions the %CMUcam4 enters stream mode and begins sending type F, H,
+* S, and/or T data packets depending on what function you called and what mode
+* the %CMUcam4 was in. To get the data packets the %CMUcam4 is sending you may
+* call the CMUcam4::getTypeFDataPacket(), CMUcam4::getTypeHDataPacket(),
+* CMUcam4::getTypeSDataPacket(), and CMUcam4::getTypeTDataPacket() to get type
+* F, H, S, and T packets the %CMUcam4 is sending respectively. If you call any
+* other function than a getType*DataPacket() function then the %CMUcam4 will
+* exit stream mode and you may no longer call any getType*DataPacket() function
+* until you tell the %CMUcam4 to enter stream mode again by calling
+* CMUcam4::trackColor(), CMUcam4::trackWindow(), CMUcam4::getHistogram(), or
+* CMUcam4::getMean(). All other functions in the %CMUcam4 interface library do
+* not cause the %CMUcam4 to enter stream mode and may be called in any order.
+*
+* When the %CMUcam4 enters stream mode it begins to constantly send data
+* packets to the Arduino. You need to call the getType*DataPacket() functions
+* to get the data packets and keep the Arduino's serial buffer from overflowing
+* while the %CMUcam4 is in stream mode. Always process data packets sent by the
+* %CMUcam4 after receiving all the data packets sent by the %CMUcam4 during the
+* current image frame. For example, if line mode is enabled and the %CMUcam4 is
+* sending type T data packets followed by type F data packets then call
+* CMUcam4::getTypeTDataPacket() and then call CMUcam4::getTypeFDataPacket() and
+* then process the type T data packet and the type F data packet. DO NOT
+* process the type T data packet before getting the type F data packet or the
+* Arduino's serial buffer may overflow.
+*
+* If you want the %CMUcam4 to exit stream mode but do not want it to execute
+* another command call the CMUcam4::idleCamera() function.
+*
+* All non-file system related functions have a timeout of 1 second. This means
+* that if communication is lost with the %CMUcam4 all non-file system related
+* functions will return in a second with the CMUCAM4_SERIAL_TIMEOUT error.
+* However, all file system related functions have a timeout of 1 hour because
+* file system related commands can take an arbitrary amount of time. Be
+* suspicious of electrical communication and/or power problems if your Arduino
+* program appears to hang on a %CMUcam4 interface library file system call.
+* But, understand that file system related functions like CMUcam4::formatDisk()
+* and CMUcam4::diskSpace() can take several minutes or more to run.
+*
+* @section S4 Arduino and Arduino Mega memory usage
+*
+* The interface library uses a non-trivial amount of RAM on the Arduino and
+* Arduino Mega. For example, Type F Data Packets require six hundred bytes of
+* RAM. Because of this, you need to keep track of your memory usage. To learn
+* how to do this please click
+* <A HREF="http://jeelabs.org/2011/05/22/atmega-memory-use/"> @b here </A> for
+* a tutorial by Jee Labs on memory usage.
+*
+* @section S5 Porting the interface library
+*
+* The interface library is composed of a CMUcam4 object and a CMUcom4 object.
+* The CMUcam4 object is the interface library and the CMUcom4 object is a
+* platform specific functionality wrapper. Only the CMUcom4.cpp file and
+* CMUcom4.h file need to be edited to port the interface library. The CMUcam4
+* object calls functions inside of the CMUcom4 object for serial and timer
+* functionality.
+*
+* Porting the CMUcom4.cpp and CMUcom4.h file is straight forward. Just supply
+* each Arduino serial and timer function wrapper with the appropriate function
+* call in your microcontroller or operating system. Additionally, you will need
+* to edit the maximum baud rate and minimum stop bits constants in the
+* CMUcom4.h file. Finally, you will also need to edit the command and response
+* serial buffer sizes in the CMUcom4.h file - the command and response serial
+* buffers do not need to be and should not be larger than 256 bytes.
+*
+* The interface library assumes that chars are at least 8 bits, ints and
+* size_ts are at least 16 bits, and longs are at least 32 bits. These
+* assumptions are valid for all platforms implementing standard
+* <A HREF="http://en.wikipedia.org/wiki/C_data_types"><b>  C data types
+* </b></A>. Additionally, the interface library assumes your microcontroller or
+* operating system is little little-endian. If your operating system or
+* microntroller does not implement standard C data types and/or is not little
+* endian then you will need to also edit the CMUcam4.cpp file and CMUcam4.h
+* file to support your particular microcontroller or operating system.
+*
+* @version @n 1.0
+* @date @n 8/20/2012
+*
+* @authors @n Kwabena W. Agyeman & Christopher J. Leaf
+* @copyright @n (c) 2012 Kwabena W. Agyeman & Christopher J. Leaf
+* @n All rights reserved - Please see the end of file for terms of use
+*
+* @par Update History:
+* @n v1.0 - Original release - 8/20/2012
+*
+* @par MIT License - TERMS OF USE:
+* @n Permission is hereby granted, free of charge, to any person obtaining a
+* copy of this software and associated documentation files (the "Software"), to
+* deal in the Software without restriction, including without limitation the
+* rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+* sell copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+* @n
+* @n The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+* @n
+* @n THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*******************************************************************************/
