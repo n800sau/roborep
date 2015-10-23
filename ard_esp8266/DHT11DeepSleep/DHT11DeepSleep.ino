@@ -1,7 +1,7 @@
 #include "DHT11DeepSleep.h"
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include "FS.h"
+#include <EEPROM.h>
 #include <DHT.h>
 #include <Wire.h>
 #include <DS1307.h>
@@ -17,12 +17,12 @@ ADC_MODE(ADC_VCC);
 #define DHTTYPE DHT11
 #define DHTPIN	5
 
+//const char *master_server = "192.168.1.153";
+//const char *master_server = "192.168.1.9";
 const char *master_server = "192.168.4.1";
-//const char *master_server = "nrfgate.local";
+//const char *master_server = SSID;
 
-const char *STORAGE_NAME = "/storage.bin";
-// if file system is available
-bool fs_ok;
+const int s_count = std::min(20U, (4096 - sizeof(HEADER_T)) / sizeof(DATA_T));
 
 const char* ssid	 = SSID;
 const char* password = PASSWORD;
@@ -59,16 +59,35 @@ void blink(int times=1)
 	}
 }
 
+HEADER_T header;
 
 void setup()
 {
 	Serial.begin(115200);
+
+	EEPROM.begin(s_count * sizeof(DATA_T) + sizeof(HEADER_T));
+	EEPROM.get(0, header);
+	if(header.magic != DATA_MAGIC) {
+		// init EEPROM
+		Serial.println("Init storage header");
+		header.magic = DATA_MAGIC;
+		header.send_first = header.send_last = -1;
+		EEPROM.put(0, header);
+		EEPROM.commit();
+	} else {
+		if(header.send_first >= s_count || header.send_last >= s_count) {
+			header.send_first = header.send_last = -1;
+			EEPROM.put(0, header);
+			EEPROM.commit();
+		}
+	}
 
 	Wire.begin(12, 14);
 
 
 	// Connect to WiFi network
 	WiFi.begin(ssid, password);
+	WiFi.mode(WIFI_STA);
 	Serial.print("\n\r \n\rWorking to connect");
 
 	// Wait for connection
@@ -90,7 +109,10 @@ void setup()
 	pinMode(LED_PIN, OUTPUT); // Set LED pin (5) as an output
 	digitalWrite(LED_PIN, LOW);
 
-	setTime(request_time());
+	int t = request_time();
+	if(t > 1000000) {
+		setTime(t);
+	}
 
 	setSyncProvider(request_time);  //set function to call when sync required
 
@@ -106,17 +128,6 @@ void setup()
 		RTC.set(DS1307_MTH, month());        //set the month
 		RTC.set(DS1307_YR, year() - 2000);         //set the year
 		RTC.start();
-	}
-
-	fs_ok = SPIFFS.begin();
-	if(!fs_ok) {
-		Serial.println("Formatting storage");
-		SPIFFS.format();
-		fs_ok = SPIFFS.begin();
-	}
-	if(!fs_ok) {
-		Serial.println("Failed to start filesystem");
-		blink(5);
 	}
 
 	delay(3000);
@@ -135,6 +146,8 @@ bool send_sensor_data(DATA_T &data)
 		"&V=" + String(data.v) +
 		"&TIME=" + String(data.timestamp);
 
+	Serial.print("Sending:");
+	Serial.println(postStr);
 	http.beginRequest();
 	int err = http.post(master_server, "/dht11");
 	if (err == 0)
@@ -142,7 +155,6 @@ bool send_sensor_data(DATA_T &data)
 		http.sendHeader("Content-Type", "application/x-www-form-urlencoded");
 		http.sendHeader("Content-Length", postStr.length());
 		http.println(postStr);
-		http.endRequest();
 		err = http.responseStatusCode();
 		if (err >= 0)
 		{
@@ -192,17 +204,17 @@ bool send_sensor_data(DATA_T &data)
 			}
 			else
 			{
-				Serial.print("Failed to skip response headers: ");
+				Serial.print("/dht11 failed to skip response headers: ");
 				Serial.println(err);
 			}
 		}
 		else
 		{
-			Serial.print("Getting response failed: ");
+			Serial.print("/dht11 getting response failed: ");
 			Serial.println(err);
 		}
 	} else {
-		Serial.print("Connect failed: ");
+		Serial.print("/dht11 connect failed: ");
 		Serial.println(err);
 	}
 	http.stop();
@@ -272,11 +284,11 @@ time_t request_time()
 		}
 		else
 		{
-			Serial.print("Getting response failed: ");
+			Serial.print("/epoch getting response failed: ");
 			Serial.println(err);
 		}
 	} else {
-		Serial.print("Connect failed: ");
+		Serial.print("/epoch connect failed: ");
 		Serial.println(err);
 	}
 	http.stop();
@@ -287,19 +299,18 @@ void loop()
 {
 
 
-  Serial.print(RTC.get(DS1307_HR, false)); //read the hour and also update all the values by pushing in true
-  Serial.print(":");
-  Serial.print(RTC.get(DS1307_MIN, false));//read minutes without update (false)
-  Serial.print(":");
-  Serial.print(RTC.get(DS1307_SEC, false));//read seconds
-  Serial.print("      ");                 // some space for a more happy life
-  Serial.print(RTC.get(DS1307_DATE, false));//read date
-  Serial.print("/");
-  Serial.print(RTC.get(DS1307_MTH, false));//read month
-  Serial.print("/");
-  Serial.print(RTC.get(DS1307_YR, false)); //read year
-  Serial.println();
-
+	Serial.print(RTC.get(DS1307_HR, false)); //read the hour and also update all the values by pushing in true
+	Serial.print(":");
+	Serial.print(RTC.get(DS1307_MIN, false));//read minutes without update (false)
+	Serial.print(":");
+	Serial.print(RTC.get(DS1307_SEC, false));//read seconds
+	Serial.print("      ");                 // some space for a more happy life
+	Serial.print(RTC.get(DS1307_DATE, false));//read date
+	Serial.print("/");
+	Serial.print(RTC.get(DS1307_MTH, false));//read month
+	Serial.print("/");
+	Serial.print(RTC.get(DS1307_YR, false)); //read year
+	Serial.println();
 
 	// Reading temperature for humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
@@ -312,7 +323,7 @@ void loop()
 		delay(500);
 	} else {
 
-		data.timestamp = now();
+		data.timestamp = (timeStatus() == timeNotSet) ? 0 : now();
 		data.v = ESP.getVcc() / 1000.;
 		Serial.print("TIME:");
 		Serial.print(data.timestamp);
@@ -327,76 +338,71 @@ void loop()
 
 		DATA_T odata;
 		// send first what is in storage if any
-		bool sent_all = false, ok;
-		// file structure:
-		// record size = sizeof(odata)
-		File storage = SPIFFS.open(STORAGE_NAME, "a");
-		if(!storage) {
-			Serial.println("Failed to open storage file for reading/writing");
-			SPIFFS.format();
-			SPIFFS.begin();
-			// just send current data
-			send_sensor_data(data);
+		bool ok;
+
+			Serial.print("DATA_T size:");
+			Serial.println(sizeof(DATA_T));
+		while(header.send_first >= 0 && header.send_last >= 0) {
+			int pos = sizeof(HEADER_T) + sizeof(DATA_T) * header.send_first;
+			Serial.print("Old data address:");
+			Serial.println(pos);
+			EEPROM.get(pos, odata);
+			if(isnan(odata.humidity) || isnan(odata.temp_c)) {
+				Serial.println("Bad old data. Skip it");
+				ok = true;
+			} else {
+				ok = send_sensor_data(odata);
+				if(ok) {
+					Serial.println("Old data sent successfully");
+				}
+			}
+			if(ok) {
+				if(header.send_first == header.send_last) {
+					header.send_first = header.send_last = -1;
+				} else {
+					header.send_first++;
+					if(header.send_first >= s_count) {
+						header.send_first = 0;
+					}
+				}
+			} else {
+				Serial.println("Can not send old data");
+				break;
+			}
+		}
+		ok = send_sensor_data(data);
+		if(ok) {
+			Serial.println("New data sent successfully");
 		} else {
-			int pos;
-			sent_all = true;
-			storage.seek(0, SeekSet);
-			Serial.print("Storage size:");
-			Serial.println(storage.size());
-			if(storage.size() > 0) {
-				int magic = storage.read();
-				Serial.print("Magic=");
-				Serial.println(magic, 16);
-				if(magic == DATA_T_MAGIC && ((storage.size() - 1) % sizeof(DATA_T)) == 0) {
-					// read file and send unsent data
-					while(storage.available()) {
-						pos = storage.position();
-						storage.read((uint8_t*)&odata, sizeof(odata));
-						if(!odata.sent) {
-							ok = send_sensor_data(odata);
-							if(ok) {
-								odata.sent = true;
-								storage.seek(pos, SeekSet);
-								storage.write((uint8_t*)&odata, sizeof(data));
-							} else {
-								sent_all = false;
-							}
+			Serial.println("Can not send new data");
+			if(data.timestamp == 0) {
+				Serial.println("Time is not syncronised. No storage allowed");
+			} else {
+				Serial.println(data.timestamp);
+				Serial.println(timeStatus());
+				if(header.send_last >= 0) {
+					header.send_last++;
+					if(header.send_last >= s_count) {
+						header.send_last = 0;
+					}
+					if(header.send_last == header.send_first) {
+						header.send_first++;
+						if(header.send_first >= s_count) {
+							header.send_first = 0;
 						}
 					}
-				}
-			}
-			if(sent_all) {
-				storage.close();
-				storage = SPIFFS.open(STORAGE_NAME, "w");
-				if(!storage) {
-					Serial.println("Failed to open storage file for rewriting");
-					if(!SPIFFS.remove(STORAGE_NAME)) {
-						Serial.println("Error removing storage file");
-					}
-					storage = SPIFFS.open(STORAGE_NAME, "w");
-					if(!storage) {
-						Serial.println("Still failed to open storage file for rewriting");
-					}
 				} else {
-					storage.write(DATA_T_MAGIC);
-					Serial.print("New storage size:");
-					Serial.println(storage.size());
-					pos = storage.position();
+					header.send_first = header.send_last = 0;
 				}
+				int pos = sizeof(HEADER_T) + sizeof(DATA_T) * header.send_last;
+				Serial.print("Write to pos:");
+				Serial.println(pos);
+				EEPROM.put(pos, data);
 			}
-			ok = send_sensor_data(data);
-			if(!ok) {
-				// save to temporary file
-				storage.write((uint8_t*)&data, sizeof(data));
-			}
-			Serial.print("File size:");
-			Serial.println(storage.size());
-			Serial.print("Data count:");
-			Serial.println((storage.size()-1.) / sizeof(data));
-			storage.close();
 			blink(3);
-			delay(500);
 		}
+		EEPROM.put(0, header);
+		EEPROM.commit();
 	}
 	ESP.deepSleep(SLEEP_SECS * 1000000L, WAKE_RF_DEFAULT);
 //	delay(SLEEP_SECS * 1000);
