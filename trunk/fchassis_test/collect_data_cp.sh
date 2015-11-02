@@ -1,1 +1,0 @@
-cp data fann/pwr

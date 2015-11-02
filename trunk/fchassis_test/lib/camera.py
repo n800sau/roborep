@@ -1,8 +1,10 @@
 import os
 from picamera.array import PiRGBArray
 import cv2
+import imutils
 from utils import dbprint
 import numpy as np
+from matplotlib import pyplot as plt
 
 # "FAST"
 # "STAR"
@@ -46,7 +48,7 @@ import numpy as np
 # "HARRIS" - GoodFeaturesToTrackDetector with Harris detector enabled
 # "Dense" - DenseFeatureDetector
 # "SimpleBlob" - SimpleBlobDetector
-DETECTOR = 'GridORB'
+DETECTOR = 'ORB'
 #DETECTOR = 'GFTT'
 NORM = cv2.NORM_HAMMING
 
@@ -93,13 +95,13 @@ class FeatureProcess(object):
 		self.img = None
 		self.cv_det = cv2.FeatureDetector_create(DETECTOR)
 		self.cv_desc = cv2.DescriptorExtractor_create(EXTRACTOR)
-#		self.matcher = cv2.DescriptorMatcher_create(MATCHER)
-		#flann_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-		flann_params= dict(algorithm = FLANN_INDEX_LSH,
-			table_number = 6, # 12
-			key_size = 12,     # 20
-			multi_probe_level = 1) #2
-		self.matcher = cv2.FlannBasedMatcher(flann_params, {})  # bug : need to pass empty dict (#1329)
+		self.matcher = cv2.DescriptorMatcher_create(MATCHER)
+#		flann_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+#		flann_params= dict(algorithm = FLANN_INDEX_LSH,
+#			table_number = 6, # 12
+#			key_size = 12,     # 20
+#			multi_probe_level = 1) #2
+#		self.matcher = cv2.FlannBasedMatcher(flann_params, {})  # bug : need to pass empty dict (#1329)
 
 
 	def filterMatches(self, kp, matches, ratio = 0.75):
@@ -109,7 +111,9 @@ class FeatureProcess(object):
 				m = m[0]
 				mkp1.append(self.kp[m.queryIdx])
 				mkp2.append(kp[m.trainIdx])
-		return zip( mkp1, mkp2 )
+		p1 = np.float32([kp.pt for kp in mkp1])
+		p2 = np.float32([kp.pt for kp in mkp2])
+		return p1, p2, zip(mkp1, mkp2)
 
 	def percent(self, frame=None):
 		rs = None
@@ -117,7 +121,7 @@ class FeatureProcess(object):
 			if frame is None and self.camera:
 				frame = capture_cvimage(self.camera)
 			if not frame is None:
-#			frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+				frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 				if self.img is None:
 					self.img = frame
 					self.kp = self.cv_det.detect(self.img)
@@ -128,9 +132,21 @@ class FeatureProcess(object):
 					kp = self.cv_det.detect(frame)
 					kp, desc = self.cv_desc.compute(frame, kp)
 					matches = self.matcher.knnMatch(self.desc, trainDescriptors=desc, k=2)
-					pairs = self.filterMatches(kp, matches)
+					p1,p2,pairs = self.filterMatches(kp, matches)
 					lp = len(pairs)
-					rs = ((lp * 100) / self.kpl) if self.kpl else 0
+					percent = ((lp * 100) / self.kpl) if self.kpl else 0
+					rs = {
+						'frame': frame,
+						'percent': percent
+					}
+					if len(p1) >= 4:
+						H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 2.0)
+						dbprint('%d / %d  inliers/matched' % (np.sum(status), len(status)))
+						pg = [p[0] for p in zip(p2, status) if p[1][0]]
+						pnt = np.average(pg, axis=0)
+						rs['point'] = pnt
+						if not pnt is None:
+							cv2.circle(frame, (pnt[0], pnt[1]), max(20, frame.shape[0] / 20), (0, 0, 255), -1)
 		except cv2.error, e:
 			dbprint('cv2 error: %s' % e)
 		return rs
@@ -230,7 +246,8 @@ class ShapeSearch:
 	def polyArea(self, poly):
 		return 0.5*np.abs(np.dot(poly[:,0],np.roll(poly[:,1],1))-np.dot(poly[:,1],np.roll(poly[:,0],1)))
 
-	def find_shapes(self, frame=None, **params):
+	# threshold_type: THRESH_BINARY, THRESH_BINARY_INV, THRESH_TRUNC, THRESH_TOZERO, THRESH_TOZERO_INV
+	def find_shapes(self, frame=None, threshold = 127, threshold_type=cv2.THRESH_BINARY, **params):
 		rs = None
 		if frame is None and self.camera:
 			frame = capture_cvimage(self.camera, **params)
@@ -239,14 +256,23 @@ class ShapeSearch:
 			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 			kernel = np.ones((5,5),np.float32)/25
 			gray = cv2.filter2D(gray, -1, kernel)
-			ret,thresh = cv2.threshold(gray, 127, 255, 1)
+			if threshold == 0:
+#				thresh = cv2.Canny(gray, 0, 50, apertureSize=5)
+#				thresh = cv2.dilate(thresh, None)
+#				thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, threshold_type, 11, 2)
+				thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, threshold_type, 11, 2)
+			else:
+				ret,thresh = cv2.threshold(gray, threshold, 255, threshold_type+cv2.THRESH_OTSU)
+				ret,thresh = cv2.threshold(gray, ret, 255, threshold_type)
 			contours,h = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 			i = 0
 			for cnt in contours:
 				approx = cv2.approxPolyDP(cnt, 0.1*cv2.arcLength(cnt,True), True)
 				prefix = 'found %d' % (len(approx),)
-				area = self.polyArea(approx[:, 0, :])
-				if area > 5:
+#				area = self.polyArea(approx[:, 0, :])
+				area = cv2.contourArea(approx)
+#				dbprint('cntarea=%s%s' % (cntarea, ' NOT SAME SIZE' if cntarea != area else ''))
+				if area > 5 and area < (thresh.shape[0] * thresh.shape[1]) / 4:
 					if len(approx)==5:
 						dbprint("%s:pentagon: A:%s" % (prefix, area))
 						cv2.drawContours(frame, [approx], 0, (255, 255 - i, 155), -1) # w
@@ -273,5 +299,140 @@ class ShapeSearch:
 				'contours': contours,
 				'frame': frame,
 				'thresh': thresh,
+			}
+		return rs
+
+class ColorFix:
+
+	def __init__(self, camera=None):
+		self.camera = camera
+
+	def max_rgb_filter(self, image):
+		# split the image into its BGR components
+		(B, G, R) = cv2.split(image)
+
+		# find the maximum pixel intensity values for each
+		# (x, y)-coordinate,, then set all pixel values less
+		# than M to zero
+		M = np.maximum(np.maximum(R, G), B)
+		R[R < M] = 0
+		G[G < M] = 0
+		B[B < M] = 0
+
+		# merge the channels back together and return the image
+		return cv2.merge([B, G, R])
+
+	def colorise(self, frame=None, **params):
+		rs = None
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera, **params)
+		if not frame is None:
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			equ = cv2.equalizeHist(gray)
+			rs = {
+				'frame': frame,
+				'iframe': gray,
+				'oframe': equ
+			}
+		return rs
+
+	def colorise1(self, frame=None, **params):
+		rs = None
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera, **params)
+		if not frame is None:
+			mframe = self.max_rgb_filter(frame)
+			rs = {
+				'frame': frame,
+				'iframe': frame,
+				'oframe': mframe
+			}
+		return rs
+
+	def locate_object(self, lowertuple, highertuple, frame=None, **params):
+		rs = None
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera, **params)
+		if not frame is None:
+			# resize the frame, blur it, and convert it to the HSV
+			# color space
+			blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+			hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+			# construct a mask, then perform
+			# a series of dilations and erosions to remove any small
+			# blobs left in the mask
+			mask = cv2.inRange(hsv, np.array(lowertuple), np.array(highertuple))
+			mask = cv2.erode(mask, None, iterations=2)
+			mask = cv2.dilate(mask, None, iterations=2)
+			# find contours in the mask and initialize the current
+			# (x, y) center of the ball
+			cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+			center = None
+			# only proceed if at least one contour was found
+			if len(cnts) > 0:
+				dbprint('Found %d cnts' % len(cnts))
+				# find the largest contour in the mask, then use
+				# it to compute the minimum enclosing circle and
+				# centroid
+				c = max(cnts, key=cv2.contourArea)
+				((x, y), radius) = cv2.minEnclosingCircle(c)
+				M = cv2.moments(c)
+				center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+				dbprint('Radius: %d' % radius)
+				# only proceed if the radius meets a minimum size
+				if radius > 10:
+					oframe = frame.copy()
+					# draw the circle and centroid on the frame,
+					# then update the list of tracked points
+					cv2.circle(oframe, (int(x), int(y)), int(radius),
+						(0, 255, 255), 2)
+					cv2.circle(oframe, center, 5, (0, 0, 255), -1)
+					rs = {
+						'center': center,
+						'frame': frame,
+						'iframe': blurred,
+						'oframe': oframe
+					}
+		return rs
+
+	def mask_range(self, lowertuple, highertuple, frame=None, **params):
+		rs = None
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera, **params)
+		if not frame is None:
+			# resize the frame, blur it, and convert it to the HSV
+			# color space
+			blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+			hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+##			h,s,v = cv2.split(hsv)
+			dw = 50
+			dh = 50
+			hlist = []
+			iy = 0
+			for y in range(0, hsv.shape[0], dh):
+				ix = 0
+				for x in range(0, hsv.shape[1], dw):
+					hsvf = hsv[y:y+dh,x:x+dh]
+#					hisf = cv2.calcHist([hsvf],[0], None, [20], [0, 256])
+					hisf = cv2.calcHist([hsv], [0, 1], None, [18, 25], [0, 180, 0, 256])
+##					nzl = np.nonzero(hisf)[0]
+#					nzl = np.where(hisf > 10)[0]
+#					hlist.append({'x': x, 'y': y, 'w': hsvf.shape[1], 'h': hsvf.shape[0], 'hist': list(nzl)})
+					hlist.append({'x': x, 'y': y, 'w': hsvf.shape[1], 'h': hsvf.shape[0], 'hist': hisf, 'img': blurred[y:y+dh,x:x+dh], 'ix': ix, 'iy': iy})
+					ix += 1
+				iy += 1
+			# construct a mask, then perform
+			# a series of dilations and erosions to remove any small
+			# blobs left in the mask
+			mask = cv2.inRange(hsv, np.array(lowertuple), np.array(highertuple))
+			mask = cv2.erode(mask, None, iterations=2)
+			mask = cv2.dilate(mask, None, iterations=2)
+			oframe = cv2.bitwise_and(blurred, blurred, mask = mask)
+			rs = {
+				'hlist': hlist,
+				'frame': frame,
+				'iframe': blurred,
+				'oframe': oframe
 			}
 		return rs

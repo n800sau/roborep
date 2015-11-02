@@ -1,6 +1,4 @@
 #!/bin/bash
 
-CLOCKWISE=1
-
-python collect_data.py ${CLOCKWISE} &> collect_data.log
+python collect_data.py &> collect_data.log
 echo $?

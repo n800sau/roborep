@@ -6,7 +6,7 @@ from fchassis_ng import fchassis_ng
 from utils import angle_diff, html_path
 from pids import Pid
 from lib.marker import collect_markers
-from lib.camera import ShapeSearch
+from lib.camera import ShapeSearch, ColorFix
 
 STEP_TIME = 0.01
 TICK_TURN_TIME = 0.5
@@ -257,7 +257,7 @@ class frobo_ng(fchassis_ng):
 			self.add_memory(abs(in_h - h), pwr, pwr, time.time() - in_t)
 			rs = in_h - h
 			self.dbprint('last h: %.2f, CHANGE: %g' % (h, rs))
-		return rs
+		return {'change': rs, 'pwr': pwr}
 
 	def tick_left(self, min_angle=None, pwr=40):
 		return self.tick_turn(False, min_angle=min_angle, pwr=pwr)
@@ -316,15 +316,16 @@ class frobo_ng(fchassis_ng):
 				self.dbprint('######################### POWER %g , diff=%g' % (pwr, diff))
 				if adiff < 30:
 					if diff > 0:
-						change = self.tick_right(pwr = pwr)
+						move_data = self.tick_right(pwr = pwr)
 					else:
-						change = self.tick_left(pwr = pwr)
+						move_data = self.tick_left(pwr = pwr)
 				else:
 					if diff > 0:
-						change = self.tick_right(min_angle=adiff, pwr = pwr)
+						move_data = self.tick_right(min_angle=adiff, pwr = pwr)
 					else:
-						change = self.tick_left(min_angle=adiff, pwr = pwr)
-				if abs(change) < 1 and slow_coef < 1:
+						move_data = self.tick_left(min_angle=adiff, pwr = pwr)
+				change = move_data['angle']
+				if (abs(change) < 1 or pwr < move_data['pwr']) and slow_coef < 1:
 					slow_coef += 0.1
 #					min_pwr += 5
 #					if min_pwr > max_pwr - 10:
@@ -364,8 +365,7 @@ class frobo_ng(fchassis_ng):
 		ih = self.compass.heading()
 		last_diff = 0
 		growing = True
-		n_steps = 360 / step_angle
-		for step in range(n_steps):
+		for step in range(10000):
 			change = self.tick_turn(clockwise, pwr=pwr, min_angle=step_angle)
 			if abs(change) < 1:
 				pwr += 5
@@ -476,7 +476,7 @@ class frobo_ng(fchassis_ng):
 					self.i = 0;
 
 				def __call__(self, c):
-					data = ss.find_shapes(resolution=(160, 120))
+					data = ss.find_shapes(threshold=0, resolution=(160, 120))
 					if data:
 						if os.environ.get('RASPICAM_ROTATE', ''):
 							angle = int(os.environ['RASPICAM_ROTATE'])
@@ -512,3 +512,32 @@ class frobo_ng(fchassis_ng):
 			self.dbprint('Result:%.2f' % adiff)
 			data.append({'output': {'adiff': adiff}, 'input': {'pwr': _pwr, 'dT': _dT, 'clockwise': _clockwise}})
 		return data
+
+	def mask_images(self, camera, hsvLower, hsvUpper, clockwise=True):
+
+		ss = ColorFix(camera)
+
+		def search_cb():
+			class do_it:
+
+				def __init__(self):
+					self.i = 0;
+
+				def __call__(self, c):
+#					data = ss.colorise()
+#					data = ss.colorise1()
+#					data = ss.locate_object(hsvLower, hsvUpper)
+					data = ss.mask_range(hsvLower, hsvUpper)
+					if data:
+						cv2.imwrite(html_path('frame_%03d.jpg' % self.i), data['frame'])
+						cv2.imwrite(html_path('iframe_%03d.jpg' % self.i), data['iframe'])
+						cv2.imwrite(html_path('oframe_%03d.jpg' % self.i), data['oframe'])
+						c.dbprint('Written set %d' % self.i)
+						self.i += 1
+
+			return do_it()
+
+		cb = search_cb()
+		self.search_around(cb, clockwise=clockwise)
+		json.dump({'imgcount': cb.i}, file(html_path('frames.json'), 'w'), indent=2)
+
