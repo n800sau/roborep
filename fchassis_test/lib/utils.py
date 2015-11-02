@@ -11,3 +11,6 @@ HTML_PATH = os.path.expanduser('~/public_html')
 
 def html_path(fname):
 	return os.path.join(HTML_PATH, fname)
+
+def html_data_path(fname):
+	return os.path.join(HTML_PATH, 'data', fname)
