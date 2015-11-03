@@ -88,6 +88,19 @@ def capture_cvimage(camera, **params):
 	camera.capture(stream, format="bgr", use_video_port=True)
 	return stream.array
 
+PLY_HEADER = '''ply
+format ascii 1.0
+element vertex %(vert_num)d
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+end_header
+'''
+
+
 class FeatureProcess(object):
 
 	def __init__(self, camera=None):
@@ -436,3 +449,64 @@ class ColorFix:
 				'oframe': oframe
 			}
 		return rs
+
+class StereoDisparity:
+
+	def __init__(self, camera=None):
+		self.camera = camera
+		self.lframe = None
+		self.rframe = None
+		self.verts = None
+		self.colors = None
+		self.disparity = None
+
+	def left_frame(self, frame=None, **params):
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera, **params)
+		self.lframe = frame
+		self.do_disparity()
+
+	def right_frame(self, frame=None, **params):
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera, **params)
+		self.rframe = frame
+		self.do_disparity()
+
+	def do_disparity(self):
+		if not (self.lframe is None or self.rframe is None):
+			window_size = 3
+			min_disp = 16
+			num_disp = 112-min_disp
+			stereo = cv2.StereoSGBM(minDisparity = min_disp,
+				numDisparities = num_disp,
+				SADWindowSize = window_size,
+				uniquenessRatio = 10,
+				speckleWindowSize = 100,
+				speckleRange = 32,
+				disp12MaxDiff = 1,
+				P1 = 8*3*window_size**2,
+				P2 = 32*3*window_size**2,
+				fullDP = False
+			)
+			disp = stereo.compute(self.lframe, self.rframe).astype(np.float32) / 16.0
+			dbprint('generating 3d point cloud...')
+			h, w = self.lframe.shape[:2]
+			f = 0.8*w  # guess for focal length
+			Q = np.float32([[1, 0, 0, -0.5*w],
+							[0,-1, 0,  0.5*h], # turn points 180 deg around x-axis,
+							[0, 0, 0,	 -f], # so that y-axis looks up
+							[0, 0, 1,	  0]])
+			points = cv2.reprojectImageTo3D(disp, Q)
+			colors = cv2.cvtColor(self.lframe, cv2.COLOR_BGR2RGB)
+			mask = disp > disp.min()
+			self.verts = points[mask]
+			self.colors = colors[mask]
+			self.disparity = (disp-min_disp)/num_disp
+
+	def write_ply(self, fname):
+		verts = self.verts.reshape(-1, 3)
+		colors = self.colors.reshape(-1, 3)
+		verts = np.hstack([verts, colors])
+		with open(fname, 'w') as f:
+			f.write(PLY_HEADER % dict(vert_num=len(verts)))
+			np.savetxt(f, verts, '%f %f %f %d %d %d')

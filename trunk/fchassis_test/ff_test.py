@@ -18,13 +18,13 @@ if __name__ == '__main__':
 		fp = FeatureProcess(camera)
 		try:
 			fp.percent()
-			c.tick_left(min_angle=5)
+			c.tick_left(min_angle=10)
 			data = fp.percent()
 			if data:
 				cv2.imwrite(html_data_path('pic1.jpg'), data['frame'])
 			dbprint('Left=%g' % (data['percent'] if data else data))
 			cv2.imwrite(html_data_path('frame.jpg'), data['frame'])
-			c.tick_right(min_angle=5)
+			c.tick_right(min_angle=20)
 			data = fp.percent()
 			if data:
 				cv2.imwrite(html_data_path('pic2.jpg'), data['frame'])
