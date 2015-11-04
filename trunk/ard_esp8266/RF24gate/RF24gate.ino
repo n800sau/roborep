@@ -8,14 +8,15 @@
 #include <SPI.h>
 #include "RF24.h"
 #include <HttpClient.h>
-#include "Time.h"
+#include <Ticker.h>
+#include <Time.h>
 
 const char *dest_server = "192.168.2.80";
 const int dest_server_port = 5580;
 const char *dest_path = "/sensors/accept.php";
 
 #include "config.h"
-const char* ssid	 = SSID;
+const char* ssid = SSID;
 const char* password = PASSWORD;
 
 const char *ap_ssid = AP_SSID;
@@ -54,22 +55,36 @@ byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing pack
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP udp;
 
+Ticker blinker;
+
+volatile int blinking_times = 0;
+volatile int blinking_state = 0;
+
+// attention! delays in tickers crash
+void blinking()
+{
+	if(blinking_times > 0) {
+		if(blinking_state) {
+			Serial.println("led off");
+			digitalWrite(LED_PIN, LOW);
+			blinking_times--;
+		} else {
+			Serial.println("led on");
+			digitalWrite(LED_PIN, HIGH);
+		}
+		blinking_state = !blinking_state;
+	}
+}
 
 void blink(int times=1)
 {
-	for(int i=0; i<times; i++) {
-		digitalWrite(LED_PIN, HIGH);
-		delay(100);
-		digitalWrite(LED_PIN, LOW);
-		if(i < times) {
-			delay(200);
-		}
-	}
+	blinking_times = times;
+	blinking_state = 0;
 }
 
 void handleRoot() {
 	digitalWrite(LED_PIN, HIGH);
-	server.send(200, "text/plain", "hello from esp8266!");
+	server.send(200, "text/plain", "hello from " SSID "!");
 	digitalWrite(LED_PIN, LOW);
 }
 
@@ -79,6 +94,7 @@ void handleDHT11()
 	String t = server.arg("T");
 	String h = server.arg("H");
 	String v = server.arg("V");
+	String id = server.arg("ID");
 	String time = server.arg("TIME");
 	time_t itime = time.toInt();
 	if(t == "" || h == "" || v == "") {
@@ -88,7 +104,7 @@ void handleDHT11()
 		Serial.print("Data timestamp:");
 		Serial.println(String(year(itime)) + "-" + String(month(itime)) + "-" + String(day(itime)) + " " +
 			String(hour(itime)) + ":" + String(minute(itime)) + ":" + String(second(itime)));
-		if(send_dht11_data(t, h, v, time)) {
+		if(send_dht11_data(id, t, h, v, time)) {
 			server.send(200, "text/plain", "Ok");
 			blink(1);
 		} else {
@@ -129,10 +145,12 @@ void handleNotFound()
 
 void setup()
 {
+
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, LOW);
 	Serial.begin(115200);
-	Serial.println(F("\nRF24 gate"));
+	Serial.setDebugOutput(true);
+	printf("\r\nRF24 gate\r\n");
 
 	WiFi.softAP(ap_ssid, ap_password, 9);
 	WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 0));
@@ -188,12 +206,18 @@ void setup()
 	// Start the radio listening for data
 	radio.startListening();
 
+	blinker.attach(0.3, blinking);
+
 	Serial.println("Starting UDP");
 	udp.begin(ntpLocalPort);
 	Serial.print("Local port: ");
 	Serial.println(udp.localPort());
 
+	radio.printDetails();
+
 }
+
+bool not_available = false;
 
 void loop() {
 	char buf[32];
@@ -203,10 +227,8 @@ void loop() {
 //	Serial.println(analogRead(A0));
 	if( radio.available(&pipenum) ){
 
-		while (radio.available()) {
-			radio.read(buf, sizeof(buf));
-		}
-	 
+		radio.read(buf, sizeof(buf));
+
 		radio.stopListening();
 		radio.write("OK", 3);
 		radio.startListening();
@@ -218,7 +240,7 @@ void loop() {
 
 		if(pipenum == DTH11_pipe) {
 			int pos = 0;
-			float t=-1, h=-1, heat=-1, v=-1;
+			float t=-1, h=-1, heat=-1, v=-1, i_id=0;
 			char intbuf[30];
 			while(pos<sizeof(buf) && buf[pos]) {
 				switch(buf[pos]) {
@@ -234,6 +256,9 @@ void loop() {
 					case 'V':
 						v = atoi(buf+pos+1) / 1000.;
 						break;
+					case 'D':
+						i_id = atoi(buf+pos+1);
+						break;
 				}
 				pos++;
 			}
@@ -245,7 +270,13 @@ void loop() {
 			Serial.print(heat);
 			Serial.print(" V:");
 			Serial.println(v);
-			send_dht11_data(String(t), String(h), String(v), String(millis()));
+			send_dht11_data(String(i_id), String(t), String(h), String(v), String(millis()));
+		}
+		not_available = false;
+	} else {
+		if(!not_available) {
+			Serial.println("Radio not available");
+			not_available = true;
 		}
 	}
 
@@ -253,7 +284,7 @@ void loop() {
 } // Loop
 
 
-bool send_dht11_data(String temp_c, String humidity, String v, String timestamp)
+bool send_dht11_data(String id, String temp_c, String humidity, String v, String timestamp)
 {
 	bool rs = false;
 	WiFiClient client;
@@ -262,7 +293,8 @@ bool send_dht11_data(String temp_c, String humidity, String v, String timestamp)
 		"TIME=" + timestamp +
 		"&T=" + temp_c +
 		"&H=" + humidity +
-		"&V=" + v;
+		"&V=" + v +
+		"&ID=" + id;
 
 	Serial.println(postStr);
 	http.beginRequest();
