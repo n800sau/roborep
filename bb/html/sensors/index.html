@@ -83,17 +83,17 @@
 			T:<br/>
 			<canvas class="chart chart-line" chart-data="tdata" chart-labels="labels"
 				chart-legend="false" chart-series="series" chart-click="onClick"
-				chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+				chart-options="{tooltipTemplate: '<%= value %>', animation: false, scaleOverride: true, scaleStartValue: 5, scaleSteps: 6, scaleStepWidth: 5}"></canvas>
 			<br/>
 			H:<br/>
 			<canvas class="chart chart-line" chart-data="hdata" chart-labels="labels"
 				chart-legend="false" chart-series="series" chart-click="onClick"
-				chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+				chart-options="{tooltipTemplate: '<%= value %>', animation: false, scaleOverride: true, scaleStartValue: 0, scaleSteps: 5, scaleStepWidth: 20}"></canvas>
 			<br/>
 			V:<br/>
 			<canvas class="chart chart-line" chart-data="vdata" chart-labels="labels"
 				chart-legend="false" chart-series="series" chart-click="onClick"
-				chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+				chart-options="{tooltipTemplate: '<%= value %>', animation: false, scaleOverride: true, scaleStartValue: 3, scaleIntegersOnly: false, scaleSteps: 5, scaleStepWidth: 0.2}"></canvas>
 		</fieldset>
 	</div>
 </body>
