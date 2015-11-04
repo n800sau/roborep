@@ -6,14 +6,20 @@ $hname = 'dht11_garage';
 $r = new Predis\Client();
 $data = $r->hgetall($hname);
 ksort($data, SORT_NUMERIC);
-$data = array_slice($data, -10, 10, TRUE);
-foreach($data as $ts => &$d) {
+$data = array_reverse(array_slice($data, -100, 100, TRUE), TRUE);
+$i = 0;
+$odata = array();
+foreach($data as $ts => $d) {
 	$d = json_decode($d);
 	$d->l = date('H:i:s', (int)$ts);
+	if($i % 5 == 0) {
+		array_unshift($odata, $d);
+	}
+	$i++;
 }
 
 header('Content-type: application/json');
-echo json_encode($data, JSON_PRETTY_PRINT);
+echo json_encode($odata, JSON_PRETTY_PRINT);
 
 ?>
 
