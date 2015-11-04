@@ -19,8 +19,7 @@ ADC_MODE(ADC_VCC);
 
 //const char *master_server = "192.168.1.153";
 //const char *master_server = "192.168.1.9";
-const char *master_server = "192.168.4.1";
-//const char *master_server = SSID;
+char master_server[20] = "sensgate";
 
 const int s_count = std::min(20U, (4096 - sizeof(HEADER_T)) / sizeof(DATA_T));
 
@@ -103,6 +102,9 @@ void setup()
 	Serial.println(ssid);
 	Serial.print("IP address: ");
 	Serial.println(WiFi.localIP());
+	Serial.print("Gateway address: ");
+	Serial.println(WiFi.gatewayIP());
+	strncpy(master_server, WiFi.gatewayIP().toString().c_str(), sizeof(master_server));
 
 	dht.begin();		   // initialize temperature sensor
 
@@ -134,7 +136,8 @@ bool send_sensor_data(DATA_T &data)
 	String postStr = "T=" + String(data.temp_c) +
 		"&H=" + String(data.humidity) +
 		"&V=" + String(data.v) +
-		"&TIME=" + String(data.timestamp);
+		"&TIME=" + String(data.timestamp) +
+		"&ID=" + ID;
 
 	Serial.print("Sending:");
 	Serial.println(postStr);
