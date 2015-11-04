@@ -2,7 +2,7 @@
 
 require __DIR__.'/Predis.php';
 
-$hname = 'dht11_data';
+$hname = 'dht11_garage';
 $r = new Predis\Client();
 $data = $r->hgetall($hname);
 ksort($data, SORT_NUMERIC);
