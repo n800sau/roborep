@@ -51,10 +51,12 @@
 						v.push(data[ts].v);
 						l.push(data[ts].l);
 					}
-					$scope.tdata = [t];
-					$scope.hdata = [h];
-					$scope.vdata = [v];
-					$scope.labels = l;
+					if(t.length > 2) {
+						$scope.tdata = [t];
+						$scope.hdata = [h];
+						$scope.vdata = [v];
+						$scope.labels = l;
+					}
 				}
 			).error(
 				function(data) {
@@ -75,21 +77,24 @@
 </head>
 <body ng-app="app">
 	<div class="container" ng-controller="LineCtrl">
-		T:<br/>
-		<canvas class="chart chart-line" chart-data="tdata" chart-labels="labels"
-			chart-legend="false" chart-series="series" chart-click="onClick"
-			chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
-		<br/>
-		H:<br/>
-		<canvas class="chart chart-line" chart-data="hdata" chart-labels="labels"
-			chart-legend="false" chart-series="series" chart-click="onClick"
-			chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
-		<br/>
-		V:<br/>
-		<canvas class="chart chart-line" chart-data="vdata" chart-labels="labels"
-			chart-legend="false" chart-series="series" chart-click="onClick"
-			chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
 		<div class="error">{{error}}</div>
+		<fieldset style="width: 0%;">
+			<legend>L1:</legend>
+			T:<br/>
+			<canvas class="chart chart-line" chart-data="tdata" chart-labels="labels"
+				chart-legend="false" chart-series="series" chart-click="onClick"
+				chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+			<br/>
+			H:<br/>
+			<canvas class="chart chart-line" chart-data="hdata" chart-labels="labels"
+				chart-legend="false" chart-series="series" chart-click="onClick"
+				chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+			<br/>
+			V:<br/>
+			<canvas class="chart chart-line" chart-data="vdata" chart-labels="labels"
+				chart-legend="false" chart-series="series" chart-click="onClick"
+				chart-options="{tooltipTemplate: '<%= value %>', animation: false}"></canvas>
+		</fieldset>
 	</div>
 </body>
 </html>
