@@ -1,0 +1,14 @@
+{
+	"min_upload_seconds": 1.0,
+	"min_motion_frames": 2,
+	"camera_warmup_time": 2.5,
+	"delta_thresh": 5,
+	"resolution": [640, 480],
+	"fps": 8,
+	"min_area": 5000,
+	"max_width": 320,
+	"max_height": 240,
+	"imdir": "/home/n800s/tmp/surveillance",
+	"shot_timeout": 10,
+	"max_files": 1000
+}
