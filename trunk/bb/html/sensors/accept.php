@@ -12,10 +12,10 @@ $cur_time = time();
 if($time == 0) {
 	$time = $cur_time;
 } else {
-	if($cur_time < $time + 100) {
+	if($cur_time + 600 < $time) {
 		// timestamp too far in the future
+		$warn = 'Timestamp too far in the future '.$time.' bigger than '.$cur_time.' ('.($time - $cur_time).')';
 		$time = 0;
-		$err = 'Timestamp too far in the future';
 	}
 }
 if($time > 0) {
@@ -29,9 +29,12 @@ if($time > 0) {
 		}
 	}
 	echo json_encode(array('result' => 'Ok'));
-} else {
+} else if(isset($err)) {
 	http_response_code(422);
 	echo json_encode(array('error' => $err));
+} else {
+	http_response_code(200);
+	echo json_encode(array('result' => $warn));
 }
 
 ?>
