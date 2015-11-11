@@ -17,9 +17,9 @@ if __name__ == '__main__':
 
 		fp = StereoDisparity(camera)
 		try:
-			c.tick_left(min_angle=1)
+			c.tick_left(min_angle=3)
 			fp.left_frame()
-			c.tick_right(min_angle=1)
+			c.tick_right(min_angle=3)
 			fp.right_frame()
 			fp.write_ply(html_data_path('disparity.ply'))
 			cv2.imwrite(html_data_path('pic0.jpg'), fp.lframe)

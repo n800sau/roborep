@@ -6,6 +6,11 @@ from utils import dbprint
 import numpy as np
 from matplotlib import pyplot as plt
 
+#from skimage import data
+#from skimage.feature import blob_dog, blob_log, blob_doh
+#from math import sqrt
+#from skimage.color import rgb2gray
+
 # "FAST"
 # "STAR"
 # "SIFT"
@@ -450,6 +455,50 @@ class ColorFix:
 			}
 		return rs
 
+	def blob_detection(self, frame=None):
+		rs = None
+		if frame is None and self.camera:
+			frame = capture_cvimage(self.camera, **params)
+
+		if not frame is None:
+			frame_gray = rgb2gray(frame)
+			blobs_log = blob_log(frame_gray, max_sigma=30, num_sigma=10, threshold=.1)
+			# Compute radii in the 3rd column.
+			blobs_log[:, 2] = blobs_log[:, 2] * sqrt(2)
+
+			blobs_dog = blob_dog(frame_gray, max_sigma=30, threshold=.1)
+			blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)
+
+			blobs_doh = blob_doh(frame_gray, max_sigma=30, threshold=.01)
+
+			blobs_list = [blobs_log, blobs_dog, blobs_doh]
+			colors = ['yellow', 'lime', 'red']
+			titles = ['Laplacian of Gaussian', 'Difference of Gaussian', 'Determinant of Hessian']
+			sequence = zip(blobs_list, colors, titles)
+
+			fig,axes = plt.subplots(1, 3, sharex=True, sharey=True, subplot_kw={'adjustable':'box-forced'})
+			axes = axes.ravel()
+			for blobs, color, title in sequence:
+				ax = axes[0]
+				axes = axes[1:]
+				ax.set_title(title)
+				ax.imshow(frame, interpolation='nearest')
+				for blob in blobs:
+					y, x, r = blob
+					c = plt.Circle((x, y), r, color=color, linewidth=2, fill=False)
+					ax.add_patch(c)
+			# Get the RGBA buffer from the figure
+			w,h = fig.canvas.get_width_height()
+			oframe = numpy.fromstring (fig.canvas.tostring_argb(), dtype=numpy.uint8)
+			oframe.shape = (w, h, 4)
+			rs = {
+				'frame': frame,
+				'iframe': frame_gray,
+				'oframe': oframe
+			}
+		return rs
+
+
 class StereoDisparity:
 
 	def __init__(self, camera=None):
@@ -510,3 +559,4 @@ class StereoDisparity:
 		with open(fname, 'w') as f:
 			f.write(PLY_HEADER % dict(vert_num=len(verts)))
 			np.savetxt(f, verts, '%f %f %f %d %d %d')
+
