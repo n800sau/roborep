@@ -12,7 +12,7 @@ if __name__ == '__main__':
 	c.debug = True
 
 	try:
-		dbprint('BEFORE %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['lcount']))
+		dbprint('BEFORE %d (%d:%d)' % (c.heading(), c.state['lcount'], c.state['lcount']))
 
 		lpwr = c.find_left_minimum(True)
 		dbprint('Min left: %d' % lpwr)
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 		c.wait_until_stop()
 		dbprint('stopped=%s' % c.is_really_stopped())
 
-		dbprint('AFTER %d (%d:%d)' % (c.compass.heading(), c.state['lcount'], c.state['lcount']))
+		dbprint('AFTER %d (%d:%d)' % (c.heading(), c.state['lcount'], c.state['lcount']))
 	finally:
 		c.cmd_mstop()
 		json.dump(c.dots, file('dots.json', 'w'), indent=2)

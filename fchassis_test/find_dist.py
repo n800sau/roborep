@@ -18,9 +18,9 @@ if __name__ == '__main__':
 	with picamera.PiCamera() as camera:
 
 		try:
-			print 'BEFORE %s cm to %s' % (c.state['sonar'], c.compass.heading())
+			print 'BEFORE %s cm to %s' % (c.state['sonar'], c.heading())
 			c.find_distance(1, clockwise=clockwise)
-			print 'AFTER %s cm to %s' % (c.state['sonar'], c.compass.heading())
+			print 'AFTER %s cm to %s' % (c.state['sonar'], c.heading())
 			json.dump(c.dots, file('dots.json', 'w'), indent=2)
 		finally:
 			update_img(camera)

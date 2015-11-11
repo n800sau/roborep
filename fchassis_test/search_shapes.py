@@ -18,13 +18,13 @@ if __name__ == '__main__':
 
 		try:
 			c.update_state()
-			dbprint('BEFORE %s m to %s' % (c.state['sonar'], c.compass.heading()))
+			dbprint('BEFORE %s m to %s' % (c.state['sonar'], c.heading()))
 			t = time.time()
 			c.search_shapes(camera, clockwise=clockwise)
-			dbprint('AFTER %s m to %s' % (c.state['sonar'], c.compass.heading()))
+			dbprint('AFTER %s m to %s' % (c.state['sonar'], c.heading()))
 			json.dump(c.dots, file('dots.json', 'w'), indent=2)
 		finally:
 			c.cmd_mstop()
 			c.wait_until_stop()
 			update_img(camera)
-			dbprint('EVENTUALLY %d (%d:%d), dist:%g, dT:%d' % (c.compass.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar'], time.time()-t))
+			dbprint('EVENTUALLY %d (%d:%d), dist:%g, dT:%d' % (c.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar'], time.time()-t))

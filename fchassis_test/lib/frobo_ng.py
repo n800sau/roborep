@@ -1,12 +1,10 @@
-import time, copy, os, sys, json, pickle, cv2, random
-from hmc5883l import hmc5883l
-from adxl345 import ADXL345
-from l3g4200d import l3g4200
+import time, copy, os, sys, json, pickle, cv2, random, redis
 from fchassis_ng import fchassis_ng
 from utils import angle_diff, html_path, html_data_path
 from pids import Pid
 from lib.marker import collect_markers
 from lib.camera import ShapeSearch, ColorFix
+from sensor_const import *
 
 STEP_TIME = 0.01
 TICK_TURN_TIME = 0.5
@@ -17,15 +15,37 @@ class frobo_ng(fchassis_ng):
 
 	def __init__(self, *args, **kwds):
 		super(frobo_ng, self).__init__(*args, **kwds)
+		self.r = redis.Redis()
 		self.hit_warn = None
 		self.dots = []
 		# (int angle): {'lpwr':, 'rpwr':, 'dt':}
 		self.memory_fname = os.path.join(os.path.dirname(sys.argv[0]), 'memory.dat')
 		self.recover_memory()
-		self.compass = hmc5883l(gauss = 4.7, declination = (12, 34))
-		self.acc = ADXL345(0x1d)
-		self.gyro = l3g4200(1)
 		self.read_sensors()
+
+	def heading(self):
+		data = self.r.lrange(COMPASS_REDIS_QUEUE, -1, -1)
+		rs = json.loads(data[0]) if data else None
+		t = time.time()
+		if rs['time'] + 2 < t:
+			raise Exception('Heading data too old (%g sec old)' % (t - rs['time']))
+		return rs['heading']
+
+	def accel(self):
+		data = self.r.lrange(ACCEL_REDIS_QUEUE, -1, -1)
+		rs = json.loads(data[0]) if data else None
+		t = time.time()
+		if rs['time'] + 2 < t:
+			raise Exception('Accelerometer data too old (%g sec old)' % (t - rs['time']))
+		return rs['axes']
+
+	def degsec(self):
+		data = self.r.lrange(GYRO_REDIS_QUEUE, -1, -1)
+		rs = json.loads(data[0]) if data else None
+		t = time.time()
+		if rs['time'] + 2 < t:
+			raise Exception('Gyro data too old (%g sec old)' % (t - rs['time']))
+		return rs['degsec']
 
 	def add_memory(self, angle, lpwr, rpwr, dt):
 		self.memory[int(angle)] = {'angle': angle, 'lpwr': lpwr, 'rpwr': rpwr, 'dt': dt}
@@ -55,8 +75,8 @@ class frobo_ng(fchassis_ng):
 		return rs
 
 	def read_sensors(self):
-		self.state['heading'] = self.compass.heading()
-		self.state['acclist'] = self.acc.getAxesList()
+		self.state['heading'] = self.heading()
+		self.state['acclist'] = self.accel()
 
 	def current_heading(self):
 		self.read_sensors()
@@ -150,24 +170,23 @@ class frobo_ng(fchassis_ng):
 	def tick_turn_old(self, clockwise, min_angle=None, pwr=50):
 		rs = 0
 		init_t = time.time()
-		init_h = self.compass.heading()
+		init_h = self.heading()
 		self.dbprint('start h: %d, pwr: %s' % (init_h, pwr))
 		try:
 			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
 			for i in range(int(TICK_TURN_TIME/STEP_TIME)):
-				h = self.compass.heading()
-				x,y,z = self.gyro.getDegPerSecAxes()
+				h = self.heading()
+				x,y,z = self.degsec()
 				if abs(z) > 5:
 					pwr *= 0.1
 					#self.dbprint('moving...%g PWR:%g' % (z, pwr))
 					self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
 				if min_angle is None:
-					st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
-					if st:
-						self.dbprint('g:%d %d %d, h:%d' % (x, y, z, h))
-						if abs(z) > 15:
-							self.dbprint('it moves')
-							break
+					x,y,z = self.degsec()
+					self.dbprint('g:%d %d %d, h:%d' % (x, y, z, h))
+					if abs(z) > 15:
+						self.dbprint('it moves')
+						break
 				else:
 					hdiff = angle_diff(h, init_h)
 					#self.dbprint('h=%g, hdiff=%g' % (h, hdiff))
@@ -179,7 +198,7 @@ class frobo_ng(fchassis_ng):
 		finally:
 			self.cmd_mstop()
 			self.wait_until_stop()
-			h = self.compass.heading()
+			h = self.heading()
 			self.add_memory(abs(init_h - h), pwr, pwr, time.time() - init_t)
 			rs = init_h - h
 			self.dbprint('last h: %d, change: %g' % (h, rs))
@@ -190,10 +209,10 @@ class frobo_ng(fchassis_ng):
 		rs = 0
 		max_pwr = pwr
 		in_t = time.time()
-		in_h = self.compass.heading()
+		in_h = self.heading()
 		if not min_angle is None:
 			azim = (in_h + min_angle) if clockwise else (in_h - min_angle)
-		in_x,in_y,in_z = self.gyro.getDegPerSecAxes()
+		in_x,in_y,in_z = self.degsec()
 		self.dbprint('start h: %.2f, z: %.2f, pwr: %s' % (in_h, in_z, pwr))
 		moved = False
 		try:
@@ -207,40 +226,37 @@ class frobo_ng(fchassis_ng):
 				for i in range(int(TICK_TURN_TIME/STEP_TIME)):
 	#				time.sleep(STEP_TIME)
 					dt = time.time() - in_t
-					h = self.compass.heading()
-					st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
-					if st:
-						x,y,z = self.gyro.getDegPerSecAxes()
-	#					self.dbprint('dh: %.2f, dz: %.2f, dt:%.2f' % (h - in_h, z - in_z, dt))
-						if min_angle is None:
-							if st:
-								self.dbprint('g:%d %d %d, h:%.2f' % (x, y, z, h))
-								if abs(z) >= 2:
-									self.dbprint('it moves')
-									moved = True
-									break
-						else:
-							# remaining angle
-							adiff = angle_diff(azim, h)
-							# passed angle
-							pdiff = angle_diff(h, in_h)
-							# f(dt, pwr, z) = 
-							# remain distance depends on z, mass and friction
-							# f((z, dt) - friction?
-							# (z / dt) - acceleration = K * (pwr - friction)
-							# time to finish
-							# curr angle velocity (with offset)
-							if z - in_z != 0:
-								rt = abs(adiff / (z - in_z))
-								if rt < dt:
-									moved = True
-									# stop
-									self.dbprint('Moved FAST enough %.2f < %.2f' % (rt, dt))
-									self.cmd_mstop()
-									self.wait_until_stop()
-									h = self.compass.heading()
-									adiff = min_angle - abs(h - in_h)
-									break
+					h = self.heading()
+					x,y,z = self.degsec()
+	#				self.dbprint('dh: %.2f, dz: %.2f, dt:%.2f' % (h - in_h, z - in_z, dt))
+					if min_angle is None:
+						self.dbprint('g:%d %d %d, h:%.2f' % (x, y, z, h))
+						if abs(z) >= 2:
+							self.dbprint('it moves')
+							moved = True
+							break
+					else:
+						# remaining angle
+						adiff = angle_diff(azim, h)
+						# passed angle
+						pdiff = angle_diff(h, in_h)
+						# f(dt, pwr, z) = 
+						# remain distance depends on z, mass and friction
+						# f((z, dt) - friction?
+						# (z / dt) - acceleration = K * (pwr - friction)
+						# time to finish
+						# curr angle velocity (with offset)
+						if z - in_z != 0:
+							rt = abs(adiff / (z - in_z))
+							if rt < dt:
+								moved = True
+								# stop
+								self.dbprint('Moved FAST enough %.2f < %.2f' % (rt, dt))
+								self.cmd_mstop()
+								self.wait_until_stop()
+								h = self.heading()
+								adiff = min_angle - abs(h - in_h)
+								break
 				if not moved:
 					pwr += 5
 					if pwr > 100:
@@ -253,7 +269,7 @@ class frobo_ng(fchassis_ng):
 			self.update_state()
 			self.wait_until_stop()
 			self.update_state()
-			h = self.compass.heading()
+			h = self.heading()
 			self.add_memory(abs(in_h - h), pwr, pwr, time.time() - in_t)
 			rs = in_h - h
 			self.dbprint('last h: %.2f, CHANGE: %g' % (h, rs))
@@ -362,7 +378,7 @@ class frobo_ng(fchassis_ng):
 
 	def search_around(self, stop_if_cb, clockwise=True, pwr=30, step_angle=10, max_pwr=100):
 		min_pwr = pwr
-		ih = self.compass.heading()
+		ih = self.heading()
 		last_diff = 0
 		growing = True
 		for step in range(10000):
@@ -374,7 +390,7 @@ class frobo_ng(fchassis_ng):
 			else:
 				pwr = min_pwr
 			self.wait_until_stop()
-			h = self.compass.heading()
+			h = self.heading()
 			adiff = abs(angle_diff(ih, h))
 			if growing:
 				if adiff < last_diff - 5:
@@ -417,13 +433,11 @@ class frobo_ng(fchassis_ng):
 				func(pwr, fwd)
 				for i in range(int(0.2 / STEP_TIME)):
 					time.sleep(STEP_TIME)
-					st = self.gyro.bus.read_byte_data(self.gyro.address, self.gyro.STATUS_REG)
-					if st:
-						x,y,z = self.gyro.getDegPerSecAxes()
-						if abs(z) > 10:
-							self.dbprint('it moves')
-							rs = pwr
-							break
+					x,y,z = self.degsec()
+					if abs(z) > 10:
+						self.dbprint('it moves')
+						rs = pwr
+						break
 				if not rs is None:
 					break
 		finally:
@@ -442,7 +456,7 @@ class frobo_ng(fchassis_ng):
 
 				def __call__(self, c):
 					rs = False
-					fname = os.path.join(os.path.expanduser('~/public_html'), 'pic%d.jpg' % self.i)
+					fname = html_data_path('pic%d.jpg' % self.i)
 					markers = collect_markers(r, fpath=fname)
 					if markers:
 						c.dbprint('FOUND %d markers:' % len(markers))
@@ -501,14 +515,14 @@ class frobo_ng(fchassis_ng):
 			_clockwise = random.choice((True, False)) if clockwise is None else clockwise
 			_pwr = random.randint(1, 100) if pwr is None else pwr
 			_dT = random.uniform(0.1, 3) if dT is None else dT
-			h = self.compass.heading()
+			h = self.heading()
 			self.dbprint('Test pwr:%d, dT:%.1f, cw: %s' % (_pwr, _dT, _clockwise))
 			self.cmd_mboth(_pwr, _clockwise, _pwr, not _clockwise)
 			time.sleep(_dT)
 			self.cmd_mstop()
 			self.wait_until_stop()
-			h1 = self.compass.heading()
-			adiff = abs(angle_diff(h, self.compass.heading()))
+			h1 = self.heading()
+			adiff = abs(angle_diff(h, self.heading()))
 			self.dbprint('Result:%.2f' % adiff)
 			data.append({'output': {'adiff': adiff}, 'input': {'pwr': _pwr, 'dT': _dT, 'clockwise': _clockwise}})
 		return data

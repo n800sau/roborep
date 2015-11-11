@@ -21,17 +21,17 @@ if __name__ == '__main__':
 	try:
 		use_camera(r)
 		c.update_state()
-		dbprint('BEFORE %s m to %s' % (c.state['sonar'], c.compass.heading()))
+		dbprint('BEFORE %s m to %s' % (c.state['sonar'], c.heading()))
 		found = c.search_marker(r, clockwise=clockwise, marker_id=TARGET)
 		dbprint('MARKER: %s' % json.dumps(found, indent=2))
-		dbprint('AFTER %s m to %s' % (c.state['sonar'], c.compass.heading()))
+		dbprint('AFTER %s m to %s' % (c.state['sonar'], c.heading()))
 		json.dump(c.dots, file('dots.json', 'w'), indent=2)
 	finally:
 		c.cmd_mstop()
 		c.wait_until_stop()
 		make_shot(r)
 		release_camera(r)
-		dbprint('EVENTUALLY %d dist=%g' % (c.compass.heading(), c.state['sonar']))
+		dbprint('EVENTUALLY %d dist=%g' % (c.heading(), c.state['sonar']))
 
 	dbprint('TARGET: %s' % found)
 
