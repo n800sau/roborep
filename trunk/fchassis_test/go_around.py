@@ -7,8 +7,12 @@ from lib.frobo_ng import frobo_ng
 from lib.camera import update_img
 import picamera, cv2
 
-hsvLower = (0, 10, 10)
-hsvUpper = (64, 255, 255)
+#hsvLower = (0, 10, 10)
+#hsvUpper = (64, 255, 255)
+
+# cat range
+hsvLower = [0, 65, 115]
+hsvUpper = [23, 145, 227]
 
 if __name__ == '__main__':
 

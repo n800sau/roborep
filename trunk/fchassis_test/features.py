@@ -17,17 +17,18 @@ if __name__ == '__main__':
 
 		ss = FeatureProcess(camera)
 		try:
-			data = ss.mask_range(clrLower, clrUpper)
-				if data:
-#					cv2.imwrite(html_data_path('frame_%03d.jpg' % i), data['frame'])
-#					cv2.imwrite(html_data_path('iframe_%03d.jpg' % i), data['iframe'])
-#					cv2.imwrite(html_data_path('oframe_%03d.jpg' % i), data['oframe'])
-					cv2.imwrite(html_data_path('frame.jpg'), data['frame'])
-					cv2.imwrite(html_data_path('iframe.jpg'), data['iframe'])
-					cv2.imwrite(html_data_path('oframe.jpg'), data['oframe'])
-#					json.dump(data['hlist'], file('colorfix.json', 'w'))
-				else:
-					dbprint("NOT FOUND")
+#			data = ss.mask_range(clrLower, clrUpper)
+			data = ss.blob_detection()
+			if data:
+#				cv2.imwrite(html_data_path('frame_%03d.jpg' % i), data['frame'])
+#				cv2.imwrite(html_data_path('iframe_%03d.jpg' % i), data['iframe'])
+#				cv2.imwrite(html_data_path('oframe_%03d.jpg' % i), data['oframe'])
+				cv2.imwrite(html_data_path('frame.jpg'), data['frame'])
+				cv2.imwrite(html_data_path('iframe.jpg'), data['iframe'])
+				cv2.imwrite(html_data_path('oframe.jpg'), data['oframe'])
+#				json.dump(data['hlist'], file('colorfix.json', 'w'))
+			else:
+				dbprint("NOT FOUND")
 #			json.dump({'imgcount': i}, file(html_data_path('frames.json'), 'w'), indent=2)
 		finally:
 			update_img(camera)

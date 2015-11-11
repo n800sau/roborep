@@ -9,8 +9,13 @@ from lib.utils import dbprint, html_data_path
 from lib.camera import update_img, ColorFix
 from matplotlib import pyplot as plt
 
-clrLower = [0, 10, 10]
-clrUpper = [64, 255, 255]
+#hsvLower = [0, 10, 10]
+#hsvUpper = [64, 255, 255]
+
+# cat range
+hsvLower = [0, 65, 115]
+hsvUpper = [23, 145, 227]
+
 
 if __name__ == '__main__':
 
@@ -21,13 +26,13 @@ if __name__ == '__main__':
 			if True:
 #			data = ss.colorise()
 #			data = ss.colorise1()
-#			data = ss.locate_object(clrLower, clrUpper)
+#			data = ss.locate_object(hsvLower, hsvUpper)
 #			w = 10
 #			i = 0
 #			for l in range(0, 200, w):
-#				clrLower[0] = l
-#				clrUpper[0] = l + w
-				data = ss.mask_range(clrLower, clrUpper)
+#				hsvLower[0] = l
+#				hsvUpper[0] = l + w
+				data = ss.mask_range(hsvLower, hsvUpper)
 				if data:
 #					cv2.imwrite(html_data_path('frame_%03d.jpg' % i), data['frame'])
 #					cv2.imwrite(html_data_path('iframe_%03d.jpg' % i), data['iframe'])
@@ -35,12 +40,12 @@ if __name__ == '__main__':
 					cv2.imwrite(html_data_path('frame.jpg'), data['frame'])
 					cv2.imwrite(html_data_path('iframe.jpg'), data['iframe'])
 					cv2.imwrite(html_data_path('oframe.jpg'), data['oframe'])
-					for l in data['hlist']:
-						fig = plt.figure()
-						ax = fig.add_subplot(111)
-						ax.hist(l['hist'])
-						plt.savefig(html_data_path('his_%d_%d.jpg' % (l['iy'], l['ix'])))
-						cv2.imwrite(html_data_path('img_%d_%d.jpg' % (l['iy'], l['ix'])), l['img'])
+#					for l in data['hlist']:
+#						fig = plt.figure()
+#						ax = fig.add_subplot(111)
+#						ax.hist(l['hist'])
+#						plt.savefig(html_data_path('his_%d_%d.jpg' % (l['iy'], l['ix'])))
+#						cv2.imwrite(html_data_path('img_%d_%d.jpg' % (l['iy'], l['ix'])), l['img'])
 #					json.dump(data['hlist'], file('colorfix.json', 'w'))
 				else:
 					dbprint("NOT FOUND")

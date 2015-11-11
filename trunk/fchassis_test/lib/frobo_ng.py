@@ -3,7 +3,7 @@ from hmc5883l import hmc5883l
 from adxl345 import ADXL345
 from l3g4200d import l3g4200
 from fchassis_ng import fchassis_ng
-from utils import angle_diff, html_path
+from utils import angle_diff, html_path, html_data_path
 from pids import Pid
 from lib.marker import collect_markers
 from lib.camera import ShapeSearch, ColorFix
@@ -56,7 +56,7 @@ class frobo_ng(fchassis_ng):
 
 	def read_sensors(self):
 		self.state['heading'] = self.compass.heading()
-		self.state['acc'] = self.acc.getAxes()
+		self.state['acclist'] = self.acc.getAxesList()
 
 	def current_heading(self):
 		self.read_sensors()
@@ -300,7 +300,7 @@ class frobo_ng(fchassis_ng):
 			for i in range(360):
 				diff = self.heading_diff(azim, err=err)
 #				self.dbprint("azim diff=%d (h:%d), acc:%s cnt:%s(pwr:%s)<>%s(pwr%s)" % (
-#					diff, self.state['heading'], self.state['acc'],
+#					diff, self.state['heading'], self.state['acclist'][-1],
 #					self.state['lcount'], self.state['lpwr'],
 #					self.state['rcount'], self.state['rpwr']
 #				))
@@ -324,7 +324,7 @@ class frobo_ng(fchassis_ng):
 						move_data = self.tick_right(min_angle=adiff, pwr = pwr)
 					else:
 						move_data = self.tick_left(min_angle=adiff, pwr = pwr)
-				change = move_data['angle']
+				change = move_data['change']
 				if (abs(change) < 1 or pwr < move_data['pwr']) and slow_coef < 1:
 					slow_coef += 0.1
 #					min_pwr += 5
@@ -366,7 +366,7 @@ class frobo_ng(fchassis_ng):
 		last_diff = 0
 		growing = True
 		for step in range(10000):
-			change = self.tick_turn(clockwise, pwr=pwr, min_angle=step_angle)
+			change = self.tick_turn(clockwise, pwr=pwr, min_angle=step_angle)['change']
 			if abs(change) < 1:
 				pwr += 5
 				if pwr > max_pwr - 10:
@@ -483,8 +483,8 @@ class frobo_ng(fchassis_ng):
 							rows,cols,depth = data['frame'].shape
 							M = cv2.getRotationMatrix2D((cols/2,rows/2), 180, 1)
 							data['frame'] = cv2.warpAffine(data['frame'], M, (cols,rows))
-						cv2.imwrite(html_path('shapes_%03d.jpg' % self.i), data['frame'])
-						cv2.imwrite(html_path('thresh_%03d.jpg' % self.i), data['thresh'])
+						cv2.imwrite(html_data_path('shapes_%03d.jpg' % self.i), data['frame'])
+						cv2.imwrite(html_data_path('thresh_%03d.jpg' % self.i), data['thresh'])
 						c.dbprint('Written set %d' % self.i)
 						self.i += 1
 
@@ -529,9 +529,9 @@ class frobo_ng(fchassis_ng):
 #					data = ss.locate_object(hsvLower, hsvUpper)
 					data = ss.mask_range(hsvLower, hsvUpper)
 					if data:
-						cv2.imwrite(html_path('frame_%03d.jpg' % self.i), data['frame'])
-						cv2.imwrite(html_path('iframe_%03d.jpg' % self.i), data['iframe'])
-						cv2.imwrite(html_path('oframe_%03d.jpg' % self.i), data['oframe'])
+						cv2.imwrite(html_data_path('frame_%03d.jpg' % self.i), data['frame'])
+						cv2.imwrite(html_data_path('iframe_%03d.jpg' % self.i), data['iframe'])
+						cv2.imwrite(html_data_path('oframe_%03d.jpg' % self.i), data['oframe'])
 						c.dbprint('Written set %d' % self.i)
 						self.i += 1
 
