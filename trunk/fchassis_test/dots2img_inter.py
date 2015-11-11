@@ -5,6 +5,7 @@ import os, json, math
 from PIL import Image, ImageDraw
 import scipy.interpolate as sp
 import numpy as np
+from lib.utils import html_data_path
 
 dots = json.load(file('dots.json'))
 
@@ -69,4 +70,4 @@ for k in dots.keys():
 #			draw.ellipse((x-2, y-2, x+2, y+2), fill='orange', outline='orange')
 #		if d.get('hit_warn', None):
 #			draw.ellipse((x-4, y-4, x+4, y+4), fill='yellow', outline='red')
-im.save('/home/n800s/public_html/drawing.jpg')
+im.save(html_data_path('drawing.jpg'))

@@ -2,7 +2,7 @@ import os
 from picamera.array import PiRGBArray
 import cv2
 import imutils
-from utils import dbprint
+from utils import dbprint, html_data_path
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -81,7 +81,7 @@ def set_params(camera, **params):
 	camera.contrast = 70
 
 def update_img(camera, fname=None, **params):
-	fname = os.path.join(os.path.expanduser('~/public_html'), fname or 'picam_0.jpg')
+	fname = html_data_path(fname or 'picam_0.jpg')
 	set_params(camera, **params)
 	camera.capture(fname, use_video_port=False)
 

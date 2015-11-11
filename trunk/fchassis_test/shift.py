@@ -16,7 +16,7 @@ if __name__ == '__main__':
 	c.debug = True
 
 	with picamera.PiCamera() as camera:
-		h = c.compass.heading()
+		h = c.heading()
 		try:
 			update_img(camera, 'pic0.jpg')
 			c.turn_in_ticks((h + (1 if right else -1) * 90) % 360, err=5)
@@ -28,5 +28,5 @@ if __name__ == '__main__':
 			c.cmd_mstop()
 			c.update_state()
 			update_img(camera)
-			change = c.compass.heading() - h
-			dbprint('EVENTUALLY %d dist=%g, turn=%g' % (c.compass.heading(), c.state['sonar'], change))
+			change = c.heading() - h
+			dbprint('EVENTUALLY %d dist=%g, turn=%g' % (c.heading(), c.state['sonar'], change))

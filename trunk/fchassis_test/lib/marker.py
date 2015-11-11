@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os, json, cv2
-from utils import dbprint
+from utils import dbprint, html_data_path
 
 SERVANT = 'raspiCamServant'
 QUEUE = SERVANT + '.js.obj'
@@ -17,7 +17,7 @@ V_ANGLE = 22
 H_ANGLE = 39
 
 def make_fpath(fname=None):
-	return os.path.join(os.path.expanduser('~/public_html'), fname or 'picam_0.jpg')
+	return html_data_path(fname or 'picam_0.jpg')
 
 def use_camera(r):
 	r.publish(SERVANT, json.dumps({
@@ -76,7 +76,7 @@ def get_marker(r, marker_id, fpath=None):
 def marker_offset(r, marker_id, fpath=None):
 	rs = None
 	if fpath is None:
-		fpath = os.path.join(os.path.expanduser('~/public_html'), 'pic0.jpg')
+		fpath = html_data_path('pic0.jpg')
 	marker = get_marker(r, marker_id, fpath=fpath)
 	if marker:
 #		dbprint('Marker: %s' % json.dumps(marker, indent=2))
@@ -85,7 +85,7 @@ def marker_offset(r, marker_id, fpath=None):
 		x = int(w * marker['dot']['x'])
 		y = int(h * marker['dot']['y'])
 		cv2.circle(frame, (x, y), max(20, frame.shape[0] / 20), (0, 0, 255), -1)
-		cv2.imwrite(os.path.join(os.path.expanduser('~/public_html'), 'pic1.jpg'), frame)
+		cv2.imwrite(html_data_path('pic1.jpg'), frame)
 		h_off = (marker['dot']['x'] - 0.5) * H_ANGLE
 		v_off = (marker['dot']['y'] - 0.5) * V_ANGLE
 		rs = h_off

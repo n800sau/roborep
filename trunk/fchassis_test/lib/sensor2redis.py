@@ -5,11 +5,7 @@ from adxl345 import ADXL345
 from l3g4200d import l3g4200
 import redis, time, json
 from utils import dbprint
-
-ACCEL_REDIS_QUEUE = 'q_accel'
-COMPASS_REDIS_QUEUE = 'q_compass'
-GYRO_REDIS_QUEUE = 'q_gyro'
-TEMPERATURE_REDIS_QUEUE = 'q_temperature'
+from sensor_const import *
 
 REDIS_LIMIT = 1000
 
