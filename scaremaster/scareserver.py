@@ -49,8 +49,11 @@ motionCounter = 0
 frame_counter = 0
 
 # cat range
-lowertuple = (0, 65, 115)
-highertuple = (23, 145, 227)
+#lowertuple = (0, 65, 115)
+#highertuple = (23, 145, 227)
+
+lowertuple = (145, 50, 33) 
+highertuple = (168, 128, 117)
 
 #lowertuple = (0, 0, 0)
 #highertuple = (200, 245, 327)
@@ -99,6 +102,9 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 
 	ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
 
+	cat_found = False
+	occupied = False
+
 	good_cnts = []
 	# loop over the contours
 	for c in cnts:
@@ -125,11 +131,13 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 		mask = cv2.erode(mask, None, iterations=2)
 		mask = cv2.dilate(mask, None, iterations=2)
 		cv2.bitwise_and(fimg, fimg, frame[y:y+h, x:x+w], mask = mask)
-		dbprint('Cat pixels count %d in shape %s' % (np.count_nonzero(mask), fimg.shape))
 
 		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 		text = "Occupied"
+		occupied = True
 		if np.count_nonzero(mask) > 0:
+			dbprint('Cat pixels count %d in shape %s' % (np.count_nonzero(mask), fimg.shape))
+			cat_found = True
 			text += " with CAT"
 
 	if good_cnts:
@@ -161,7 +169,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 		ft = t
 
 	# check to see if the room is occupied
-	if text == "Occupied":
+	if occupied:
 		# check to see if enough time has passed between uploads
 		if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
 			# increment the motion counter
