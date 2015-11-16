@@ -9,6 +9,7 @@ import argparse
 import warnings
 import datetime
 import imutils
+from imutils.object_detection import non_max_suppression
 import json
 import time
 import cv2
@@ -128,8 +129,8 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 		fimg = frame[y:y+h, x:x+w]
 		gray = cv2.cvtColor(fimg, cv2.COLOR_BGR2GRAY)
 
-		rects = cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv.CV_HAAR_SCALE_IMAGE)
-		if rects.size > 0:
+		rects = cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv2.cv.CV_HAAR_SCALE_IMAGE)
+		if len(rects) > 0:
 			# apply non-maxima suppression to the bounding boxes using a
 			# fairly large overlap threshold to try to maintain overlapping
 			# boxes that are still people
