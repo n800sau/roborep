@@ -36,6 +36,8 @@ camera.framerate = conf["fps"]
 rawCapture = PiRGBArray(camera, size=tuple(conf["resolution"]))
 imdir = conf["imdir"]
 
+cascade = cv2.CascadeClassifier(os.path.join(os.path.dirname(__file__), 'cat_cascade.xml'))
+
 if not os.path.exists(imdir):
 	os.makedirs(imdir)
 
@@ -123,21 +125,39 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 
 		good_cnts.append({'c':c, 'x': x, 'y': y, 'w': w, 'h': h, 'area': area})
 
-
 		fimg = frame[y:y+h, x:x+w]
-		fblur = cv2.GaussianBlur(fimg, (11, 11), 0)
-		fblur = cv2.cvtColor(fblur, cv2.COLOR_BGR2HSV)
-		mask = cv2.inRange(fimg, np.array(lowertuple), np.array(highertuple))
-		mask = cv2.erode(mask, None, iterations=2)
-		mask = cv2.dilate(mask, None, iterations=2)
-		cv2.bitwise_and(fimg, fimg, frame[y:y+h, x:x+w], mask = mask)
+		gray = cv2.cvtColor(fimg, cv2.COLOR_BGR2GRAY)
+
+		rects = cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv.CV_HAAR_SCALE_IMAGE)
+		if rects.size > 0:
+			# apply non-maxima suppression to the bounding boxes using a
+			# fairly large overlap threshold to try to maintain overlapping
+			# boxes that are still people
+			rects = np.array([[rx, ry, rx + rw, ry + rh] for (rx, ry, rw, rh) in rects])
+			pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
+
+			# draw the bounding boxes
+			for (xA, yA, xB, yB) in pick:
+				cv2.rectangle(frame, (x+xA, y+yA), (x+xB, y+yB), (0, 0, 255), 2)
+			dbprint('Cat found')
+			cat_found = True
+
+
+#		fblur = cv2.GaussianBlur(fimg, (11, 11), 0)
+#		fblur = cv2.cvtColor(fblur, cv2.COLOR_BGR2HSV)
+#		mask = cv2.inRange(fimg, np.array(lowertuple), np.array(highertuple))
+#		mask = cv2.erode(mask, None, iterations=2)
+#		mask = cv2.dilate(mask, None, iterations=2)
+#		cv2.bitwise_and(fimg, fimg, frame[y:y+h, x:x+w], mask = mask)
+#		dbprint('Cat pixels count %d in shape %s' % (np.count_nonzero(mask), fimg.shape))
+#		if np.count_nonzero(mask) > 0:
+#			dbprint('Cat pixels count %d in shape %s' % (np.count_nonzero(mask), fimg.shape))
+#			cat_found = True
 
 		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 		text = "Occupied"
 		occupied = True
-		if np.count_nonzero(mask) > 0:
-			dbprint('Cat pixels count %d in shape %s' % (np.count_nonzero(mask), fimg.shape))
-			cat_found = True
+		if cat_found:
 			text += " with CAT"
 
 	if good_cnts:
@@ -169,7 +189,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 		ft = t
 
 	# check to see if the room is occupied
-	if occupied:
+	if occupied and cat_found:
 		# check to see if enough time has passed between uploads
 		if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
 			# increment the motion counter
