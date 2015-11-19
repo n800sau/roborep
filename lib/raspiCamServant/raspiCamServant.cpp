@@ -157,6 +157,14 @@ void raspiCamServant::make_shot(json_t *js)
 	}
 }
 
+static bool marker_eq(aruco::Marker i, aruco::Marker j) {
+  return i.id == j.id;
+}
+
+static bool marker_less(aruco::Marker i,aruco::Marker j) {
+	return i.id < j.id;
+}
+
 void raspiCamServant::find_markers(json_t *js)
 {
 	if(!camera.isOpened()) {
@@ -174,12 +182,43 @@ void raspiCamServant::find_markers(json_t *js)
 		camera.retrieve(image);
 		cv::cvtColor(image, image, CV_BGR2GRAY);
 
+		printf("Dim: %dx%d\n", image.cols, image.rows);
+
 		syslog(LOG_NOTICE, "captured dim: %dx%d", image.cols, image.rows);
 
 		aruco::MarkerDetector mDetector;
+
 		//read the input image
 		//Ok, let's detect
 		mDetector.detect(image, markers, camParam, markerSize);
+
+		if(image.cols > 300 && image.rows > 300) {
+			int roi_w = image.cols / 4;
+			int roi_h = image.rows / 4;
+			const int x_step = roi_w / 3;
+			const int y_step = roi_h / 3;
+			for(int x=0; x<image.cols; x+=x_step) {
+				for(int y=0; y<image.rows; y+=y_step) {
+					cv::Mat subimage(image, cv::Rect(x, y, std::min(image.cols-x, roi_w), std::min(image.rows-y, roi_h)));
+					printf("Sub Dim: (%d,%d) %dx%d\n", x, y, subimage.cols, subimage.rows);
+					vector<aruco::Marker> submarkers;
+					mDetector.detect(subimage, submarkers, camParam, markerSize);
+					if(!submarkers.empty())
+						printf("Detected %d\n", submarkers.size());
+					while(!submarkers.empty()) {
+						aruco::Marker m = submarkers.back();
+						submarkers.pop_back();
+						for(int j=0; j<4; j++) {
+							m[j].x += x;
+							m[j].y += y;
+						}
+						markers.push_back(m);
+					}
+				}
+			}
+		}
+		std::sort(markers.begin(), markers.end(), marker_less);
+		markers.erase(std::unique(markers.begin(), markers.end(), marker_eq), markers.end());
 
 		if(imgpath) {
 			if(draw_markers) {
@@ -191,6 +230,7 @@ void raspiCamServant::find_markers(json_t *js)
 			}
 			cv::imwrite(imgpath, image);
 		}
+
 		// push markers to redis queue
 		json2redislist();
 	} catch (std::exception &ex) {
