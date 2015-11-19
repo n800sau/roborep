@@ -11,6 +11,8 @@ void setup_compass()
 	mag = Adafruit_HMC5883_Unified(12345);
 	if(!mag.begin()) {
 		Serial.println(F("Could not connect to HMC5883."));
+	} else {
+		Serial.println(F("HMC5883 is ready."));
 	}
 }
 

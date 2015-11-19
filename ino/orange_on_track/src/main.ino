@@ -2,6 +2,14 @@
 #include "SerialProtocol.h"
 #include "commands.h"
 
+int LCURRENT = A3;
+int RCURRENT = A2;
+
+
+// Pin 13 has an LED connected on most Arduino boards.
+// give it a name:
+int led = 13;
+
 // sonar
 int maximumRange = 200; // Maximum range needed
 int minimumRange = 0; // Minimum range needed
@@ -17,16 +25,16 @@ float count2dist(int count)
 	return count * ENC_STEP;
 }
 
-const int MIN_PWM = 10;
+const int MIN_PWM = 140;
 const int MAX_PWM = 255;
 
 
 // motor pins
-const int LEFT_MOTOR_1 = 6;
-const int LEFT_MOTOR_2 = 5;
+const int LEFT_MOTOR_1 = 9;
+const int LEFT_MOTOR_2 = 10;
 
-const int RIGHT_MOTOR_1 = 10;
-const int RIGHT_MOTOR_2 = 9;
+const int RIGHT_MOTOR_1 = 6;
+const int RIGHT_MOTOR_2 = 5;
 
 const int echoPin = 12; // Echo Pin
 const int trigPin = 11; // Trigger Pin
@@ -90,6 +98,9 @@ void IccBase::sendState()
 	vals[0] = lPower;
 	vals[1] = rPower;
 	sendFloats(R_MPOWER_2F, vals, 2);
+	vals[0] = analogRead(LCURRENT);
+	vals[1] = analogRead(RCURRENT);
+	sendFloats(R_MCURRENT_2F, vals, 2);
 	vals[0] = count2dist(lCounter);
 	vals[1] = count2dist(rCounter);
 	sendFloats(R_MDIST_2F, vals, 2);
@@ -158,7 +169,7 @@ void setLeftMotor(int power, bool fwd)
 		int pwm = power2pwm(power);
 		if(fwd) {
 			analogWrite(LEFT_MOTOR_1, pwm);
-			digitalWrite(LEFT_MOTOR_2, LOW);
+			digitalWrite(LEFT_MOTOR_2, HIGH);
 		} else {
 			analogWrite(LEFT_MOTOR_2, pwm);
 			digitalWrite(LEFT_MOTOR_1, LOW);
@@ -180,7 +191,7 @@ void setRightMotor(int power, bool fwd)
 		int pwm = power2pwm(power);
 		if(fwd) {
 			analogWrite(RIGHT_MOTOR_1, pwm);
-			digitalWrite(RIGHT_MOTOR_2, LOW);
+			digitalWrite(RIGHT_MOTOR_2, HIGH);
 		} else {
 			analogWrite(RIGHT_MOTOR_2, pwm);
 			digitalWrite(RIGHT_MOTOR_1, LOW);
@@ -272,6 +283,8 @@ void setup()
 {
 	Serial.begin(115200);
 
+	pinMode(led, OUTPUT);
+
 	pinMode(trigPin, OUTPUT);
 	pinMode(echoPin, INPUT);
 
@@ -290,6 +303,32 @@ void setup()
 	attachInterrupt(rInt, lIntCB, CHANGE);
 
 	Serial.println("Setup finished.");
+
+/*				setLeftMotor(100, 1);
+				setRightMotor(100, 1);
+			Serial.print(lCounter);
+			Serial.print(" : ");
+			Serial.println(rCounter);
+		for(int i=0; i<50; i++) {
+			Serial.print(analogRead(LCURRENT));
+			Serial.print(" : ");
+			Serial.println(analogRead(RCURRENT));
+			delay(100);
+		}
+				setLeftMotor(100, 0);
+				setRightMotor(100, 0);
+		delay(3000);
+			setLeftMotor(0, false);
+			setRightMotor(0, false);
+			Serial.print(lCounter);
+			Serial.print(" : ");
+			Serial.println(rCounter);
+		for(int i=0; i<10; i++) {
+			Serial.print(analogRead(LCURRENT));
+			Serial.print(" : ");
+			Serial.println(analogRead(RCURRENT));
+			delay(100);
+		}*/
 }
 
 unsigned long last_ping = millis();
