@@ -58,7 +58,7 @@ class ADXL345:
 	def __init__(self, address = 0x53):
 		self.bus = smbus.SMBus(1 if int(revision, 16) >= 4 else 0)
 		self.address = address
-		self.setBandwidthRate(self.BW_RATE_100HZ)
+		self.setBandwidthRate(self.BW_RATE_25HZ)
 		self.setRange(self.RANGE_2G)
 		self.enableMeasurement()
 

@@ -1,4 +1,4 @@
-import time, copy, os, sys, json, pickle, cv2, random, redis
+import time, copy, os, sys, json, pickle, cv2, random, redis, subprocess, atexit
 from fchassis_ng import fchassis_ng
 from utils import angle_diff, html_path, html_data_path
 from pids import Pid
@@ -11,40 +11,66 @@ TICK_TURN_TIME = 0.5
 
 MIN_DISTANCE = 0.1
 
+class ExDataTooOld(Exception):
+	pass
+
+class ExNoData(Exception):
+	pass
+
 class frobo_ng(fchassis_ng):
 
 	def __init__(self, *args, **kwds):
 		super(frobo_ng, self).__init__(*args, **kwds)
-		self.r = redis.Redis()
+		self.r = redis.Redis(db=2)
+		self.sensor_process = self.run_sensors_process()
+		atexit.register(self.sensor_process.kill)
+		self.dbprint('sensor process: %s' % self.sensor_process.pid, force=True)
+		for i in range(10):
+			try:
+				self.heading()
+			except (ExDataTooOld, ExNoData):
+				self.dbprint('Waiting for sensor2redis.py process, %d sec(s)' % (i+1), force=True)
+				time.sleep(1)
+				continue
+			break
+		self.dbprint('sensor2redis.py is producing data')
 		self.hit_warn = None
 		self.dots = []
 		# (int angle): {'lpwr':, 'rpwr':, 'dt':}
 		self.memory_fname = os.path.join(os.path.dirname(sys.argv[0]), 'memory.dat')
 		self.recover_memory()
-		self.read_sensors()
+
+	def run_sensors_process(self):
+		return subprocess.Popen(['python', os.path.join(os.path.dirname(__file__), 'sensor2redis.py')])
 
 	def heading(self):
 		data = self.r.lrange(COMPASS_REDIS_QUEUE, -1, -1)
 		rs = json.loads(data[0]) if data else None
+		if rs is None:
+			raise ExNoData('No data')
 		t = time.time()
 		if rs['time'] + 2 < t:
-			raise Exception('Heading data too old (%g sec old)' % (t - rs['time']))
+			raise ExDataTooOld('Heading data too old (%g sec old)' % (t - rs['time']))
 		return rs['heading']
 
 	def accel(self):
 		data = self.r.lrange(ACCEL_REDIS_QUEUE, -1, -1)
 		rs = json.loads(data[0]) if data else None
+		if rs is None:
+			raise ExNoData('No data')
 		t = time.time()
 		if rs['time'] + 2 < t:
-			raise Exception('Accelerometer data too old (%g sec old)' % (t - rs['time']))
+			raise ExDataTooOld('Accelerometer data too old (%g sec old)' % (t - rs['time']))
 		return rs['axes']
 
 	def degsec(self):
 		data = self.r.lrange(GYRO_REDIS_QUEUE, -1, -1)
 		rs = json.loads(data[0]) if data else None
+		if rs is None:
+			raise ExNoData('No data')
 		t = time.time()
 		if rs['time'] + 2 < t:
-			raise Exception('Gyro data too old (%g sec old)' % (t - rs['time']))
+			raise ExDataTooOld('Gyro data too old (%g sec old)' % (t - rs['time']))
 		return rs['degsec']
 
 	def add_memory(self, angle, lpwr, rpwr, dt):
@@ -74,16 +100,8 @@ class frobo_ng(fchassis_ng):
 			prev_k = k
 		return rs
 
-	def read_sensors(self):
-		self.state['heading'] = self.heading()
-		self.state['acclist'] = self.accel()
-
-	def current_heading(self):
-		self.read_sensors()
-		return self.state['heading']
-
 	def heading_diff(self, azim, err=10):
-		heading = self.current_heading()
+		heading = self.heading()
 		diff = angle_diff(azim, heading)
 		return diff if abs(diff) > err else 0
 
@@ -101,7 +119,7 @@ class frobo_ng(fchassis_ng):
 		self.dbprint("stopped")
 
 	def is_really_stopped(self, secs=0.5):
-		h = self.current_heading()
+		h = self.heading()
 		self.update_state()
 		lcount = self.state['lcount']
 		rcount = self.state['rcount']
@@ -118,8 +136,8 @@ class frobo_ng(fchassis_ng):
 		pid = Pid(2., 0, 0)
 		pid.range(-power, power)
 		if heading is None:
-			heading = self.current_heading()
-		elif abs(angle_diff(heading, self.current_heading())) > 5:
+			heading = self.heading()
+		elif abs(angle_diff(heading, self.heading())) > 5:
 			self.turn_in_ticks(heading)
 		pid.set(heading)
 		offset = 0
@@ -127,7 +145,7 @@ class frobo_ng(fchassis_ng):
 			t = time.time()
 			while (t + max_secs) > time.time():
 				self.update_state()
-				hdiff = angle_diff(self.current_heading(), heading)
+				hdiff = angle_diff(self.heading(), heading)
 				if abs(hdiff) > 20:
 					self.dbprint("STOP and CORRECT")
 					tt = time.time()
@@ -135,7 +153,7 @@ class frobo_ng(fchassis_ng):
 					self.turn_in_ticks(heading, err=5)
 					counted_offset = counted - self.steps_counted()
 					self.dbprint("COUNTER OFFSET=%d" % counted_offset)
-					hdiff = angle_diff(self.current_heading(), heading)
+					hdiff = angle_diff(self.heading(), heading)
 					max_secs += time.time() - tt
 				if hdiff > 1:
 					offset = 20 if fwd else -20
@@ -145,7 +163,7 @@ class frobo_ng(fchassis_ng):
 					offset = 0
 				lpwr = power - offset
 				rpwr = power + offset
-				self.dbprint('^%d hdiff:%g off:%d pw:%d<>%d cnt:%d<>%d' % (int(self.current_heading()), hdiff, offset, lpwr, rpwr, self.state['lcount'], self.state['rcount']))
+				self.dbprint('^%d hdiff:%g off:%d pw:%d<>%d cnt:%d<>%d' % (int(self.heading()), hdiff, offset, lpwr, rpwr, self.state['lcount'], self.state['rcount']))
 				if fwd and self.state['sonar'] >= 0 and self.state['sonar'] < MIN_DISTANCE:
 					self.hit_warn = self.state['sonar']
 					self.dbprint('STOP distance=%s' % self.state['sonar'])
@@ -153,7 +171,7 @@ class frobo_ng(fchassis_ng):
 				steps = self.steps_counted() + counted_offset
 				if steps > max_steps:
 					self.dbprint('Max steps reached (%d > %d)' % (steps, max_steps))
-					hdiff = angle_diff(self.current_heading(), heading)
+					hdiff = angle_diff(self.heading(), heading)
 					if abs(hdiff) > 3:
 						self.dbprint("FINAL CORRECTION")
 						self.turn_in_ticks(heading, err=5)
@@ -161,7 +179,7 @@ class frobo_ng(fchassis_ng):
 				self.cmd_mboth(lpwr, fwd, rpwr, fwd)
 				time.sleep(STEP_TIME)
 				self.update_state()
-				pid.step(input=self.current_heading())
+				pid.step(input=self.heading())
 				offset = pid.get()
 		finally:
 			self.cmd_mstop()
@@ -309,17 +327,12 @@ class frobo_ng(fchassis_ng):
 		max_pwr = 100
 		slow_coef = 1
 		change_list = []
-		self.dbprint('start turn h %d' % int(self.current_heading()))
+		self.dbprint('start turn h %d' % int(self.heading()))
 		try:
 			last_counts = [self.state['lcount'], self.state['rcount'], 0]
 			last_diff = self.heading_diff(azim, err=err)
 			for i in range(360):
 				diff = self.heading_diff(azim, err=err)
-#				self.dbprint("azim diff=%d (h:%d), acc:%s cnt:%s(pwr:%s)<>%s(pwr%s)" % (
-#					diff, self.state['heading'], self.state['acclist'][-1],
-#					self.state['lcount'], self.state['lpwr'],
-#					self.state['rcount'], self.state['rpwr']
-#				))
 				adiff = abs(diff)
 				if adiff < err:
 					break
@@ -374,7 +387,7 @@ class frobo_ng(fchassis_ng):
 				last_diff = diff
 		finally:
 			self.cmd_mstop()
-			self.dbprint('end turn h %d' % int(self.current_heading()))
+			self.dbprint('end turn h %d' % int(self.heading()))
 
 	def search_around(self, stop_if_cb, clockwise=True, pwr=30, step_angle=10, max_pwr=100):
 		min_pwr = pwr
@@ -416,7 +429,7 @@ class frobo_ng(fchassis_ng):
 		# 10 attempt to turn
 		i = 10
 		while self.state['sonar'] < min_dist and i>0:
-			self.turn_in_ticks(self.current_heading() + (45 if clockwise else -45), stop_if=lambda c: c.stop_if_cb(min_dist))
+			self.turn_in_ticks(self.heading() + (45 if clockwise else -45), stop_if=lambda c: c.stop_if_cb(min_dist))
 			i -= 1
 
 	def find_left_minimum(self, fwd=True):
@@ -459,7 +472,7 @@ class frobo_ng(fchassis_ng):
 					fname = html_data_path('pic%d.jpg' % self.i)
 					markers = collect_markers(r, fpath=fname)
 					if markers:
-						c.dbprint('FOUND %d markers:' % len(markers))
+						c.dbprint('FOUND %d markers (%d):' % (len(markers), c.heading()))
 						for m in markers:
 							if marker_id is None:
 								c.dbprint('\t%s' % (m['id'], ))

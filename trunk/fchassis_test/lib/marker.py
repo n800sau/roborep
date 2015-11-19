@@ -39,7 +39,8 @@ def collect_markers(r, fpath=None):
 	if fpath:
 		params['path'] = fpath
 	r.publish(SERVANT, json.dumps(params))
-	v = r.blpop(QUEUE, timeout=5)
+	dbprint('Published %s' % json.dumps(params, indent=2))
+	v = r.blpop(QUEUE, timeout=40)
 	if v:
 		v = json.loads(v[1])
 #		dbprint('DATA=%s' % (json.dumps(v, indent=2),))

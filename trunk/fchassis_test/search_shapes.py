@@ -23,6 +23,9 @@ if __name__ == '__main__':
 			c.search_shapes(camera, clockwise=clockwise)
 			dbprint('AFTER %s m to %s' % (c.state['sonar'], c.heading()))
 			json.dump(c.dots, file('dots.json', 'w'), indent=2)
+		except Exception, e:
+			dbprint('Error %s' % e)
+			raise
 		finally:
 			c.cmd_mstop()
 			c.wait_until_stop()
