@@ -40,7 +40,8 @@ class fchassis_ng(bin2uno_inf):
 		self.s_port = cfg['serial_port']
 		self.s_baud = int(cfg.get('baud_rate', 115200))
 
-		self.ser = Serial(self.s_port, self.s_baud, timeout=5, writeTimeout=5)
+#		self.ser = Serial(self.s_port, self.s_baud, timeout=5, writeTimeout=5)
+		self.ser = Serial(self.s_port, self.s_baud, timeout=5)
 		self.dbprint('Connected %s at %d' % (self.s_port, self.s_baud))
 
 		for i in range(50):
