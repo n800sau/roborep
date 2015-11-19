@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
-import sys, os
+import sys, os, socket
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'lib_py'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'ros_icc_base'))
+
+if socket.gethostname() == 'orange':
+	sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'orange_on_track'))
+elif socket.gethostname() == 'hubee':
+	sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'ros_icc_base'))
 
 from conf_ino import configure
 import json
@@ -34,7 +38,7 @@ class fchassis_ng(bin2uno_inf):
 		self.distance = None
 		self.voltage = None
 
-		cfgobj = configure(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'ros_icc_base'))
+		cfgobj = configure(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'orange_on_track'))
 
 		cfg = cfgobj.as_dict('serial')
 		self.s_port = cfg['serial_port']
@@ -126,6 +130,9 @@ class fchassis_ng(bin2uno_inf):
 							self.state['tick_time'] = time.time()
 							self.state['lcount'] = data['vals'][0]
 							self.state['rcount'] = data['vals'][1]
+						elif data['cmd'] == pycmds.R_MCURRENT_2F:
+							self.state['lcurrent'] = data['vals'][0]
+							self.state['rcurrent'] = data['vals'][1]
 						elif data['cmd'] == pycmds.R_MPOWER_2F:
 							self.state['lpwr'] = data['vals'][0]
 							self.state['rpwr'] = data['vals'][1]

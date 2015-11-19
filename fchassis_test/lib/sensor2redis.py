@@ -11,7 +11,7 @@ REDIS_LIMIT = 100
 
 class Sensors:
 
-	def __init__(self, adxl345_address=0x1d):
+	def __init__(self, adxl345_address=0x53):
 		self.r = redis.Redis(db=2)
 
 		self.adxl345 = ADXL345(adxl345_address)
