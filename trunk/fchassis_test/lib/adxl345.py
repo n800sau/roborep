@@ -132,7 +132,8 @@ class ADXL345:
 if __name__ == "__main__":
 	# if run directly we'll just create an instance of the class and output 
 	# the current readings
-	adxl345 = ADXL345(0x1d)
+#	adxl345 = ADXL345(0x1d)
+	adxl345 = ADXL345()
 	adxl345.setFIFOmode(adxl345.FIFO_BYPASS, adxl345.FIFO_TRIGGER_INT2, 2)
 	adxl345.setFIFOmode(adxl345.FIFO_FIFO, adxl345.FIFO_TRIGGER_INT2, 2)
 
