@@ -11,7 +11,7 @@ def buf2hex(buf):
 	return ' '.join(line)
 
 
-class bin2uno_inf:
+class bin2uno_inf(object):
 
 	def __init__(self, magic_byte):
 		self.debug = False
@@ -33,7 +33,7 @@ class bin2uno_inf:
 			print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
 
 	def send_bytes(self, bytes):
-		self.dbprint('Sending %s' % buf2hex(bytes))
+#		self.dbprint('Sending %s' % buf2hex(bytes))
 		self.send2ino(bytes)
 
 	def crc8(self, bytes):
@@ -49,7 +49,7 @@ class bin2uno_inf:
 		return crc
 
 	def send_command(self, command, databytes=None):
-		self.dbprint('send_command')
+#		self.dbprint('send_command')
 		packet = chr(self.magic_byte) + chr(command)
 		if databytes is None:
 			packet += chr(0)
@@ -129,7 +129,7 @@ class bin2uno_inf:
 #						if line.startswith('MSG:'):
 #							self.dbprint(': %s\n' % line)
 #						self.dbprint('Discarded: %s\n' % ' '.join([('%2.2x' % ord(c)) for c in discarded]))
-						self.dbprint('Discarded: %s\n' % discarded)
+			#			self.dbprint('Discarded: %s\n' % discarded)
 						self.dbg_data += discarded
 #		self.dbprint('returns %s' % rs)
 		return rs

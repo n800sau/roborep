@@ -10,6 +10,8 @@ void setup_bmp085()
 	if(!bmp.begin())
 	{
 		Serial.println(F("Could not connect to BMP085."));
+	} else {
+		Serial.println(F("BMP085 is ready."));
 	}
 }
 

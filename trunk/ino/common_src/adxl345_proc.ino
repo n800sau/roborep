@@ -14,6 +14,8 @@ ScalarLimitedQueue<float, 10> acc_z;
 
 adxl345_state_t adxl345_state;
 
+bool adxl345_exists = false;
+
 void setup_accel()
 {
 
@@ -22,41 +24,43 @@ void setup_accel()
 	accel = Adafruit_ADXL345_Unified(12345);
 
 	/* Initialise the sensor */
-	if(!accel.begin())
+	if(!(adxl345_exists = accel.begin()))
 	{
 		Serial.println(F("Could not connect to ADXL345."));
 	} else {
 		Serial.println(F("ADXL345 is ready"));
+
+		// Set the range of the accelerometer to a maximum of 2G.
+		accel.setRange(ADXL345_RANGE_2_G);
+
+		// interrupts setup
+		pinMode(A_INT1_PIN, INPUT); 
+
+		accel.writeRegister(ADXL345_REG_INT_MAP, 0); // send all interrupts to ADXL345's INT1 pin
+		accel.writeRegister(ADXL345_REG_INT_ENABLE, B8(1111100)); // enable signle and double tap, activity, inactivity and free fall detection
+
+		// single tap configuration
+		accel.writeRegister(ADXL345_REG_DUR, 0x1f); // 625us/LSB
+		accel.writeRegister(ADXL345_REG_THRESH_TAP, 24); // 62.5mg/LSB  <==> 3000mg/62.5mg = 48 LSB as datasheet suggestion
+		accel.writeRegister(ADXL345_REG_TAP_AXES, B8(111)); // enable tap detection on x,y,z axes
+
 	}
-
-	// Set the range of the accelerometer to a maximum of 2G.
-	accel.setRange(ADXL345_RANGE_2_G);
-
-	// interrupts setup
-	pinMode(A_INT1_PIN, INPUT); 
-
-	accel.writeRegister(ADXL345_REG_INT_MAP, 0); // send all interrupts to ADXL345's INT1 pin
-	accel.writeRegister(ADXL345_REG_INT_ENABLE, B8(1111100)); // enable signle and double tap, activity, inactivity and free fall detection
-
-	// single tap configuration
-	accel.writeRegister(ADXL345_REG_DUR, 0x1f); // 625us/LSB
-	accel.writeRegister(ADXL345_REG_THRESH_TAP, 24); // 62.5mg/LSB  <==> 3000mg/62.5mg = 48 LSB as datasheet suggestion
-	accel.writeRegister(ADXL345_REG_TAP_AXES, B8(111)); // enable tap detection on x,y,z axes
-
 }
 
 void process_accel()
 {
-	accel.getEvent(&adxl345_state.event);
-	acc_x.push(adxl345_state.event.acceleration.x);
-	acc_y.push(adxl345_state.event.acceleration.y);
-	acc_z.push(adxl345_state.event.acceleration.z);
+	if(adxl345_exists) {
+		accel.getEvent(&adxl345_state.event);
+		acc_x.push(adxl345_state.event.acceleration.x);
+		acc_y.push(adxl345_state.event.acceleration.y);
+		acc_z.push(adxl345_state.event.acceleration.z);
 
-	if(digitalRead(A_INT1_PIN)) {
-		int interruptSource = accel.readRegister(ADXL345_REG_INT_SOURCE);
-		if(interruptSource & B8(1000000)) {
-			adxl345_state.single_tap++;
-			Serial.println("### SINGLE_TAP ###");
+		if(digitalRead(A_INT1_PIN)) {
+			int interruptSource = accel.readRegister(ADXL345_REG_INT_SOURCE);
+			if(interruptSource & B8(1000000)) {
+				adxl345_state.single_tap++;
+				Serial.println("### SINGLE_TAP ###");
+			}
 		}
 	}
 

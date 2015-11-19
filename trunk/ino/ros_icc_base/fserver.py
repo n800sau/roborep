@@ -15,6 +15,7 @@ import traceback
 import threading
 import Queue
 from PyMata.pymata import PyMata
+import pids
 
 import logging
 logging.basicConfig(filename='fserver_bmp.log',level=logging.DEBUG)
@@ -162,9 +163,15 @@ class Device:
 		return self.readS16(register, little_endian=False)
 
 
-class fserver:
+class fserver(pids.Pid):
 
-	def __init__(self, s_dev):
+	def __init__(self, s_dev, **config):
+		self.keep_heading = None
+		self.maxAccX = 0
+		self.last_heading = 0
+		self.r = redis.Redis()
+
+		super(fserver, self).__init__(**config)
 		self.debug = True
 		self.left_dir = None
 		self.right_dir = None
@@ -173,7 +180,10 @@ class fserver:
 		self.t = threading.Thread(target=redis_subscriber, args = (self.q,))
 		self.t.setDaemon(True)
 		self.t.start()
-		self.maxAccX = 0
+
+
+		self.range(-50.0, 50.0)
+		self.tune(.8,.1,.1)
 
 		self.enc_data = {
 			ENCODER_L: {
@@ -212,7 +222,6 @@ class fserver:
 		self.board.set_pin_mode(ENCODER_R, self.board.INPUT, self.board.DIGITAL)
 		# Arm the digital latch to detect when the button is pressed
 		self.arm_latch(ENCODER_R, True)
-		self.r = redis.Redis()
 
 	def __exit__(self, type, value, traceback):
 		# close the interface down cleanly
@@ -228,12 +237,21 @@ class fserver:
 		if self.debug or force:
 			print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
 
+	def measure(self):
+		compass = self.get_last('hmc5883l', 2)
+		if compass:
+			self.last_heading = compass['heading_degrees']
+		return self.last_heading
+
 	def reset_counters(self):
 		self.enc_data[ENCODER_L]['count'] = 0
 		self.enc_data[ENCODER_R]['count'] = 0
 
 	def steps_counted(self):
 		return max(abs(self.enc_data[ENCODER_L]['count']), abs(self.enc_data[ENCODER_R]['count']))
+
+	def adjust_pwr(self, pwr):
+		self.dbprint('output=%f' % self.get())
 
 	def right_move(self, direct, pwr):
 		if direct:
@@ -291,6 +309,7 @@ class fserver:
 		return self.enc_data[ENCODER_L]['pwr'] == 0 and self.enc_data[ENCODER_R]['pwr'] == 0
 
 	def stop(self):
+		self.keep_heading = None
 		if not self.is_stopped():
 			self.left_move(0, 0)
 			self.right_move(0, 0)
@@ -310,12 +329,19 @@ class fserver:
 			if self.target_steps > 0:
 				self.reset_counters()
 			self.dbprint('pwr: %d' % pwr)
-			if command == 'mv_fwd':
-				self.right_move(1, pwr)
-				self.left_move(1, pwr)
-			elif command == 'mv_back':
-				self.right_move(0, pwr)
-				self.left_move(0, pwr)
+			if command in ('mv_fwd', 'mv_back'):
+				self.keep_heading = None
+				compass = self.get_last('hmc5883l', 2)
+				if compass:
+					self.keep_heading = compass['heading_degrees']
+					self.last_step_time = time.time()
+					self.set(self.keep_heading)
+				if command == 'mv_fwd':
+					self.right_move(1, pwr)
+					self.left_move(1, pwr)
+				else:
+					self.right_move(0, pwr)
+					self.left_move(0, pwr)
 			elif command == 't_left':
 				self.right_move(1, pwr)
 				self.left_move(0, pwr)
@@ -338,6 +364,7 @@ class fserver:
 		try:
 			compass = self.get_last('hmc5883l', 2)
 			if compass:
+				self.last_heading = compass['heading_degrees']
 				r['heading'] = compass['heading_degrees']
 			r['Rcount'] = self.enc_data[ENCODER_R]['count']
 			r['Rpower'] = self.enc_data[ENCODER_R]['pwr']
@@ -380,6 +407,16 @@ class fserver:
 					self.cmd_show_sensors()
 				else:
 					time.sleep(0.1)
+			if not self.keep_heading is None:
+				if t-self.last_step_time > 0:
+					compass = self.get_last('hmc5883l', 2)
+					if compass:
+						self.last_heading = compass['heading_degrees']
+					self.step(dt=t-self.last_step_time, input=self.last_heading)
+					adj_pwr = self.get()
+					if abs(adj_pwr) >= 1:
+						self.adjust_pwr(adj_pwr)
+					self.last_step_time = t
 
 if __name__ == '__main__':
 
