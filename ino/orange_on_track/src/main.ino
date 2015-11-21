@@ -1,6 +1,15 @@
 #include <voltage.h>
+#include <SharpIR.h>
 #include "SerialProtocol.h"
 #include "commands.h"
+
+#define IR A1
+#define IR_MODEL 20150
+
+// 2Y0A02
+
+SharpIR sharp(IR, 25, 93, IR_MODEL);
+
 
 int LCURRENT = A3;
 int RCURRENT = A2;
@@ -10,10 +19,18 @@ int RCURRENT = A2;
 // give it a name:
 int led = 13;
 
+/*
 // sonar
 int maximumRange = 200; // Maximum range needed
 int minimumRange = 0; // Minimum range needed
+
+const int echoPin = 12; // Echo Pin
+const int trigPin = 11; // Trigger Pin
+
+*/
+
 long duration = -1, distance = -1; // Duration used to calculate distance
+
 
 const float COUNT_PER_REV = 20.0;
 const float WHEEL_DIAMETER = 0.065;
@@ -35,9 +52,6 @@ const int LEFT_MOTOR_2 = 10;
 
 const int RIGHT_MOTOR_1 = 6;
 const int RIGHT_MOTOR_2 = 5;
-
-const int echoPin = 12; // Echo Pin
-const int trigPin = 11; // Trigger Pin
 
 // encoder pins
 const int Eleft = 2;
@@ -202,7 +216,7 @@ void setRightMotor(int power, bool fwd)
 	}
 }
 
-void sonar()
+/*void sonar()
 {
 	// The following trigPin/echoPin cycle is used to determine the
 	// distance of the nearest object by bouncing soundwaves off of it.
@@ -223,7 +237,7 @@ void sonar()
 	} else if(distance > maximumRange) {
 		distance = maximumRange + 1;
 	}
-}
+}*/
 
 void serialEvent() {
 	base.serialEvent();
@@ -285,8 +299,10 @@ void setup()
 
 	pinMode(led, OUTPUT);
 
-	pinMode(trigPin, OUTPUT);
-	pinMode(echoPin, INPUT);
+	pinMode (IR, INPUT);
+
+//	pinMode(trigPin, OUTPUT);
+//	pinMode(echoPin, INPUT);
 
 	pinMode(LEFT_MOTOR_1, OUTPUT);
 	pinMode(LEFT_MOTOR_2, OUTPUT);
@@ -335,7 +351,8 @@ unsigned long last_ping = millis();
 
 void loop()
 {
-	sonar();
+	distance=sharp.distance();  // this returns the distance to the object you're measuring
+//	sonar();
 	if(base.available()) {
 //		Serial.println('available');
 		last_ping = millis();
