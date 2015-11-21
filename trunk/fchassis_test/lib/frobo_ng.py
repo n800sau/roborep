@@ -1,8 +1,4 @@
-<<<<<<< .mine
-import time, copy, os, sys, json, pickle, cv2, random, redis, subprocess
-=======
 import time, copy, os, sys, json, pickle, cv2, random, redis, subprocess, atexit
->>>>>>> .r897
 from fchassis_ng import fchassis_ng
 from utils import angle_diff, html_path, html_data_path
 from pids import Pid
@@ -38,16 +34,6 @@ class frobo_ng(fchassis_ng):
 				continue
 			break
 		self.dbprint('sensor2redis.py is producing data')
-		self.sensor_process = self.run_sensors_process()
-		self.dbprint('sensor process: %s' % self.sensor_process, force=True)
-		for i in range(10):
-			try:
-				self.heading()
-			except (ExDataTooOld, ExNoData):
-				self.dbprint('%d' % (i+1), force=True)
-				time.sleep(1)
-				continue
-			break
 		self.hit_warn = None
 		self.dots = []
 		# (int angle): {'lpwr':, 'rpwr':, 'dt':}
