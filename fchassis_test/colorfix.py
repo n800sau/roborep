@@ -32,7 +32,10 @@ if __name__ == '__main__':
 #			for l in range(0, 200, w):
 #				hsvLower[0] = l
 #				hsvUpper[0] = l + w
-				data = ss.mask_range(hsvLower, hsvUpper)
+#				data = ss.mask_range(hsvLower, hsvUpper)
+#				data = ss.gradients()
+#				data = ss.blur()
+				data = ss.edges()
 				if data:
 #					cv2.imwrite(html_data_path('frame_%03d.jpg' % i), data['frame'])
 #					cv2.imwrite(html_data_path('iframe_%03d.jpg' % i), data['iframe'])

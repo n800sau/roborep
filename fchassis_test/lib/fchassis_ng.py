@@ -4,9 +4,13 @@ import sys, os, socket
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'lib_py'))
 
 if socket.gethostname() == 'orange':
-	sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'orange_on_track'))
+	ino_path = 'orange_on_track'
 elif socket.gethostname() == 'hubee':
-	sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'ros_icc_base'))
+	ino_path = 'ros_icc_base'
+else:
+	raise Exception('Hostname %s not in list' % socket.gethostname())
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', ino_path))
 
 from conf_ino import configure
 import json
@@ -38,7 +42,7 @@ class fchassis_ng(bin2uno_inf):
 		self.distance = None
 		self.voltage = None
 
-		cfgobj = configure(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', 'orange_on_track'))
+		cfgobj = configure(os.path.join(os.path.dirname(__file__), '..', '..', 'ino', ino_path))
 
 		cfg = cfgobj.as_dict('serial')
 		self.s_port = cfg['serial_port']
@@ -123,6 +127,7 @@ class fchassis_ng(bin2uno_inf):
 					if 'cmd' in data:
 						rs = True
 						if data['cmd'] == pycmds.R_DIST_1F:
+							self.dbprint('Sonar received %d' % data['vals'][0])
 							self.state['sonar'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_VOLTS_1F:
 							self.state['v'] = data['vals'][0]

@@ -340,10 +340,14 @@ class ColorFix:
 		# merge the channels back together and return the image
 		return cv2.merge([B, G, R])
 
-	def colorise(self, frame=None, **params):
-		rs = None
+	def frame(self, frame, **params):
 		if frame is None and self.camera:
 			frame = capture_cvimage(self.camera, **params)
+		return frame
+
+	def colorise(self, frame=None, **params):
+		rs = None
+		frame = self.frame(frame, **params)
 		if not frame is None:
 			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 			equ = cv2.equalizeHist(gray)
@@ -356,8 +360,7 @@ class ColorFix:
 
 	def colorise1(self, frame=None, **params):
 		rs = None
-		if frame is None and self.camera:
-			frame = capture_cvimage(self.camera, **params)
+		frame = self.frame(frame, **params)
 		if not frame is None:
 			mframe = self.max_rgb_filter(frame)
 			rs = {
@@ -369,8 +372,7 @@ class ColorFix:
 
 	def locate_object(self, lowertuple, highertuple, frame=None, **params):
 		rs = None
-		if frame is None and self.camera:
-			frame = capture_cvimage(self.camera, **params)
+		frame = self.frame(frame, **params)
 		if not frame is None:
 			# resize the frame, blur it, and convert it to the HSV
 			# color space
@@ -416,8 +418,7 @@ class ColorFix:
 
 	def mask_range(self, lowertuple, highertuple, frame=None, **params):
 		rs = None
-		if frame is None and self.camera:
-			frame = capture_cvimage(self.camera, **params)
+		frame = self.frame(frame, **params)
 		if not frame is None:
 			# resize the frame, blur it, and convert it to the HSV
 			# color space
@@ -455,10 +456,9 @@ class ColorFix:
 			}
 		return rs
 
-	def blob_detection(self, frame=None):
+	def blob_detection(self, frame=None, **params):
 		rs = None
-		if frame is None and self.camera:
-			frame = capture_cvimage(self.camera, **params)
+		frame = self.frame(frame, **params)
 
 		if not frame is None:
 			frame_gray = rgb2gray(frame)
@@ -497,6 +497,86 @@ class ColorFix:
 				'oframe': oframe
 			}
 		return rs
+
+	def gradients(self, frame=None, **params):
+		rs = None
+		image = self.frame(frame, **params)
+		if not image is None:
+			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+			# compute gradients along the X and Y axis, respectively
+			gX = cv2.Sobel(gray, ddepth=cv2.CV_64F, dx=1, dy=0)
+			gY = cv2.Sobel(gray, ddepth=cv2.CV_64F, dx=0, dy=1)
+
+			# the `gX` and `gY` images are now of the floating point data type,
+			# so we need to take care to convert them back a to unsigned 8-bit
+			# integer representation so other OpenCV functions can utilize them
+			gX = cv2.convertScaleAbs(gX)
+			gY = cv2.convertScaleAbs(gY)
+
+			# combine the sobel X and Y representations into a single image
+			sobelCombined = cv2.addWeighted(gX, 0.5, gY, 0.5, 0)
+
+			rs = {
+				'frame': image,
+				'iframe': gray,
+				'oframe': sobelCombined
+			}
+		return rs
+
+	def blur(self, frame=None, **params):
+		rs = None
+		image = self.frame(frame, **params)
+		if not image is None:
+			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+			fparams = [(11, 21, 7), (11, 41, 21), (11, 61, 39)]
+
+			# loop over the diameter, sigma color, and sigma space
+			diameter, sigmaColor, sigmaSpace = fparams[2]
+			# apply bilateral filtering and display the image
+#			blurred = cv2.bilateralFilter(image, diameter, sigmaColor, sigmaSpace)
+
+			blurred = cv2.GaussianBlur(image, (9, 9), 0)
+
+			rs = {
+				'frame': image,
+				'iframe': gray,
+				'oframe': blurred,
+			}
+		return rs
+
+	def edges(self, frame=None, **params):
+		rs = None
+		image = self.frame(frame, **params)
+		if not image is None:
+			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+			blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+
+			# apply Canny edge detection using a wide threshold, tight
+			# threshold, and automatically determined threshold
+#			edged = cv2.Canny(blurred, 10, 200)
+#			edged = cv2.Canny(blurred, 225, 250)
+			edged = imutils.auto_canny(blurred)
+			rs = {
+				'frame': image,
+				'iframe': gray,
+				'oframe': edged,
+			}
+		return rs
+
+
+	def auto_canny(self, image, sigma=0.33):
+		# compute the median of the single channel pixel intensities
+		v = np.median(image)
+
+		# apply automatic Canny edge detection using the computed median
+		lower = int(max(0, (1.0 - sigma) * v))
+		upper = int(min(255, (1.0 + sigma) * v))
+		edged = cv2.Canny(image, lower, upper)
+
+		# return the edged image
+		return edged
 
 
 class StereoDisparity:

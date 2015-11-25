@@ -54,7 +54,9 @@ class Sensors:
 
 if __name__ == "__main__":
 
-	s = Sensors()
+	import socket
+
+	s = Sensors(adxl345_address=0x1d if socket.gethostname() == 'hubee' else 0x53)
 
 	while True:
 		time.sleep(0.01)

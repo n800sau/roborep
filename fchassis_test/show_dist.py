@@ -8,7 +8,7 @@ if __name__ == '__main__':
 
 
 	c = frobo_ng()
-#	c.debug = True
+	c.debug = True
 
 	for i in range(5):
 		c.update_state()
