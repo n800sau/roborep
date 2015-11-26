@@ -107,17 +107,25 @@ void raspiCamServant::loop()
 
 void raspiCamServant::start_camera(json_t *js)
 {
+	json_t *obj;
 	stop_camera();
 	//set camera params
+	obj = json_object_get(js, "width");
+	int w = (obj) ? json_integer_value(obj) :  CAMERA_WIDTH;
+	obj = json_object_get(js, "height");
+	int h = (obj) ? json_integer_value(obj) :  CAMERA_HEIGHT;
 	camera.set(CV_CAP_PROP_FORMAT, CV_8UC3);
-	camera.set(CV_CAP_PROP_BRIGHTNESS, 60);
-	camera.set(CV_CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH);
-	camera.set(CV_CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT);
+	obj = json_object_get(js, "brightness");
+	camera.set(CV_CAP_PROP_BRIGHTNESS, (obj) ? json_integer_value(obj) : 60);
+	obj = json_object_get(js, "contrast");
+	camera.set(CV_CAP_PROP_CONTRAST, (obj) ? json_integer_value(obj) : 60);
+	camera.set(CV_CAP_PROP_FRAME_WIDTH, w);
+	camera.set(CV_CAP_PROP_FRAME_HEIGHT, h);
 	if(cam_yml) {
 		syslog(LOG_NOTICE, "Use %s", cam_yml);
 		camParam.readFromXMLFile(cam_yml);
 		//resizes the parameters to fit the size of the input image
-		camParam.resize(cv::Size(CAMERA_WIDTH, CAMERA_HEIGHT));
+		camParam.resize(cv::Size(w, h));
 	}
 	if (!camera.open()) {
 		syslog(LOG_ERR, "Error opening the camera");
@@ -138,7 +146,7 @@ void raspiCamServant::stop_camera(json_t *js)
 void raspiCamServant::make_shot(json_t *js)
 {
 	if(!camera.isOpened()) {
-		start_camera();
+		start_camera(js);
 	}
 	const char *imgpath = json_string_value(json_object_get(js, "path"));
 	cv::Mat image;
