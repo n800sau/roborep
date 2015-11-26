@@ -5,6 +5,7 @@ import imutils
 from utils import dbprint, html_data_path
 import numpy as np
 from matplotlib import pyplot as plt
+import colorsys
 
 #from skimage import data
 #from skimage.feature import blob_dog, blob_log, blob_doh
@@ -75,10 +76,15 @@ MATCHER = 'BruteForce-Hamming'
 #MATCHER = 'Flann'
 
 def set_params(camera, **params):
-	camera.resolution = params.get('resolution', (320, 240))
-	camera.exposure_mode = 'auto'
-	camera.brightness = 70
-	camera.contrast = 70
+	for k,v in (
+				('resolution', (320, 240)),
+				('brightness', 70),
+				('contrast', 70),
+				('exposure_mode', 'auto'),
+			):
+		setattr(camera, k, params.pop(k, v))
+	if params:
+		raise Exception('Unknown parameters: %s' % ','.join(params.keys()))
 
 def update_img(camera, fname=None, **params):
 	fname = html_data_path(fname or 'picam_0.jpg')
@@ -565,19 +571,51 @@ class ColorFix:
 			}
 		return rs
 
+	def rgb_list(self, n=30):
+		hsv_tuples = [(x*1.0/n, 0.5, 0.5) for x in range(n)]
+		return map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples)
 
-	def auto_canny(self, image, sigma=0.33):
-		# compute the median of the single channel pixel intensities
-		v = np.median(image)
 
-		# apply automatic Canny edge detection using the computed median
-		lower = int(max(0, (1.0 - sigma) * v))
-		upper = int(min(255, (1.0 + sigma) * v))
-		edged = cv2.Canny(image, lower, upper)
+	def contours(self, frame=None, **params):
+		rs = None
+		image = self.frame(frame, **params)
+		clrlist = self.rgb_list()
+		if not image is None:
+			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-		# return the edged image
-		return edged
+			gray = cv2.GaussianBlur(gray, (3, 3), 0)
+#			gray = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+			gray = imutils.auto_canny(gray)
 
+			(cnts, _) = cv2.findContours(gray.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+			dbprint('Contours found: %d' % len(cnts))
+
+
+			clone = image.copy()
+			cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
+			i = 0
+			for c in cnts:
+				if i >= len(clrlist):
+					i = 0
+				clr = clrlist[i]
+				if len(c) >= 5:
+					ellipse = cv2.fitEllipse(c)
+					cv2.ellipse(clone, ellipse, clr, 1)
+				else:
+					((x, y), radius) = cv2.minEnclosingCircle(c)
+					cv2.circle(clone, (int(x), int(y)), int(radius), clr, 1)
+#				box = cv2.minAreaRect(c)
+#				box = np.int0(cv2.cv.BoxPoints(box))
+#				cv2.drawContours(clone, [box], -1, (0, 255, 0), 1)
+				i += 1
+
+#			cv2.drawContours(clone, cnts, -1, (0, 255, 0), 1)
+			rs = {
+				'frame': image,
+				'iframe': gray,
+				'oframe': clone,
+			}
+		return rs
 
 class StereoDisparity:
 

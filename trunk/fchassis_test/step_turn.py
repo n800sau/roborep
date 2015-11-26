@@ -16,10 +16,11 @@ try:
 	h = c.heading()
 	dbprint('BEFORE %.2f (%d:%d)' % (h, c.state['lcount'], c.state['rcount']))
 	proc = c.tick_left if LEFT else c.tick_right
-	proc(pwr=80)
+	proc(pwr=100)
 #	proc(pwr=100, min_angle=90)
 	new_h = c.heading()
 	dbprint('AFTER %.2f (%d:%d) turned:%.2f' % (new_h, c.state['lcount'], c.state['rcount'], new_h - h))
 finally:
-#	update_img(picamera.PiCamera())
-	pass
+	cam = picamera.PiCamera()
+	time.sleep(2)
+	update_img(cam)

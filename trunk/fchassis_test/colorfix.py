@@ -35,7 +35,8 @@ if __name__ == '__main__':
 #				data = ss.mask_range(hsvLower, hsvUpper)
 #				data = ss.gradients()
 #				data = ss.blur()
-				data = ss.edges()
+#				data = ss.edges()
+				data = ss.contours(brightness=100, contrast=100)
 				if data:
 #					cv2.imwrite(html_data_path('frame_%03d.jpg' % i), data['frame'])
 #					cv2.imwrite(html_data_path('iframe_%03d.jpg' % i), data['iframe'])

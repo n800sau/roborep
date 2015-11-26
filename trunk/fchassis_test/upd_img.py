@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
 	if 1:
 		r = redis.Redis()
-		use_camera(r)
+		use_camera(r, brightness=90, contrast=90)
 		time.sleep(4)
 		try:
 			markers = collect_markers(r, fpath = html_data_path('markers.jpg'))
@@ -23,4 +23,4 @@ if __name__ == '__main__':
 	else:
 		cam = picamera.PiCamera()
 		time.sleep(2)
-		update_img(cam)
+		update_img(cam, brightness=90, contrast=90, exposure_mode='off')

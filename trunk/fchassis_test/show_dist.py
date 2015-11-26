@@ -16,4 +16,4 @@ if __name__ == '__main__':
 			break
 		else:
 			time.sleep(1)
-	print '%g m to %s' % (c.state['sonar'], c.heading())
+	print '%g m to %s (%g volts)' % (c.state['sonar'], c.heading(), c.state['v'])
