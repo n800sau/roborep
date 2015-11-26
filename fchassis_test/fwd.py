@@ -23,7 +23,9 @@ try:
 	json.dump(c.dots, file('dots.json', 'w'), indent=2)
 finally:
 	c.cmd_mstop()
-	update_img(picamera.PiCamera())
+	cam = picamera.PiCamera()
 	c.update_state()
 	change = c.heading() - h
+	time.sleep(2)
+	update_img(cam)
 	dbprint('EVENTUALLY %d (%d:%d) dist=%g, turn=%d' % (c.heading(), c.state['lcount'], c.state['rcount'], c.state['sonar'], change))

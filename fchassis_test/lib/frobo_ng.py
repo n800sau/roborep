@@ -521,6 +521,31 @@ class frobo_ng(fchassis_ng):
 		self.search_around(cb, clockwise=clockwise)
 		json.dump({'imgcount': cb.i}, file(html_path('shapes.json'), 'w'), indent=2)
 
+	def search_contours(self, camera, clockwise=True):
+
+		ss = ColorFix(camera)
+
+		def search_cb():
+			class do_it:
+
+				def __init__(self):
+					self.i = 0;
+
+				def __call__(self, c):
+					data = ss.contours()
+					if data:
+						cv2.imwrite(html_data_path('frame_%03d.jpg' % self.i), data['frame'])
+						cv2.imwrite(html_data_path('iframe_%03d.jpg' % self.i), data['iframe'])
+						cv2.imwrite(html_data_path('oframe_%03d.jpg' % self.i), data['oframe'])
+						c.dbprint('Written set %d' % self.i)
+						self.i += 1
+
+			return do_it()
+
+		cb = search_cb()
+		self.search_around(cb, clockwise=clockwise)
+		json.dump({'imgcount': cb.i}, file(html_path('frames.json'), 'w'), indent=2)
+
 	def collect_turn_data(self, cnt=100, clockwise=None, dT=None, pwr=None):
 		data = []
 		random.seed()
