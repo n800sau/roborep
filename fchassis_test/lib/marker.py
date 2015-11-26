@@ -19,10 +19,11 @@ H_ANGLE = 39
 def make_fpath(fname=None):
 	return html_data_path(fname or 'picam_0.jpg')
 
-def use_camera(r):
-	r.publish(SERVANT, json.dumps({
+def use_camera(r, **params):
+	params.update({
 		'cmd': 'start_camera',
-	}))
+	})
+	r.publish(SERVANT, json.dumps(params))
 
 def release_camera(r):
 	r.publish(SERVANT, json.dumps({
@@ -92,14 +93,14 @@ def marker_offset(r, marker_id, fpath=None):
 		rs = h_off
 	return rs
 
-def make_shot(r, fpath=None):
+def make_shot(r, fpath=None, **params):
 	if fpath is None:
 		fpath = make_fpath()
 	r.delete(QUEUE)
-	params = {
+	params.update({
 		'cmd': 'make_shot',
 		'path': fpath,
-	}
+	})
 	r.publish(SERVANT, json.dumps(params))
 	v = r.blpop(QUEUE, timeout=5)
 	if v:
