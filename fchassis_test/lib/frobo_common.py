@@ -7,7 +7,7 @@ from lib.camera import ShapeSearch, ColorFix
 from sensor_const import *
 
 STEP_TIME = 0.01
-TICK_TURN_TIME = 0.5
+WHOLE_TURN_TIME = 0.5
 
 MIN_DISTANCE = 0.1
 
@@ -17,10 +17,10 @@ class ExDataTooOld(Exception):
 class ExNoData(Exception):
 	pass
 
-class frobo_ng(fchassis_ng):
+class frobo_common(fchassis_ng):
 
 	def __init__(self, *args, **kwds):
-		super(frobo_ng, self).__init__(*args, **kwds)
+		super(frobo_common, self).__init__(*args, **kwds)
 		self.r = redis.Redis(db=2)
 		self.sensor_process = self.run_sensors_process()
 		atexit.register(self.sensor_process.kill)
@@ -106,7 +106,7 @@ class frobo_ng(fchassis_ng):
 		return diff if abs(diff) > err else 0
 
 	def update_state(self):
-		rs = super(frobo_ng, self).update_state()
+		rs = super(frobo_common, self).update_state()
 		if rs:
 			dot = copy.deepcopy(self.state)
 			self.dots.append(dot)
@@ -192,7 +192,7 @@ class frobo_ng(fchassis_ng):
 		self.dbprint('start h: %d, pwr: %s' % (init_h, pwr))
 		try:
 			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
-			for i in range(int(TICK_TURN_TIME/STEP_TIME)):
+			for i in range(int(WHOLE_TURN_TIME/STEP_TIME)):
 				h = self.heading()
 				x,y,z = self.degsec()
 				if abs(z) > 5:
@@ -241,7 +241,7 @@ class frobo_ng(fchassis_ng):
 					self.cmd_mleft(pwr, clockwise)
 				elif mright:
 					self.cmd_mright(pwr, not clockwise)
-				for i in range(int(TICK_TURN_TIME/STEP_TIME)):
+				for i in range(int(WHOLE_TURN_TIME/STEP_TIME)):
 	#				time.sleep(STEP_TIME)
 					dt = time.time() - in_t
 					h = self.heading()
@@ -298,6 +298,26 @@ class frobo_ng(fchassis_ng):
 
 	def tick_right(self, min_angle=None, pwr=40):
 		return self.tick_turn(True, min_angle=min_angle, pwr=pwr)
+
+	def simple_turn(self, azim, err=3, pwr=90):
+		diff = self.heading_diff(azim, err=err)
+		if diff != 0:
+			clockwise = diff > 0
+			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
+			i = 0
+			while diff != 0 and (diff > 0) == clockwise and i < int(WHOLE_TURN_TIME/STEP_TIME):
+				time.sleep(STEP_TIME)
+				diff = self.heading_diff(azim, err=err)
+				i += 1
+			# finished
+			self.cmd_mstop()
+			self.wait_until_stop()
+			diff = self.heading_diff(azim, err=err)
+			if diff != 0:
+				# it is gone too far
+				# apply the old way
+				self.dbprint('Run turn in ticks as a fallback')
+				self.turn_in_ticks(azim, err=err)
 
 	def turn(self, azim, err=3, stop_if=None, move_cb=None):
 		diff = self.heading_diff(azim, err=err)

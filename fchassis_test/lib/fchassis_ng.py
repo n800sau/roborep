@@ -127,7 +127,6 @@ class fchassis_ng(bin2uno_inf):
 					if 'cmd' in data:
 						rs = True
 						if data['cmd'] == pycmds.R_DIST_1F:
-							self.dbprint('Sonar received %d' % data['vals'][0])
 							self.state['sonar'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_VOLTS_1F:
 							self.state['v'] = data['vals'][0]
