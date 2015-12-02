@@ -14,12 +14,12 @@ cam = picamera.PiCamera()
 try:
 	azim = c.heading()
 	dbprint('BEFORE %d (%d:%d)' % (azim, c.state['lcount'], c.state['rcount']))
-	c.move_straight(fwd=False, max_steps=c.m2steps(dist), max_secs=1)
+	c.move_straight(fwd=False, max_steps=c.m2steps(dist), max_secs=2)
 	dbprint('AFTER MOVE BACK %d (%d:%d)' % (c.heading(), c.state['lcount'], c.state['rcount']))
 	update_img(cam)
 	azim -= 180
 	dbprint("Turning around to %d" % azim)
-	c.turn_in_ticks(azim, err=5)
+	c.turn(azim, err=5)
 	dbprint('AFTER TURN %d (%d:%d)' % (c.heading(), c.state['lcount'], c.state['rcount']))
 
 	json.dump(c.dots, file('dots.json', 'w'), indent=2)

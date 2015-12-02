@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #divan
-#AZIM=350
+#AZIM=350 / 353
 
 # to dinner table
-#AZIM=90
+#AZIM=90 / 44
 
 #to wall
 #AZIM=210
@@ -14,10 +14,8 @@
 
 
 #AZIM=232
-AZIM=210
+AZIM=44
 
 python turn2azim.py ${AZIM} &> turn2azim.log
-#python turn2azim.py ${AZIM}
 echo $?
 
-#./mk_big_img.sh

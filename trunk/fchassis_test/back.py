@@ -12,8 +12,9 @@ c = frobo_ng()
 c.debug = True
 try:
 	h = c.heading()
+	c.update_state()
 	dbprint('BEFORE %d (%d:%d)' % (h, c.state['lcount'], c.state['rcount']))
-	c.move_straight(fwd=False, max_steps=c.m2steps(dist), max_secs=5)
+	c.move_straight(fwd=False, max_steps=c.m2steps(dist), max_secs=1)
 	dbprint('AFTER %d (%d:%d)' % (c.heading(), c.state['lcount'], c.state['rcount']))
 	c.update_state()
 	json.dump(c.dots, file('dots.json', 'w'), indent=2)

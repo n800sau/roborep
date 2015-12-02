@@ -23,7 +23,7 @@ if __name__ == '__main__':
 	try:
 		dbprint('BEFORE %s cm to %s' % (c.state['sonar'], c.heading()))
 		for i in range(30):
-			c.move_straight(fwd=True, max_secs=20, max_steps=c.m2steps(random.randint(10, 100)/100.), power=100)
+			c.move_straight(fwd=True, max_secs=2, max_steps=c.m2steps(random.randint(10, 100)/100.), power=100)
 			c.find_distance(60, clockwise=random.choice((True, False)))
 			markers = collect_markers(r, fpath = html_path('data'), 'pic%d.jpg' % i))
 			if markers:

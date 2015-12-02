@@ -19,7 +19,7 @@ if __name__ == '__main__':
 		h = c.heading()
 		try:
 			update_img(camera, 'pic0.jpg')
-			c.turn_in_ticks((h + (1 if right else -1) * 90) % 360, err=5)
+			c.turn((h + (1 if right else -1) * 90) % 360, err=5)
 			c.move_straight(fwd=True, max_secs=5, max_steps=c.m2steps(0.5))
 			update_img(camera, 'pic1.jpg')
 			c.turn_in_ticks(h, err=5)
