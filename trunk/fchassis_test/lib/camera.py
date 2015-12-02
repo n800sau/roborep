@@ -583,11 +583,12 @@ class ColorFix:
 		if not image is None:
 			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-			gray = cv2.GaussianBlur(gray, (3, 3), 0)
+			gray = cv2.GaussianBlur(gray, (15, 15), 0)
 #			gray = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 			gray = imutils.auto_canny(gray)
 
-			(cnts, _) = cv2.findContours(gray.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+#			(cnts, _) = cv2.findContours(gray.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+			(cnts, _) = cv2.findContours(gray.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 			dbprint('Contours found: %d' % len(cnts))
 
 
@@ -604,9 +605,9 @@ class ColorFix:
 				else:
 					((x, y), radius) = cv2.minEnclosingCircle(c)
 					cv2.circle(clone, (int(x), int(y)), int(radius), clr, 1)
-#				box = cv2.minAreaRect(c)
-#				box = np.int0(cv2.cv.BoxPoints(box))
-#				cv2.drawContours(clone, [box], -1, (0, 255, 0), 1)
+				box = cv2.minAreaRect(c)
+				box = np.int0(cv2.cv.BoxPoints(box))
+				cv2.drawContours(clone, [box], -1, (0, 255, 0), 1)
 				i += 1
 
 #			cv2.drawContours(clone, cnts, -1, (0, 255, 0), 1)
