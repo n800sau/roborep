@@ -2,8 +2,8 @@ import time, copy, os, sys, json, pickle, cv2, random, redis, subprocess, atexit
 from fchassis_ng import fchassis_ng
 from utils import angle_diff, html_path, html_data_path
 from pids import Pid
-from lib.marker import collect_markers
-from lib.camera import ShapeSearch, ColorFix
+from marker import collect_markers
+from camera import ShapeSearch, ColorFix
 from sensor_const import *
 
 STEP_TIME = 0.01
