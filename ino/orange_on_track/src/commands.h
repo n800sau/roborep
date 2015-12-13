@@ -19,10 +19,11 @@ enum REPLY {
 	R_ERROR_0,
 	R_VOLTS_1F,
 	R_MCOUNTS_2F,
-	R_MCURRENT_2F,
+	R_MCURRENT_2F, //5
 	R_MPOWER_2F,
 	R_MDIST_2F,
-	R_DIST_1F,
+	R_DIST_1F,     //8
+	R_IRDIST_1F,   //9
 	R_END                // end of block marker
 };
 
