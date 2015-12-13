@@ -19,7 +19,7 @@ int RCURRENT = A2;
 // give it a name:
 int led = 13;
 
-/*
+
 // sonar
 int maximumRange = 200; // Maximum range needed
 int minimumRange = 0; // Minimum range needed
@@ -27,15 +27,14 @@ int minimumRange = 0; // Minimum range needed
 const int echoPin = 12; // Echo Pin
 const int trigPin = 11; // Trigger Pin
 
-*/
-
-long duration = -1, distance = -1; // Duration used to calculate distance
 
 
-const float COUNT_PER_REV = 20.0;
-const float WHEEL_DIAMETER = 0.065;
-const float BASELINE = 0.14;
-const float ENC_STEP = WHEEL_DIAMETER * PI / COUNT_PER_REV;
+long duration = -1; // Duration used to calculate distance
+long distance = -1; // sonar distance
+long ir_distance = -1; // IR distance
+
+
+const float ENC_STEP = 0.25; // for PR6 track
 
 float count2dist(int count)
 {
@@ -47,11 +46,11 @@ const int MAX_PWM = 255;
 
 
 // motor pins
-const int LEFT_MOTOR_1 = 9;
-const int LEFT_MOTOR_2 = 10;
+const int LEFT_MOTOR_1 = 6;
+const int LEFT_MOTOR_2 = 5;
 
-const int RIGHT_MOTOR_1 = 6;
-const int RIGHT_MOTOR_2 = 5;
+const int RIGHT_MOTOR_1 = 9;
+const int RIGHT_MOTOR_2 = 10;
 
 // encoder pins
 const int Eleft = 2;
@@ -73,7 +72,7 @@ const int rInt = Eright - 2;
 // might possibly need to adjust it to 25000. However, this threshold
 // value is working perfectly for my situation
 //
-volatile unsigned long threshold = 10000;
+volatile unsigned long threshold = 100;
 
 // Working variables for the interrupt routines
 //
@@ -120,6 +119,8 @@ void IccBase::sendState()
 	sendFloats(R_MDIST_2F, vals, 2);
 	vals[0] = (distance > 0) ? distance / 100. : distance;
 	sendFloats(R_DIST_1F, vals, 1);
+	vals[0] = (ir_distance > 0) ? ir_distance / 100. : ir_distance;
+	sendFloats(R_IRDIST_1F, vals, 1);
 	sendFloats(R_END, NULL, 0);
 }
 
@@ -144,6 +145,7 @@ void lIntCB()
 		if (intLhistory != intLsignal) {
 			intLtime = micros();
 			lCounter++;
+			digitalWrite(led, lCounter & 1);
 		}
 	}
 }
@@ -157,6 +159,7 @@ void rIntCB()
 		if (intRhistory != intRsignal) {
 			intRtime = micros();
 			rCounter++;
+			digitalWrite(led, rCounter & 1);
 		}
 	}
 }
@@ -216,7 +219,7 @@ void setRightMotor(int power, bool fwd)
 	}
 }
 
-/*void sonar()
+void sonar()
 {
 	// The following trigPin/echoPin cycle is used to determine the
 	// distance of the nearest object by bouncing soundwaves off of it.
@@ -237,7 +240,7 @@ void setRightMotor(int power, bool fwd)
 	} else if(distance > maximumRange) {
 		distance = maximumRange + 1;
 	}
-}*/
+}
 
 void serialEvent() {
 	base.serialEvent();
@@ -301,8 +304,8 @@ void setup()
 
 	pinMode (IR, INPUT);
 
-//	pinMode(trigPin, OUTPUT);
-//	pinMode(echoPin, INPUT);
+	pinMode(trigPin, OUTPUT);
+	pinMode(echoPin, INPUT);
 
 	pinMode(LEFT_MOTOR_1, OUTPUT);
 	pinMode(LEFT_MOTOR_2, OUTPUT);
@@ -315,44 +318,18 @@ void setup()
 	digitalWrite(Eleft, HIGH);
 	digitalWrite(Eright, HIGH);
 
-	attachInterrupt(lInt, rIntCB, CHANGE);
-	attachInterrupt(rInt, lIntCB, CHANGE);
+	attachInterrupt(lInt, lIntCB, CHANGE);
+	attachInterrupt(rInt, rIntCB, CHANGE);
 
 	Serial.println("Setup finished.");
-
-/*				setLeftMotor(100, 1);
-				setRightMotor(100, 1);
-			Serial.print(lCounter);
-			Serial.print(" : ");
-			Serial.println(rCounter);
-		for(int i=0; i<50; i++) {
-			Serial.print(analogRead(LCURRENT));
-			Serial.print(" : ");
-			Serial.println(analogRead(RCURRENT));
-			delay(100);
-		}
-				setLeftMotor(100, 0);
-				setRightMotor(100, 0);
-		delay(3000);
-			setLeftMotor(0, false);
-			setRightMotor(0, false);
-			Serial.print(lCounter);
-			Serial.print(" : ");
-			Serial.println(rCounter);
-		for(int i=0; i<10; i++) {
-			Serial.print(analogRead(LCURRENT));
-			Serial.print(" : ");
-			Serial.println(analogRead(RCURRENT));
-			delay(100);
-		}*/
 }
 
 unsigned long last_ping = millis();
 
 void loop()
 {
-	distance=sharp.distance();  // this returns the distance to the object you're measuring
-//	sonar();
+	ir_distance=sharp.distance();  // this returns the distance to the object you're measuring
+	sonar();
 	if(base.available()) {
 //		Serial.println('available');
 		last_ping = millis();
@@ -361,8 +338,8 @@ void loop()
 	} else {
 		if(last_ping + 60000 < millis()) {
 			Serial.println("Control timeout. Stopping");
-			setLeftMotor(0, false);
-			setRightMotor(0, false);
+			setLeftMotor(0, true);
+			setRightMotor(0, true);
 		}
 	}
 	delay(50);
