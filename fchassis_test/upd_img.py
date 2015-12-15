@@ -37,12 +37,26 @@ from lib.utils import html_data_path
 
 #sz=math.sqrt((x1-x2)**2 + (y1-y2)**2)
 
+# measured 1m 23.76px
+#D = 0.0036 * 0.03 * 480 / (23.76 * 0.0027) ~ 0.808 (ruler- 1m)
+
+#F = (23.76 * 1.) / 0.03 ~ 792
+
+#F = (49.4687 * 0.5) / 0.03 ~ 824
+
+#F = (34.6151 * 0.7) / 0.03 ~ 808
+
+#Favg = (792+824+808)/3 = 808
+
+#D = 808 * 0.03 / 50.68 ~ 0.478 (measured 0.49)
+#D = 808 * 0.03 / 32.31 ~ 0.75 (measured 0.745)
+
 if __name__ == '__main__':
 
 	if 1:
 		r = redis.Redis()
 		use_camera(r)
-		use_camera(r, width=640, height=480)
+		use_camera(r, width=640, height=480, brightness=80, contrast=80)
 #		use_camera(r, brightness=90, contrast=90)
 		time.sleep(4)
 		try:
