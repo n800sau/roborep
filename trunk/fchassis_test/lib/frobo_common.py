@@ -6,10 +6,6 @@ from marker import collect_markers
 from camera import ShapeSearch, ColorFix
 from sensor_const import *
 
-STEP_TIME = 0.01
-WHOLE_TURN_TIME = 0.5
-
-MIN_DISTANCE = 0.1
 
 class ExDataTooOld(Exception):
 	pass
@@ -18,6 +14,12 @@ class ExNoData(Exception):
 	pass
 
 class frobo_common(fchassis_ng):
+
+
+	STEP_TIME = 0.01
+	WHOLE_TURN_TIME = 0.5
+
+	MIN_DISTANCE = 0.2
 
 	def __init__(self, *args, **kwds):
 		super(frobo_common, self).__init__(*args, **kwds)
@@ -164,9 +166,9 @@ class frobo_common(fchassis_ng):
 				lpwr = power - offset
 				rpwr = power + offset
 				self.dbprint('^%d hdiff:%g off:%d pw:%d<>%d cnt:%d<>%d' % (int(self.heading()), hdiff, offset, lpwr, rpwr, self.state['lcount'], self.state['rcount']))
-				if fwd and self.state['sonar'] >= 0 and self.state['sonar'] < MIN_DISTANCE:
-					self.hit_warn = self.state['sonar']
-					self.dbprint('STOP distance=%s' % self.state['sonar'])
+				if fwd and self.dist_fwd() >= 0 and self.dist_fwd() < self.MIN_DISTANCE:
+					self.hit_warn = self.dist_fwd()
+					self.dbprint('STOP distance=%s' % self.dist_fwd())
 					break
 				steps = self.steps_counted() + counted_offset
 				if steps > max_steps:
@@ -177,7 +179,7 @@ class frobo_common(fchassis_ng):
 						self.turn_in_ticks(heading, err=5)
 					break
 				self.cmd_mboth(lpwr, fwd, rpwr, fwd)
-				time.sleep(STEP_TIME)
+				time.sleep(self.STEP_TIME)
 				self.update_state()
 				pid.step(input=self.heading())
 				offset = pid.get()
@@ -192,7 +194,7 @@ class frobo_common(fchassis_ng):
 		self.dbprint('start h: %d, pwr: %s' % (init_h, pwr))
 		try:
 			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
-			for i in range(int(WHOLE_TURN_TIME/STEP_TIME)):
+			for i in range(int(self.WHOLE_TURN_TIME/self.STEP_TIME)):
 				h = self.heading()
 				x,y,z = self.degsec()
 				if abs(z) > 5:
@@ -212,7 +214,7 @@ class frobo_common(fchassis_ng):
 						self.dbprint('%g degrees trigger stop' % hdiff)
 						break
 			#	self.update_state()
-				time.sleep(STEP_TIME)
+				time.sleep(self.STEP_TIME)
 		finally:
 			self.cmd_mstop()
 			self.wait_until_stop()
@@ -241,8 +243,8 @@ class frobo_common(fchassis_ng):
 					self.cmd_mleft(pwr, clockwise)
 				elif mright:
 					self.cmd_mright(pwr, not clockwise)
-				for i in range(int(WHOLE_TURN_TIME/STEP_TIME)):
-	#				time.sleep(STEP_TIME)
+				for i in range(int(self.WHOLE_TURN_TIME/self.STEP_TIME)):
+	#				time.sleep(self.STEP_TIME)
 					dt = time.time() - in_t
 					h = self.heading()
 					x,y,z = self.degsec()
@@ -305,8 +307,8 @@ class frobo_common(fchassis_ng):
 			clockwise = diff > 0
 			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
 			i = 0
-			while diff != 0 and (diff > 0) == clockwise and i < int(WHOLE_TURN_TIME/STEP_TIME):
-				time.sleep(STEP_TIME)
+			while diff != 0 and (diff > 0) == clockwise and i < int(self.WHOLE_TURN_TIME/self.STEP_TIME):
+				time.sleep(self.STEP_TIME)
 				diff = self.heading_diff(azim, err=err)
 				i += 1
 			# finished
@@ -319,11 +321,10 @@ class frobo_common(fchassis_ng):
 				self.dbprint('Run turn in ticks as a fallback')
 				self.turn_in_ticks(azim, err=err)
 
-	def turn(self, azim, err=3, stop_if=None, move_cb=None):
+	def turn_using_memory(self, azim, err=3, stop_if=None, move_cb=None):
 		diff = self.heading_diff(azim, err=err)
 		if diff:
-#			data = self.find_memory_closest(azim)
-			data = None
+			data = self.find_memory_closest(azim)
 			if data is None:
 				self.turn_in_ticks(azim, err=err, stop_if=stop_if, move_cb=move_cb)
 			else:
@@ -394,7 +395,7 @@ class frobo_common(fchassis_ng):
 				self.db_state()
 				if last_counts[0] == self.state['lcount'] and last_counts[1] == self.state['rcount']:
 					last_counts[2] += 1
-					if last_counts[2] > int(1/STEP_TIME):
+					if last_counts[2] > int(1/self.STEP_TIME):
 						self.dbprint('Stopped moving')
 						break
 				else:
@@ -438,17 +439,17 @@ class frobo_common(fchassis_ng):
 	def stop_if_cb(self, stop_dist):
 		n = 10
 		self.update_state()
-		while self.state['sonar'] < 0 and n > 0:
+		while self.dist_fwd() < 0 and n > 0:
 			time.sleep(0.01)
 			self.update_state()
 			n -= 1
-		return self.state['sonar'] > stop_dist if self.state['sonar'] >= 0 else False
+		return self.dist_fwd() > stop_dist if self.dist_fwd() >= 0 else False
 
 	def find_distance(self, min_dist=100, clockwise=True):
 		self.stop_if_cb(1)
 		# 10 attempt to turn
 		i = 10
-		while self.state['sonar'] < min_dist and i>0:
+		while self.dist_fwd() < min_dist and i>0:
 			self.turn_in_ticks(self.heading() + (45 if clockwise else -45), stop_if=lambda c: c.stop_if_cb(min_dist))
 			i -= 1
 
@@ -464,8 +465,8 @@ class frobo_common(fchassis_ng):
 		try:
 			for pwr in range(100):
 				func(pwr, fwd)
-				for i in range(int(0.2 / STEP_TIME)):
-					time.sleep(STEP_TIME)
+				for i in range(int(0.2 / self.STEP_TIME)):
+					time.sleep(self.STEP_TIME)
 					x,y,z = self.degsec()
 					if abs(z) > 10:
 						self.dbprint('it moves')
@@ -485,6 +486,7 @@ class frobo_common(fchassis_ng):
 
 				def __init__(self):
 					self.i = 0;
+					self.fnames = []
 					self.target_loc = None
 
 				def __call__(self, c):
@@ -493,6 +495,7 @@ class frobo_common(fchassis_ng):
 					markers = collect_markers(r, fpath=fname)
 					if markers:
 						c.dbprint('FOUND %d markers (%d):' % (len(markers), c.heading()))
+						self.fnames.append(fname)
 						for m in markers:
 							if marker_id is None:
 								c.dbprint('\t%s' % (m['id'], ))
@@ -510,6 +513,8 @@ class frobo_common(fchassis_ng):
 
 		cb = collect_markers_cb(r, marker_id)
 		self.search_around(cb, clockwise=clockwise)
+		json.dump({'files': cb.fnames, 'title': 'markers', 'time_mark': int(time.time())},
+			file(html_path('frames.json'), 'w'), indent=2)
 		return cb.target_loc
 
 	def search_shapes(self, camera, clockwise=True):
@@ -521,6 +526,7 @@ class frobo_common(fchassis_ng):
 
 				def __init__(self):
 					self.i = 0;
+					self.fnames = []
 
 				def __call__(self, c):
 					data = ss.find_shapes(threshold=0, resolution=(160, 120))
@@ -530,8 +536,12 @@ class frobo_common(fchassis_ng):
 							rows,cols,depth = data['frame'].shape
 							M = cv2.getRotationMatrix2D((cols/2,rows/2), 180, 1)
 							data['frame'] = cv2.warpAffine(data['frame'], M, (cols,rows))
-						cv2.imwrite(html_data_path('shapes_%03d.jpg' % self.i), data['frame'])
-						cv2.imwrite(html_data_path('thresh_%03d.jpg' % self.i), data['thresh'])
+						fname = data_path('shapes_%04d.jpg' % self.i)
+						self.fnames.append(fname)
+						cv2.imwrite(html_path(fname), data['frame'])
+						fname = html_data_path('thresh_%04d.jpg' % self.i)
+						self.fnames.append(fname)
+						cv2.imwrite(html_path(fname), data['thresh'])
 						c.dbprint('Written set %d' % self.i)
 						self.i += 1
 
@@ -539,7 +549,8 @@ class frobo_common(fchassis_ng):
 
 		cb = search_cb()
 		self.search_around(cb, clockwise=clockwise)
-		json.dump({'imgcount': cb.i}, file(html_path('shapes.json'), 'w'), indent=2)
+		json.dump({'files': cb.fnames, 'title': 'shapes', 'time_mark': int(time.time())},
+			file(html_path('frames.json'), 'w'), indent=2)
 
 	def search_contours(self, camera, clockwise=True):
 
@@ -613,3 +624,7 @@ class frobo_common(fchassis_ng):
 		self.search_around(cb, clockwise=clockwise)
 		json.dump({'imgcount': cb.i}, file(html_path('frames.json'), 'w'), indent=2)
 
+	def dist_fwd(self):
+		return self.state['sonar']
+#		dists = [dist for dist in (self.state['sonar'], self.state['irdist']) if dist >= 0]
+#		return min(dists if dists else -1)

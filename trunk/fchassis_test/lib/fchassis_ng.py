@@ -16,17 +16,10 @@ from conf_ino import configure
 import json
 import time
 import struct
-import math
 import traceback
 import pycmds
 from bin2uno_inf import bin2uno_inf
 from serial import Serial
-
-COUNT_PER_REV = 20.0
-WHEEL_DIAMETER = 0.065
-BASELINE = 0.14
-
-ENC_STEP = WHEEL_DIAMETER * math.pi / COUNT_PER_REV
 
 SENSORS_SHOW_PERIOD = 1
 
@@ -128,6 +121,8 @@ class fchassis_ng(bin2uno_inf):
 						rs = True
 						if data['cmd'] == pycmds.R_DIST_1F:
 							self.state['sonar'] = data['vals'][0]
+						elif data['cmd'] == pycmds.R_IRDIST_1F:
+							self.state['irdist'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_VOLTS_1F:
 							self.state['v'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_MCOUNTS_2F:
@@ -199,7 +194,7 @@ class fchassis_ng(bin2uno_inf):
 			))
 
 	def m2steps(self, m):
-		return int(m / ENC_STEP)
+		return None
 
 	def run(self):
 		data = ''

@@ -8,7 +8,7 @@ from lib.camera import update_img
 from lib.frobo_ng import frobo_ng
 from lib.marker import use_camera, release_camera, marker_offset, make_shot
 
-TARGET = 299
+TARGET = 908
 #TARGET = 477
 #TARGET = 1023
 

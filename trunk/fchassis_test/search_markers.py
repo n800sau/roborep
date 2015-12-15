@@ -19,7 +19,7 @@ if __name__ == '__main__':
 	c.debug = True
 
 	try:
-		use_camera(r)
+		use_camera(r, width=320, height=240)
 		c.update_state()
 		dbprint('BEFORE %s m to %s' % (c.state['sonar'], c.heading()))
 		found = c.search_marker(r, clockwise=clockwise, marker_id=TARGET)
