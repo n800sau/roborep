@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, json, cv2
+import os, json, cv2, math
 from utils import dbprint, html_data_path
 
 SERVANT = 'raspiCamServant'
@@ -46,11 +46,20 @@ def collect_markers(r, fpath=None):
 		v = json.loads(v[1])
 #		dbprint('DATA=%s' % (json.dumps(v, indent=2),))
 		dbprint('FOUND %d markers: %s' % (len(v['markers']), ','.join([str(m['id']) for m in v['markers']])))
-		rs = v['markers']
+		rs = [update_marker_distance(m) for m in v['markers']]
 	else:
 		dbprint('No answer')
 	return rs
 
+def update_marker_distance(m):
+	p1 = m['coords'][0]
+	m['sz'] = []
+	for p2 in m['coords'][1:] + m['coords'][:1]:
+		m['sz'].append(math.sqrt((p1['x'] - p2['x'])**2 + (p1['y'] - p2['y'])**2))
+		p1 = p2
+	m['sz_mean'] = sum(m['sz']) / float(len(m['sz']))
+	m['distance'] = 808 * m['size'] / m['sz_mean']
+	return m
 
 def get_marker(r, marker_id, fpath=None):
 	rs = None
@@ -59,6 +68,7 @@ def get_marker(r, marker_id, fpath=None):
 		dbprint('\t%s' % m['id'])
 #		os.system('espeak "%s"' % ' '.join([c for c in str(m['id'])]))
 		if m['id'] == marker_id:
+			update_marker_distance(m)
 			rs = {'coords': m['coords']}
 			for c in rs['coords']:
 				c['x'] /= m['width']
