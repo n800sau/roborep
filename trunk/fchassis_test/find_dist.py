@@ -18,6 +18,7 @@ if __name__ == '__main__':
 	with picamera.PiCamera() as camera:
 
 		try:
+			c.update_state()
 			print 'BEFORE %s cm to %s' % (c.state['sonar'], c.heading())
 			c.find_distance(1, clockwise=clockwise)
 			print 'AFTER %s cm to %s' % (c.state['sonar'], c.heading())
