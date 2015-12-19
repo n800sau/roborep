@@ -110,6 +110,8 @@ class frobo_common(fchassis_ng):
 	def update_state(self):
 		rs = super(frobo_common, self).update_state()
 		if rs:
+			self.state['heading'] = self.heading()
+			self.state['acc'] = self.accel()
 			dot = copy.deepcopy(self.state)
 			self.dots.append(dot)
 		return rs
