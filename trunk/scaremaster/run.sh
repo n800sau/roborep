@@ -2,6 +2,6 @@
 
 cur_dir=`pwd`
 
-python scareserver.py --conf="${cur_dir}/conf.json" &> ${cur_dir}/run.log &
+python "${cur_dir}/scareserver.py" --conf="${cur_dir}/conf.json" &> ${cur_dir}/run.log &
 
 echo $?
