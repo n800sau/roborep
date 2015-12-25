@@ -205,7 +205,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 				cv2.imwrite(os.path.join(imdir, fname), imutils.resize(frame, width=320))
 				if os.path.exists(slname):
 					os.unlink(slname)
-				os.symlink(os.path.join(imdir, fname), slname)
+				os.symlink(fname, slname)
 
 				dbprint("Image %s written" % fname)
 
