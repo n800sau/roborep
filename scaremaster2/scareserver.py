@@ -48,7 +48,6 @@ dbprint("[INFO] warming up...")
 time.sleep(conf["camera_warmup_time"])
 avg = None
 lastUploaded = datetime.datetime.now()
-motionCounter = 0
 frame_counter = 0
 
 # cat range
@@ -127,9 +126,11 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 		good_cnts.append({'c':c, 'x': x, 'y': y, 'w': w, 'h': h, 'area': area})
 
 		fimg = frame[y:y+h, x:x+w]
-		gray = cv2.cvtColor(fimg, cv2.COLOR_BGR2GRAY)
+#		gray = cv2.cvtColor(fimg, cv2.COLOR_BGR2GRAY)
+		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-		rects = cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv2.cv.CV_HAAR_SCALE_IMAGE)
+#		rects = cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=4, minSize=(30, 30), flags = cv2.cv.CV_HAAR_SCALE_IMAGE)
+		rects = cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(100, 100), flags = cv2.cv.CV_HAAR_SCALE_IMAGE)
 		if len(rects) > 0:
 			# apply non-maxima suppression to the bounding boxes using a
 			# fairly large overlap threshold to try to maintain overlapping
@@ -139,7 +140,8 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 
 			# draw the bounding boxes
 			for (xA, yA, xB, yB) in pick:
-				cv2.rectangle(frame, (x+xA, y+yA), (x+xB, y+yB), (0, 0, 255), 2)
+#				cv2.rectangle(frame, (x+xA, y+yA), (x+xB, y+yB), (0, 0, 255), 2)
+				cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 0, 255), 2)
 			dbprint('Cat found')
 			cat_found = True
 
@@ -193,41 +195,31 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	if occupied and cat_found:
 		# check to see if enough time has passed between uploads
 		if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
-			# increment the motion counter
-			motionCounter += 1
 
-			# check to see if the number of frames with consistent motion is
-			# high enough
-			if motionCounter >= conf["min_motion_frames"]:
+			fname = 'motion@%s.jpg' % timestamp.strftime('%Y%m%d_%H%M%S')
+			slname = os.path.join(imdir, 'motion.jpg')
+			cv2.imwrite(os.path.join(imdir, fname), imutils.resize(frame, width=320))
+			if os.path.exists(slname):
+				os.unlink(slname)
+			os.symlink(fname, slname)
 
-				fname = 'motion@%s.jpg' % timestamp.strftime('%Y%m%d_%H%M%S')
-				slname = os.path.join(imdir, 'motion.jpg')
-				cv2.imwrite(os.path.join(imdir, fname), imutils.resize(frame, width=320))
-				if os.path.exists(slname):
-					os.unlink(slname)
-				os.symlink(os.path.join(imdir, fname), slname)
+			dbprint("Image %s written" % fname)
 
-				dbprint("Image %s written" % fname)
+			existing = glob.glob(os.path.join(imdir, 'motion@*.jpg'))
+			cnt = len(existing)
+			if cnt > conf['max_files']:
+				existing.sort()
+				for fn in existing[:cnt-conf['max_files']]:
+					try:
+						os.unlink(fn)
+						dbprint("Image %s deleted" % fn)
+					except Exception, e:
+						dbprint("Can not delete image %s: %s" % (fn, e))
 
-				existing = glob.glob(os.path.join(imdir, 'motion@*.jpg'))
-				cnt = len(existing)
-				if cnt > conf['max_files']:
-					existing.sort()
-					for fn in existing[:cnt-conf['max_files']]:
-						try:
-							os.unlink(fn)
-							dbprint("Image %s deleted" % fn)
-						except Exception, e:
-							dbprint("Can not delete image %s: %s" % (fn, e))
+			# update the last uploaded timestamp and reset the motion
+			# counter
+			lastUploaded = timestamp
 
-				# update the last uploaded timestamp and reset the motion
-				# counter
-				lastUploaded = timestamp
-				motionCounter = 0
-
-	# otherwise, the room is not occupied
-	else:
-		motionCounter = 0
 
 	# clear the stream in preparation for the next frame
 	rawCapture.truncate(0)
