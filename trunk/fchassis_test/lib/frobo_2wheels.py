@@ -15,3 +15,5 @@ class frobo_2wheels(frobo_common):
 	def m2steps(self, m):
 		return int(m / ENC_STEP)
 
+	def steps2m(self, steps):
+		return steps * ENC_STEP

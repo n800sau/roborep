@@ -4,15 +4,15 @@ from frobo_common import frobo_common
 
 #encoders 0.25 mm per unit?
 #ENC_STEP = 0.003 # test result back?
-#ENC_STEP = 0.0015 # test result fwd
-ENC_STEP = 0.003
+ENC_STEP = 0.00396 # test result fwd
+#ENC_STEP = 0.00546 # test result back
 
 class frobo_track(frobo_common):
 
 	def turn(self, *args, **kwds):
 		return self.simple_turn(*args, **kwds)
 
-	def move_straight(self, fwd=True, max_steps=5, max_secs=1, heading=None, power=50):
+	def move_straight(self, fwd=True, max_steps=5, max_secs=1, fix_heading=True, heading=None, power=50):
 		self.cmd_reset_counters()
 		counted_offset = 0
 		if heading is None:
@@ -22,10 +22,13 @@ class frobo_track(frobo_common):
 		offset = 0
 		try:
 			t = time.time()
-			while (t + max_secs) > time.time():
+			while True:
+				if (t + max_secs) <= time.time():
+					self.dbprint('%d secs is out' % max_secs)
+					break
 				self.update_state()
 				hdiff = angle_diff(self.heading(), heading)
-				if abs(hdiff) > 20:
+				if abs(hdiff) > 20 and fix_heading:
 					self.dbprint("STOP and CORRECT")
 					tt = time.time()
 					counted = self.steps_counted()
@@ -40,8 +43,9 @@ class frobo_track(frobo_common):
 					offset = -20 if fwd else 20
 				else:
 					offset = 0
-				lpwr = power - offset
-				rpwr = power + offset
+				# to avoid pwr < 0
+				lpwr = max(0, power - offset)
+				rpwr = max(0, power + offset)
 				self.dbprint('^%d hdiff:%g off:%d pw:%d<>%d cnt:%d<>%d' % (int(self.heading()), hdiff, offset, lpwr, rpwr, self.state['lcount'], self.state['rcount']))
 				if fwd and self.state['sonar'] >= 0 and self.state['sonar'] < self.MIN_DISTANCE:
 					self.hit_warn = self.state['sonar']
@@ -64,3 +68,5 @@ class frobo_track(frobo_common):
 	def m2steps(self, m):
 		return int(m / ENC_STEP)
 
+	def steps2m(self, steps):
+		return steps * ENC_STEP
