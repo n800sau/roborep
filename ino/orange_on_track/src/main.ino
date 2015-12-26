@@ -1,7 +1,12 @@
+//#define USE_SHARP
+
 #include <voltage.h>
-#include <SharpIR.h>
 #include "SerialProtocol.h"
 #include "commands.h"
+
+#ifdef USE_SHARP
+
+#include <SharpIR.h>
 
 #define IR A1
 #define IR_MODEL 20150
@@ -10,10 +15,15 @@
 
 SharpIR sharp(IR, 25, 93, IR_MODEL);
 
+long ir_distance = -1; // IR distance
 
-int LCURRENT = A3;
-int RCURRENT = A2;
+#endif // USE_SHARP
 
+const int LCURRENT = A3;
+const int RCURRENT = A2;
+
+
+const int MOTION_PIN = A0;
 
 // Pin 13 has an LED connected on most Arduino boards.
 // give it a name:
@@ -31,7 +41,6 @@ const int trigPin = 11; // Trigger Pin
 
 long duration = -1; // Duration used to calculate distance
 long distance = -1; // sonar distance
-long ir_distance = -1; // IR distance
 
 
 const float ENC_STEP = 0.25; // for PR6 track
@@ -41,8 +50,11 @@ float count2dist(int count)
 	return count * ENC_STEP;
 }
 
-const int MIN_PWM = 140;
-const int MAX_PWM = 255;
+const int MIN_FWD_PWM = 160;
+const int MAX_FWD_PWM = 255;
+
+const int MIN_BACK_PWM = 95;
+const int MAX_BACK_PWM = 255;
 
 
 // motor pins
@@ -72,7 +84,7 @@ const int rInt = Eright - 2;
 // might possibly need to adjust it to 25000. However, this threshold
 // value is working perfectly for my situation
 //
-volatile unsigned long threshold = 100;
+volatile unsigned long threshold = 50;
 
 // Working variables for the interrupt routines
 //
@@ -105,6 +117,8 @@ void IccBase::sendState()
 	float vals[3];
 	vals[0] = readVccMv() / 1000.;
 	sendFloats(R_VOLTS_1F, vals, 1);
+	vals[0] = analogRead(MOTION_PIN);
+	sendFloats(R_MOTION_1F, vals, 1);
 	vals[0] = lCounter;
 	vals[1] = rCounter;
 	sendFloats(R_MCOUNTS_2F, vals, 2);
@@ -119,8 +133,10 @@ void IccBase::sendState()
 	sendFloats(R_MDIST_2F, vals, 2);
 	vals[0] = (distance > 0) ? distance / 100. : distance;
 	sendFloats(R_DIST_1F, vals, 1);
+#ifdef USE_SHARP
 	vals[0] = (ir_distance > 0) ? ir_distance / 100. : ir_distance;
 	sendFloats(R_IRDIST_1F, vals, 1);
+#endif // USE_SHARP
 	sendFloats(R_END, NULL, 0);
 }
 
@@ -145,7 +161,7 @@ void lIntCB()
 		if (intLhistory != intLsignal) {
 			intLtime = micros();
 			lCounter++;
-			digitalWrite(led, lCounter & 1);
+//			digitalWrite(led, lCounter & 1);
 		}
 	}
 }
@@ -159,18 +175,20 @@ void rIntCB()
 		if (intRhistory != intRsignal) {
 			intRtime = micros();
 			rCounter++;
-			digitalWrite(led, rCounter & 1);
+//			digitalWrite(led, rCounter & 1);
 		}
 	}
 }
 
-int power2pwm(int power)
+int power2pwm(int power, bool fwd)
 {
-	int rs = MIN_PWM + (MAX_PWM-MIN_PWM) / 100. * power;
-	if(rs < MIN_PWM) {
-		rs = MIN_PWM;
-	} else if(rs > MAX_PWM) {
-		rs = MAX_PWM;
+	int min_pwm = (fwd) ? MIN_FWD_PWM : MIN_BACK_PWM;
+	int max_pwm = (fwd) ? MAX_FWD_PWM : MAX_BACK_PWM;
+	int rs = min_pwm + (max_pwm - min_pwm) / 100. * power;
+	if(rs < min_pwm) {
+		rs = min_pwm;
+	} else if(rs > max_pwm) {
+		rs = max_pwm;
 	}
 	return rs;
 }
@@ -183,7 +201,7 @@ void setLeftMotor(int power, bool fwd)
 		digitalWrite(LEFT_MOTOR_2, LOW);
 		Serial.println('Left stopped');
 	} else {
-		int pwm = power2pwm(power);
+		int pwm = power2pwm(power, fwd);
 		if(fwd) {
 			analogWrite(LEFT_MOTOR_1, pwm);
 			digitalWrite(LEFT_MOTOR_2, HIGH);
@@ -205,7 +223,7 @@ void setRightMotor(int power, bool fwd)
 		digitalWrite(RIGHT_MOTOR_2, LOW);
 		Serial.println('Right stopped');
 	} else {
-		int pwm = power2pwm(power);
+		int pwm = power2pwm(power, fwd);
 		if(fwd) {
 			analogWrite(RIGHT_MOTOR_1, pwm);
 			digitalWrite(RIGHT_MOTOR_2, HIGH);
@@ -233,7 +251,9 @@ void sonar()
 	duration = pulseIn(echoPin, HIGH);
 
 	//Calculate the distance (in cm) based on the speed of sound.
-	distance = duration/58.2;
+//	distance = duration/58.2;
+
+	distance = duration/73;
 
 	if(distance < minimumRange) {
 		distance = minimumRange - 1;
@@ -301,9 +321,11 @@ void setup()
 	Serial.begin(115200);
 
 	pinMode(led, OUTPUT);
+	digitalWrite(led, LOW);
 
+#ifdef USE_SHARP
 	pinMode (IR, INPUT);
-
+#endif // USE_SHARP
 	pinMode(trigPin, OUTPUT);
 	pinMode(echoPin, INPUT);
 
@@ -328,7 +350,9 @@ unsigned long last_ping = millis();
 
 void loop()
 {
+#ifdef USE_SHARP
 	ir_distance=sharp.distance();  // this returns the distance to the object you're measuring
+#endif // USE_SHARP
 	sonar();
 	if(base.available()) {
 //		Serial.println('available');

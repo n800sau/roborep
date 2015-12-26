@@ -1,5 +1,5 @@
-ino build &>build.log
+#ino build &>build.log
 
-#ino build && ./upload.sh
+ino build && ./upload.sh
 
 echo $?
