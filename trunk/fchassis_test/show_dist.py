@@ -13,6 +13,7 @@ if __name__ == '__main__':
 	for i in range(500):
 		c.update_state()
 		if c.state['sonar'] > 0:
+#			print c.state['motion']
 #			print '%g(%g) m to %s (%g volts)' % (c.state['sonar'], c.state.get('irdist', -1), c.heading(), c.state['v'])
 			break
 		else:

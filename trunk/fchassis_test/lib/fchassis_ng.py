@@ -125,6 +125,8 @@ class fchassis_ng(bin2uno_inf):
 							self.state['irdist'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_VOLTS_1F:
 							self.state['v'] = data['vals'][0]
+						elif data['cmd'] == pycmds.R_MOTION_1F:
+							self.state['motion'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_MCOUNTS_2F:
 							self.state['tick_time'] = time.time()
 							self.state['lcount'] = data['vals'][0]
