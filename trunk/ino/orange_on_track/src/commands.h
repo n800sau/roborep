@@ -24,6 +24,7 @@ enum REPLY {
 	R_MDIST_2F,
 	R_DIST_1F,     //8
 	R_IRDIST_1F,   //9
+	R_MOTION_1F, //10
 	R_END                // end of block marker
 };
 
