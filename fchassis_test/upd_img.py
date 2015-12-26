@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, time, redis, math
+import sys, os, time, redis, json
 
 import picamera
 from lib.camera import update_img
@@ -56,19 +56,13 @@ if __name__ == '__main__':
 	if 1:
 		r = redis.Redis()
 		use_camera(r)
-		use_camera(r, width=640, height=480, brightness=80, contrast=80)
+#		use_camera(r, brightness=80, contrast=85)
+#		use_camera(r, width=640, height=480, brightness=80, contrast=80)
 #		use_camera(r, brightness=90, contrast=90)
 		time.sleep(4)
 		try:
 			markers = collect_markers(r, fpath = html_data_path('markers.jpg'))
-			for m in markers:
-				p1 = m['coords'][0]
-				m['sz'] = []
-				for p2 in m['coords'][1:] + m['coords'][:1]:
-					m['sz'].append(math.sqrt((p1['x'] - p2['x'])**2 + (p1['y'] - p2['y'])**2))
-					p1 = p2
-				m['sz_mean'] = sum(m['sz']) / float(len(m['sz']))
-				print m
+			print json.dumps(dict([(m['id'], m['distance']) for m in markers]), indent=2)
 		finally:
 			time.sleep(1)
 			make_shot(r)

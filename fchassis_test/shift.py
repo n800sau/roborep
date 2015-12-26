@@ -19,10 +19,10 @@ if __name__ == '__main__':
 		h = c.heading()
 		try:
 			update_img(camera, 'pic0.jpg')
-			c.turn((h + (1 if right else -1) * 90) % 360, err=5)
-			c.move_straight(fwd=True, max_secs=5, max_steps=c.m2steps(0.5))
+			c.turn((h + (1 if right else -1) * 90) % 360, err=10)
+			c.move_straight(fwd=True, max_secs=20, max_steps=c.m2steps(0.5))
 			update_img(camera, 'pic1.jpg')
-			c.turn_in_ticks(h, err=5)
+			c.turn(h, err=5)
 			json.dump(c.dots, file('dots.json', 'w'), indent=2)
 		finally:
 			c.cmd_mstop()
