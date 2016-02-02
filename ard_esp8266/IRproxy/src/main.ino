@@ -3,6 +3,11 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 
+extern "C" {
+	#include "user_interface.h"
+}
+
+
 #include "config.h"
 
 #define HOSTNAME "irproxy"
@@ -50,6 +55,8 @@ void  setup ( )
 //	Serial.print(ipMulti);
 //	Serial.print(":");
 //	Serial.println(portMulti);
+
+	wifi_set_sleep_type(LIGHT_SLEEP_T);
 }
 
 //+=============================================================================
@@ -190,9 +197,6 @@ void  dumpCode (decode_results *results)
 	}
 }
 
-//+=============================================================================
-// The repeating section of the code
-//
 void  loop ( )
 {
 	decode_results  results;        // Somewhere to store the results
@@ -213,6 +217,7 @@ void  loop ( )
 		dumpCode(&results);           // Output the results as source code
 		Serial.println("");           // Blank line between entries
 		irrecv.resume();              // Prepare for the next value
+		wifi_set_sleep_type(LIGHT_SLEEP_T);
 //	} else {
 		// send no data message
 //		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
