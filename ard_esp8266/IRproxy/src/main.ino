@@ -201,7 +201,11 @@ void  loop ( )
 
 		// send the ir data
 		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
+		Udp.print("{\"encoding\": \"");
 		Udp.print(encoding(&results));
+		Udp.print("\", \"ircode\": ");
+		Udp.print(results.value);
+		Udp.print("}");
 		Udp.endPacket();
 
 		dumpInfo(&results);           // Output the results
