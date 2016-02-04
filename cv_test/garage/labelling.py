@@ -7,7 +7,7 @@ from skimage.filters import threshold_adaptive
 from skimage import measure
 import numpy as np
 
-img_path = os.path.join(os.path.expanduser('~/sshfs/asus/root/sdb1/garage'), '*.jpg')
+img_path = os.path.join(os.path.expanduser('~/sshfs/asus/root/rus_hard/garage'), '*.jpg')
 out_path = os.path.join(os.path.dirname(__file__), 'output')
 
 def process_image(fname):

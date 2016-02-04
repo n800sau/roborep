@@ -1,6 +1,6 @@
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3">
 <title>Ideapad Frames</title>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
 <script type="text/javascript">
@@ -21,7 +21,7 @@ myApp.controller('MyController', function($scope, $http, $interval) {
 <div ng-app='myApp' ng-controller='MyController'>
 	<h2>{{data.title}}</h2>
 	<p>
-	<div style="margin: 5px; border: solid black 2px;" ng-repeat="fname in data.files.slice(0, 4);">
+	<div style="margin: 5px; border: solid black 2px;" ng-repeat="fname in data.files.slice(0, 12);">
 		<img src="{{fname}}" alt="{{fname}}"></img>
 	</div>
 </div>
