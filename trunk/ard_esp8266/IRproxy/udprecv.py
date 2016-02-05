@@ -3,6 +3,7 @@
 import socket
 import struct
 import json
+import subprocess
 
 MCAST_GRP = '239.0.0.57'
 MCAST_PORT = 12345
@@ -19,9 +20,11 @@ while True:
 	try:
 		data = sock.recv(10240)
 		data = json.loads(data)
-		print 'encoding:%s, value:0x%4.4x' % (data['encoding'], data['ircode'])
+		text = 'encoding:%s, value:0x%4.4x' % (data['encoding'], data['ircode'])
+		print text
+		subprocess.call(['espeak', text])
 	except Exception, e:
 		if isinstance(e, KeyboardInterrupt):
 			raise
-		print 'Error'
+		print 'Error', e
 
