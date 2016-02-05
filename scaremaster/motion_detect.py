@@ -2,8 +2,9 @@
 
 from __future__ import division
 
-import picamera, time, os, sys, cv2, imutils
+import picamera, time, os, sys, cv2, imutils, traceback
 import numpy as np
+from scipy.misc import imresize
 from PIL import Image
 from picamera.array import PiRGBArray, PiYUVArray
 
@@ -55,7 +56,7 @@ class MyMotionDetector(object):
 					frame = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB)
 					cv2.imwrite(os.path.join(basepath, bname + '.jpg'), frame)
 					small = imutils.resize(frame, width=320)
-					detected_mask = cv2.resize((detected * 255).astype(np.uint8), (small.shape[1], small.shape[0]))
+					detected_mask = imresize((detected * 255).astype(np.uint8), small.shape, 'nearest')
 					detected_small = cv2.bitwise_and(small, small, mask = detected_mask)
 					cv2.imwrite(os.path.join(basepath, bname + '_det_small.jpg'), detected_small)
 #	#				print('mask size=%s, type=%s, img size=%s, type=%s' % (mask.shape, mask.dtype, small.shape, small.dtype))
@@ -77,9 +78,10 @@ class MyMotionDetector(object):
 
 for i in xrange(10):
 	with picamera.PiCamera() as camera:
-		camera.resolution = (2592, 1944)
-#		camera.resolution = (640, 480)
+#		camera.resolution = (2592, 1944)
+		camera.resolution = (640, 480)
 		camera.framerate = 15
+		camera.zoom = (0.2, 0., 0.6, 1.)
 		camera.start_recording(
 			# Throw away the video data, but make sure we're using H.264
 			'/dev/null', format='h264', resize=(320, 240),
