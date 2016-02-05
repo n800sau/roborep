@@ -11,7 +11,7 @@ $i = 0;
 $odata = array();
 foreach($data as $ts => $d) {
 	$d = json_decode($d);
-	$d->l = date('H:i:s', (int)$ts);
+	$d->l = date('d H:i:s', (int)$ts);
 	if($i % 5 == 0) {
 		array_unshift($odata, $d);
 	}
