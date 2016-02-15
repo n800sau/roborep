@@ -6,6 +6,7 @@ import json
 import subprocess
 import time
 import redis
+from get_weather import get_weather_list
 
 def get_last_data():
 	r = redis.Redis('192.168.2.80')
@@ -34,7 +35,7 @@ while True:
 		data = sock.recv(1000)
 		data = json.loads(data)
 		print 'encoding:%s, value:0x%4.4x' % (data['encoding'], data['ircode'])
-		if data['encoding'] == 'SONY' and data['ircode'] == 0x290:
+		if data['encoding'] == 'SONY' and data['ircode'] in (0x290, 0x291):
 			if last_time is None or last_time + 2 < time.time():
 				print 'Pass'
 				if not p is None:
@@ -42,11 +43,16 @@ while True:
 					p = None
 				last_time = time.time()
 				nullf = file('/dev/null', 'w')
-				last_data = get_last_data()
-				timestamp = time.localtime(last_data['timestamp'])
-				text = 'At %d hour, %d minutes, the temperature outside is %d degrees, humidity is %d' % (
-					timestamp.tm_hour, timestamp.tm_min, last_data['t'], last_data['h'])
-				p = subprocess.Popen(['espeak', text], stdout=nullf, stderr=nullf)
+				text == None
+				if data['ircode'] == 0x290:
+					last_data = get_last_data()
+					timestamp = time.localtime(last_data['timestamp'])
+					text = 'At %d hour, %d minutes, the temperature outside is %d degrees, humidity is %d' % (
+						timestamp.tm_hour, timestamp.tm_min, last_data['t'], last_data['h'])
+				elif data['ircode'] == 0x291:
+					text = '\n'.join(get_weather_list('Kirrawee'))
+				if text:
+					p = subprocess.Popen(['espeak', text], stdout=nullf, stderr=nullf)
 			else:
 				print 'Too soon'
 		else:

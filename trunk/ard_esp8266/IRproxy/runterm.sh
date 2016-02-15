@@ -1,8 +1,9 @@
 DEV=/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
 #DEV=/dev/ttyUSB0
 
-./miniterm.py -p $DEV -b 115200 --rts 0 --dtr 0 &>runterm.log
-#miniterm.py $DEV 115200
+#./miniterm.py -p $DEV -b 115200 --rts 0 --dtr 0 &>runterm.log
+./miniterm.py -p $DEV -b 115200 --rts 0 --dtr 0
+##miniterm.py $DEV 115200
 #picocom -b 115200 $DEV
 #cat $DEV
 echo $?
