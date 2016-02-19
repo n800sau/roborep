@@ -6,6 +6,7 @@ import json
 import subprocess
 import time
 import redis
+import traceback
 from get_weather import get_weather_list
 
 def get_last_data():
@@ -43,7 +44,7 @@ while True:
 					p = None
 				last_time = time.time()
 				nullf = file('/dev/null', 'w')
-				text == None
+				text = None
 				if data['ircode'] == 0x290:
 					last_data = get_last_data()
 					timestamp = time.localtime(last_data['timestamp'])
@@ -60,5 +61,5 @@ while True:
 	except Exception, e:
 		if isinstance(e, KeyboardInterrupt):
 			raise
-		print 'Error', e
+		traceback.print_exc()
 
