@@ -32,3 +32,4 @@ try:
 finally:
 	cmdf.close()
 shutil.copy(cmdfname, os.path.join(img_path, cmdfname))
+print 'Copied'
