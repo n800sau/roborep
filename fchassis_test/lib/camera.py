@@ -1,4 +1,6 @@
 import os
+import matplotlib
+matplotlib.use('Agg')
 from picamera.array import PiRGBArray
 import cv2
 import imutils
@@ -8,9 +10,13 @@ from matplotlib import pyplot as plt
 import colorsys
 
 #from skimage import data
-#from skimage.feature import blob_dog, blob_log, blob_doh
-#from math import sqrt
-#from skimage.color import rgb2gray
+from skimage.feature import blob_dog, blob_log, blob_doh
+from math import sqrt
+from skimage.color import rgb2gray
+
+from scipy.spatial import distance as dist
+
+from sklearn.cluster import KMeans
 
 # "FAST"
 # "STAR"
@@ -54,9 +60,9 @@ import colorsys
 # "HARRIS" - GoodFeaturesToTrackDetector with Harris detector enabled
 # "Dense" - DenseFeatureDetector
 # "SimpleBlob" - SimpleBlobDetector
-DETECTOR = 'ORB'
+DETECTOR = 'SURF'
 #DETECTOR = 'GFTT'
-NORM = cv2.NORM_HAMMING
+#NORM = cv2.NORM_HAMMING
 
 #for sift, surf
 #NORM = cv2.NORM_L2
@@ -64,7 +70,7 @@ NORM = cv2.NORM_HAMMING
 
 
 # SIFT/0, SURF*, BRIEF+, BRISK*, ORB+, FREAK*
-EXTRACTOR = 'ORB'
+EXTRACTOR = 'SURF'
 #EXTRACTOR = 'BRIEF'
 
 
@@ -72,7 +78,8 @@ FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
 FLANN_INDEX_LSH    = 6
 
 
-MATCHER = 'BruteForce-Hamming'
+MATCHER = 'BruteForce'
+#MATCHER = 'BruteForce-Hamming'
 #MATCHER = 'Flann'
 
 def set_params(camera, **params):
@@ -111,6 +118,46 @@ property uchar blue
 end_header
 '''
 
+COLORS = [
+	(102,0,0),
+	(166,66,0),
+	(255,213,128),
+	(176,179,134),
+	(38,51,38),
+	(0,238,255),
+	(102,156,204),
+	(234,191,255),
+	(89,67,82),
+	(51,26,36),
+	(255,191,191),
+	(204,143,102),
+	(166,155,0),
+	(136,255,0),
+	(191,255,225),
+	(124,163,166),
+	(0,24,89),
+	(173,51,204),
+	(128,32,83),
+	(115,57,65),
+	(255,34,0),
+	(255,136,0),
+	(76,71,0),
+	(129,204,102),
+	(0,255,170),
+	(0,71,89),
+	(51,92,204),
+	(80,45,89),
+	(204,0,82),
+	(255,145,128),
+	(102,66,26),
+	(238,255,0),
+	(51,89,45),
+	(0,153,122),
+	(0,48,89),
+	(54,0,204),
+	(255,0,170),
+	(255,128,179)
+]
 
 class FeatureProcess(object):
 
@@ -128,7 +175,7 @@ class FeatureProcess(object):
 #		self.matcher = cv2.FlannBasedMatcher(flann_params, {})  # bug : need to pass empty dict (#1329)
 
 
-	def filterMatches(self, kp, matches, ratio = 0.75):
+	def filterMatches(self, kp, matches, ratio = 0.70):
 		mkp1, mkp2 = [], []
 		for m in matches:
 			if len(m) == 2 and m[0].distance < m[1].distance * ratio:
@@ -137,7 +184,55 @@ class FeatureProcess(object):
 				mkp2.append(kp[m.trainIdx])
 		p1 = np.float32([kp.pt for kp in mkp1])
 		p2 = np.float32([kp.pt for kp in mkp2])
-		return p1, p2, zip(mkp1, mkp2)
+#		pdists = dist.cdist(p1, p2)
+		pdists = np.sqrt(((p1 - p2)**2).sum(axis=1))
+		dbprint('before dist: %s' % (p1.shape,))
+		# remove distance outliers
+		d = np.abs(pdists - np.median(pdists))
+		mdev = np.median(d)
+		s = (d/mdev if mdev else 0) < 2
+		p1 = p1[s]
+		p2 = p2[s]
+		pdists = pdists[s]
+		dbprint('before angl: %s' % (p1.shape,))
+		# remove angle outliers
+		pvec = p2 - p1
+		pangls = np.arctan2(pvec[:,0], pvec[:,1]) * 180 / np.pi
+		d = np.abs(pangls - np.median(pangls))
+		mdev = np.median(d)
+		s = (d/mdev if mdev else 0) < 2
+		p1 = p1[s]
+		p2 = p2[s]
+		pdists = pdists[s]
+		pangls = pangls[s]
+		dbprint('after angl: %s' % (p1.shape,))
+		return p1, p2, pdists, pangls
+
+	def draw_matches(self, img1, img2, pnts1, pnts2):
+		# initialize the output visualization image
+		(hA, wA) = img1.shape[:2]
+		(hB, wB) = img2.shape[:2]
+		vis = np.zeros((max(hA, hB), wA + wB, 3), dtype="uint8")
+		vis[0:hA, 0:wA] = img1
+		vis[0:hB, wA:] = img2
+		# loop over the matches
+		for p1,p2 in zip(pnts1, pnts2):
+			# generate a random color and draw the match
+			color = np.random.randint(0, high=255, size=(3,))
+			ptA = (int(p1[0]), int(p1[1]))
+			ptB = (int(p2[0] + wA), int(p2[1]))
+			cv2.line(vis, ptA, ptB, color, 1)
+		return vis
+
+	def frame_draw_matches(self, frame, pnts1, pnts2, labels):
+		rs = frame.copy()
+		# loop over the matches
+		for p1,p2,color in zip(pnts1, pnts2, np.array(COLORS)[labels]):
+			# generate a random color and draw the match
+			ptA = (int(p1[0]), int(p1[1]))
+			ptB = (int(p2[0]), int(p2[1]))
+			cv2.line(rs, ptA, ptB, color, 1)
+		return rs
 
 	def percent(self, frame=None):
 		rs = None
@@ -145,23 +240,29 @@ class FeatureProcess(object):
 			if frame is None and self.camera:
 				frame = capture_cvimage(self.camera)
 			if not frame is None:
-				frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+				gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 				if self.img is None:
 					self.img = frame
-					self.kp = self.cv_det.detect(self.img)
-					self.kp, self.desc = self.cv_desc.compute(self.img, self.kp)
+					self.kp = self.cv_det.detect(gray)
+					self.kp, self.desc = self.cv_desc.compute(gray, self.kp)
 					self.kpl = len(self.kp)
-					dbprint('kp type:%s, desc type=%s' % (type(self.kp), type(self.desc)))
+#					dbprint('kp type:%s, desc type=%s' % (type(self.kp), type(self.desc)))
 				else:
-					kp = self.cv_det.detect(frame)
-					kp, desc = self.cv_desc.compute(frame, kp)
+					kp = self.cv_det.detect(gray)
+					kp, desc = self.cv_desc.compute(gray, kp)
+					
 					matches = self.matcher.knnMatch(self.desc, trainDescriptors=desc, k=2)
-					p1,p2,pairs = self.filterMatches(kp, matches)
-					lp = len(pairs)
+					p1,p2,dists,angls = self.filterMatches(kp, matches)
+					lp = len(dists)
+
+					dbprint('min_dist=%s, max_dist=%s' % (dists.min(), dists.max()))
+
 					percent = ((lp * 100) / self.kpl) if self.kpl else 0
 					rs = {
+						'iframe': self.img,
 						'frame': frame,
-						'percent': percent
+						'oframe': cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB),
+						'percent': percent,
 					}
 					if len(p1) >= 4:
 						H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 2.0)
@@ -170,7 +271,12 @@ class FeatureProcess(object):
 						pnt = np.average(pg, axis=0)
 						rs['point'] = pnt
 						if not pnt is None:
-							cv2.circle(frame, (pnt[0], pnt[1]), max(20, frame.shape[0] / 20), (0, 0, 255), -1)
+							cv2.circle(rs['oframe'], (pnt[0], pnt[1]), 5, (0, 0, 255), -1)
+#					rs['mframe'] = self.draw_matches(rs['iframe'], rs['frame'], p1, p2)
+					clt = KMeans(n_clusters=4)
+					clt.fit(dists.reshape(-1, 1))
+					dbprint('hist:%s' % list(np.histogram(dists, 5)[0]))
+					rs['mframe'] = self.frame_draw_matches(rs['frame'], p1, p2, clt.labels_)
 		except cv2.error, e:
 			dbprint('cv2 error: %s' % e)
 		return rs
@@ -495,8 +601,9 @@ class ColorFix:
 					ax.add_patch(c)
 			# Get the RGBA buffer from the figure
 			w,h = fig.canvas.get_width_height()
-			oframe = numpy.fromstring (fig.canvas.tostring_argb(), dtype=numpy.uint8)
-			oframe.shape = (w, h, 4)
+			fig.canvas.draw()
+			oframe = np.fromstring (fig.canvas.tostring_argb(), dtype=np.uint8)
+			oframe.shape = (h, w, 4)
 			rs = {
 				'frame': frame,
 				'iframe': frame_gray,
