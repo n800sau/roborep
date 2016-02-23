@@ -53,7 +53,7 @@ from lib.utils import html_data_path
 
 if __name__ == '__main__':
 
-	if 1:
+	if 0:
 		r = redis.Redis()
 		use_camera(r)
 #		use_camera(r, brightness=80, contrast=85)
