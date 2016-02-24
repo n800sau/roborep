@@ -12,13 +12,13 @@ import numpy as np
 import mahotas
 from make_hogs import process_image
 
-IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-15')
+IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-16')
 
 time_mark = int(time.time())
 
 LEVELS = 3
 
-MAX_NFILES = 300
+MAX_NFILES = 1000
 
 def fill_a_level(shf, subdir, flist):
 
