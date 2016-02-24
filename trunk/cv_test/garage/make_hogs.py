@@ -15,16 +15,20 @@ def car_crop(image):
 def process_image(fname, mask=None):
 	bname = os.path.basename(fname)
 	image = cv2.imread(fname)
-	image = car_crop(image)
-#	write_image(image, bname + '_image.png', fnames)
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-#	(H, hogImage) = feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=True)
-	H = feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=False)
+	H = _process_image(image)
+#	(H, hogImage) = _process_image(image)
 #	hogImage = exposure.rescale_intensity(hogImage, out_range=(0, 255))
 #	hogImage = hogImage.astype("uint8")
 #	write_image(hogImage, bname + '_hog.png', fnames)
 	json.dump(list(H), file(os.path.join('hog', bname + '.hog'), 'w'))
 	return H
+
+def _process_image(image):
+	image = car_crop(image)
+#	write_image(image, bname + '_image.png', fnames)
+	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+	return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=False)
+#	return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=True)
 
 if __name__ == '__main__':
 
