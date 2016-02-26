@@ -3,12 +3,14 @@
 import os, sys, glob, json
 from sklearn.cross_validation import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from sklearn.metrics import classification_report
 from sklearn.externals import joblib
 import numpy as np
 import cv2
 import imutils
-from make_hogs import _process_image
+from make_hogs import _process_image, find_orig_file, process_image
 
 BASEPATH = 'traindata'
 HOGPATH = 'hog'
@@ -29,6 +31,9 @@ def get_hog_data():
 	ls = []
 	for l,n in data:
 		hf = os.path.join(HOGPATH, n + '.hog')
+		if not os.path.exists(hf):
+			orig_fname = find_orig_file(n)
+			process_image(orig_fname)
 		hog = json.load(file(hf))
 		ds.append(hog)
 		ls.append(l)
@@ -38,7 +43,7 @@ def get_hog_data():
 if __name__ == '__main__':
 
 
-	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-18')
+	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-22')
 	DST_PATH = os.path.expanduser('output/images/predict')
 
 	hdata = get_hog_data()
@@ -47,36 +52,37 @@ if __name__ == '__main__':
 
 	(trainData, valData, trainLabels, valLabels) = train_test_split(trainData, trainLabels, test_size=0.1, random_state=84)
 
-	print valLabels
-
 	# initialize the values of k for our k-Nearest Neighbor classifier along with the
 	# list of accuracies for each value of k
-	kVals = range(1, 30, 2)
-	accuracies = []
+#	kVals = range(1, 30, 2)
+#	accuracies = []
 
 	# loop over various values of `k` for the k-Nearest Neighbor classifier
-	for k in xrange(1, 30, 2):
+#	for k in xrange(1, 30, 2):
 		# train the k-Nearest Neighbor classifier with the current value of `k`
-		model = KNeighborsClassifier(n_neighbors=k)
-		model.fit(trainData, trainLabels)
+#		model = KNeighborsClassifier(n_neighbors=k)
+#		model.fit(trainData, trainLabels)
 
 		# evaluate the model and update the accuracies list
-		score = model.score(valData, valLabels)
-		print("k=%d, accuracy=%.2f%%" % (k, score * 100))
-		accuracies.append(score)
+#		score = model.score(valData, valLabels)
+#		print("k=%d, accuracy=%.2f%%" % (k, score * 100))
+#		accuracies.append(score)
 
 	# find the value of k that has the largest accuracy
-	i = np.argmax(accuracies)
-	print("k=%d achieved highest accuracy of %.2f%% on validation data" % (kVals[i], accuracies[i] * 100))
+#	i = np.argmax(accuracies)
+	i = 1
+#	print("k=%d achieved highest accuracy of %.2f%% on validation data" % (kVals[i], accuracies[i] * 100))
 
 	# re-train our classifier using the best k value and predict the labels of the
 	# test data
-	model = KNeighborsClassifier(n_neighbors=kVals[i])
+#	model = SVC(kernel="linear")
+	model = LogisticRegression()
+#	model = KNeighborsClassifier(n_neighbors=kVals[i])
 	model.fit(trainData, trainLabels)
-	mfname = 'models/knc.pkl'
-	joblib.dump(model, mfname)
+#	mfname = 'models/knc.pkl'
+#	joblib.dump(model, mfname)
 
-	model = joblib.load(mfname)
+#	model = joblib.load(mfname)
 
 #	predictions = model.predict(testData)
 
