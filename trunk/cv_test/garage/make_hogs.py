@@ -9,8 +9,18 @@ from skimage import feature
 from skimage import exposure
 import numpy as np
 
+ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
+
+def find_orig_file(fn):
+	#00D6FB009223(n800sau)_1_20160217173337_26871.jpg
+	ts = fn.split('_')[2]
+	dt = ts[:8]
+	dr = '%s-%s-%s' % (dt[:4], dt[4:6], dt[6:])
+	return os.path.join(ROOT_PATH, dr, fn)
+
 def car_crop(image):
-	return image[90:, 70:270]
+	return image
+#	return image[90:, 70:270]
 
 def process_image(fname, mask=None):
 	bname = os.path.basename(fname)
@@ -34,7 +44,7 @@ if __name__ == '__main__':
 
 	time_mark = int(time.time())
 
-	img_path = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-15')
+	img_path = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-21')
 	out_path = os.path.join(os.path.dirname(__file__), 'output')
 
 	SAMPLE_FNAME = 'sample.json'
