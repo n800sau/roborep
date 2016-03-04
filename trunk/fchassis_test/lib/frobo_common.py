@@ -303,25 +303,29 @@ class frobo_common(fchassis_ng):
 	def tick_right(self, min_angle=None, pwr=40):
 		return self.tick_turn(True, min_angle=min_angle, pwr=pwr)
 
-	def simple_turn(self, azim, err=3, pwr=90):
+	def simple_turn(self, azim, err=3, pwr=90, cb_func=None, precise_stop=True):
 		diff = self.heading_diff(azim, err=err)
 		if diff != 0:
 			clockwise = diff > 0
+			self.dbprint('heading:%d, diff:%d, simple turn %s' % (self.heading(), diff, ('clockwise' if clockwise else 'counter-clockwise')))
 			self.cmd_mboth(pwr, clockwise, pwr, not clockwise)
 			i = 0
 			while diff != 0 and (diff > 0) == clockwise and i < int(self.WHOLE_TURN_TIME/self.STEP_TIME):
 				time.sleep(self.STEP_TIME)
 				diff = self.heading_diff(azim, err=err)
+				if not cb_func is None:
+					cb_func(self)
 				i += 1
 			# finished
 			self.cmd_mstop()
 			self.wait_until_stop()
-			diff = self.heading_diff(azim, err=err)
-			if diff != 0:
-				# it is gone too far
-				# apply the old way
-				self.dbprint('Run turn in ticks as a fallback')
-				self.turn_in_ticks(azim, err=err)
+			if precise_stop:
+				diff = self.heading_diff(azim, err=err)
+				if diff != 0:
+					# it is gone too far
+					# apply the old way
+					self.dbprint('Run turn in ticks as a fallback')
+					self.turn_in_ticks(azim, err=err)
 
 	def turn_using_memory(self, azim, err=3, stop_if=None, move_cb=None):
 		diff = self.heading_diff(azim, err=err)
