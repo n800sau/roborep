@@ -54,14 +54,14 @@ void blink(int times=1)
 }
 
 void handleRoot() {
-	server.send(200, "text/plain", "hello from " SSID "!");
+	server.send(200, "text/plain", "Hello from " + WiFi.localIP().toString() + "!");
 	blink(1);
 }
 
 void handleScare()
 {
 	start_pump(1);
-	server.send(200, "text/plain", "Ok");
+	server.send(200, "text/plain", "Pump. Ok");
 	blink(1);
 }
 
@@ -74,9 +74,11 @@ void handlePan()
 	} else if(pos > 180) {
 		pos = 180;
 	}
+	DBG_SERIAL.print("pan to ");
+	DBG_SERIAL.println(pos);
 	pan_servo.write(pos);
-	server.send(200, "text/plain", "Ok");
-	blink(1);
+	server.send(200, "text/plain", "Pan to " + String(pos) + ". Ok");
+	blink(2);
 }
 
 void handleTilt()
@@ -88,24 +90,23 @@ void handleTilt()
 	} else if(pos > 180) {
 		pos = 180;
 	}
+	DBG_SERIAL.print("tilt to ");
+	DBG_SERIAL.println(pos);
 	tilt_servo.write(pos);
-	server.send(200, "text/plain", "Ok");
-	blink(1);
+	server.send(200, "text/plain", "Tilt to " + String(pos) + ". Ok");
+	blink(3);
 }
 
 void setup()
 {
 	DBG_SERIAL.begin(115200, SERIAL_8N1, SERIAL_FULL);
-	DBG_SERIAL.setDebugOutput(true);
+//	DBG_SERIAL.setDebugOutput(true);
 	pinMode(PUMP_PIN, OUTPUT);
 	digitalWrite(PUMP_PIN, LOW);
 
 	// Connect to WiFi network
 	WiFi.begin(ssid, password);
 	DBG_SERIAL.print("\n\r \n\rWorking to connect");
-
-	pan_servo.attach(PAN_SERVO_PIN);
-	pan_servo.attach(TILT_SERVO_PIN);
 
 	// Wait for connection
 	while (WiFi.status() != WL_CONNECTED) {
@@ -119,6 +120,9 @@ void setup()
 	DBG_SERIAL.println(WiFi.localIP());
 
 	blink(1);
+
+	pan_servo.attach(PAN_SERVO_PIN);
+	tilt_servo.attach(TILT_SERVO_PIN);
 
 	if (!MDNS.begin("scarecrowwater")) {
 		DBG_SERIAL.println("Error setting up mDNS responder!");
