@@ -17,7 +17,7 @@ def get_weather_list(location):
 	data = pywapi.get_weather_from_weather_com(code)
 	current = data['current_conditions']
 	nextday = data['forecasts'][1]
-	rs = ['Current weather at %s.' % data['location']['name'],
+	rs = ['%s.' % data['location']['name'],
 		'Temperature %s.' % current['temperature'],
 		'Humidity %s.' % current['humidity'],
 		'Wind %d meter per second' % (int(current['wind']['speed']) * 1000 // 3600),
