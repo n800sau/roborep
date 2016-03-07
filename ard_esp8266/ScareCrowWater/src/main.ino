@@ -3,16 +3,21 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <Ticker.h>
+#include <Servo.h> 
 
 #include "config.h"
 
 const char* ssid	 = SSID;
 const char* password = PASSWORD;
 
+#define PAN_SERVO_PIN   12
+#define TILT_SERVO_PIN  14
+
 #define PUMP_PIN 4
 
 #define LED_PIN 2
 
+#define DBG_SERIAL Serial
 
 Ticker blinker;
 Ticker pumper;
@@ -22,17 +27,20 @@ ESP8266WebServer server(80);
 volatile int blinking_times = 0;
 volatile int blinking_state = 0;
 
+Servo pan_servo;  // create servo object to control a servo 
+Servo tilt_servo; // twelve servo objects can be created on most boards
+
 
 // attention! delays in tickers crash
 void blinking()
 {
 	if(blinking_times > 0) {
 		if(blinking_state) {
-			Serial.println("led off");
+			DBG_SERIAL.println("led off");
 			digitalWrite(LED_PIN, LOW);
 			blinking_times--;
 		} else {
-			Serial.println("led on");
+			DBG_SERIAL.println("led on");
 			digitalWrite(LED_PIN, HIGH);
 		}
 		blinking_state = !blinking_state;
@@ -57,41 +65,74 @@ void handleScare()
 	blink(1);
 }
 
+void handlePan()
+{
+	String p = server.arg("pos");
+	int pos = (p == "") ? 90 : p.toInt();
+	if(pos < 0) {
+		pos = 0;
+	} else if(pos > 180) {
+		pos = 180;
+	}
+	pan_servo.write(pos);
+	server.send(200, "text/plain", "Ok");
+	blink(1);
+}
+
+void handleTilt()
+{
+	String p = server.arg("pos");
+	int pos = (p == "") ? 90 : p.toInt();
+	if(pos < 0) {
+		pos = 0;
+	} else if(pos > 180) {
+		pos = 180;
+	}
+	tilt_servo.write(pos);
+	server.send(200, "text/plain", "Ok");
+	blink(1);
+}
 
 void setup()
 {
-	Serial.begin(115200);
+	DBG_SERIAL.begin(115200, SERIAL_8N1, SERIAL_FULL);
+	DBG_SERIAL.setDebugOutput(true);
 	pinMode(PUMP_PIN, OUTPUT);
 	digitalWrite(PUMP_PIN, LOW);
 
 	// Connect to WiFi network
 	WiFi.begin(ssid, password);
-	Serial.print("\n\r \n\rWorking to connect");
+	DBG_SERIAL.print("\n\r \n\rWorking to connect");
+
+	pan_servo.attach(PAN_SERVO_PIN);
+	pan_servo.attach(TILT_SERVO_PIN);
 
 	// Wait for connection
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(500);
-		Serial.print(".");
+		DBG_SERIAL.print(".");
 	}
-	Serial.println("");
-	Serial.print("Connected to ");
-	Serial.println(ssid);
-	Serial.println("IP addresses: ");
-	Serial.println(WiFi.localIP());
+	DBG_SERIAL.println("");
+	DBG_SERIAL.print("Connected to ");
+	DBG_SERIAL.println(ssid);
+	DBG_SERIAL.println("IP addresses: ");
+	DBG_SERIAL.println(WiFi.localIP());
 
 	blink(1);
 
 	if (!MDNS.begin("scarecrowwater")) {
-		Serial.println("Error setting up mDNS responder!");
+		DBG_SERIAL.println("Error setting up mDNS responder!");
 	} else {
-		Serial.println("mDNS responder started");
+		DBG_SERIAL.println("mDNS responder started");
 		MDNS.addService("http", "tcp", 80);
 	}
 
 	server.on("/", handleRoot);
 	server.on("/scare", HTTP_GET, handleScare);
+	server.on("/tilt", HTTP_GET, handleTilt);
+	server.on("/pan", HTTP_GET, handlePan);
 	server.begin();
-	Serial.println("HTTP server started");
+	DBG_SERIAL.println("HTTP server started");
 
 	pumper.attach(1, pumping);
 	blinker.attach(0.3, blinking);
@@ -111,8 +152,8 @@ void pumping()
 				digitalWrite(PUMP_PIN, LOW);
 				break;
 		}
-		Serial.print("Stage ");
-		Serial.println(pump_stage);
+		DBG_SERIAL.print("Stage ");
+		DBG_SERIAL.println(pump_stage);
 		pump_stage++;
 		if(pump_stage >= 2) {
 			pump_stage = 0;
@@ -123,9 +164,9 @@ void pumping()
 
 void start_pump(int n)
 {
-	Serial.print("Pump ");
-	Serial.print(n);
-	Serial.println(" times");
+	DBG_SERIAL.print("Pump ");
+	DBG_SERIAL.print(n);
+	DBG_SERIAL.println(" times");
 	pump_stage = 0;
 	n_loops = n;
 }
