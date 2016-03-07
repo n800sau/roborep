@@ -9,6 +9,11 @@ import redis
 import traceback
 from get_weather import get_weather_list
 
+MODEL = 'NEC'
+OWN_WEATHER = 0xfd4ab5
+OUTER_WEATHER = 0xfd0af5
+IRCODE_LIST = (OWN_WEATHER, OUTER_WEATHER)
+
 def get_last_data():
 	r = redis.Redis('192.168.2.80')
 	data = r.hgetall('dht11_garage')
@@ -36,7 +41,7 @@ while True:
 		data = sock.recv(1000)
 		data = json.loads(data)
 		print 'encoding:%s, value:0x%4.4x' % (data['encoding'], data['ircode'])
-		if data['encoding'] == 'SONY' and data['ircode'] in (0x290, 0x291):
+		if data['encoding'] == MODEL and data['ircode'] in IRCODE_LIST:
 			if last_time is None or last_time + 2 < time.time():
 				print 'Pass'
 				if not p is None:
@@ -45,15 +50,15 @@ while True:
 				last_time = time.time()
 				nullf = file('/dev/null', 'w')
 				text = None
-				if data['ircode'] == 0x290:
+				if data['ircode'] == OWN_WEATHER:
 					last_data = get_last_data()
 					timestamp = time.localtime(last_data['timestamp'])
 					text = 'At %d hour, %d minutes, the temperature outside is %d degrees, humidity is %d' % (
 						timestamp.tm_hour, timestamp.tm_min, last_data['t'], last_data['h'])
-				elif data['ircode'] == 0x291:
-					text = '\n'.join(get_weather_list('Kirrawee'))
+				elif data['ircode'] == OUTER_WEATHER:
+					text = '.\n'.join(get_weather_list('Kirrawee'))
 				if text:
-					p = subprocess.Popen(['espeak', text], stdout=nullf, stderr=nullf)
+					p = subprocess.Popen(['espeak', '-s', '150', text], stdout=nullf, stderr=nullf)
 			else:
 				print 'Too soon'
 		else:
