@@ -47,6 +47,7 @@ while True:
 				if not p is None:
 					p.wait()
 					p = None
+					paplay.wait()
 				last_time = time.time()
 				nullf = file('/dev/null', 'w')
 				text = None
@@ -58,7 +59,8 @@ while True:
 				elif data['ircode'] == OUTER_WEATHER:
 					text = '.\n'.join(get_weather_list('Kirrawee'))
 				if text:
-					p = subprocess.Popen(['espeak', '-s', '150', text], stdout=nullf, stderr=nullf)
+					paplay = subprocess.Popen(['paplay'], stdout=nullf, stderr=nullf, stdin=subprocess.PIPE)
+					p = subprocess.Popen(['espeak', '-s', '150', text, '--stdout'], stdout=paplay.stdout, stderr=nullf)
 			else:
 				print 'Too soon'
 		else:
