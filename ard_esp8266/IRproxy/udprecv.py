@@ -6,7 +6,6 @@ import json
 import subprocess
 import time
 import redis
-import alsaaudio
 import traceback
 from get_weather import get_weather_list
 
@@ -50,15 +49,9 @@ if __name__ == '__main__':
 				if last_time is None or last_time + 2 < time.time():
 					print 'Pass'
 					if data['ircode'] == VOL_UP:
-						m = alsaaudio.Mixer()
-						vol = m.getvolume() + 5
-						print 'set volume %d' % vol
-						m.setvolume(vol)
+						subprocess.call(["amixer", "-D", "pulse", "sset", "Master", "5%+"])
 					elif data['ircode'] == VOL_DOWN:
-						m = alsaaudio.Mixer()
-						vol = m.getvolume() - 5
-						print 'set volume %d' % vol
-						m.setvolume(vol)
+						subprocess.call(["amixer", "-D", "pulse", "sset", "Master", "5%-"])
 					else:
 						if not p is None:
 							p.wait()
