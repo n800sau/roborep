@@ -35,6 +35,7 @@ sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 last_time = None
 p = None
+paplay = None
 while True:
 	try:
 		print 'Waiting...'
@@ -45,9 +46,9 @@ while True:
 			if last_time is None or last_time + 2 < time.time():
 				print 'Pass'
 				if not p is None:
+					paplay.wait()
 					p.wait()
 					p = None
-					paplay.wait()
 				last_time = time.time()
 				nullf = file('/dev/null', 'w')
 				text = None
@@ -59,8 +60,10 @@ while True:
 				elif data['ircode'] == OUTER_WEATHER:
 					text = '.\n'.join(get_weather_list('Kirrawee'))
 				if text:
-					paplay = subprocess.Popen(['paplay'], stdout=nullf, stderr=nullf, stdin=subprocess.PIPE)
-					p = subprocess.Popen(['espeak', '-s', '150', text, '--stdout'], stdout=paplay.stdout, stderr=nullf)
+					cmdlst = ['espeak', '-s', '150', text, '--stdout']
+					print json.dumps(cmdlst, indent=2)
+					p = subprocess.Popen(cmdlst, stdout=subprocess.PIPE)
+					paplay = subprocess.Popen(['aplay', '-v'], stdout=nullf, stdin=p.stdout)
 			else:
 				print 'Too soon'
 		else:
