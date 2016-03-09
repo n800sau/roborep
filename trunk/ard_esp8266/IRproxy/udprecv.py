@@ -12,8 +12,8 @@ from get_weather import get_weather_list
 MODEL = 'NEC'
 OWN_WEATHER = 0xfd4ab5
 OUTER_WEATHER = 0xfd0af5
-VOL_UP = 0xfd0001
-VOL_DOWN = 0xfd0002
+VOL_UP = 0xfdb04f
+VOL_DOWN = 0xfd8877
 IRCODE_LIST = (OWN_WEATHER, OUTER_WEATHER, VOL_UP, VOL_DOWN)
 
 def get_last_data():
