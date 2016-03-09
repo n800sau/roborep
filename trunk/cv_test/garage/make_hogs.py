@@ -9,7 +9,9 @@ from skimage import feature
 from skimage import exposure
 import numpy as np
 
+
 ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
+#ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony')
 
 def find_orig_file(fn):
 	#00D6FB009223(n800sau)_1_20160217173337_26871.jpg
@@ -20,11 +22,17 @@ def find_orig_file(fn):
 
 def car_crop(image):
 	return image
+# to use car root area only
 #	return image[90:, 70:270]
 
 def process_image(fname, mask=None):
+	print fname,
 	bname = os.path.basename(fname)
+	print '>', bname,
 	image = cv2.imread(fname)
+	print ',', image.shape
+	if image.shape[0] * image.shape[1] > 640 * 480:
+		image = imutils.resize(image, height=480)
 	H = _process_image(image)
 #	(H, hogImage) = _process_image(image)
 #	hogImage = exposure.rescale_intensity(hogImage, out_range=(0, 255))
@@ -44,16 +52,16 @@ if __name__ == '__main__':
 
 	time_mark = int(time.time())
 
-	img_path = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-21')
+	img_path = os.path.join(ROOT_PATH, '2014-10_01')
 	out_path = os.path.join(os.path.dirname(__file__), 'output')
 
 	SAMPLE_FNAME = 'sample.json'
 
-	if os.path.exists(SAMPLE_FNAME):
-		flist = json.load(file(SAMPLE_FNAME))
-	else:
-		flist = glob.glob(os.path.join(img_path, '*.jpg'))
-		json.dump(flist, file(SAMPLE_FNAME, 'w'), indent=2)
+#	if os.path.exists(SAMPLE_FNAME):
+#		flist = json.load(file(SAMPLE_FNAME))
+#	else:
+	flist = glob.glob(os.path.join(img_path, '*.jpg'))
+	json.dump(flist, file(SAMPLE_FNAME, 'w'), indent=2)
 
 	i = 0
 	for fn in flist:

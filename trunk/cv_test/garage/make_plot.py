@@ -5,20 +5,20 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+from misc import fname2dt, fname2dt_exc
 
 img_path = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
 
 plt.hold(False)
-for dname in glob.glob(os.path.join(img_path, '201*-*-*')):
+for dname in glob.glob(os.path.join(img_path, '2016-03-*')):
 	tvals = {}
 	for fname in glob.glob(os.path.join(dname, '*(n800sau)*_*.jpg')):
-#		00D6FB009223(n800sau)_1_20151202020654_2294.jpg
-		bname = os.path.basename(fname)
-		match = re.match(r'^.+\(n800sau\)_\d_(\d{14})_\d{4}\.jpg$', bname)
-		if not match is None:
-			ts = datetime.datetime.strptime(match.groups()[0], '%Y%m%d%H%M%S')
+		try:
+			ts = fname2dt(fname)
 			ts.hour
 			tvals[ts.hour] = tvals.get(ts.hour, 0) + 1
+		except fname2dt_exc:
+			pass
 	hours = range(1, 25)
 	hist = []
 	for h in hours:

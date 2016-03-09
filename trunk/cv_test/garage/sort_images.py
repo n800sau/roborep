@@ -11,50 +11,59 @@ from sklearn.cluster import KMeans
 import numpy as np
 import mahotas
 from make_hogs import process_image
+from misc import fname2dt, fname2dt_exc
 
-IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-16')
+#IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-16')
+IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony/2014-10_01')
 
 time_mark = int(time.time())
 
 LEVELS = 3
 
-MAX_NFILES = 1000
+MAX_NFILES = 50
+
+# recursive sorting of images using hog
 
 def fill_a_level(shf, subdir, flist):
 
-	hog_path = 'hog'
+	if len(flist) > 1:
 
-	fnames = []
+		hog_path = 'hog'
 
-	featurelist = []
+		fnames = []
 
-	processed = []
-	for fn in flist:
-		bname = os.path.basename(fn)
-		hogname = os.path.join(hog_path, bname + '.hog')
-		if os.path.exists(hogname):
-			f = json.load(file(hogname))
-		else:
-			print 'Not Found !!!!!!!!!!!!!!!!!!!!!!!'
-			f = process_image(fn)
-		featurelist.append(f)
-		processed.append(os.path.basename(fn))
+		featurelist = []
 
-	clt = KMeans(n_clusters=2)
-	clt.fit(featurelist)
+		processed = []
+		for fn in flist:
+			bname = os.path.basename(fn)
+			print bname
+			hogname = os.path.join(hog_path, bname + '.hog')
+			if os.path.exists(hogname):
+				f = json.load(file(hogname))
+			else:
+				print 'Not Found !!!!!!!!!!!!!!!!!!!!!!!'
+				f = process_image(fn)
+			featurelist.append(f)
+			processed.append(os.path.basename(fn))
 
-	slabels = set(clt.labels_)
+		clt = KMeans(n_clusters=2)
+		clt.fit(featurelist)
 
-	files = dict([(l, []) for l in slabels])
+		slabels = set(clt.labels_)
 
-	for label,fn in zip(clt.labels_, processed):
-		files[label].append(fn)
+		files = dict([(l, []) for l in slabels])
 
-	for label,lfn in files.items():
-		ddir = os.path.join(subdir, str(label))
-		print >>shf, 'mkdir %s' % ddir
-		for bname in lfn:
-			print >>shf, 'ln \'%s\' \'%s/%s\'' % (bname, ddir, bname)
+		for label,fn in zip(clt.labels_, processed):
+			files[label].append(fn)
+
+		for label,lfn in files.items():
+			ddir = os.path.join(subdir, str(label))
+			print >>shf, 'mkdir %s' % ddir
+			for bname in lfn:
+				print >>shf, 'ln \'%s\' \'%s/%s\'' % (bname, ddir, bname)
+	else:
+		files = []
 	return files
 
 def loop_a_level(shf, subdir, levels, flist):
