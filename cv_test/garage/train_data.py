@@ -43,7 +43,7 @@ def get_hog_data():
 if __name__ == '__main__':
 
 
-	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-22')
+	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-23')
 	DST_PATH = os.path.expanduser('output/images/predict')
 
 	hdata = get_hog_data()
@@ -79,10 +79,13 @@ if __name__ == '__main__':
 	model = LogisticRegression()
 #	model = KNeighborsClassifier(n_neighbors=kVals[i])
 	model.fit(trainData, trainLabels)
-#	mfname = 'models/knc.pkl'
-#	joblib.dump(model, mfname)
+	mfname = 'models/knc.pkl'
+	joblib.dump(model, mfname)
 
-#	model = joblib.load(mfname)
+
+
+
+	model = joblib.load(mfname)
 
 #	predictions = model.predict(testData)
 
