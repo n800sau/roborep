@@ -1,7 +1,9 @@
 #!/bin/bash
 
+cd /home/n800s/work/roborep/ard_esp8266/IRproxy
+
 cur_dir=`pwd`
 
-python "${cur_dir}/udprecv.py" &> ${cur_dir}/run.log &
+/usr/bin/python "${cur_dir}/udprecv.py" &> ${cur_dir}/run.log &
 
 echo $?
