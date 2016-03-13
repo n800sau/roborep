@@ -11,8 +11,8 @@ VOL_UP = 0xfdb04f
 VOL_DOWN = 0xfd8877
 
 #IRCODE = OWN_WEATHER
-#IRCODE = VOL_DOWN
-IRCODE = VOL_UP
+IRCODE = VOL_DOWN
+#IRCODE = VOL_UP
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
