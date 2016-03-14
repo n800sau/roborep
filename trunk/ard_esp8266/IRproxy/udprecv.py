@@ -68,7 +68,6 @@ if __name__ == '__main__':
 			data = json.loads(data)
 			dbprint('encoding:%s, value:0x%4.4x' % (data['encoding'], data['ircode']))
 			if data['encoding'] == MODEL and data['ircode'] in IRCODE_LIST:
-				subprocess.call(['beep', '-f', '555', '-l', '460'])
 				if last_time is None or last_time + 2 < time.time():
 					dbprint('Pass')
 					if data['ircode'] == VOL_UP:
@@ -76,6 +75,7 @@ if __name__ == '__main__':
 					elif data['ircode'] == VOL_DOWN:
 						subprocess.call(["amixer", "-D", "pulse", "sset", "Master", "5%-"])
 					else:
+						subprocess.call(['aplay', 'beep.wav'])
 						if not p is None:
 							p.wait()
 							p = None
