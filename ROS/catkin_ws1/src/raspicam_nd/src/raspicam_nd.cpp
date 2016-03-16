@@ -36,6 +36,7 @@ namespace raspicam_nd
 		private:
 			virtual void onInit()
 			{
+				NODELET_DEBUG("RaspiCamNd onInit start");
 				ros::NodeHandle &nh = getNodeHandle();
 				ros::NodeHandle &private_nh = getPrivateNodeHandle();
 
@@ -48,7 +49,8 @@ namespace raspicam_nd
 				ros::SubscriberStatusCallback connect_cb = boost::bind(&RaspiCamNd::connectCb, this);
 				// Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
-				pub = it->advertiseCamera("image_raw", 1);
+				image_transport::SubscriberStatusCallback image_cb = boost::bind(&RaspiCamNd::connectCb, this);
+				pub = it->advertiseCamera("image_raw", 1, image_cb, image_cb);
 			}
 
 			// Handles (un)subscribing when clients (un)subscribe
@@ -56,10 +58,13 @@ namespace raspicam_nd
 			{
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
 				if (pub.getNumSubscribers() == 0) {
-					if(camera_cv.isOpened())
+					if(camera_cv.isOpened()) {
+						NODELET_DEBUG("RaspiCamNd Disconnect callback!");
 						camera_cv.release();
+					}
 				} else {
 					if(!camera_cv.isOpened()) {
+						NODELET_DEBUG("RaspiCamNd Connect callback!");
 						ros::NodeHandle &nh = getNodeHandle();
 						ros::NodeHandle &private_nh = getPrivateNodeHandle();
 						int fps;
