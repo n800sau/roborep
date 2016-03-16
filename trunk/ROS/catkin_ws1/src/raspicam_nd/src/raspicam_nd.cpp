@@ -68,11 +68,16 @@ namespace raspicam_nd
 						NODELET_DEBUG("RaspiCamNd Connect callback!");
 						ros::NodeHandle &nh = getNodeHandle();
 						ros::NodeHandle &private_nh = getPrivateNodeHandle();
-						int fps;
+						int fps, width, height;
 						private_nh.param("fps", fps, 10);
 						private_nh.param<std::string>("color_mode", color_mode, "rgb8");
+						private_nh.param("width", width, 320);
+						private_nh.param("height", height, 240);
 						camera_cv.set(CV_CAP_PROP_FORMAT, color_mode_map[color_mode]);
 						camera_cv.set(CV_CAP_PROP_FPS, fps);
+						camera_cv.set(CV_CAP_PROP_FRAME_WIDTH, width);
+						camera_cv.set(CV_CAP_PROP_FRAME_HEIGHT, height);
+						NODELET_DEBUG_STREAM("fps set to " << fps << ", color_mode: " << color_mode << ", size: " << width << "x" << height);
 						if(!camera_cv.open())
 							ROS_ERROR("Error opening camera");
 						sleep(3);

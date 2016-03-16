@@ -1,8 +1,12 @@
 <launch>
-  <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
+	<node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
 
-  <node pkg="nodelet" type="nodelet" name="RaspiCamNd" args="load raspicam_nd/RaspiCamNd standalone_nodelet" output="screen">
-  </node>
+	<node pkg="nodelet" type="nodelet" name="RaspiCamNd" args="load raspicam_nd/RaspiCamNd standalone_nodelet" output="screen">
+		<param name="fps" type="int" value="5"/>
+		<param name="color_mode" type="str" value="mono8"/>
+		<param name="width" type="int" value="2560"/>
+		<param name="height" type="int" value="1920"/>
+	</node>
 
 </launch>
 
