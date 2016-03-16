@@ -59,6 +59,7 @@ namespace raspicam_nd
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
 				if (pub.getNumSubscribers() == 0) {
 					if(camera_cv.isOpened()) {
+						timer_.stop();
 						NODELET_DEBUG("RaspiCamNd Disconnect callback!");
 						camera_cv.release();
 					}
