@@ -1,0 +1,7 @@
+<library path="lib/libraspicam_nd">
+  <class name="raspicam_nd/RaspiCamNd" type="raspicam_nd::RaspiCamNd" base_class_type="nodelet::Nodelet">
+    <description>
+      To capture using raspicam
+    </description>
+  </class>
+</library>
