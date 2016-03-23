@@ -1,3 +1,6 @@
-#redis-cli publish raspiCamServant '{"cmd": "start_camera"}'
-redis-cli publish raspiCamServant '{"cmd": "find_markers", "path": "/home/n800s/public_html/rcam.jpg", "draw_markers": true}'
+redis-cli publish raspiCamServant '{"cmd": "start_camera"}'
+#redis-cli publish raspiCamServant '{"cmd": "find_markers", "path": "/home/n800s/public_html/rcam.jpg", "draw_markers": true}'
+#redis-cli publish raspiCamServant '{"cmd": "make_shot", "path": "/home/n800s/public_html/rcam.jpg"}'
+#redis-cli publish raspiCamServant '{"cmd": "make_shot", "path": "/home/n800s/work/robotarr-code/lib/raspiCamServant/rcam.jpg"}'
+redis-cli publish raspiCamServant '{"cmd": "make_shot", "path": "redis:image"}'
 redis-cli publish raspiCamServant '{"cmd": "stop_camera"}'

@@ -1,5 +1,5 @@
 CC=g++
-CCOPTS=-I/usr/include/hiredis -I../ReServant -L/opt/vc/lib 
+CCOPTS=-I/usr/local/include -I/usr/include/hiredis -I../ReServant -L/opt/vc/lib -L/usr/local/lib
 STRIP=-strip
 SRCS=raspiCamServantd.cpp raspiCamServant.cpp
 OBJECTS=raspiCamServantd.o raspiCamServant.o
@@ -50,26 +50,6 @@ raspiCamServant.o: /usr/include/event2/event-config.h /usr/include/stdint.h
 raspiCamServant.o: /usr/include/netdb.h /usr/include/netinet/in.h
 raspiCamServant.o: /usr/include/endian.h /usr/include/rpc/netdb.h
 raspiCamServant.o: /usr/include/time.h /usr/include/xlocale.h
-raspiCamServant.o: /usr/include/event2/bufferevent.h /usr/include/opencv/cv.h
-raspiCamServant.o: /usr/include/opencv2/core/core_c.h
-raspiCamServant.o: /usr/include/opencv2/core/types_c.h /usr/include/assert.h
-raspiCamServant.o: /usr/include/string.h /usr/include/math.h
-raspiCamServant.o: /usr/include/opencv2/core/core.hpp
-raspiCamServant.o: /usr/include/opencv2/core/version.hpp
-raspiCamServant.o: /usr/include/opencv2/core/operations.hpp
-raspiCamServant.o: /usr/include/limits.h /usr/include/opencv2/core/mat.hpp
-raspiCamServant.o: /usr/include/opencv2/imgproc/imgproc_c.h
-raspiCamServant.o: /usr/include/opencv2/imgproc/types_c.h
-raspiCamServant.o: /usr/include/opencv2/imgproc/imgproc.hpp
-raspiCamServant.o: /usr/include/opencv2/video/tracking.hpp
-raspiCamServant.o: /usr/include/opencv2/features2d/features2d.hpp
-raspiCamServant.o: /usr/include/opencv2/flann/miniflann.hpp
-raspiCamServant.o: /usr/include/opencv2/flann/flann.hpp
-raspiCamServant.o: /usr/include/opencv2/calib3d/calib3d.hpp
-raspiCamServant.o: /usr/include/opencv2/objdetect/objdetect.hpp
-raspiCamServant.o: /usr/include/opencv2/legacy/compat.hpp
-raspiCamServant.o: /usr/include/opencv/highgui.h
-raspiCamServant.o: /usr/include/opencv2/highgui/highgui_c.h
-raspiCamServant.o: /usr/include/opencv2/highgui/highgui.hpp
-raspiCamServant.o: /usr/include/unistd.h /usr/include/getopt.h
+raspiCamServant.o: /usr/include/event2/bufferevent.h /usr/include/unistd.h
+raspiCamServant.o: /usr/include/getopt.h /usr/include/math.h
 raspiCamServant.o: /usr/include/syslog.h
