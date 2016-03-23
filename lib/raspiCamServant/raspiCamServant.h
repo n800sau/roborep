@@ -6,8 +6,9 @@
 #include <aruco/aruco.h>
 #include <raspicam/raspicam_cv.h>
 #include <raspicam/raspicam_still_cv.h>
+#include "opencv2/video/video.hpp"
 
-enum RTYPE { RT_NONE, RT_MARKERS, RT_SHOT };
+enum RTYPE { RT_NONE, RT_MARKERS, RT_SHOT, RT_VIDEO };
 
 class raspiCamServant:public ReServant
 {
@@ -23,6 +24,7 @@ class raspiCamServant:public ReServant
 		const char *cam_yml;
 		vector<aruco::Marker> markers;
 		RTYPE reply_type;
+		cv::VideoWriter *pwriter;
 
 	protected:
 		virtual void loop();
@@ -32,6 +34,8 @@ class raspiCamServant:public ReServant
 		void start_camera(json_t *js=NULL);
 		void stop_camera(json_t *js=NULL);
 		void make_shot(json_t *js=NULL);
+		void start_video(json_t *js=NULL);
+		void stop_video(json_t *js=NULL);
 
 	public:
 		raspiCamServant(const char *cam_yml=NULL);

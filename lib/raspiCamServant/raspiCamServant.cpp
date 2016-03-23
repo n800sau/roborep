@@ -33,13 +33,15 @@ struct RASPICAM_CMD_FUNC:public CMD_FUNC {
 typedef RASPICAM_CMD_FUNC *pRASPICAM_CMD_FUNC;
 
 raspiCamServant::raspiCamServant(const char *cam_yml):
-ReServant("raspiCamServant"),markerSize(0.03),cam_yml(cam_yml),reply_type(RT_NONE)
+ReServant("raspiCamServant"),markerSize(0.03),cam_yml(cam_yml),reply_type(RT_NONE),pwriter(NULL)
 {
 	const static pRASPICAM_CMD_FUNC cmdlist[] = {
 		new RASPICAM_CMD_FUNC("find_markers", &raspiCamServant::find_markers),
 		new RASPICAM_CMD_FUNC("start_camera", &raspiCamServant::start_camera),
 		new RASPICAM_CMD_FUNC("stop_camera", &raspiCamServant::stop_camera),
 		new RASPICAM_CMD_FUNC("make_shot", &raspiCamServant::make_shot),
+		new RASPICAM_CMD_FUNC("start_video", &raspiCamServant::start_video),
+		new RASPICAM_CMD_FUNC("stop_video", &raspiCamServant::stop_video),
 	};
 	this->setCmdList((pCMD_FUNC *)cmdlist, sizeof(cmdlist)/sizeof(cmdlist[0]));
 }
@@ -85,8 +87,8 @@ bool raspiCamServant::fill_json(json_t *js, int list_id)
 					json_object_set_new(mjs, "coords", rjsl);
 					json_object_set_new(mjs, "id", json_integer((*m).id));
 					json_object_set_new(mjs, "size", json_real((*m).ssize));
-					json_object_set_new(mjs, "width", json_integer(CAMERA_WIDTH));
-					json_object_set_new(mjs, "height", json_integer(CAMERA_HEIGHT));
+					json_object_set_new(mjs, "width", json_integer(camera.get(CV_CAP_PROP_FRAME_WIDTH)));
+					json_object_set_new(mjs, "height", json_integer(camera.get(CV_CAP_PROP_FRAME_HEIGHT)));
 					json_array_append(mjsl, mjs);
 				}
 				json_object_set_new(js, "markers", mjsl);
@@ -102,6 +104,12 @@ bool raspiCamServant::fill_json(json_t *js, int list_id)
 
 void raspiCamServant::loop()
 {
+	if(pwriter) {
+		cv::Mat image;
+		camera.grab();
+		camera.retrieve(image);
+		pwriter->write(image);
+	}
 	ReServant::loop();
 }
 
@@ -156,12 +164,47 @@ void raspiCamServant::make_shot(json_t *js)
 		camera.grab();
 		camera.retrieve(image);
 		syslog(LOG_NOTICE, "captured dim: %dx%d", image.cols, image.rows);
-		cv::imwrite(imgpath, image);
+		if(strncmp(imgpath, "redis:", 6) == 0) {
+			vector<uchar> v;
+			cv::imencode(".jpg", image, v);
+			uchar *buf = new uchar[v.size()];
+			std::copy(v.begin(), v.end(), buf);
+			redisCommand(redis, "SET %s %b", (imgpath + 6), buf, v.size());
+		} else {
+			cv::imwrite(imgpath, image);
+		}
 		// push image path to redis queue
 		json2redislist();
 	} catch (std::exception &ex) {
 		reply_type = RT_NONE;
 		syslog(LOG_ERR, "Exception : %s", ex.what());
+	}
+}
+
+void raspiCamServant::start_video(json_t *js)
+{
+	if(!camera.isOpened()) {
+		start_camera(js);
+	}
+	const char *avipath = json_string_value(json_object_get(js, "path"));
+	reply_type = RT_VIDEO;
+	double fps = json_number_value(json_object_get(js, "fps"));
+	if( fps == 0 ) fps = 25;
+	setLoopInterval(1./fps);
+	cv::Size sz = cv::Size(camera.get(CV_CAP_PROP_FRAME_WIDTH), camera.get(CV_CAP_PROP_FRAME_HEIGHT));
+	pwriter = new cv::VideoWriter(avipath, CV_FOURCC('X','V','I','D'), fps, sz);
+	if(!pwriter) {
+		reply_type = RT_NONE;
+		syslog(LOG_ERR, "Could not open the output video to write: %s", avipath);
+	}
+}
+
+void raspiCamServant::stop_video(json_t *js)
+{
+	if(pwriter) {
+		delete pwriter;
+		pwriter = NULL;
+		setLoopInterval();
 	}
 }
 
@@ -200,14 +243,18 @@ void raspiCamServant::find_markers(json_t *js)
 		//Ok, let's detect
 		mDetector.detect(image, markers, camParam, markerSize);
 
-		if(image.cols > 300 && image.rows > 300) {
-			int roi_w = image.cols / 4;
-			int roi_h = image.rows / 4;
-			const int x_step = roi_w / 3;
-			const int y_step = roi_h / 3;
+		if(image.cols > 320 && image.rows > 240) {
+			int roi_w = 320;
+			int roi_h = 240;
+			const int x_step = 50;
+			const int y_step = 50;
 			for(int x=0; x<image.cols; x+=x_step) {
 				for(int y=0; y<image.rows; y+=y_step) {
 					cv::Mat subimage(image, cv::Rect(x, y, std::min(image.cols-x, roi_w), std::min(image.rows-y, roi_h)));
+//					char *buf = (char*)malloc(strlen(imgpath) + 100);
+//					snprintf(buf, strlen(imgpath) + 100, "%s.%dx%d.png", imgpath, x, y);
+//					cv::imwrite(buf, subimage);
+//					free(buf);
 					printf("Sub Dim: (%d,%d) %dx%d\n", x, y, subimage.cols, subimage.rows);
 					vector<aruco::Marker> submarkers;
 					mDetector.detect(subimage, submarkers, camParam, markerSize);
