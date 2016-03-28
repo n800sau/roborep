@@ -16,7 +16,8 @@ OWN_WEATHER = 0xfd4ab5
 OUTER_WEATHER = 0xfd0af5
 VOL_UP = 0xfdb04f
 VOL_DOWN = 0xfd8877
-IRCODE_LIST = (OWN_WEATHER, OUTER_WEATHER, VOL_UP, VOL_DOWN)
+WATER_SPIT = 0xd
+IRCODE_LIST = (OWN_WEATHER, OUTER_WEATHER, VOL_UP, VOL_DOWN, WATER_SPIT)
 
 MCAST_GRP = '239.0.0.57'
 MCAST_PORT = 12345
@@ -71,9 +72,11 @@ if __name__ == '__main__':
 				if last_time is None or last_time + 2 < time.time():
 					dbprint('Pass')
 					if data['ircode'] == VOL_UP:
-						subprocess.call(["amixer", "-D", "pulse", "sset", "Master", "5%+"])
+						subprocess.call(["amixer", "-D", "pulse", "sset", "Master", "5%+"], close_fds=True)
 					elif data['ircode'] == VOL_DOWN:
-						subprocess.call(["amixer", "-D", "pulse", "sset", "Master", "5%-"])
+						subprocess.call(["amixer", "-D", "pulse", "sset", "Master", "5%-"], close_fds=True)
+					elif data['ircode'] == WATER_SPIT:
+						subprocess.Popen(["curl", "http://scarecrowwater.local/scare"], close_fds=True)
 					else:
 						subprocess.call(['aplay', 'beep.wav'])
 						if not p is None:
