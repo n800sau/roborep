@@ -10,14 +10,7 @@ import time
 import redis
 import traceback
 from get_weather import get_weather_list
-
-MODEL = 'NEC'
-OWN_WEATHER = 0xfd4ab5
-OUTER_WEATHER = 0xfd0af5
-VOL_UP = 0xfdb04f
-VOL_DOWN = 0xfd8877
-WATER_SPIT = 0xd
-IRCODE_LIST = (OWN_WEATHER, OUTER_WEATHER, VOL_UP, VOL_DOWN, WATER_SPIT)
+from nec_codes import *
 
 MCAST_GRP = '239.0.0.57'
 MCAST_PORT = 12345
