@@ -18,6 +18,7 @@
 #include <boost/unordered_map.hpp>
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
+#include <ros/package.h>
 
 using namespace raspicam;
 
@@ -42,8 +43,16 @@ namespace raspicam_nd
 
 				it.reset(new image_transport::ImageTransport(nh));
 
-				camera_name = nh.getNamespace();
-				cinfo.reset(new camera_info_manager::CameraInfoManager(nh, camera_name));
+//				camera_name = nh.getNamespace();
+//				NODELET_DEBUG_STREAM("Camera name: " << camera_name);
+//				cinfo.reset(new camera_info_manager::CameraInfoManager(nh, camera_name));
+				cinfo.reset(new camera_info_manager::CameraInfoManager(nh, "pi_camera"));
+
+				std::string url;
+				private_nh.param<std::string>("camera_info_url", url, "file://" + ros::package::getPath("raspicam_nd") + "/pi_camera.yaml");
+//				private_nh.param<std::string>("camera_info_url", url, "");
+				NODELET_DEBUG_STREAM("YAML url: " << url);
+				cinfo->loadCameraInfo(url);
 
 				// Monitor whether anyone is subscribed to the output
 				ros::SubscriberStatusCallback connect_cb = boost::bind(&RaspiCamNd::connectCb, this);
@@ -73,6 +82,7 @@ namespace raspicam_nd
 						private_nh.param<std::string>("color_mode", color_mode, "rgb8");
 						private_nh.param("width", width, 320);
 						private_nh.param("height", height, 240);
+
 						camera_cv.set(CV_CAP_PROP_FORMAT, color_mode_map[color_mode]);
 						camera_cv.set(CV_CAP_PROP_FPS, fps);
 						camera_cv.set(CV_CAP_PROP_FRAME_WIDTH, width);
@@ -83,7 +93,7 @@ namespace raspicam_nd
 						sleep(3);
 						camera_cv.grab();
 
-						timer_ = nh.createTimer(ros::Duration(1.0 / fps), boost::bind(&RaspiCamNd::timerCb, this, _1));
+						timer_ = nh.createTimer(ros::Duration(0.5 / fps), boost::bind(&RaspiCamNd::timerCb, this, _1));
 					}
 				}
 			}
