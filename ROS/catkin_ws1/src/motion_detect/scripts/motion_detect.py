@@ -14,11 +14,14 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 
-class motion_detector:
+class motion_detector(rospy.SubscribeListener):
 
 	def __init__(self):
-		self.thresh_pub = rospy.Publisher("/thresh/image_raw", Image, queue_size=1)
-		self.motion_pub = rospy.Publisher("/motion/image_raw", Image, queue_size=1)
+
+		self.thresh_pub = rospy.Publisher("/thresh/image_raw", Image, queue_size=1, subscriber_listener=self)
+		self.motion_pub = rospy.Publisher("/motion/image_raw", Image, queue_size=1, subscriber_listener=self)
+
+		self.peers = []
 
 		self.frames = []
 		self.avg = None
@@ -31,7 +34,25 @@ class motion_detector:
 		self.delta_thresh = rospy.get_param('~delta_thresh', 5)
 
 		self.bridge = CvBridge()
-		self.image_sub = rospy.Subscriber("/camera/image_raw", Image, self.callback)
+		self.image_sub = None
+
+	def peer_subscribe(self, topic_name, topic_publish, peer_publish):
+		if self.image_sub is None:
+			self.image_sub = rospy.Subscriber("/camera/image_raw", Image, self.callback)
+			rospy.loginfo('Subscribe')
+			self.peers = 1
+		else:
+			self.peers += 1
+		rospy.loginfo('N peers: %d' % self.peers)
+
+	def peer_unsubscribe(self, topic_name, num_peers):
+		if not self.image_sub is None:
+			self.peers -= 1
+		if self.peers == 0:
+			self.image_sub.unregister()
+			self.image_sub = None
+			rospy.loginfo('Unsubscribe')
+		rospy.loginfo('N peers: %d' % self.peers)
 
 	def callback(self, data):
 		try:
