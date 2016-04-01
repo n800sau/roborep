@@ -10,8 +10,12 @@
 		<param name="width" type="int" value="320"/>
 		<param name="height" type="int" value="240"/>
 -->
+		<param name="width" type="int" value="640"/>
+		<param name="height" type="int" value="480"/>
+<!--
 		<param name="width" type="int" value="2560"/>
 		<param name="height" type="int" value="1920"/>
+-->
 
 	</node>
 
