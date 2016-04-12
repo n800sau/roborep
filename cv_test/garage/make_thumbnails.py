@@ -2,7 +2,7 @@
 
 import os, sys, imutils, glob, cv2, shutil
 
-SUBDIR = '2016-02-16'
+SUBDIR = '2016-03-23'
 SRC_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
 DST_PATH = os.path.expanduser('output/images/thumbs')
 

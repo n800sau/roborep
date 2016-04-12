@@ -23,7 +23,7 @@ ctypes = ['car', 'nocar', 'car_with_cars', 'nocar_with_cars']
 
 
 
-base_path = os.path.expanduser('~/sshfs/asus/root/sdb1/garage')
+base_path = os.path.expanduser('~/sshfs/asus/root/rus_hdd/garage/2016-03-25')
 
 def get_features(fpath):
 	rs = None

@@ -10,7 +10,7 @@ from sklearn.externals import joblib
 import numpy as np
 import cv2
 import imutils
-from make_hogs import _process_image, find_orig_file, process_image
+from make_hogs import _process_image, find_orig_file, process_image, car_mask
 
 BASEPATH = 'traindata'
 HOGPATH = 'hog'
@@ -31,9 +31,12 @@ def get_hog_data():
 	ls = []
 	for l,n in data:
 		hf = os.path.join(HOGPATH, n + '.hog')
+		orig_fname = find_orig_file(n)
+		print 'orig fname:', orig_fname
 		if not os.path.exists(hf):
-			orig_fname = find_orig_file(n)
-			process_image(orig_fname)
+			if process_image(orig_fname, mask_proc=car_mask) is None:
+				# skip the image
+				continue
 		hog = json.load(file(hf))
 		ds.append(hog)
 		ls.append(l)
@@ -43,18 +46,20 @@ def get_hog_data():
 if __name__ == '__main__':
 
 
-	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-23')
-	DST_PATH = os.path.expanduser('output/images/predict')
+#	DST_PATH = os.path.expanduser('output/images/predict')
 
 	hdata = get_hog_data()
 
-	(trainData, testData, trainLabels, testLabels) = train_test_split(hdata['data'], hdata['labels'], test_size=0.25, random_state=42)
+#	trainData = hdata['data']
+#	trainLabels = hdata['labels']
+
+	(trainData, testData, trainLabels, testLabels) = train_test_split(hdata['data'], hdata['labels'], test_size=0.40, random_state=42)
 
 	(trainData, valData, trainLabels, valLabels) = train_test_split(trainData, trainLabels, test_size=0.1, random_state=84)
 
 	# initialize the values of k for our k-Nearest Neighbor classifier along with the
 	# list of accuracies for each value of k
-#	kVals = range(1, 30, 2)
+	kVals = range(1, 30, 2)
 #	accuracies = []
 
 	# loop over various values of `k` for the k-Nearest Neighbor classifier
@@ -79,30 +84,12 @@ if __name__ == '__main__':
 	model = LogisticRegression()
 #	model = KNeighborsClassifier(n_neighbors=kVals[i])
 	model.fit(trainData, trainLabels)
+
 	mfname = 'models/knc.pkl'
+#	model = joblib.load(mfname)
+
+	# evaluate the model and update the accuracies list
+	accuracy = model.score(valData, valLabels) * 100
+	print("accuracy=%.2f%%" % (accuracy,))
+
 	joblib.dump(model, mfname)
-
-
-
-
-	model = joblib.load(mfname)
-
-#	predictions = model.predict(testData)
-
-#	print predictions
-
-	# show a final classification report demonstrating the accuracy of the classifier
-	# for each of the digits
-#	print("EVALUATION ON TESTING DATA")
-#	print(classification_report(testLabels, predictions))
-
-# sort real data
-	for fn in glob.glob(os.path.join(IMG_PATH, '*.jpg')):
-		image = cv2.imread(fn)
-		hog = _process_image(image)
-		prediction = model.predict([hog])
-		dname = os.path.join(DST_PATH, os.path.basename(IMG_PATH), prediction[0])
-		if not os.path.exists(dname):
-			os.makedirs(dname)
-		fname = os.path.join(dname, os.path.basename(fn))
-		cv2.imwrite(fname, imutils.resize(image, width=160))

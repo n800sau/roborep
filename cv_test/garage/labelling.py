@@ -7,7 +7,7 @@ from skimage.filters import threshold_adaptive
 from skimage import measure
 import numpy as np
 
-img_path = os.path.join(os.path.expanduser('~/sshfs/asus/root/rus_hard/garage'), '*.jpg')
+img_path = os.path.join(os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-03-25'), '*.jpg')
 out_path = os.path.join(os.path.dirname(__file__), 'output')
 
 def process_image(fname):
@@ -46,12 +46,15 @@ def process_image(fname):
 			mask = cv2.add(mask, labelMask)
 
 		# show the label mask
-		fn = os.path.join('images', 'label_%d.png' % i)
+		fn = os.path.join('images', 'labels', os.path.splitext(os.path.basename(fname))[0], 'label_%.3d.jpg' % i)
 		fnames.append(fn)
-		cv2.imwrite(os.path.join(out_path, fn), imutils.resize(labelMask, width=160))
+		fn = os.path.join(out_path, fn)
+		if not os.path.exists(os.path.dirname(fn)):
+			os.makedirs(os.path.dirname(fn))
+		cv2.imwrite(fn, imutils.resize(labelMask, width=160))
 
 	# show the large components in the image
-	fn = os.path.join('images', 'LargeBlobs.png')
+	fn = os.path.join('images', 'labels', os.path.basename(fname))
 	fnames.insert(0, fn)
 	cv2.imwrite(os.path.join(out_path, fn), imutils.resize(mask, width=160))
 

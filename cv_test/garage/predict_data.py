@@ -10,12 +10,12 @@ from sklearn.externals import joblib
 import numpy as np
 import cv2
 import imutils
-from make_hogs import _process_image, find_orig_file, process_image
+from make_hogs import _process_image, find_orig_file, process_image, car_mask
 
 if __name__ == '__main__':
 
 
-	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-24')
+	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-03-25')
 	DST_PATH = os.path.expanduser('output/images/predict')
 
 	mfname = 'models/knc.pkl'
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 # sort real data
 	for fn in glob.glob(os.path.join(IMG_PATH, '*.jpg')):
 		image = cv2.imread(fn)
-		hog = _process_image(image)
+		hog = _process_image(image, mask_proc=car_mask)
 		prediction = model.predict([hog])
 		dname = os.path.join(DST_PATH, os.path.basename(IMG_PATH), prediction[0])
 		if not os.path.exists(dname):

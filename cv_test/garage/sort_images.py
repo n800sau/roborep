@@ -10,17 +10,17 @@ from skimage import exposure
 from sklearn.cluster import KMeans
 import numpy as np
 import mahotas
-from make_hogs import process_image
+from make_hogs import process_image, car_mask
 from misc import fname2dt, fname2dt_exc
 
-#IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-02-16')
-IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony/2014-10_01')
+IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-03-23')
+#IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony/2014-10_01')
 
 time_mark = int(time.time())
 
 LEVELS = 3
 
-MAX_NFILES = 50
+MAX_NFILES = 500
 
 # recursive sorting of images using hog
 
@@ -43,7 +43,7 @@ def fill_a_level(shf, subdir, flist):
 				f = json.load(file(hogname))
 			else:
 				print 'Not Found !!!!!!!!!!!!!!!!!!!!!!!'
-				f = process_image(fn)
+				f = process_image(fn, mask_proc=car_mask)
 			featurelist.append(f)
 			processed.append(os.path.basename(fn))
 
