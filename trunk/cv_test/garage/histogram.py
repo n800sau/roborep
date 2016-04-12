@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 
 time_mark = int(time.time())
 
-img_path = os.path.join(os.path.expanduser('~/sshfs/asus/root/sdb1/garage/2015-12-02'), '*.jpg')
+img_path = os.path.join(os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-03-25'), '*.jpg')
 out_path = os.path.join(os.path.dirname(__file__), 'output')
 
 def process_image(fname):
@@ -36,9 +36,12 @@ def process_image(fname):
 	plt.plot(hist)
 	plt.xlim([0, 256])
 
-	fn = os.path.join('images', 'histogram.png')
+	fn = os.path.join('images', 'histogram', os.path.basename(fname))
 	fnames.append(fn)
-	plt.savefig(os.path.join(out_path, fn), bbox_inches='tight', format='png')
+	fn = os.path.join(out_path, fn)
+	if not os.path.exists(os.path.dirname(fn)):
+		os.makedirs(os.path.dirname(fn))
+	plt.savefig(fn, bbox_inches='tight', format='png')
 
 	# normalize the histogram
 	hist /= hist.sum()
@@ -52,9 +55,12 @@ def process_image(fname):
 	plt.xlim([0, 256])
 
 
-	fn = os.path.join('images', 'histogram_norm.png')
+	fn = os.path.join('images', 'histogram_norm', os.path.basename(fname))
 	fnames.append(fn)
-	plt.savefig(os.path.join(out_path, fn), bbox_inches='tight', format='png')
+	fn = os.path.join(out_path, fn)
+	if not os.path.exists(os.path.dirname(fn)):
+		os.makedirs(os.path.dirname(fn))
+	plt.savefig(fn, bbox_inches='tight', format='png')
 #	cv2.imwrite(os.path.join(out_path, fn), imutils.resize(mask, width=160))
 
 	print '%d files' % len(fnames)
@@ -65,8 +71,6 @@ def process_image(fname):
 		'time_mark': time_mark,
 	}, file(os.path.join(out_path, 'frames.json'), 'w'), indent=2)
 
-for fn in glob.glob(img_path)[:10]:
+for fn in glob.glob(img_path):
 
 	process_image(fn)
-
-	break

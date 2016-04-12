@@ -10,6 +10,10 @@ from skimage import exposure
 import numpy as np
 
 
+#BASE_DIR = 'cat5'
+#ROOT_PATH = os.path.expanduser('~/work/opencv/cat')
+#BASE_DIR = '2014-10_01'
+BASE_DIR = '2016-03-31'
 ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
 #ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony')
 
@@ -20,39 +24,49 @@ def find_orig_file(fn):
 	dr = '%s-%s-%s' % (dt[:4], dt[4:6], dt[6:])
 	return os.path.join(ROOT_PATH, dr, fn)
 
-def car_crop(image):
-	return image
+def car_mask(image):
 # to use car root area only
-#	return image[90:, 70:270]
+	mask = np.zeros(image.shape[:2], dtype="uint8")
+	cv2.rectangle(mask, (int(image.shape[1]*.09), int(image.shape[0]*.35)), (int(image.shape[1]*.7), int(image.shape[0])), 255, -1)
+	return mask
 
-def process_image(fname, mask=None):
+def process_image(fname, mask_proc=None):
+	H = None
 	print fname,
 	bname = os.path.basename(fname)
 	print '>', bname,
 	image = cv2.imread(fname)
-	print ',', image.shape
-	if image.shape[0] * image.shape[1] > 640 * 480:
-		image = imutils.resize(image, height=480)
-	H = _process_image(image)
+	if image is None:
+		print 'Error: Image can not be read.'
+	else:
+		print ',', image.shape
+		if image.shape[0] * image.shape[1] > 640 * 480:
+			image = imutils.resize(image, height=480)
+		H = _process_image(image)
 #	(H, hogImage) = _process_image(image)
 #	hogImage = exposure.rescale_intensity(hogImage, out_range=(0, 255))
 #	hogImage = hogImage.astype("uint8")
 #	write_image(hogImage, bname + '_hog.png', fnames)
-	json.dump(list(H), file(os.path.join('hog', bname + '.hog'), 'w'))
+		json.dump(list(H), file(os.path.join('hog', bname + '.hog'), 'w'))
 	return H
 
-def _process_image(image):
-	image = car_crop(image)
-#	write_image(image, bname + '_image.png', fnames)
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-	return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=False)
-#	return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=True)
+def _process_image(image, mask_proc=None):
+	if image is None:
+		print 'Error: Image is None.'
+	else:
+		if mask_proc:
+			mask = mask_proc(image)
+			image = cv2.bitwise_and(image, image, mask=mask)
+#		write_image(image, bname + '_image.png', fnames)
+		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=False)
+#		return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=True)
 
 if __name__ == '__main__':
 
 	time_mark = int(time.time())
 
-	img_path = os.path.join(ROOT_PATH, '2014-10_01')
+	img_path = os.path.join(ROOT_PATH, BASE_DIR)
 	out_path = os.path.join(os.path.dirname(__file__), 'output')
 
 	SAMPLE_FNAME = 'sample.json'
@@ -67,5 +81,5 @@ if __name__ == '__main__':
 	for fn in flist:
 		frame = cv2.imread(fn)
 		i += 1
-		process_image(fn)
+		process_image(fn, mask_proc=car_mask)
 
