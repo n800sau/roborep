@@ -23,7 +23,7 @@ myApp.controller('MyController', function($scope, $http, $interval) {
 <div ng-app='myApp' ng-controller='MyController'>
 	<h2>{{data.title}}</h2>
 	<p>
-	<div style="margin: 5px; border: solid black 2px;" ng-repeat="fname in data.files.slice(0, 12);">
+	<div style="margin: 5px; border: solid black 2px;" ng-repeat="fname in data.files">
 		<img src="{{fname}}?{{load_id}}" alt="{{fname}}"></img>
 		{{fname}}
 	</div>
