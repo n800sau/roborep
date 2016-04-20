@@ -43,7 +43,7 @@ class MyMotionDetector(object):
 				).clip(0, 255).astype(np.uint8)
 			# If there're more than 10 vectors with a magnitude greater
 			# than 60, then say we've detected motion
-			detected = data > 10
+			detected = data > 40
 			# 10% changes
 			if detected.sum() > self.nchanges:
 				print('M!')
