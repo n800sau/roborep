@@ -1,14 +1,22 @@
 {
-	"min_upload_seconds": 1.0,
+	"min_upload_seconds": 5.0,
 	"min_motion_frames": 2,
 	"camera_warmup_time": 2.5,
 	"delta_thresh": 5,
-	"resolution": [640, 480],
-	"fps": 8,
-	"min_area": 5000,
+	"resolution":[2592, 1944],
+	"file_width": 1920,
+	"fps": 1,
+	"min_area": 100,
+	"max_area": 50000,
 	"max_width": 320,
 	"max_height": 240,
 	"imdir": "/home/n800s/tmp/surveillance",
 	"shot_timeout": 10,
-	"max_files": 1000
+	"max_files": 1000,
+	"ftp": {
+		"path": "/rus_hard/scaremaster",
+		"host": "192.168.1.1",
+		"user": "writer",
+		"password": "pfgbcm"
+	}
 }
