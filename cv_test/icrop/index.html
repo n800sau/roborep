@@ -1,0 +1,136 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3">
+	<title>Ra Test</title>
+	<link rel="stylesheet" href="mr-image/mr-image.min.css">
+	<link rel="stylesheet" href="style.css">
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+	<script src="mr-image/mr-image.min.js"></script>
+	<script type="text/javascript">
+		var myApp = angular.module('myApp', ['mrImage']);
+		myApp.controller('MyController', function($scope, $http, $interval) {
+
+			$scope.start = 0;
+			$scope.count = 6;
+
+			$scope.load_id = (new Date()).getTime();
+
+			$scope.selector = {};
+
+			$scope.el = null;
+
+			var reloadData = function() {
+				$http.get('thumbs.php?load_id=' + $scope.load_id + '&start=' + $scope.start + '&count=' + $scope.count).success(
+					function(data) {
+						$scope.data = data;
+					}
+				);
+			}
+
+			reloadData();
+
+			$scope.thumb_click = function(el) {
+				$scope.el = el;
+			}
+
+			$scope.nextPage = function() {
+				$scope.start += $scope.count;
+				reloadData();
+			}
+
+			$scope.prevPage = function() {
+				$scope.start -= $scope.count;
+				if($scope.start < 0) {
+					$scope.start = 0;
+				}
+				reloadData();
+			}
+
+			$scope.addRect = function () {
+				$http.put('add_rect.php', {
+					bname: $scope.el.bname,
+					selector: $scope.selector
+				}).success(function(data) {
+					if(data) {
+						$scope.el.drawer = data;
+						$scope.selector.clear();
+					}
+				});
+			};
+
+			$scope.removeRect = function (rect) {
+				$http.put('remove_rect.php', {
+					bname: $scope.el.bname,
+					index: $scope.el.drawer.indexOf(rect)
+				}).success(function(data) {
+					if(data) {
+						$scope.el.drawer = data;
+						$scope.selector.clear();
+					}
+				});
+			};
+
+			$scope.clearDrawer = function () {
+				$http.put('clear_drawer.php', {
+					bname: $scope.el.bname
+				}).success(function(data) {
+					if(data) {
+						$scope.el.drawer = data;
+					}
+				});
+			};
+
+		});
+	</script>
+</head>
+<body>
+
+<button onclick="location.reload()">&orarr;</button>
+<br/>
+
+<div ng-app='myApp' ng-controller='MyController' ng-cloak>
+
+
+	{{start}} - {{start+count-1}}
+
+	<div class="thumb" style="width: 100px;margin: 5px; border: none;" ng-repeat="el in data">
+		<img ng-src="{{el.thumb}}" alt="{{el.bname}}" ng-click="thumb_click(el)"></img>
+	</div>
+
+	<button ng-click="prevPage()" ng-disabled="start <= 0">&pr;</button>
+	<button ng-click="nextPage()" ng-disabled="count > data.length">&sc;</button>
+
+	<div ng-if="el">
+		<button ng-click="addRect()">&plus;</button>
+		<table>
+			<tr>
+				<td>
+					<div mr-image
+						mr-max-width="300"
+						mr-src="el.image"
+						mr-selector="selector"
+						mr-drawer="el.drawer"
+					>
+					</div>
+				</td>
+				<td>
+					<div class="drawer">
+					</div>
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr ng-repeat="rect in el.drawer">
+				<td>{{rect.x1|number: 0}},{{rect.y1|number: 0}}<br/></td>
+				<td><br/>{{rect.x2|number: 0}},{{rect.y2|number: 0}}</td>
+				<td><button ng-click="removeRect(rect)">&cross;</button></td>
+			</tr>
+		</table>
+		<button ng-click="clearDrawer()">Clear</button>
+	</div>
+
+
+</div>
+
+</body>
+</html>

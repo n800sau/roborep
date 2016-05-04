@@ -1,0 +1,21 @@
+.mr-image {
+	margin: 0;
+}
+
+.drawer {
+	padding-left: 5px;
+}
+
+.drawer table {
+	border-collapse: collapse;
+	border-width: 0px;
+}
+
+.drawer tr {
+	border-width: 1px;
+}
+
+.drawer td {
+	padding-left: 5px;
+	border: solid black 1px;
+}
