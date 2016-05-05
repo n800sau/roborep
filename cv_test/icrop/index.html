@@ -82,6 +82,17 @@
 				});
 			};
 
+			$scope.negate = function(el) {
+				$http.put('negate_image.php', {
+					bname: el.bname,
+					negative: el.negative
+				}).success(function(data) {
+					if(data) {
+						el.negative = data.negative;
+					}
+				});
+			}
+
 		});
 	</script>
 </head>
@@ -99,9 +110,16 @@
 
 	{{start}} - {{start+count-1}}
 
-	<div class="thumb" style="width: 100px;margin: 5px; border: none;" ng-repeat="el in data">
-		<img ng-src="{{el.thumb}}" alt="{{el.bname}}" ng-click="thumb_click(el)"></img>
-	</div>
+	<table>
+		<tr class="thumb" style="width: 100px;margin: 5px; border: none;" ng-repeat="el in data">
+			<td>
+				<img ng-src="{{el.thumb}}" alt="{{el.bname}}" ng-click="thumb_click(el)"></img>
+			</td>
+			<td>
+				<input type="checkbox" ng-model="el.negative" ng-click="negate(el)"></input>
+			</td>
+		</tr>
+	</table>
 
 	<div ng-if="el">
 		<button ng-click="addRect()">&plus;</button>

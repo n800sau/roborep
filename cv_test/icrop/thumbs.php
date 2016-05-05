@@ -3,6 +3,7 @@
 	$ARATIO = 4./3;
 	$SRCPATH = 'images';
 	$THUMBPATH = 'thumbs';
+	$NEGATIVEPATH = 'negatives';
 	$DRAWERSPATH = 'drawers';
 	$TH_WIDTH = 64;
 	$TH_HEIGHT = $TH_WIDTH  / $ARATIO;
@@ -20,15 +21,17 @@
 				// check if thumb exists
 				$bname = basename($fpath);
 				$ftime = filemtime($fpath);
+				$npath = $NEGATIVEPATH . '/' . $bname;
+				$negative = file_exists($npath);
 				$thpath = $THUMBPATH . '/' . $bname;
-				$thtime = file_exists($thpath) ? filemtime($thpath) : null;
+				$thtime = file_exists($thpath) ? filemtime($thpath) : NULL;
 				$jpath = $DRAWERSPATH . '/' . $bname . '.json';
 				if(file_exists($jpath)) {
 					$drawer = json_decode(file_get_contents($jpath));
 					$jtime = filemtime($jpath);
 				} else {
 					$drawer = array();
-					$jtime = null;
+					$jtime = NULL;
 				}
 				if(is_null($thtime) || ($thtime < $ftime) || ((!is_null($jtime)) && ($thtime < $jtime))) {
 					// make thumbnail
@@ -51,7 +54,8 @@
 					'thumb' => $thpath,
 					'image' => $fpath,
 					'bname' => $bname,
-					'drawer' => $drawer
+					'drawer' => $drawer,
+					'negative' => $negative
 				);
 				$count--;
 				if($count <= 0) {
