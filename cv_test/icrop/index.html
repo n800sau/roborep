@@ -35,6 +35,7 @@
 
 			$scope.nextPage = function() {
 				$scope.start += $scope.count;
+				$scope.el = null;
 				reloadData();
 			}
 
@@ -43,6 +44,7 @@
 				if($scope.start < 0) {
 					$scope.start = 0;
 				}
+				$scope.el = null;
 				reloadData();
 			}
 
@@ -90,15 +92,16 @@
 
 <div ng-app='myApp' ng-controller='MyController' ng-cloak>
 
+	<div>
+		<button ng-click="prevPage()" ng-disabled="start <= 0">&pr;</button>
+		<button ng-click="nextPage()" ng-disabled="count > data.length">&sc;</button>
+	</div>
 
 	{{start}} - {{start+count-1}}
 
 	<div class="thumb" style="width: 100px;margin: 5px; border: none;" ng-repeat="el in data">
 		<img ng-src="{{el.thumb}}" alt="{{el.bname}}" ng-click="thumb_click(el)"></img>
 	</div>
-
-	<button ng-click="prevPage()" ng-disabled="start <= 0">&pr;</button>
-	<button ng-click="nextPage()" ng-disabled="count > data.length">&sc;</button>
 
 	<div ng-if="el">
 		<button ng-click="addRect()">&plus;</button>
