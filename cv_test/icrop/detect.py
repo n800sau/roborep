@@ -12,7 +12,8 @@ detector = dlib.simple_object_detector(os.path.join(BASEPATH, 'detector', 'simpl
 
 fnames = []
 
-for dname in glob.glob(os.path.join(BASEPATH, 'testing', '2016-*-*')):
+found = 0
+for dname in glob.glob(os.path.join(BASEPATH, 'testing', '*')):
 	if os.path.isdir(dname):
 
 		bdname = os.path.basename(dname)
@@ -22,6 +23,8 @@ for dname in glob.glob(os.path.join(BASEPATH, 'testing', '2016-*-*')):
 			# load the image and make predictions
 			image = cv2.imread(testingPath)
 			boxes = detector(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+			print(testingPath)
+			found += len(boxes) > 0
 
 			outpath = os.path.join(BASEPATH, 'output', bdname, 'no' if len(boxes) == 0 else 'yes')
 
@@ -36,5 +39,7 @@ for dname in glob.glob(os.path.join(BASEPATH, 'testing', '2016-*-*')):
 				os.makedirs(outpath)
 			ofname = os.path.join(outpath, os.path.basename(testingPath))
 			cv2.imwrite(ofname, image)
+
+print("[INFO] found %d images" % found)
 
 print("[INFO] finished")
