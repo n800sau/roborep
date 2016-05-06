@@ -1,7 +1,6 @@
 <?php
 
-	$SRCPATH = 'images';
-	$DRAWERSPATH = 'drawers';
+	include 'vars.php';
 
 	$data = file_get_contents("php://input");
 	$data = json_decode($data, TRUE);

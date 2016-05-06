@@ -1,12 +1,6 @@
 <?php
 
-	$ARATIO = 4./3;
-	$SRCPATH = 'images';
-	$THUMBPATH = 'thumbs';
-	$NEGATIVEPATH = 'negatives';
-	$DRAWERSPATH = 'drawers';
-	$TH_WIDTH = 64;
-	$TH_HEIGHT = $TH_WIDTH  / $ARATIO;
+	include 'vars.php';
 
 	$start = isset($_GET["start"]) ? (int)$_GET["start"] : 0;
 	$count = isset($_GET["count"]) ? (int)$_GET["count"] : 5;
