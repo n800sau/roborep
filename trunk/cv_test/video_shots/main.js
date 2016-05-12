@@ -26,7 +26,13 @@ angular.module('myApp',
 					var modelCtrl = controllers[1];
 					elem.on('click', function() {
 						$http.get("shoot.php?time=" + API.currentTime).success(function(data) {
-							modelCtrl.$setViewValue(data.url);
+							var srclist = modelCtrl.$modelValue || [];
+							var dt = new Date(data.time * 1000);
+							srclist.push({
+								url: data.url,
+								label: dt.getMinutes() + ':' + dt.getSeconds() + '.' + dt.getMilliseconds()
+							});
+							modelCtrl.$setViewValue(srclist.splice(-3, 3));
 //							console.log(data);
 						}).error(function(data) {
 							console.log(data);

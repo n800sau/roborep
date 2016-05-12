@@ -2,9 +2,12 @@
 <head>
 	<title>Player Test</title>
 	<link rel="stylesheet" href="style.css">
-	<script src="node_modules/angular/angular.min.js"></script>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/videogular/1.4.3/videogular.min.js"></script>
+
+<!--	<script src="node_modules/angular/angular.min.js"></script>-->
 	<script src="node_modules/angular-sanitize/angular-sanitize.min.js"></script>
-	<script src="node_modules/videogular/videogular.js"></script>
+<!--	<script src="node_modules/videogular/videogular.js"></script> -->
 	<script src="node_modules/videogular-controls/vg-controls.js"></script>
 	<script src="node_modules/videogular-buffering/vg-buffering.js"></script>
 	<script src="node_modules/videogular-overlay-play/vg-overlay-play.js"></script>
@@ -18,8 +21,8 @@
 			<button onclick="location.reload()">&orarr;</button>
 			<p/>
 
-			<div class="preview">
-				<img ng-src="{{controller.image_preview}}" ng-if="controller.image_preview"></img>
+			<div class="preview" ng-repeat="src in controller.preview_images track by $index">
+				<img ng-src="{{src.url}}"></img>{{src.label}}
 			</div>
 			<div class="video">
 				<videogular vg-theme="controller.config.theme">
@@ -39,7 +42,7 @@
 					</vg-controls>
 
 					<vg-controls class="bottom-level">
-						<div button_shoot class="iconButton embutton" ng-model="controller.image_preview">&radic;</div>
+						<div button_shoot class="iconButton embutton" ng-model="controller.preview_images">&radic;</div>
 						<div button_step_back class="iconButton embutton">&NestedLessLess;</div>
 						<div button_step_fwd class="iconButton embutton">&NestedGreaterGreater;</div>
 					</vg-controls>
