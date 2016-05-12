@@ -5,7 +5,7 @@
 	if(isset($_GET["time"])) {
 		$time = ((int)$_GET["time"]) / 1000.;
 		$rs = array('time' => $time);
-		$bname = $HQ_VIDEO . '_' . $time . '.jpg';
+		$bname = basename($HQ_VIDEO . '_' . $time . '.jpg');
 		if(!file_exists($O_FULL)) {
 			mkdir($O_FULL, 0777, true);
 		}
