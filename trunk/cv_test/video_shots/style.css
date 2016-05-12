@@ -1,0 +1,77 @@
+body {
+}
+
+#controls span {
+	display:inline-block;
+	background-color: black;
+}
+
+#playpause {
+	background:#eee;
+	color:#333;
+	padding:0 5px;
+	font-size:12pt;
+	text-transform:uppercase;
+	width:50px;
+}
+
+div.video {
+	position:absolute;
+	left: 0;
+	bottom: 0;
+	width: 300px;
+	height: 350px;
+}
+
+div.video videogular vg-media {
+	height: 250px;
+}
+
+.top-level {
+	bottom: 70px;
+}
+
+.middle-level {
+	bottom: 40px;
+}
+.bottom-level {
+	bottom: 0;
+}
+
+div.video vg-time-display {
+	font-size: 10px;
+}
+
+videogular.embutton {
+    display: table-cell;
+    width: 50px;
+    vertical-align: middle;
+    text-align: center;
+    cursor: pointer;
+}
+
+videogular .embutton a,
+videogular .embutton a:hover,
+videogular .embutton a:visited {
+    color: white;
+    text-decoration: none;
+}
+
+videogular div.embutton {
+    display: table-cell;
+    width: 50px;
+    vertical-align: middle;
+    text-align: center;
+    cursor: pointer;
+}
+
+videogular div.embutton a,
+videogular div.embutton a:hover,
+videogular div.embutton a:visited {
+    color: white;
+    text-decoration: none;
+}
+
+div.preview {
+	margin-bottom: 10px;
+}
