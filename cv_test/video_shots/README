@@ -1,0 +1,12 @@
+Requires:
+
+angular
+angular-sanitize
+videogular
+videogular-angulartics
+videogular-buffering
+videogular-controls
+videogular-dash
+videogular-ima-ads
+videogular-overlay-play
+videogular-themes-default
