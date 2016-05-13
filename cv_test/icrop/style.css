@@ -1,3 +1,11 @@
+.thumb td {
+	cursor: pointer;
+}
+
+.btn {
+	width: 100%;
+}
+
 .mr-image {
 	margin: 0;
 }
@@ -18,4 +26,8 @@
 .drawer td {
 	padding-left: 5px;
 	border: solid black 1px;
+}
+
+.label, .negative {
+	text-align: center;
 }
