@@ -18,6 +18,10 @@
 				$npath = $NEGATIVEPATH . '/' . $bname;
 				$negative = file_exists($npath);
 				$thpath = $THUMBPATH . '/' . $bname;
+				$labels = array();
+				foreach($ALL_LABELS as $label) {
+					$labels[$label] = file_exists($LABELSPATH . '/' . $label . '/' . $bname);
+				}
 				$thtime = file_exists($thpath) ? filemtime($thpath) : NULL;
 				$jpath = $DRAWERSPATH . '/' . $bname . '.json';
 				if(file_exists($jpath)) {
@@ -49,7 +53,8 @@
 					'image' => $fpath,
 					'bname' => $bname,
 					'drawer' => $drawer,
-					'negative' => $negative
+					'negative' => $negative,
+					'labels' => $labels,
 				);
 				$count--;
 				if($count <= 0) {
@@ -59,6 +64,6 @@
 			$i++;
 		}
 	}
-	echo json_encode($flist);
+	echo json_encode(array('labels' => $ALL_LABELS, 'data' => $flist));
 
 ?>
