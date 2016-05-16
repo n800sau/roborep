@@ -10,11 +10,13 @@ extern "C" {
 
 #include "config.h"
 
-#define HOSTNAME "irproxy"
+#define HOSTNAME "irproxy_test"
 
 const char* ssid     = SSID;
 const char* password = PASSWORD;
 
+// reboot code
+#define TURN_OFF 0xfd9a65
 
 int RECV_PIN = 2; //an IR detector/demodulator is connected to GPIO pin 2
 
@@ -203,25 +205,32 @@ void  loop ( )
 
 	if (irrecv.decode(&results)) {  // Grab an IR code
 
-		// send the ir data
-		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
-		Udp.print("{\"encoding\": \"");
-		Udp.print(encoding(&results));
-		Udp.print("\", \"ircode\": ");
-		Udp.print(results.value);
-		Udp.print("}");
-		Udp.endPacket();
+		// reboot case
+		if(results.decode_type == NEC && results.value == TURN_OFF) {
+			// reboot
+			ESP.reset();
+		} else {
 
-		dumpInfo(&results);           // Output the results
-		dumpRaw(&results);            // Output the results in RAW format
-		dumpCode(&results);           // Output the results as source code
-		Serial.println("");           // Blank line between entries
+			// send the ir data
+			Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
+			Udp.print("{\"encoding\": \"");
+			Udp.print(encoding(&results));
+			Udp.print("\", \"ircode\": ");
+			Udp.print(results.value);
+			Udp.print("}");
+			Udp.endPacket();
+
+			dumpInfo(&results);           // Output the results
+			dumpRaw(&results);            // Output the results in RAW format
+			dumpCode(&results);           // Output the results as source code
+			Serial.println("");           // Blank line between entries
+		}
 		irrecv.resume();              // Prepare for the next value
-		wifi_set_sleep_type(LIGHT_SLEEP_T);
 //	} else {
 		// send no data message
 //		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
 //		Udp.print("No data");
 //		Udp.endPacket();
 	}
+	wifi_set_sleep_type(LIGHT_SLEEP_T);
 }
