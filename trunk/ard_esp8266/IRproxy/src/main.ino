@@ -10,7 +10,7 @@ extern "C" {
 
 #include "config.h"
 
-#define HOSTNAME "irproxy_test"
+#define HOSTNAME "irproxy"
 
 const char* ssid     = SSID;
 const char* password = PASSWORD;
