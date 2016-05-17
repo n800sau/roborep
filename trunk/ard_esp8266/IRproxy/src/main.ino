@@ -2,6 +2,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
+#include <ESP8266Ping.h>
 
 extern "C" {
 	#include "user_interface.h"
@@ -12,6 +13,8 @@ extern "C" {
 
 #define HOSTNAME "irproxy"
 
+const IPAddress ping_test_ip(192, 168, 1, 1);
+
 const char* ssid     = SSID;
 const char* password = PASSWORD;
 
@@ -19,6 +22,8 @@ const char* password = PASSWORD;
 #define TURN_OFF 0xfd9a65
 
 int RECV_PIN = 2; //an IR detector/demodulator is connected to GPIO pin 2
+
+const int LED_NETWORK_ERROR_PIN = 4; //network error LED pin
 
 IRrecv irrecv(RECV_PIN);
 
@@ -32,6 +37,8 @@ unsigned int portMulti = 12345;      // local port to listen on
 void  setup ( )
 {
 	Serial.begin(115200);
+	pinMode(LED_NETWORK_ERROR_PIN, OUTPUT);
+	digitalWrite(LED_NETWORK_ERROR_PIN, HIGH);
 	WiFi.begin(ssid, password);
 	Serial.println("");
 
@@ -40,6 +47,7 @@ void  setup ( )
 		delay(500);
 		Serial.print(".");
 	}
+	digitalWrite(LED_NETWORK_ERROR_PIN, LOW);
 	Serial.println("");
 	Serial.print("Connected to ");
 	Serial.println(ssid);
@@ -231,6 +239,15 @@ void  loop ( )
 //		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
 //		Udp.print("No data");
 //		Udp.endPacket();
+		// check network connection
+		if(Ping.ping(ping_test_ip)) {
+			Serial.println("Ping success!!");
+		} else {
+			digitalWrite(LED_NETWORK_ERROR_PIN, HIGH);
+			Serial.println("Ping error.");
+			delay(1000);
+			digitalWrite(LED_NETWORK_ERROR_PIN, LOW);
+		}
 	}
 	wifi_set_sleep_type(LIGHT_SLEEP_T);
 }
