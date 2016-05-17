@@ -59,7 +59,11 @@ if __name__ == '__main__':
 		try:
 			dbprint('Waiting...')
 			data = sock.recv(1000)
-			data = json.loads(data)
+			try:
+				data = json.loads(data)
+			except ValueError, e:
+				dbprint('%s: %s' % (e, data))
+				continue
 			dbprint('encoding:%s, value:0x%4.4x' % (data['encoding'], data['ircode']))
 			if data['encoding'] == MODEL and data['ircode'] in IRCODE_LIST:
 				if last_time is None or last_time + 2 < time.time():
