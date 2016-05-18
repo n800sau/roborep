@@ -1,0 +1,11 @@
+   reset causes:
+        0:
+        1: normal boot
+        2: reset pin
+        3: software reset
+        4: watchdog reset
+
+    boot device:
+        0:
+        1: ram
+        3: flash
