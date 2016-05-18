@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
+#include <ESP8266Ping.h>
 
 #include "config.h"
 
@@ -19,6 +20,7 @@ unsigned int portMulti = 12345;      // local port to listen on
 void  setup ( )
 {
 	Serial.begin(115200);
+	WiFi.mode(WIFI_STA);
 	WiFi.begin(ssid, password);
 	Serial.println("");
 
@@ -39,6 +41,8 @@ void  setup ( )
 
 }
 
+const IPAddress remote_ip(192, 168, 1, 1);
+
 void  loop ( )
 {
 	// send no data message
@@ -47,4 +51,10 @@ void  loop ( )
 	Udp.endPacket();
 	Serial.println("Test");
 	delay(1000);
+	if(Ping.ping(remote_ip)) {
+		Serial.println("Ping success!!");
+	} else {
+		Serial.println("Ping error.");
+	}
+	delay(500);
 }
