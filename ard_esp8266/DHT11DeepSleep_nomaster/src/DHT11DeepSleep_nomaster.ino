@@ -11,6 +11,8 @@
 
 #include "config.h"
 
+#define ID "bigbal"
+
 // To read VCC voltage
 // TOUT pin has to be disconnected in this mode.
 ADC_MODE(ADC_VCC);
