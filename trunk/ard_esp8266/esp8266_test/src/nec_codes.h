@@ -10,16 +10,18 @@ const int
 	VOL_DOWN = 0xfd8877,
 	// 0
 	WATER_SPIT = 0xfdf00f,
-	LED_ON = 0xfdb04f,
-	LED_OFF = 0xfd8877;
+	IR_RED = 0xfd629d,
+	IR_GREEN = 0xfd22dd,
+	IR_YELLOW = 0xfd20df,
+	IR_BLUE = 0xfde01f;
 
 /*
 RES  - 0xfd1ae5
 RATIO - 0xfd18e7
 MUTE - 0xfd9867
-CH+ - 0xfdb24d
-CH- - 0xfd8a75
-TV?RADIO - 0xfd708f
+CH_PLUS - 0xfdb24d
+CH_MINUS - 0xfd8a75
+TV_RADIO - 0xfd708f
 PAUSE - 0xfd48b7
 INFO - 0xfda25d
 RECALL - 0xfda05f
@@ -43,9 +45,9 @@ epg - 0xfd52ad
 ttx - 0xfd12ed
 sub - 0xfd10ef
 opt - 0xfdd02f
-RED - 0xfd629d
-GREEN - 0xfd22dd
-YELLOW - 0xfd20df
-BLUE - 0xfde01f
+IR_RED - 0xfd629d
+IR_GREEN - 0xfd22dd
+IR_YELLOW - 0xfd20df
+IR_BLUE - 0xfde01f
 
 */

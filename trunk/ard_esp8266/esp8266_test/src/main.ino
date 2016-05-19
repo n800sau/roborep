@@ -31,26 +31,32 @@ char packetBuffer[UDP_TX_PACKET_MAX_SIZE]; //buffer to hold incoming packet
 const char replyAck[] = "ack"; 
 const char replyNak[] = "nak"; 
 
-const int LED_PIN = 4;
+const int RED_PIN = 4;
+const int GREEN_PIN = 12;
+const int YELLOW_PIN = 13;
+const int BLUE_PIN = 14;
 
 void setup()
 {
 	Serial.begin(115200);
+	// initialise pins
+	pinMode(RED_PIN, OUTPUT);
+	pinMode(GREEN_PIN, OUTPUT);
+	pinMode(YELLOW_PIN, OUTPUT);
+	pinMode(BLUE_PIN, OUTPUT);
 
-	// Initialise wifi connection
-	wifiConnected = connectWifi();
+}
 
-	// only proceed if wifi connection successful
-	if(wifiConnected){
-
-		if (MDNS.begin(HOSTNAME)) {
-			Serial.println("MDNS responder started");
-		}
-
-		udpConnected = connectUDP();
-		if (udpConnected){
-			// initialise pins
-			pinMode(LED_PIN, OUTPUT);
+void blink(int pin, int times=5)
+{
+	Serial.print("BLINK ");
+	Serial.println(pin);
+	for(int i=0; i<times; i++) {
+		digitalWrite(pin, HIGH);
+		delay(100);
+		digitalWrite(pin, LOW);
+		if(i < times) {
+			delay(200);
 		}
 	}
 }
@@ -100,17 +106,20 @@ void loop()
 					if(encoding && strcmp(encoding, MODEL) == 0) {
 						int ircode = json["ircode"];
 						Serial.println(encoding);
+						Serial.print("0x");
 						Serial.println(ircode, HEX);
 						switch(ircode) {
-							case LED_ON:
-								// turn LED on or off depending on value recieved
-								digitalWrite(LED_PIN, LOW);
-								Serial.println("LOW");
+							case IR_RED:
+								blink(RED_PIN, 3);
 								break;
-							case LED_OFF:
-								// turn LED on or off depending on value recieved
-								digitalWrite(LED_PIN, HIGH);
-								Serial.println("HIGH");
+							case IR_GREEN:
+								blink(GREEN_PIN, 2);
+								break;
+							case IR_YELLOW:
+								blink(YELLOW_PIN, 1);
+								break;
+							case IR_BLUE:
+								blink(BLUE_PIN, 5);
 								break;
 						}
 					} else {
@@ -124,9 +133,18 @@ void loop()
 				UDP.endPacket();
 
 			}
-			delay(10);
+		} else {
+			udpConnected = connectUDP();
+		}
+	} else {
+		wifiConnected = connectWifi();
+		if(wifiConnected) {
+			if(MDNS.begin(HOSTNAME)) {
+				Serial.println("MDNS responder " HOSTNAME " started");
+			}
 		}
 	}
+	delay(10);
 }
 
 	// connect to UDP – returns true if successful or false if not
@@ -180,3 +198,4 @@ boolean connectWifi()
 	}
 	return state;
 }
+
