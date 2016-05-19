@@ -240,13 +240,18 @@ void  loop ( )
 //		Udp.print("No data");
 //		Udp.endPacket();
 		// check network connection
-		if(Ping.ping(ping_test_ip)) {
+		if(Ping.ping(ping_test_ip, 2)) {
 			Serial.println("Ping success!!");
 		} else {
-			digitalWrite(LED_NETWORK_ERROR_PIN, HIGH);
 			Serial.println("Ping error.");
-			delay(1000);
-			digitalWrite(LED_NETWORK_ERROR_PIN, LOW);
+			for(int i=0; i<4; i++) {
+				if(i > 0) {
+					delay(100);
+				}
+				digitalWrite(LED_NETWORK_ERROR_PIN, HIGH);
+				delay(100);
+				digitalWrite(LED_NETWORK_ERROR_PIN, LOW);
+			}
 		}
 	}
 	wifi_set_sleep_type(LIGHT_SLEEP_T);
