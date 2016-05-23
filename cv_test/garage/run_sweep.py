@@ -27,7 +27,7 @@ for srcname in pathlist:
 			ftp_h.mkd(bdname)
 			pathlist.append(dname)
 		dstname = os.path.join(dname, bname)
-		print bname, '->', dstname
+#		print bname, '->', dstname
 		ftp_h.rename(srcname, dstname)
 		redis.rpush(REDIS_LIST, dstname)
 
