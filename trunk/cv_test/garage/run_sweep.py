@@ -5,6 +5,8 @@ from datetime import datetime
 from ftplib import FTP
 import redis
 
+REDIS_LIST = 'garage_files2label'
+
 r = re.compile('^[0-9A-F]+\(.*\)_\d_(\d+)_\d+\.jpg')
 
 redis = redis.Redis()
@@ -27,6 +29,6 @@ for srcname in pathlist:
 		dstname = os.path.join(dname, bname)
 		print bname, '->', dstname
 		ftp_h.rename(srcname, dstname)
-		redis.rpush('garage_files2label', dstname)
+		redis.rpush(REDIS_LIST, dstname)
 
 ftp_h.quit()
