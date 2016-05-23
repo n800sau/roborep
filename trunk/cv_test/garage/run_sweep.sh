@@ -1,6 +1,9 @@
 #!/bin/bash
 
-cd /home/n800s/work/roborep/cv_test/garage
+
+source ~/.virtualenvs/gurus/bin/activate
+
+cd ~/work/roborep/cv_test/garage
 
 cur_dir=`pwd`
 
