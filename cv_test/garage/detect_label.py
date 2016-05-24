@@ -2,7 +2,7 @@
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-import os, sys, re, time
+import os, sys, re, time, json
 from datetime import datetime
 from ftplib import FTP
 import cPickle
@@ -13,10 +13,9 @@ from skimage import feature
 
 from email_send import send_email
 
-MODELPATH = 'models/model.svc'
-REDIS_LIST = 'garage_files2label'
-REDIS_HASH = 'garage_labels'
-REDIS_ZLIST = 'garage_labels_ts'
+MODELPATH = 'models/inside_empty.svc'
+REDIS_INPUT_LIST = 'garage_files2label'
+REDIS_OUTPUT_LIST = 'garage_labels'
 
 def detect_label(model, image):
 	image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -42,15 +41,12 @@ def detect_image_label(model, ftp_h, fpath):
 	return (detect_label(model, image), imgdata)
 
 redis = redis.Redis('bbspeaker')
-ftp_h = FTP('192.168.1.1')
-ftp_h.login('writer', 'pfgbcm')
-ftp_h.cwd('rus_hard/garage')
 #00D6FB009223(n800sau)_1_20160516142921_30928.jpg
-model = cPickle.loads(open(MODELPATH).read())
+ftp_h = None
+model = None
 r = re.compile('^[0-9A-F]+\(.*\)_\d_(\d+)_\d+\.jpg')
-for i in range(50):
-	fpath = redis.lpop(REDIS_LIST)
-	print fpath
+for i in range(500):
+	fpath = redis.lpop(REDIS_INPUT_LIST)
 	if fpath is None:
 		break
 	m = r.match(os.path.basename(fpath))
@@ -58,19 +54,26 @@ for i in range(50):
 		dt = datetime.strptime(m.groups()[0], '%Y%m%d%H%M%S')
 		ts = time.mktime(dt.timetuple())
 		try:
+			if ftp_h is None:
+				ftp_h = FTP('192.168.1.1')
+				ftp_h.login('writer', 'pfgbcm')
+				ftp_h.cwd('rus_hard/garage')
+			if model is None:
+				model = cPickle.loads(open(MODELPATH).read())
 			label,imgdata = detect_image_label(model, ftp_h, fpath)
-			redis.hset(REDIS_HASH, fpath, label)
-			last_ts = redis.zrange(REDIS_ZLIST, -1, -1, withscores=True)
-			if last_ts:
-				last_label,last_ts = last_ts[0]
-				if last_ts < ts and last_label != label:
-					msg = 'Detected change at %s from %s to %s (diff=%d)' % (dt.strftime('%d/%m %H:%M:%S'), last_label, label, ts - last_ts)
+			last_rec = redis.lrange(REDIS_OUTPUT_LIST, -1, -1)
+			if last_rec:
+				last_rec = json.loads(last_rec[0])
+				if last_rec['ts'] < ts and last_rec['label'] != label:
+					msg = 'Detected change at %s from %s to %s (diff=%d)' % (dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'])
 					print msg
 					send_email('itmousecage@gmail.com', 'Detected %s at %s' % (label, dt.strftime('%d/%m %H:%M:%S')), msg, [imgdata])
-			redis.zadd(REDIS_ZLIST, label, ts)
+			redis.rpush(REDIS_OUTPUT_LIST, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
+			redis.ltrim(REDIS_OUTPUT_LIST, max(0, redis.llen(REDIS_OUTPUT_LIST) - 100), -1)
 		except:
 			# return fpath back to redis list
-			redis.lpush(REDIS_LIST, fpath)
+			redis.lpush(REDIS_INPUT_LIST, fpath)
 			raise
 
-ftp_h.quit()
+if not ftp_h is None:
+	ftp_h.quit()
