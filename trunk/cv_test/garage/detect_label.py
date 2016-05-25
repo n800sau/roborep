@@ -13,9 +13,11 @@ from skimage import feature
 
 from email_send import send_email
 
-MODELPATH = 'models/inside_empty.svc'
+MODELLIST = ['inside_empty', 'open_close']
+
+MODELPATH = 'models'
 REDIS_INPUT_LIST = 'garage_files2label'
-REDIS_OUTPUT_LIST = 'garage_labels'
+REDIS_OUTPUT_PREFIX = 'garage_label_'
 
 def detect_label(model, image):
 	image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -28,8 +30,9 @@ def detect_label(model, image):
 	labels = model.predict_proba(hist)
 	labels = zip(model.classes_, labels[0])
 	labels.sort(key=lambda x: x[1], reverse=True)
-	print labels
-	return labels[0][0] if abs(labels[0][1] - labels[1][1]) > 0.5 else '_'
+	rs = labels[0][0] if abs(labels[0][1] - labels[1][1]) > 0.5 else '_'
+	print '%s -> %s' % (labels, rs)
+	return rs
 
 
 def detect_image_label(model, ftp_h, fpath):
@@ -43,7 +46,7 @@ def detect_image_label(model, ftp_h, fpath):
 redis = redis.Redis('bbspeaker')
 #00D6FB009223(n800sau)_1_20160516142921_30928.jpg
 ftp_h = None
-model = None
+models = None
 r = re.compile('^[0-9A-F]+\(.*\)_\d_(\d+)_\d+\.jpg')
 for i in range(500):
 	fpath = redis.lpop(REDIS_INPUT_LIST)
@@ -58,18 +61,24 @@ for i in range(500):
 				ftp_h = FTP('192.168.1.1')
 				ftp_h.login('writer', 'pfgbcm')
 				ftp_h.cwd('rus_hard/garage')
-			if model is None:
-				model = cPickle.loads(open(MODELPATH).read())
-			label,imgdata = detect_image_label(model, ftp_h, fpath)
-			last_rec = redis.lrange(REDIS_OUTPUT_LIST, -1, -1)
-			if last_rec:
-				last_rec = json.loads(last_rec[0])
-				if last_rec['ts'] < ts and last_rec['label'] != label:
-					msg = 'Detected change at %s from %s to %s (diff=%d)' % (dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'])
-					print msg
-					send_email('itmousecage@gmail.com', 'Detected %s at %s' % (label, dt.strftime('%d/%m %H:%M:%S')), msg, [imgdata])
-			redis.rpush(REDIS_OUTPUT_LIST, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
-			redis.ltrim(REDIS_OUTPUT_LIST, max(0, redis.llen(REDIS_OUTPUT_LIST) - 100), -1)
+			if models is None:
+				t = time()
+				models = {}
+				for mname in MODELLIST:
+					models[mname] = cPickle.loads(open(os.path.join(MODELPATH, mname + '.svc')).read())
+				print 'models load time: %d' % (time() - t)
+			for mname,model in models.items():
+				label,imgdata = detect_image_label(model, ftp_h, fpath)
+				output_name = REDIS_OUTPUT_PREFIX + mname
+				last_rec = redis.lrange(output_name, -1, -1)
+				if last_rec:
+					last_rec = json.loads(last_rec[0])
+					if last_rec['ts'] < ts and last_rec['label'] != label:
+						msg = 'Detected change at %s from %s to %s (diff=%d)' % (dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'])
+						print msg
+						send_email('itmousecage@gmail.com', 'Detected %s at %s' % (label, dt.strftime('%d/%m %H:%M:%S')), msg, [imgdata])
+				redis.rpush(output_name, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
+				redis.ltrim(output_name, max(0, redis.llen(output_name) - 100), -1)
 		except:
 			# return fpath back to redis list
 			redis.lpush(REDIS_INPUT_LIST, fpath)
