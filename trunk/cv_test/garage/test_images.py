@@ -9,6 +9,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from make_hogs import find_orig_file
 from sklearn.cluster import KMeans
+from skimage import feature
 
 img_paths = [
 	os.path.join(os.path.expanduser('traindata/car_inside'), '*.jpg'),
@@ -44,50 +45,55 @@ def process_image(fname):
 
 	plt.ioff()
 
-	detector = cv2.FeatureDetector_create("SIFT")
-	extractor = cv2.DescriptorExtractor_create("SIFT")
+	detector = cv2.FeatureDetector_create("Dense")
+	detector.setInt("initXyStep", 6)
+	extractor = cv2.DescriptorExtractor_create("SURF")
 
 	image = cv2.imread(fname)
 	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-	image = cv2.imread(fname)
-	labimage = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+#	blobs = feature.blob_dog(gray, threshold=.5, max_sigma=40)
+#	bimage = image.copy()
+#	for i in range(blobs.shape[0]):
+#		blob = blobs[i]
+#		print blob
+#		cv2.circle(bimage, (int(blob[0]), int(blob[1])), int(blob[2]), (128, 255, 0), -1)
+#	write_image(bimage, pfx + '_blobs.jpg', fnames)
 
-	h,s,v = cv2.split(labimage)
-	cl = []
-	for t in (h, s, v):
-		t = cv2.GaussianBlur(t, (11, 11), 0)
-		cl.append(((t - t.min()) * 256. / (t.max() - t.min())).astype('uint8'))
-	labimage = cv2.merge(cl)
-	nimage = cv2.cvtColor(labimage, cv2.COLOR_LAB2BGR)
-	write_image(nimage, pfx + '_labimage.jpg', fnames)
+#	labimage = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+#	l,a,b = cv2.split(labimage)
+#	cl = []
+#	for t in (l, a, b):
+#		t = cv2.GaussianBlur(t, (11, 11), 0)
+#		cl.append(((t - t.min()) * 256. / (t.max() - t.min())).astype('uint8'))
+#	labimage = cv2.merge(cl)
+#	nimage = cv2.cvtColor(labimage, cv2.COLOR_LAB2BGR)
+#	write_image(nimage, pfx + '_labimage.jpg', fnames)
 
-	hsvimage = cv2.cvtColor(nimage, cv2.COLOR_BGR2LAB)
-	h,s,v = cv2.split(hsvimage)
-	write_image(h, pfx + '_hueimage.jpg', fnames)
+#	hsvimage = cv2.cvtColor(nimage, cv2.COLOR_BGR2LAB)
+#	h,s,v = cv2.split(hsvimage)
+#	write_image(h, pfx + '_hueimage.jpg', fnames)
 
-	hist = cv2.calcHist([h], [0], None, [256], [0, 256])
-
+#	hist = cv2.calcHist([h], [0], None, [256], [0, 256])
 	# plot the histogram
-	plt.figure(figsize=(2,2))
-	plt.title("Hue Histogram")
-	plt.xlabel("Bins")
-	plt.ylabel("# of Pixels")
-	plt.plot(hist)
-	plt.xlim([0, 256])
-
-	fn = os.path.join('images', pfx + '_hue_histogram.png')
-	fnames.append(fn)
-	plt.savefig(os.path.join(out_path, fn), bbox_inches='tight', format='png')
+#	plt.figure(figsize=(2,2))
+#	plt.title("Hue Histogram")
+#	plt.xlabel("Bins")
+#	plt.ylabel("# of Pixels")
+#	plt.plot(hist)
+#	plt.xlim([0, 256])
+#	fn = os.path.join('images', pfx + '_hue_histogram.png')
+#	fnames.append(fn)
+#	plt.savefig(os.path.join(out_path, fn), bbox_inches='tight', format='png')
 
 
 #	gray = v
-	for i in range(1):
-		gray = cv2.medianBlur(gray, 3)
-	for i in range(1):
-		gray = cv2.GaussianBlur(gray, (11, 11), 0)
+#	for i in range(1):
+#		gray = cv2.medianBlur(gray, 3)
+#	for i in range(1):
+#		gray = cv2.GaussianBlur(gray, (11, 11), 0)
 
-	write_image(gray, pfx + '_blurred.jpg', fnames)
+#	write_image(gray, pfx + '_blurred.jpg', fnames)
 
 #	mask = (gray > 170).astype("uint8")
 #	cv2.bitwise_and(gray, gray, mask = mask)
