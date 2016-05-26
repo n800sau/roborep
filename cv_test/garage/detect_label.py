@@ -62,23 +62,33 @@ for i in range(500):
 				ftp_h.login('writer', 'pfgbcm')
 				ftp_h.cwd('rus_hard/garage')
 			if models is None:
-				t = time()
+				t = time.time()
 				models = {}
 				for mname in MODELLIST:
 					models[mname] = cPickle.loads(open(os.path.join(MODELPATH, mname + '.svc')).read())
-				print 'models load time: %d' % (time() - t)
+				print 'models load time: %d' % (int(time.time() - t)/60)
+			msglist = []
+			labellist = []
 			for mname,model in models.items():
-				label,imgdata = detect_image_label(model, ftp_h, fpath)
 				output_name = REDIS_OUTPUT_PREFIX + mname
+				label,imgdata = detect_image_label(model, ftp_h, fpath)
 				last_rec = redis.lrange(output_name, -1, -1)
 				if last_rec:
 					last_rec = json.loads(last_rec[0])
 					if last_rec['ts'] < ts and last_rec['label'] != label:
 						msg = 'Detected change at %s from %s to %s (diff=%d)' % (dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'])
 						print msg
-						send_email('itmousecage@gmail.com', 'Detected %s at %s' % (label, dt.strftime('%d/%m %H:%M:%S')), msg, [imgdata])
+						msglist.append(msg)
+						labellist.append(label)
+				else:
+					msg = 'Initial at %s %s' % (dt.strftime('%d/%m %H:%M:%S'), label)
+					print msg
+					msglist.append(msg)
+					labellist.append(label)
 				redis.rpush(output_name, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
 				redis.ltrim(output_name, max(0, redis.llen(output_name) - 100), -1)
+			if msglist:
+				send_email('itmousecage@gmail.com', 'Detected %s at %s' % (','.join(labellist), dt.strftime('%d/%m %H:%M:%S')), '\n'.join(msglist), [imgdata])
 		except:
 			# return fpath back to redis list
 			redis.lpush(REDIS_INPUT_LIST, fpath)
