@@ -1,0 +1,5 @@
+                                    PICAXE-08M2
+                                                        +V         1             8    0V
+                                       (In) Serial In / C.5        2             7    C.0 / Serial Out (Out / hserout / DAC)
+                             (Touch / ADC / Out / In) C.4          3 X           6    C.1 (In / Out / ADC / Touch / hserin / SRI / hi2c scl)
+                                                   (In) C.3        4 X           5    C.2 (In / Out / ADC / Touch / pwm / tune / SRQ / hi2c sda)
