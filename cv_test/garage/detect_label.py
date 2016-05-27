@@ -52,7 +52,8 @@ for i in range(500):
 	fpath = redis.lpop(REDIS_INPUT_LIST)
 	if fpath is None:
 		break
-	m = r.match(os.path.basename(fpath))
+	bname = os.path.basename(fpath)
+	m = r.match(bname)
 	if m:
 		dt = datetime.strptime(m.groups()[0], '%Y%m%d%H%M%S')
 		ts = time.mktime(dt.timetuple())
@@ -66,17 +67,20 @@ for i in range(500):
 				models = {}
 				for mname in MODELLIST:
 					models[mname] = cPickle.loads(open(os.path.join(MODELPATH, mname + '.svc')).read())
-				print 'models load time: %d' % (int(time.time() - t)/60)
+#					cPickle.dump(models[mname], open(os.path.join(MODELPATH, mname + '.svc.new'), 'w'), protocol=cPickle.HIGHEST_PROTOCOL)
+				tdiff = int(time.time() - t)
+				print 'models load time: %d:%d' % (tdiff//60, tdiff%60)
 			msglist = []
 			labellist = []
 			for mname,model in models.items():
 				output_name = REDIS_OUTPUT_PREFIX + mname
+				print bname,
 				label,imgdata = detect_image_label(model, ftp_h, fpath)
 				last_rec = redis.lrange(output_name, -1, -1)
 				if last_rec:
 					last_rec = json.loads(last_rec[0])
 					if last_rec['ts'] < ts and last_rec['label'] != label:
-						msg = 'Detected change at %s from %s to %s (diff=%d)' % (dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'])
+						msg = 'Detected %s changed at %s from %s to %s (diff=%d)' % (mname, dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'])
 						print msg
 						msglist.append(msg)
 						labellist.append(label)
@@ -96,3 +100,5 @@ for i in range(500):
 
 if not ftp_h is None:
 	ftp_h.quit()
+
+print 'Finished'
