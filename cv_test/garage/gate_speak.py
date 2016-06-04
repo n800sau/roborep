@@ -26,11 +26,11 @@ if state:
 				text = 'gate is ' + state['label']
 
 	if text:
-		#cmdlst = ['espeak', '-s', '150', text, '--stdout']
-		#cmd = '%s | sox -t wav - -r 44100 -t wav - | aplay -v' % subprocess.list2cmdline(cmdlst)
-		cmdlst = ['echo', text]
-		cmd = '%s | text2wave -f 44100 |aplay -v' % subprocess.list2cmdline(cmdlst)
-#		dbprint(cmd)
 		dbprint(text)
-#		p = subprocess.Popen(cmd, shell=True)
-#		p.wait()
+		cmdlst = ['espeak', '-s', '150', text, '--stdout']
+		cmd = '%s | sox -t wav - -r 44100 -t wav - | aplay -v' % subprocess.list2cmdline(cmdlst)
+#		cmdlst = ['echo', text]
+#		cmd = '%s | text2wave -f 44100 |aplay -v' % subprocess.list2cmdline(cmdlst)
+#		dbprint(cmd)
+		p = subprocess.Popen(cmd, shell=True)
+		p.wait()
