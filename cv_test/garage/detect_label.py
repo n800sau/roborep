@@ -65,7 +65,7 @@ try:
 					ftp_h = FTP('192.168.1.1')
 					ftp_h.login('writer', 'pfgbcm')
 					ftp_h.cwd('rus_hard/garage')
-				if not ftp.size(fpath) is None:
+				if not ftp_h.size(fpath) is None:
 					if models is None:
 						t = time.time()
 						models = {}
