@@ -65,45 +65,49 @@ try:
 					ftp_h = FTP('192.168.1.1')
 					ftp_h.login('writer', 'pfgbcm')
 					ftp_h.cwd('rus_hard/garage')
-				if models is None:
-					t = time.time()
-					models = {}
-					for mname in MODELLIST:
-						models[mname] = cPickle.loads(open(os.path.join(MODELPATH, mname + '.svc')).read())
-#	#					cPickle.dump(models[mname], open(os.path.join(MODELPATH, mname + '.svc.new'), 'w'), protocol=cPickle.HIGHEST_PROTOCOL)
-					tdiff = int(time.time() - t)
-					print 'models load time: %d:%d' % (tdiff//60, tdiff%60)
-				msglist = []
-				labellist = []
-				for mname,model in models.items():
-					output_name = REDIS_OUTPUT_PREFIX + mname
-					print bname,
-					label,imgdata = detect_image_label(model, ftp_h, fpath)
-					if label == NO_LABEL:
-						queue_pfx = NO_LABEL_QUEUE_PREFIX + mname
-						redis.rpush(queue_pfx, bname)
-						redis.ltrim(queue_pfx, max(0, redis.llen(queue_pfx) - 100), -1)
-					last_rec = redis.lrange(output_name, -1, -1)
-					if last_rec:
-						last_rec = json.loads(last_rec[0])
-						if last_rec['ts'] < ts and last_rec['label'] != label:
-							msg = '%s changed at %s from %s to %s (diff=%d), %s' % (mname, dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'], bname)
-							print msg
-							msglist.append(msg)
-							labellist.append((mname, label))
-					else:
-						msg = 'Initial at %s %s' % (dt.strftime('%d/%m %H:%M:%S'), label)
-						print msg
-						msglist.append(msg)
-						labellist.append(label)
-					print
-					redis.rpush(output_name, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
-					redis.ltrim(output_name, max(0, redis.llen(output_name) - 100), -1)
-				if msglist:
-					labellist = [('%s:%s' % (mname, label)) for mname,label in labellist if label != OANO_LABEL]
-					if not labellist:
-						labellist = ['_']
-					send_email('itmousecage@gmail.com', '%s: %s' % (dt.strftime('%d/%m %H:%M:%S'), ','.join(labellist)), '\n'.join(msglist), [imgdata])
+				if not ftp.size(fpath) is None:
+					if models is None:
+						t = time.time()
+						models = {}
+						for mname in MODELLIST:
+							models[mname] = cPickle.loads(open(os.path.join(MODELPATH, mname + '.svc')).read())
+#	#						cPickle.dump(models[mname], open(os.path.join(MODELPATH, mname + '.svc.new'), 'w'), protocol=cPickle.HIGHEST_PROTOCOL)
+						tdiff = int(time.time() - t)
+						print 'models load time: %d:%d' % (tdiff//60, tdiff%60)
+					msglist = []
+					labellist = []
+					for mname,model in models.items():
+						output_name = REDIS_OUTPUT_PREFIX + mname
+						print bname,
+						label,imgdata = detect_image_label(model, ftp_h, fpath)
+						if label == NO_LABEL:
+							queue_pfx = NO_LABEL_QUEUE_PREFIX + mname
+							redis.rpush(queue_pfx, bname)
+							redis.ltrim(queue_pfx, max(0, redis.llen(queue_pfx) - 100), -1)
+						elif label in ('open', 'close'):
+							redis.set('gate', json.dumps({'label': label, 'ts': time.time()}))
+						if label != NO_LABEL:
+							last_rec = redis.lrange(output_name, -1, -1)
+							if last_rec:
+								last_rec = json.loads(last_rec[0])
+								if last_rec['ts'] < ts and last_rec['label'] != label:
+									msg = '%s changed at %s from %s to %s (diff=%d), %s' % (mname, dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'], bname)
+									print msg
+									msglist.append(msg)
+									labellist.append((mname, label))
+							else:
+								msg = 'Initial at %s %s' % (dt.strftime('%d/%m %H:%M:%S'), label)
+								print msg
+								msglist.append(msg)
+								labellist.append(label)
+							print
+							redis.rpush(output_name, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
+							redis.ltrim(output_name, max(0, redis.llen(output_name) - 100), -1)
+					if msglist:
+						labellist = [label for mname,label in labellist if label != NO_LABEL]
+						if not labellist:
+							labellist = ['_']
+						send_email('itmousecage@gmail.com', '%s: %s' % (dt.strftime('%H:%M:%S %d/%m'), ','.join(labellist)), '\n'.join(msglist), [imgdata])
 			except:
 				# return fpath back to redis list
 				redis.lpush(REDIS_INPUT_LIST, fpath)
