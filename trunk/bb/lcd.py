@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import Adafruit_BBIO.GPIO as GPIO
+import Adafruit_BBIO.PWM as PWM
 import time
 
 #==============================================================================#
@@ -27,8 +28,9 @@ PINS = {
 	'DB1':'',       # pin 8 on LCD
 	'DB0':'',       # pin 7 on LCD
 	'R/W': 'P8_11', # Pin R/W is held to ground in the circuit - W only
-	'V0':  'P9_14',
 }
+
+V0_PIN = 'P9_14'
 
 # 
 #V0 - P9.14 - PWM1A
@@ -76,6 +78,7 @@ def initalizePins(pins):
 		GPIO.setup(pin, GPIO.OUT)
 	# set all low including R/W
 	set_all_low(pins)
+	PWM.start(V0_PIN, 50, 2000, 1)
 
 # Pause the script for 2 ms
 def wait():
