@@ -2,4 +2,5 @@
 <resources>
     <string name="remote_service_connected">Display connected</string>
     <string name="remote_service_disconnected">Display disconnected</string>
+    <string name="app_name">ACTIVITY_ENTRY_NAME</string>
 </resources>
