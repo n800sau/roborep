@@ -1,0 +1,79 @@
+
+       Usage:
+       android [global options] create [action options]
+       Global options:
+  -s --silent     : Silent mode, shows errors only.
+  -v --verbose    : Verbose mode, shows errors, warnings and all messages.
+     --clear-cache: Clear the SDK Manager repository manifest cache.
+  -h --help       : Help on a specific command.
+
+                                                                    Valid
+                                                                    actions
+                                                                    are
+                                                                    composed
+                                                                    of a verb
+                                                                    and an
+                                                                    optional
+                                                                    direct
+                                                                    object:
+- create avd          : Creates a new Android Virtual Device.
+- create project      : Creates a new Android project.
+- create test-project : Creates a new Android project for a test package.
+- create lib-project  : Creates a new Android library project.
+- create uitest-project: Creates a new UI test project.
+
+                     Action "create avd":
+  Creates a new Android Virtual Device.
+Options:
+  -t --target  : Target ID of the new AVD. [required]
+  -a --snapshot: Place a snapshots file in the AVD, to enable persistence.
+  -c --sdcard  : Path to a shared SD card image, or size of a new sdcard for
+                 the new AVD.
+  -p --path    : Directory where the new AVD will be created.
+  -b --abi     : The ABI to use for the AVD. The default is to auto-select the
+                 ABI if the platform has only one ABI for its system images.
+  -d --device  : The optional device definition to use. Can be a device index
+                 or id.
+  -n --name    : Name of the new AVD. [required]
+  -s --skin    : Skin for the new AVD.
+  -g --tag     : The sys-img tag to use for the AVD. The default is to
+                 auto-select if the platform has only one tag for its system
+                 images.
+  -f --force   : Forces creation (overwrites an existing AVD)
+
+                         Action "create project":
+  Creates a new Android project.
+Options:
+  -n --name          : Project name.
+  -a --activity      : Name of the default Activity that is created.
+                       [required]
+  -k --package       : Android package name for the application. [required]
+  -v --gradle-version: Gradle Android plugin version.
+  -t --target        : Target ID of the new project. [required]
+  -g --gradle        : Use gradle template.
+  -p --path          : The new project's directory. [required]
+
+                              Action "create test-project":
+  Creates a new Android project for a test package.
+Options:
+  -m --main    : Path to directory of the app under test, relative to the test
+                 project directory. [required]
+  -p --path    : The new project's directory. [required]
+  -n --name    : Project name.
+
+                             Action "create lib-project":
+  Creates a new Android library project.
+Options:
+  -t --target        : Target ID of the new project. [required]
+  -v --gradle-version: Gradle Android plugin version.
+  -g --gradle        : Use gradle template.
+  -n --name          : Project name.
+  -k --package       : Android package name for the library. [required]
+  -p --path          : The new project's directory. [required]
+
+                                Action "create uitest-project":
+  Creates a new UI test project.
+Options:
+  -n --name    : Project name.
+  -p --path    : The new project's directory. [required]
+  -t --target  : Target ID of the new project. [required]
