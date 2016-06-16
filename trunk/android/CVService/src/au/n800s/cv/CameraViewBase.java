@@ -12,6 +12,8 @@ import android.hardware.Camera.PreviewCallback;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import au.n800s.robo.common.DbMsg;
+
 public abstract class CameraViewBase extends SurfaceView implements SurfaceHolder.Callback, Runnable {
 
     private Camera              mCamera;
