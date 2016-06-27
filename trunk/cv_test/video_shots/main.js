@@ -9,9 +9,11 @@ angular.module('myApp',
 	)
 	.controller('HomeCtrl',
 		["$sce", "$http", "$scope", function ($sce, $http, $scope) {
+			$scope.load_id = (new Date()).getTime();
+
 			this.config = {
 				sources: [
-					{src: $sce.trustAsResourceUrl("data/input/v.webm?a=b"), type: "video/webm"}
+					{src: $sce.trustAsResourceUrl("data/input/v.webm?load_id=" + $scope.load_id), type: "video/webm"}
 				],
 				theme: "node_modules/videogular-themes-default/videogular.css"
 			};
