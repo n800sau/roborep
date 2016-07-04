@@ -23,25 +23,27 @@
 		<button ng-click="nextPage()" ng-disabled="count > data.length">&sc;</button>
 	</div>
 
-	{{start}} - {{start+count-1}}
+	{{start}} - {{start+count-1}}<br/>
 
-	<table style="width: 100px;margin: 5px;">
+	<input type="checkbox" ng-model="filter_unticked">Non-ticked</input>
+
+	<table class="images">
 		<tr>
 			<th></th>
-			<th>-</th>
 			<th ng-repeat="l in labels track by $index">
 				{{l}}
 			</th>
+			<th>Neg</th>
 		</tr>
-		<tr ng-repeat="el in data">
+		<tr ng-repeat="el in data" ng-class="[{labelled: is_labelled(el)}]" ng-if="!(filter_unticked && is_labelled(el))">
 			<td class="thumb">
-				<img ng-src="{{el.thumb}}" alt="{{el.bname}}" ng-click="thumb_click(el)"></img>
-			</td>
-			<td class="negative">
-				<input type="checkbox" ng-model="el.negative" ng-click="negate(el)"></input>
+				<img ng-src="{{el.thumb}}" alt="{{el.bname}}" ng-click="thumb_click(el)" title="{{el.bname}}"></img>
 			</td>
 			<td ng-repeat="l in labels track by $index" class="label">
 				<input type="checkbox" ng-model="el.labels[l]" ng-click="labelate(el)"></input>
+			</td>
+			<td class="negative">
+				<input type="checkbox" ng-model="el.negative" ng-click="negate(el)"></input>
 			</td>
 		</tr>
 	</table>
@@ -54,7 +56,9 @@
 					<div mr-image
 						mr-src="el.image"
 						mr-selector="selector"
-						mr-drawer="el.drawer">
+						mr-drawer="el.drawer"
+						mr-max-width="200"
+					>
 					</div>
 				</td>
 				<td>
