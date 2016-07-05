@@ -96,4 +96,15 @@ myApp.controller('MyController', function($scope, $http, $interval) {
 		});
 	}
 
+	$scope.is_labelled = function(el) {
+		var found = false;
+		for(var i=0; i<$scope.labels.length; i++) {
+			if(el.labels[$scope.labels[i]]) {
+				found = true;
+				break;
+			}
+		}
+		return found;
+	}
+
 });

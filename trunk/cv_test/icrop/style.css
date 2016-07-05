@@ -1,7 +1,3 @@
-.thumb td {
-	cursor: pointer;
-}
-
 .btn {
 	width: 100%;
 }
@@ -28,6 +24,27 @@
 	border: solid black 1px;
 }
 
+table {
+	border-collapse: collapse;
+}
+
 .label, .negative {
 	text-align: center;
+}
+
+table.images {
+	width: 100px;
+	margin: 5px;
+}
+
+td.thumb {
+	cursor: pointer;
+}
+
+table.images th, table.images td {
+	border-right: solid 1px black;
+}
+
+.labelled {
+	background-color: #DDDDDD;
 }
