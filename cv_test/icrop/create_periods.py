@@ -32,6 +32,6 @@ for dname in glob.glob(os.path.join(IMG_PATH, '2016-*-*')):
 				label = p2[1]
 				pleft = p2[0]
 		ofname = os.path.join(dname, 'periods.json')
-		json.dump(pdata, file(ofname, 'w'), indent=2)
+		json.dump([p for p in pdata if p[0] != '_'], file(ofname, 'w'), indent=2)
 
 print 'Finished'
