@@ -18,11 +18,6 @@ symbol stagelen = time_end / 3
 symbol stage1end = stagelen
 symbol stage2end = stagelen * 2
 
-low led1
-low led2
-low led3
-' settimer to 1 second ticks at 4MHz
-
 main:
 	gosub reset_leds
 	touch touch_btn, bstate
