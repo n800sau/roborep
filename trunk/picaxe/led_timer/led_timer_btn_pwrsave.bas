@@ -5,8 +5,6 @@ symbol led1 = C.0
 symbol led2 = C.1
 symbol led3 = C.2
 symbol led4 = C.4
-symbol light_on = b0
-symbol bstate = b1
 symbol timeval = w1
 
 ' 2 min
@@ -42,7 +40,7 @@ action:
 	endif
 	gosub blink
 	pause tick_pause
-	let timeval = timeval + period
+	inc timeval
 	goto action
 
 blink:
@@ -72,7 +70,6 @@ blink:
 	return
 
 reset_leds:
-	let light_on = 0
 	low led1
 	low led2
 	low led3

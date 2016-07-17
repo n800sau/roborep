@@ -1,11 +1,9 @@
 ' 4.5V pack 08M2
 
-symbol touch_btn = C.4
+symbol btn = pinC.3
 symbol led1 = C.0
 symbol led2 = C.1
 symbol led3 = C.2
-symbol light_on = b0
-symbol bstate = b1
 symbol timeval = w1
 
 ' 2 min
@@ -22,8 +20,7 @@ symbol stage2end = stagelen * 2
 
 main:
 	gosub reset_leds
-	touch touch_btn, bstate
-	if bstate > 100 then
+	if btn = 0 then
 		let timeval = 0
 		gosub action
 		pause 1000
@@ -40,30 +37,32 @@ action:
 	endif
 	gosub blink
 	pause tick_pause
-	let timeval = timeval + period
+	inc timeval
 	goto action
 
 blink:
 	if timeval >= stage2end then
-		high led1
-		high led2
+		low led1
+		low led2
 		high led3
 		pause blink_period
 		low led3
 	elseif timeval >= stage1end then
-		high led1
+		low led1
 		high led2
+		low led3
 		pause blink_period
 		low led2
 	else
 		high led1
+		low led2
+		low led3
 		pause blink_period
 		low led1
 	endif
 	return
 
 reset_leds:
-	let light_on = 0
 	low led1
 	low led2
 	low led3

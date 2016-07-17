@@ -12,7 +12,8 @@ symbol timeval = w1
 symbol period = 500
 symbol secticks = 1000 / period
 symbol minticks = secticks * 60
-symbol time_end = minticks * 2
+symbol twominticks = minticks * 2
+symbol time_end = twominticks * 1000
 symbol stagelen = time_end / 3
 
 symbol stage1end = stagelen
@@ -23,6 +24,7 @@ main:
 	touch touch_btn, bstate
 	if bstate > 100 then
 		let timeval = 0
+'sertxd("The value of timeval is ",#timeval,13,10)
 		gosub action
 		pause 1000
 	endif
@@ -36,6 +38,7 @@ action:
 	gosub blink
 	pause period
 	let timeval = timeval + period
+	debug
 	goto action
 
 blink:
