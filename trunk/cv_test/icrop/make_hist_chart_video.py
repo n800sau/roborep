@@ -22,8 +22,8 @@ while True:
 	hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 	h,s,v = cv2.split(image)
 	hist = cv2.calcHist([h], [0], None, [256], [0, 256])
-	hist /= hist.sum()
-	fig = plt.figure(figsize=(4.5, 1.8), dpi=50)
+	hist /= hist.max()
+	fig = plt.figure(figsize=(4.5, 1.8), dpi=100)
 	ax = fig.add_subplot(121)
 	ax.set_title("Histogram")
 	ax.set_xlabel("Bins")
@@ -48,3 +48,5 @@ while True:
 if not out is None:
 	out.release()
 camera.release()
+
+print 'Finished'
