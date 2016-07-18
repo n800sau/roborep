@@ -29,8 +29,13 @@
 			<td>
 				<img ng-src="{{el.img2.thumb}}" ng-click="thumb_click(el.img2)" title="{{el.img2.dname}}"></img>
 			</td>
+			<td>
+				<img ng-src="{{el.img3.thumb}}" ng-click="thumb_click(el.img3)" title="{{el.img3.dname}}"></img>
+			</td>
 		</tr>
 	</table>
+
+	<img src="{{el.image}}" width="150" ng-if="el"></img>
 
 </div>
 
