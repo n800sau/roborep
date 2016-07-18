@@ -76,11 +76,17 @@
 				// check if thumb exists
 				$subfname = $fileinfos->getSubPathname();
 				$bname = basename($subfname);
+
 				$thpath1 = $THUMBPATH1 . '/' . $subfname;
 				mkthumb($fpath1, $thpath1);
+
 				$fpath2 = $SRCPATH2 . '/' . $subfname;
 				$thpath2 = $THUMBPATH2 . '/' . $subfname;
 				mkthumb($fpath2, $thpath2);
+
+				$fpath3 = $SRCPATH3 . '/' . $subfname;
+				$thpath3 = $THUMBPATH3 . '/' . $subfname;
+				mkthumb($fpath3, $thpath3);
 
 				$bname = basename($subfname);
 				$flist[] = array(
@@ -93,6 +99,12 @@
 					'img2' => array(
 						'thumb' => $thpath2,
 						'image' => $fpath2,
+						'bname' => $bname,
+						'dname' => $subfname,
+					),
+					'img3' => array(
+						'thumb' => $thpath3,
+						'image' => $fpath3,
 						'bname' => $bname,
 						'dname' => $subfname,
 					),
