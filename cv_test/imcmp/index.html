@@ -1,0 +1,38 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3">
+	<title>Ra ImCmp</title>
+	<link rel="stylesheet" href="style.css">
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+	<script type="text/javascript" src="main.js"></script>
+</head>
+<body>
+
+<button onclick="location.reload()">&orarr;</button>
+<br/>
+
+<div ng-app='myApp' ng-controller='MyController' ng-cloak>
+
+	<div>
+		<button ng-click="prevPage()" ng-disabled="start <= 0">&pr;</button>
+		<button ng-click="nextPage()" ng-disabled="count > data.length">&sc;</button>
+	</div>
+
+	{{start}} - {{start+count-1}}<br/>
+	{{first}} - {{last}}<br/>
+
+	<table>
+		<tr class="thumb" style="width: 100px;margin: 5px; border: none;" ng-repeat="el in data">
+			<td>
+				<img ng-src="{{el.img1.thumb}}" ng-click="thumb_click(el.img1)" title="{{el.img1.dname}}"></img>
+			</td>
+			<td>
+				<img ng-src="{{el.img2.thumb}}" ng-click="thumb_click(el.img2)" title="{{el.img2.dname}}"></img>
+			</td>
+		</tr>
+	</table>
+
+</div>
+
+</body>
+</html>
