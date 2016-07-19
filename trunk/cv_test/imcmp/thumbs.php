@@ -8,6 +8,9 @@
 			$ftime = filemtime($fpath);
 			$thtime = file_exists($thpath) ? filemtime($thpath) : NULL;
 			if(is_null($thtime) || ($thtime < $ftime)) {
+				if(!file_exists(dirname($thpath))) {
+					mkdir(dirname($thpath), 0777, true);
+				}
 				// make thumbnail
 				$thumb = new \Imagick($fpath);
 //		error_log($TH_WIDTH . ',' . $TH_HEIGHT);
@@ -53,7 +56,7 @@
 	$fileinfos = new RecursiveIteratorIterator(
 		new FilesOnlyFilter(
 			new VisibleOnlyFilter(
-				new RecursiveDirectoryIterator($SRCPATH1, FilesystemIterator::UNIX_PATHS)
+				new RecursiveDirectoryIterator($SRCPATH1, FilesystemIterator::UNIX_PATHS | FilesystemIterator::FOLLOW_SYMLINKS)
 			)
 		),
 		RecursiveIteratorIterator::LEAVES_ONLY 
@@ -70,6 +73,7 @@
 	foreach ($fileinfos as $dname)
 	{
 		$fpath1 = $dname->getPathname();
+		error_log($fpath1);
 		$itype = exif_imagetype($fpath1);
 		if($itype) {
 			if($i >= $start) {

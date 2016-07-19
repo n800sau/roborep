@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-import os, json
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
+
+from paths import r_list_dirs, list_images
+import json
 import cv2
 import imutils
 from matplotlib import pyplot as plt
@@ -9,7 +13,12 @@ in_dir = os.path.join('data', 'images1')
 out_dir = os.path.join('data', 'images2')
 out_hist_dir = os.path.join('data', 'images3')
 
-def process_image(fname, in_dir, out_dir, out_his_dir):
+def process_image(fname, in_dir, out_dir, out_hist_dir):
+
+	for dr in (out_dir, out_hist_dir):
+		dr = os.path.dirname(os.path.join(dr, fname))
+		if not os.path.exists(dr):
+			os.makedirs(dr)
 
 	image = cv2.imread(os.path.join(in_dir, fname))
 
@@ -26,6 +35,7 @@ def process_image(fname, in_dir, out_dir, out_his_dir):
 #	ax.set_ylim([0, 300])
 	ax.plot(hist)
 	ax.set_xlim([0, 256])
+#	print os.path.join(out_hist_dir, fname)
 	plt.savefig(os.path.join(out_hist_dir, fname), dpi = (50))
 	plt.close(fig)
 
@@ -36,11 +46,10 @@ def process_image(fname, in_dir, out_dir, out_his_dir):
 		eroded = cv2.erode(h.copy(), None, iterations=i + 1)
 		cv2.imwrite(os.path.join(out_dir, fname), eroded)
 
-for root, dirs, files in os.walk(in_dir, followlinks=True):
+for subdir in r_list_dirs(in_dir):
 
-	for fname in files:
-		process_image(fname, in_dir, out_dir, out_hist_dir)
-
-	break
+	for fname in list_images(in_dir, subdir):
+#		print in_dir, dpath, fname
+		process_image(fname, os.path.join(in_dir, subdir), os.path.join(out_dir, subdir), os.path.join(out_hist_dir, subdir))
 
 print 'Finished'
