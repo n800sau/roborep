@@ -1,6 +1,7 @@
 import os
+import imghdr
 
-def list_dirs(root_dir, subdir='.', real_paths=None):
+def r_list_dirs(root_dir, subdir='.', real_paths=None):
 	rs = []
 	bpath = os.path.join(root_dir, subdir)
 	if real_paths is None:
@@ -11,7 +12,15 @@ def list_dirs(root_dir, subdir='.', real_paths=None):
 #		print real_path
 		rs.append(subdir)
 		for d in os.listdir(real_path):
-			rs += list_dirs(root_dir, os.path.join(subdir, d), real_paths)
+			rs += r_list_dirs(root_dir, os.path.join(subdir, d), real_paths)
+	return rs
+
+def list_images(root_dir, subdir='.'):
+	rs = []
+	for fname in os.listdir(os.path.join(root_dir, subdir)):
+		fpath = os.path.join(root_dir, subdir, fname)
+		if os.path.isfile(fpath) and imghdr.what(fpath):
+			rs.append(fname)
 	return rs
 
 if __name__ == '__main__':
