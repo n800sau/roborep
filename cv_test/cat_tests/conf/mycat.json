@@ -1,0 +1,45 @@
+{
+  #######
+  # DATASET SAMPLING CONFIGURATION
+  #######
+  "dataset_path": "mycat",
+  "masked_path": "mycat_masked",
+  "features_path": "myoutput/features.hdf5",
+  "output_path": "myoutput/data",
+
+  #######
+  # OVERFEAT CONFIGURATION
+  #######
+  "overfeat_layer_num": -3,
+  "overfeat_fixed_size": [231, 231],
+  "overfeat_batch_size": 10,
+
+  #######
+  # LABEL ENCODER CONFIGURATION
+  #######
+  "label_encoder_path": "myoutput/le.cpickle",
+
+  #######
+  # CLASSIFIER CONFIGURATION
+  #######
+  "classifier_path": "myoutput/classifier.cpickle",
+  "training_size": 0.5,
+  "results_path": "myoutput/results.txt",
+
+# CNN
+
+  "network": "lenet",
+#  "network": "karpathynet",
+#  "network": "shallownet",
+#  "network": "minivggnet",
+  "weights": "myoutput/models/lenet_weights.hdf5",
+  "arch": "myoutput/models/lenet_arch.json",
+  "labels": "myoutput/models/label_list.json",
+  "test_size": 0.25,
+  "dropout": 1,
+  "batch_size": 32,
+  "activation": "relu",
+#  "activation": "tanh",
+  "epochs": 80
+
+}
