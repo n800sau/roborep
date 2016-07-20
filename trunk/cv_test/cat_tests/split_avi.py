@@ -6,18 +6,10 @@ from imutils import paths, resize
 import argparse
 import numpy as np
 from pyimagesearch.utils import Conf
-from keras.optimizers import SGD
-from keras.utils import np_utils
-from pyimagesearch.cnn import ConvNetFactory
 
-#from keras.layers.convolutional import Convolution2D
-#from keras.layers.convolutional import MaxPooling2D
-#from keras.layers.core import Activation
-#from keras.layers.core import Flatten
-#from keras.layers.core import Dropout
-#from keras.layers.core import Dense
-#from keras.models import Sequential
 from keras.models import model_from_json
+
+from image_data import extract_image_data
 
 # construct the argument parser and parse the command line arguments
 ap = argparse.ArgumentParser()
@@ -27,17 +19,6 @@ args = vars(ap.parse_args())
 
 # load the configuration and grab all image paths in the dataset
 conf = Conf(args["conf"])
-
-IMG_SIDE = 100
-
-def extract_image_data(image):
-	image = cv2.resize(image, (IMG_SIDE, IMG_SIDE))
-	hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-	h,s,v = cv2.split(hsv)
-	hist = cv2.calcHist([h], [0], None, [256], [0, 256])
-	hist /= hist.max()
-	return hist.reshape(16, 16)
-
 
 # if a video path was not supplied, grab the reference to the webcam
 if args.get("video", False):
