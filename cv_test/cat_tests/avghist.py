@@ -18,6 +18,8 @@ from keras.layers.core import Dropout
 from keras.layers.core import Dense
 from keras.models import Sequential
 
+from image_data import extract_image_data
+
 DO_TRAIN = 0
 DO_TEST = 1
 
@@ -48,17 +50,19 @@ i = 0
 for fname in imagePaths:
 	label = os.path.basename(os.path.dirname(fname))
 	image = cv2.imread(fname)
-	image = cv2.resize(image, (IMG_SIDE, IMG_SIDE))
+	hdata[i][0] = extract_image_data(image)
+#	image = cv2.imread(fname)
+#	image = cv2.resize(image, (IMG_SIDE, IMG_SIDE))
 # not working like that
 #	image = resize(image, width=100, height=100)
-	hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-	h,s,v = cv2.split(hsv)
-	hist = cv2.calcHist([h], [0], None, [256], [0, 256])
-	hist /= hist.max()
+#	hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+#	h,s,v = cv2.split(hsv)
+#	hist = cv2.calcHist([h], [0], None, [256], [0, 256])
+#	hist /= hist.max()
 	label_index = label_list.index(label)
 	labels[i] = label_index
-	hdata[i][0] = hist.reshape(16, 16)
-	idata[i] = np.swapaxes(image, 0, 2)
+#	hdata[i][0] = hist.reshape(16, 16)
+#	idata[i] = np.swapaxes(cv2.resize(image, (IMG_SIDE, IMG_SIDE)), 0, 2)
 	i += 1
 
 data = hdata
