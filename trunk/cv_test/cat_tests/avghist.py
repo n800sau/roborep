@@ -20,7 +20,7 @@ from keras.models import Sequential
 
 from image_data import extract_image_data
 
-DO_TRAIN = 0
+DO_TRAIN = 1
 DO_TEST = 1
 
 # construct the argument parser and parse the command line arguments
@@ -40,7 +40,7 @@ IMG_SIDE = 100
 
 label_list = []
 labels = np.empty(icount, np.uint8)
-hdata = np.empty((icount, 1, 16, 16), np.uint8)
+hdata = None 
 idata = np.empty((icount, 3, IMG_SIDE, IMG_SIDE), np.uint8)
 
 # collect labels
@@ -50,7 +50,10 @@ i = 0
 for fname in imagePaths:
 	label = os.path.basename(os.path.dirname(fname))
 	image = cv2.imread(fname)
-	hdata[i][0] = extract_image_data(image)
+	imgdata = extract_image_data(image)
+	if hdata is None:
+		hdata = np.empty((icount, 1, imgdata.shape[0], imgdata.shape[1]), np.uint8)
+	hdata[i][0] = imgdata
 #	image = cv2.imread(fname)
 #	image = cv2.resize(image, (IMG_SIDE, IMG_SIDE))
 # not working like that
