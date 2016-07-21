@@ -149,7 +149,7 @@ static void ReServant_dump_request_cb(struct evhttp_request *req, void *arg)
 	evhttp_send_reply(req, 200, "OK", NULL);
 }
 
-void ReServant_connectCallback(const redisAsyncContext *c)
+void ReServant_connectCallback(const redisAsyncContext *c, int i)
 {
     ((void)c);
     syslog(LOG_NOTICE, "connected...\n");
