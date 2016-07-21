@@ -74,6 +74,6 @@ void fprint_reply(redisReply *reply, int indent, FILE *stream)
 				break;
 		}
 	} else {
-		fprintf(stream, "%s\n", reply);
+		fprintf(stream, "%s\n", (char*)reply);
 	}
 }
