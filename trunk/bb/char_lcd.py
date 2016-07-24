@@ -30,6 +30,7 @@ lcd_d5        = 'P8_12'
 lcd_d6        = 'P8_10'
 lcd_d7        = 'P8_8'
 lcd_backlight = 'P9_14'
+# R/W connected to GND
 
 # Define LCD column and row size for 16x2 LCD.
 lcd_columns = 16
