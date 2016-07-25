@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # Example using a character LCD connected to a Raspberry Pi or BeagleBone Black.
 import time
+import pyping
+from datetime import timedelta
 
 import Adafruit_CharLCD as LCD
 
@@ -29,6 +31,13 @@ lcd.set_backlight(1)
 while True:
 
 	lcd.home()
-	lcd.message(time.strftime('%d/%m/%Y\n%H:%M:%S'))
+	with open('/proc/uptime', 'r') as f:
+		response = pyping.ping('192.168.1.1')
+		uptime_seconds = float(f.readline().split()[0])
+		uptime_string = 'Uptime: %s' % timedelta(seconds = uptime_seconds)
+		lcd.message(time.strftime('%H:%M:%S') + (' p: %s' % (not response.ret_code)) + '\n' + uptime_string.split('.')[0])
+
+#	lcd.message(time.strftime('%d/%m/%Y\n%H:%M:%S'))
+
 	time.sleep(1)
 
