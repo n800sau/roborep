@@ -14,7 +14,7 @@ from image_data import extract_image_data
 # construct the argument parser and parse the command line arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-c", "--conf", required=True, help="path to configuration file")
-ap.add_argument("-v", "--video", required=True, help="path to video file")
+ap.add_argument("-v", "--video", required=False, help="path to video file")
 args = vars(ap.parse_args())
 
 # load the configuration and grab all image paths in the dataset
@@ -32,7 +32,7 @@ fps = 25
 
 icount = 1
 
-hdata = np.empty((icount, 1, 16, 16), np.uint8)
+hdata = None
 
 model1 = model_from_json(open(conf["arch"], "r").read())
 model1.load_weights(conf["weights"])
@@ -40,39 +40,46 @@ model1.load_weights(conf["weights"])
 label_list1 = json.load(file(conf["labels"], "r"))
 
 t = time.time()
-i = 0
-while True:
 
-	(grabbed, frame) = camera.read()
+try:
+	i = 0
+	while True:
 
-	# if we are viewing a video and we did not grab a frame, then we have reached the
-	# end of the video
-	if args.get("video") and not grabbed:
-		break
+		(grabbed, frame) = camera.read()
 
-	if not grabbed:
-		continue
+		# if we are viewing a video and we did not grab a frame, then we have reached the
+		# end of the video
+		if args.get("video") and not grabbed:
+			break
 
-	i += 1
+		if not grabbed:
+			continue
 
-	hdata[0] = extract_image_data(frame)
+		data = extract_image_data(frame)
 
-	proba = model1.predict(hdata, batch_size=1, verbose=0)
+		if hdata is None:
+			hdata = np.empty((icount, 1, data.shape[0], data.shape[1]), np.uint8)
 
-#	print('PROBA:', proba)
-	predictions = proba.argmax(axis=1)
+		i += 1
 
-	predict_label = label_list1[predictions[0]]
+		hdata[0][0] = data
 
-	print predict_label
+		proba = model1.predict(hdata, batch_size=1, verbose=0)
 
-	if predict_label not in outlist:
-		sz = list(reversed(frame.shape[:2]))
-		outlist[predict_label] = cv2.VideoWriter(predict_label + '.avi', fourcc, fps, tuple(sz))
+#		print('PROBA:', proba)
+		predictions = proba.argmax(axis=1)
 
-	outlist[predict_label].write(frame)
+		predict_label = label_list1[predictions[0]]
 
-for out in outlist.values():
-	out.release()
+		print predict_label
 
-print 'Finished (%d frame/sec)' % (i / (time.time() - t))
+		if predict_label not in outlist:
+			sz = list(reversed(frame.shape[:2]))
+			outlist[predict_label] = cv2.VideoWriter(predict_label + '.avi', fourcc, fps, tuple(sz))
+
+		outlist[predict_label].write(frame)
+
+finally:
+	for out in outlist.values():
+		out.release()
+	print 'Finished (%d frame/sec)' % (i / (time.time() - t))
