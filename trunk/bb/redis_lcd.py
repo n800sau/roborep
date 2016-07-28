@@ -5,6 +5,7 @@ import redis
 import Adafruit_CharLCD as LCD
 
 REDIS_KEY = 'LCD_lines'
+REDIS_PRI_KEY = 'LCD_timed_lines'
 
 lcd_rs        = 'P8_15'
 lcd_en        = 'P8_13'
@@ -33,7 +34,9 @@ old_line = None
 lcd.set_backlight(1)
 while True:
 
-	new_line = r.get(REDIS_KEY)
+	new_line = r.get(REDIS_PRI_KEY)
+	if not new_line:
+		new_line = r.get(REDIS_KEY)
 	if new_line != old_line:
 		lcd.home()
 		if new_line:
