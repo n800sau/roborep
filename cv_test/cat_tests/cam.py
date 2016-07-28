@@ -3,6 +3,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 
 import cv2, random, json, time
 from imutils import paths, resize
+import redis
 import argparse
 import numpy as np
 from pyimagesearch.utils import Conf
@@ -18,6 +19,9 @@ args = vars(ap.parse_args())
 
 # load the configuration and grab all image paths in the dataset
 conf = Conf(args["conf"])
+
+REDIS_KEY = 'LCD_timed_lines'
+r = redis.Redis()
 
 fourcc = cv2.cv.CV_FOURCC('X', 'V', 'I', 'D')
 fps = 2
@@ -68,7 +72,9 @@ try:
 
 		predict_label = label_list1[predictions[0]]
 
-		print '%5d %s %s' % (i, predict_label, proba)
+		print '%5d %s %.2f-%.2f' % (i, predict_label, proba[0][0], proba[0][1])
+		r.set(REDIS_KEY, time.strftime('%H:%M:%S') + '\n' + predict_label)
+		r.expire(REDIS_KEY, 5)
 
 finally:
 	print 'Finished (%d frame/sec)' % (i / (time.time() - t))
