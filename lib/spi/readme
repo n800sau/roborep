@@ -1,1 +1,6 @@
 Beagle Bone spi
+
+bb black:
+PORT 	CS0 	DO 	DI 	SCLK
+SPI0 	P9_17 	P9_21 	P9_18 	P9_22
+SPI1 	P9_28 	P9_29 	P9_30 	P9_31
