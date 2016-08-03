@@ -52,7 +52,7 @@ ftp_h = None
 models = None
 r = re.compile('^[0-9A-F]+\(.*\)_\d_(\d+)_\d+\.jpg')
 try:
-	redis = redis.Redis('bbspeaker')
+	redis = redis.Redis()
 	for i in range(5000):
 		fpath = redis.lpop(REDIS_INPUT_LIST)
 		if fpath is None:
@@ -64,9 +64,8 @@ try:
 			ts = time.mktime(dt.timetuple())
 			try:
 				if ftp_h is None:
-					ftp_h = FTP('192.168.1.1')
+					ftp_h = FTP('192.168.1.1', timeout=30)
 					ftp_h.login('writer', 'pfgbcm')
-					ftp_h.cwd('rus_hard/garage')
 				if models is None:
 					t = time.time()
 					models = {}
@@ -100,7 +99,7 @@ try:
 							msg = 'Initial at %s %s' % (dt.strftime('%d/%m %H:%M:%S'), label)
 							print msg
 							msglist.append(msg)
-							labellist.append(label)
+							labellist.append((mname, label))
 						print
 						redis.rpush(output_name, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
 						redis.ltrim(output_name, max(0, redis.llen(output_name) - 100), -1)
@@ -116,9 +115,10 @@ try:
 				raise
 except Exception, e:
 	send_email('itmousecage@gmail.com', '%s error occured: %s' % (failed_file, str(e)), 'Error details: %s' % traceback.format_exc())
-	pass
+	traceback.print_exc(sys.stderr)
 
 if not ftp_h is None:
 	ftp_h.quit()
+
 
 print 'Finished at %s' % time.strftime('%d/%m %H:%M:%S')
