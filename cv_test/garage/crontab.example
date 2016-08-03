@@ -1,0 +1,4 @@
+# m h  dom mon dow   command
+*/2 * * * * /home/n800s/work/roborep/cv_test/garage/detect_label.sh >/dev/null
+*/5 * * * * /home/n800s/work/roborep/cv_test/garage/run_sweep.sh >/dev/null
+#*/2 * * * * /home/n800s/work/roborep/cv_test/garage/gate_speak.sh >/dev/null
