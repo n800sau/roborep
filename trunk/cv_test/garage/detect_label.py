@@ -39,12 +39,16 @@ def detect_label(model, image):
 
 
 def detect_image_label(model, ftp_h, fpath):
+	t = time.time()
 	reader = StringIO()
 	ftp_h.retrbinary("RETR %s" % fpath, reader.write)
 	imgdata = reader.getvalue()
 	img_array = np.asarray(bytearray(imgdata), dtype=np.uint8)
 	image = cv2.imdecode(img_array, cv2.CV_LOAD_IMAGE_UNCHANGED)
-	return (detect_label(model, image), imgdata)
+	rs = (detect_label(model, image), imgdata)
+	tdiff = int(time.time() - t)
+	print 'image process time: %d:%02d' % (tdiff//60, tdiff%60)
+	return rs
 
 #00D6FB009223(n800sau)_1_20160516142921_30928.jpg
 failed_file = ''
@@ -73,7 +77,7 @@ try:
 						models[mname] = cPickle.loads(open(os.path.join(MODELPATH, mname + '.svc')).read())
 #						cPickle.dump(models[mname], open(os.path.join(MODELPATH, mname + '.svc.new'), 'w'), protocol=cPickle.HIGHEST_PROTOCOL)
 					tdiff = int(time.time() - t)
-					print 'models load time: %d:%d' % (tdiff//60, tdiff%60)
+					print 'models load time: %d:%02d' % (tdiff//60, tdiff%60)
 				msglist = []
 				labellist = []
 				for mname,model in models.items():
