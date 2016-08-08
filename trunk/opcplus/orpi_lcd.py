@@ -27,6 +27,7 @@ class LCD16x2:
 	E_DELAY = 0.0005
 
 	def __init__(self):
+		self.lines = (self.LCD_LINE_1, self.LCD_LINE_2)
 		gpio.init()
 		gpio.setcfg(self.LCD_E, gpio.OUTPUT)  # E
 		gpio.setcfg(self.LCD_RS, gpio.OUTPUT) # RS
@@ -34,19 +35,16 @@ class LCD16x2:
 		gpio.setcfg(self.LCD_D5, gpio.OUTPUT) # DB5
 		gpio.setcfg(self.LCD_D6, gpio.OUTPUT) # DB6
 		gpio.setcfg(self.LCD_D7, gpio.OUTPUT) # DB7
-		self.lcd_init()
-
-	def lcd_init(self):
 		# Initialise display
-		self.lcd_byte(0x33, self.LCD_CMD) # 110011 Initialise
-		self.lcd_byte(0x32, self.LCD_CMD) # 110010 Initialise
-		self.lcd_byte(0x06, self.LCD_CMD) # 000110 Cursor move direction
-		self.lcd_byte(0x0C, self.LCD_CMD) # 001100 Display On,Cursor Off, Blink Off
-		self.lcd_byte(0x28, self.LCD_CMD) # 101000 Data length, number of lines, font size
+		self.send_byte(0x33, self.LCD_CMD) # 110011 Initialise
+		self.send_byte(0x32, self.LCD_CMD) # 110010 Initialise
+		self.send_byte(0x06, self.LCD_CMD) # 000110 Cursor move direction
+		self.send_byte(0x0C, self.LCD_CMD) # 001100 Display On,Cursor Off, Blink Off
+		self.send_byte(0x28, self.LCD_CMD) # 101000 Data length, number of lines, font size
 		self.clear()
 		time.sleep(self.E_DELAY)
 
-	def lcd_byte(self, bits, mode):
+	def send_byte(self, bits, mode):
 		# Send byte to data pins
 		# bits = data
 		# mode = True  for character
@@ -96,17 +94,23 @@ class LCD16x2:
 		gpio.output(self.LCD_E, False)
 		time.sleep(self.E_DELAY)
 
-	def lcd_string(self, message,line):
+	def lcd_string(self, message, line):
 		# Send string to display
 		message = message.ljust(self.LCD_WIDTH, " ")
 
-		self.lcd_byte(line, self.LCD_CMD)
+		self.send_byte(line, self.LCD_CMD)
 
 		for i in range(self.LCD_WIDTH):
-			self.lcd_byte(ord(message[i]), self.LCD_CHR)
+			self.send_byte(ord(message[i]), self.LCD_CHR)
+
+	def message(self, text):
+		i = 0
+		for line in text.split('\n')[:2]:
+			self.lcd_string(line, self.lines[i])
+			i += 1
 
 	def clear(self):
-		self.lcd_byte(0x01, self.LCD_CMD) # 000001 Clear display
+		self.send_byte(0x01, self.LCD_CMD) # 000001 Clear display
 
 if __name__ == '__main__':
 
