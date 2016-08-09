@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import os, sys, re
+import sys, os
+sys.path.append(os.path.expanduser('~/private'))
+from credential import cred
+import re
 from datetime import datetime
 from ftplib import FTP
 import redis
@@ -11,7 +14,7 @@ r = re.compile('^[0-9A-F]+\(.*\)_\d_(\d+)_\d+\.jpg')
 
 redis = redis.Redis()
 ftp_h = FTP('192.168.1.1')
-ftp_h.login('writer', 'pfgbcm')
+ftp_h.login('writer', cred['writer@192.168.1.1'])
 ftp_h.cwd('rus_hard/garage')
 #00D6FB009223(n800sau)_1_20160516142921_30928.jpg
 pathlist = ftp_h.nlst()
