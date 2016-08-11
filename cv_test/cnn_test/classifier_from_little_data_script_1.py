@@ -40,14 +40,14 @@ data/
 ```
 '''
 
-import os
+import os, json
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras.utils.visualize_util import plot
 
-DO_TRAIN = 1
+DO_TRAIN = 0
 
 
 # dimensions of our images.
@@ -100,6 +100,7 @@ validation_generator = test_datagen.flow_from_directory(
         batch_size=32,
         class_mode='binary')
 
+print 'validate=', validation_generator.class_indices
 
 if DO_TRAIN:
 
@@ -117,6 +118,9 @@ if DO_TRAIN:
         batch_size=32,
         class_mode='binary')
 
+	print 'train=', validation_generator.class_indices
+	json.dump(validation_generator.class_indices, open('labels.json', "w"), indent=2)
+
 	rs = model.fit_generator(
         train_generator,
         samples_per_epoch=nb_train_samples,
@@ -125,7 +129,6 @@ if DO_TRAIN:
         nb_val_samples=nb_validation_samples)
 
 	print rs.epoch
-	print model.predict_classes
 
 	open('model.json', "w").write(model.to_json(indent=2))
 
