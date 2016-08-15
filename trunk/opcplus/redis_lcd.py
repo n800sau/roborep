@@ -21,7 +21,7 @@ while True:
 		new_line = r.get(REDIS_KEY)
 	if new_line != old_line:
 		if new_line:
-			lcd.message('\n'.join(new_line))
+			lcd.message(new_line)
 		else:
 			lcd.clear()
 		old_line = new_line

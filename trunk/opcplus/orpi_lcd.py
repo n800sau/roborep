@@ -107,6 +107,7 @@ class LCD16x2:
 		i = 0
 		for line in text.split('\n')[:2]:
 			self.lcd_string(line, self.lines[i])
+			print line
 			i += 1
 
 	def clear(self):
