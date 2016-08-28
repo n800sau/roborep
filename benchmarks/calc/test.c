@@ -6,11 +6,11 @@
 #define W 10000
 #define H 10000
 
-#define FLOAT float
-#define INT int
+#define FLOAT double
+#define INT long long
 
 typedef FLOAT FA[H][W];
-typedef int IA[H][W];
+typedef INT IA[H][W];
 
 int main()
 {
@@ -26,7 +26,7 @@ int main()
 //	printf("Start at %d\n", t1);
 	for(int i=0; i<W; i++) {
 #pragma omp parallel for
-#pragma omp simd collapse(2)
+//#pragma omp simd collapse(2)
 		for(int j=0; j<H; j++) {
 			(*a)[j][i] = j * i;
 		}
@@ -38,7 +38,7 @@ int main()
 //	printf("Start at %d\n", t1);
 	for(int i=0; i<W; i++) {
 #pragma omp parallel for
-#pragma omp simd collapse(2)
+//#pragma omp simd collapse(2)
 		for(int j=0; j<H; j++) {
 			(*b)[j][i] = j * i;
 		}
