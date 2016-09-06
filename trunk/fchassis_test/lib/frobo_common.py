@@ -134,7 +134,7 @@ class frobo_common(fchassis_ng):
 			not self.heading_diff(h, err=2)
 
 
-	def move_straight(self, fwd=True, max_steps=5, max_secs=1, heading=None, power=50):
+	def move_straight(self, fwd=True, max_steps=5, max_secs=1, heading=None, power=50, **kwds):
 		self.cmd_reset_counters()
 		counted_offset = 0
 		pid = Pid(2., 0, 0)
