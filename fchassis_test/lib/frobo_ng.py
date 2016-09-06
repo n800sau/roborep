@@ -5,6 +5,7 @@ from frobo_2wheels import frobo_2wheels
 def frobo_ng(*args, **kwds):
 	rs = None
 	hn = gethostname()
+#	print 'host:', hn
 	if hn == 'orange':
 		rs = frobo_track(*args, **kwds)
 	elif hn == 'hubee':

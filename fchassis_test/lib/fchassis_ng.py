@@ -7,6 +7,7 @@ if socket.gethostname() == 'orange':
 	ino_path = 'orange_on_track'
 elif socket.gethostname() == 'hubee':
 	ino_path = 'ros_icc_base'
+#	ino_path = 'orange_on_wheels'
 else:
 	raise Exception('Hostname %s not in list' % socket.gethostname())
 
@@ -109,7 +110,7 @@ class fchassis_ng(bin2uno_inf):
 	def update_state(self):
 		self.wait4sensors = True
 		old_debug = self.debug
-		self.debug = False
+#		self.debug = False
 		rs = False
 		try:
 			self.send_command(pycmds.C_STATE)
@@ -138,6 +139,7 @@ class fchassis_ng(bin2uno_inf):
 							self.state['lpwr'] = data['vals'][0]
 							self.state['rpwr'] = data['vals'][1]
 						elif data['cmd'] == pycmds.R_MDIST_2F:
+							self.dbprint(json.dumps(data, indent=4))
 							self.state['ldist'] = data['vals'][0]
 							self.state['rdist'] = data['vals'][1]
 						elif data['cmd'] == pycmds.R_END:
