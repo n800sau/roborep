@@ -17,11 +17,12 @@
 		$rs['cmd'] = 'ffmpeg -ss ' . $time . ' -i ' . $HQ_VIDEO . ' -vframes 1 ' . $full_fname;
 		$output = array();
 		exec($rs['cmd'], $output);
+		sleep(1);
 		if(file_exists($full_fname)) {
 			$small = new \Imagick($full_fname);
 			$small->resizeImage($SM_WIDTH, $SM_HEIGHT, imagick::INTERPOLATE_BICUBIC, -1);
 			$small->writeImage($small_fname);
-			if(file_exists($full_fname)) {
+			if(file_exists($small_fname)) {
 				$rs['url'] = $small_fname;
 			}
 		} else {
