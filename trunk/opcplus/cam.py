@@ -16,11 +16,11 @@ r = redis.Redis()
 
 #fourcc = cv2.cv.CV_FOURCC('X', 'V', 'I', 'D')
 fps = 10
-min_area = 200
+min_area = 300
 max_area = 50000
 delta_thresh = 5
 
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 camera.set(cv2.cv.CV_CAP_PROP_FPS, fps)
 camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 320)
 camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
@@ -85,6 +85,7 @@ try:
 					cv2.imwrite(os.path.join(OUTPUT_PATH, time.strftime('found%d_%H:%M:%S.jpg')), frame)
 			else:
 				moveCounter = 0
+			cv2.accumulateWeighted(gray, avg, 0.5)
 
 finally:
 	print 'Finished (%d frame/sec)' % (i / (time.time() - t))
