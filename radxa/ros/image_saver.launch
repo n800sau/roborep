@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="image_view" type="image_saver" name="image_saver" output="screen">
+    <remap from="image" to="image_raw" />
+    <param name="filename_format" value="/home/n800s/public_html/last_tmp.png" />
+    <param name="save_all_image" value="false" />
+  </node>
+</launch>
+
