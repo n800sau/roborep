@@ -37,6 +37,8 @@
     messageType : 'sensor_msgs/CompressedImage'
   });
 
+  var go_on = false;
+
   var image_show = function(message) {
     var canvas = document.getElementById('myCanvas');
     var context = canvas.getContext('2d');
@@ -51,7 +53,22 @@
     var ts = document.getElementById('timestamp');
     ts.innerHTML=message.header.stamp.secs + '.' + Math.round(message.header.stamp.nsecs/1000000);
     listener.unsubscribe();
-    setTimeout(subscribe, 5000);
+    if(go_on) {
+      setTimeout(subscribe, 5000);
+    }
+  }
+
+  var start = function() {
+    go_on = true;
+    document.getElementById('stop_btn').disabled = false;
+    document.getElementById('start_btn').disabled = true;
+    subscribe();
+  }
+
+  var stop = function() {
+    go_on = false;
+    document.getElementById('stop_btn').disabled = true;
+    document.getElementById('start_btn').disabled = false;
   }
 
   var subscribe = function() {
@@ -65,6 +82,10 @@
 
 <body>
   <button onclick="location.reload()">&orarr;</button>
+  <br/>
+
+  <button id="start_btn" onclick="start()">&vrtri;</button>
+  <button id="stop_btn" onclick="stop()" disabled="disabled">&squf;</button>
   <br/>
 
   <canvas id="myCanvas" width="160" height="120" style="border:1px solid #000000;">
