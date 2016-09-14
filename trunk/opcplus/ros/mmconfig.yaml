@@ -1,0 +1,2 @@
+local_pubs: [camera_info, camera_process/bond, image_raw/compressed]
+foreign_pubs: []

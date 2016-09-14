@@ -1,7 +1,7 @@
 <launch>
   <arg name="master" default="radxa"/>
   <node pkg="multimaster" type="master_sync.py" name="master_sync" output="screen"> 
-    <param name="foreign_master" value="http://$(arg master):11311" />      
-    <rosparam command="load" file="config.yaml" />
+    <param name="foreign_master" value="http://$(arg master):11311" />
+    <rosparam command="load" file="mmconfig.yaml" />
   </node>
 </launch>
