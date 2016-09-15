@@ -2,35 +2,26 @@
 
 import glob, random, os, shutil
 
-fcats = glob.glob('dogs_and_cats/cat/*.jpg')
-fdogs = glob.glob('dogs_and_cats/dog/*.jpg')
+srcdir = 'dogs_and_cats'
+dstdir = 'data'
 
+classes = [os.path.basename(d) for d in glob.glob(os.path.join(srcdir, '*')) if os.path.isdir(d)]
 
-random.shuffle(fcats)
-random.shuffle(fdogs)
+train_part = 0.5
 
-shutil.rmtree('data')
+shutil.rmtree(dstdir)
 
-for p in ('data/train/cats', 'data/train/dogs', 'data/validation/cats', 'data/validation/dogs'):
-	if not os.path.exists(p):
-		os.makedirs(p)
+fnames = {}
 
-i = 1
-for fcat in fcats[:1000]:
-	os.symlink(os.path.join('../../..', fcat), 'data/train/cats/cat%03d.jpg' % i)
-	i += 1
-
-i = 1
-for fdog in fdogs[:1000]:
-	os.symlink(os.path.join('../../..', fdog), 'data/train/dogs/dog%03d.jpg' % i)
-	i += 1
-
-i = 1
-for fcat in fcats[-400:]:
-	os.symlink(os.path.join('../../..', fcat), 'data/validation/cats/cat%03d.jpg' % i)
-	i += 1
-
-i = 1
-for fdog in fdogs[-400:]:
-	os.symlink(os.path.join('../../..', fdog), 'data/validation/dogs/dog%03d.jpg' % i)
-	i += 1
+for cl in classes:
+	fnames[cl] = glob.glob(os.path.join(srcdir, cl, '*.jpg'))
+	random.shuffle(fnames[cl])
+	for v,part in (('train', (0, 0.5, 1)), ('validation', (0, 0.5, -1))):
+		dp = os.path.join(dstdir, v, cl)
+		if not os.path.exists(dp):
+			os.makedirs(dp)
+		i = 1
+		cnt = len(fnames[cl])
+		for fn in fnames[cl][::part[2]][int(cnt * part[0]):int(cnt * part[1])]:
+			os.symlink(os.path.abspath(fn), os.path.join(dp, '%s%03d.jpg' % (cl, i)))
+			i += 1
