@@ -1,2 +1,2 @@
-local_pubs: [camera_info, camera_process/bond, image_raw/compressed]
+local_pubs: [camera_info, image_raw/compressed, ow_camera/camera_info, ow_camera/image_raw/compressed ]
 foreign_pubs: []
