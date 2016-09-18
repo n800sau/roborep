@@ -5,16 +5,16 @@
 	</include>
 	<include file="rmaster.launch">
 	</include>
-	<node pkg="image_view" type="image_saver" name="image_saver" output="screen">
+<!--	<node pkg="image_view" type="image_saver" name="image_saver" output="screen">
 		<remap from="image" to="image_raw" />
 		<param name="filename_format" value="/home/n800s/public_html/protopupis/last_tmp.png" />
 		<param name="save_all_image" value="false" />
 	</node>
 	<node pkg="image_view" type="image_saver" name="image_saver_raspi" output="screen">
-		<remap from="image" to="/camera/image_raw" />
+		<remap from="image" to="/ow_camera/image_raw" />
 		<param name="filename_format" value="/home/n800s/public_html/protopupis/last_rasp_tmp.png" />
 		<param name="save_all_image" value="false" />
-	</node>
+	</node> -->
 </launch>
 
 
