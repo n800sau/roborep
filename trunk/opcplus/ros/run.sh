@@ -1,1 +1,1 @@
-roslaunch image_saver.launch &>run.log
+roslaunch main.launch &>run.log
