@@ -33,7 +33,13 @@
 
   var op_listener = new ROSLIB.Topic({
     ros : ros,
-    name : '/duplex/image_raw/compressed',
+    name : '/image_raw/compressed',
+    messageType : 'sensor_msgs/CompressedImage'
+  });
+
+  var ow_listener = new ROSLIB.Topic({
+    ros : ros,
+    name : '/ow_camera/image_raw/compressed',
     messageType : 'sensor_msgs/CompressedImage'
   });
 
@@ -50,8 +56,13 @@
     };
     var dataURL="data:image/jpeg;base64," + message.data;
     imageObj.src = dataURL;
+//    console.log('Received message on ' + listener.name + ': ' + message.data);
     var ts = document.getElementById(prefix + 'timestamp');
     ts.innerHTML=message.header.stamp.secs + '.' + Math.round(message.header.stamp.nsecs/1000000);
+//    listener.unsubscribe();
+//    if(go_on) {
+//      setTimeout(subscribe.bind(this, listener, prefix), period);
+//    }
   }
 
   var start = function() {
@@ -59,6 +70,7 @@
     document.getElementById('stop_btn').disabled = false;
     document.getElementById('start_btn').disabled = true;
     subscribe(op_listener, 'op_');
+    subscribe(ow_listener, 'ow_');
   }
 
   var stop = function() {
@@ -66,6 +78,7 @@
     document.getElementById('stop_btn').disabled = true;
     document.getElementById('start_btn').disabled = false;
     op_listener.unsubscribe();
+    ow_listener.unsubscribe();
   }
 
   var subscribe = function(listener, prefix) {
@@ -83,10 +96,13 @@
   <button id="stop_btn" onclick="stop()" disabled="disabled">&squf;</button>
   <br/>
 
-  <canvas id="op_Canvas" width="160" height="240" style="border:1px solid #000000;">
+  <canvas id="op_Canvas" width="160" height="120" style="border:1px solid #000000;">
   </canvas>
   <div id="op_timestamp"></div>
   <br/>
+  <canvas id="ow_Canvas" width="160" height="120" style="border:1px solid #000000;">
+  </canvas>
+  <div id="ow_timestamp"></div>
 </body>
 </html>
 
