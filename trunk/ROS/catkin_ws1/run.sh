@@ -1,1 +1,1 @@
-roslaunch raspicam_nd raspicam_nd.launch
+roslaunch main.launch &>run.log

@@ -2,6 +2,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 cmake_minimum_required(VERSION 2.8.3)
 project(raspicam_nd)
 
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} /usr/local/lib/cmake/)
+
 find_package(catkin REQUIRED COMPONENTS
 	image_transport
 	roscpp
