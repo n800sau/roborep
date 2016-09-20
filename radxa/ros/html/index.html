@@ -31,16 +31,23 @@
 
 
 
-  var listener = new ROSLIB.Topic({
+  var op_listener = new ROSLIB.Topic({
     ros : ros,
     name : '/image_raw/compressed',
     messageType : 'sensor_msgs/CompressedImage'
   });
 
-  var go_on = false;
+  var ow_listener = new ROSLIB.Topic({
+    ros : ros,
+    name : '/ow_camera/image_raw/compressed',
+    messageType : 'sensor_msgs/CompressedImage'
+  });
 
-  var image_show = function(message) {
-    var canvas = document.getElementById('myCanvas');
+  var go_on = false;
+  var period = 1000;
+
+  var image_show = function(listener, prefix, message) {
+    var canvas = document.getElementById(prefix + 'Canvas');
     var context = canvas.getContext('2d');
     var imageObj = new Image();
 
@@ -49,38 +56,39 @@
     };
     var dataURL="data:image/jpeg;base64," + message.data;
     imageObj.src = dataURL;
-    console.log('Received message on ' + listener.name + ': ' + message.data);
-    var ts = document.getElementById('timestamp');
+//    console.log('Received message on ' + listener.name + ': ' + message.data);
+    var ts = document.getElementById(prefix + 'timestamp');
     ts.innerHTML=message.header.stamp.secs + '.' + Math.round(message.header.stamp.nsecs/1000000);
-    listener.unsubscribe();
-    if(go_on) {
-      setTimeout(subscribe, 5000);
-    }
+//    listener.unsubscribe();
+//    if(go_on) {
+//      setTimeout(subscribe.bind(this, listener, prefix), period);
+//    }
   }
 
   var start = function() {
     go_on = true;
     document.getElementById('stop_btn').disabled = false;
     document.getElementById('start_btn').disabled = true;
-    subscribe();
+    subscribe(op_listener, 'op_');
+    subscribe(ow_listener, 'ow_');
   }
 
   var stop = function() {
     go_on = false;
     document.getElementById('stop_btn').disabled = true;
     document.getElementById('start_btn').disabled = false;
+    op_listener.unsubscribe();
+    ow_listener.unsubscribe();
   }
 
-  var subscribe = function() {
-    listener.subscribe(image_show);
+  var subscribe = function(listener, prefix) {
+    listener.subscribe(image_show.bind(this, listener, prefix));
   }
-
-  subscribe();
 
 </script>
 </head>
 
-<body>
+<body onload="start()">
   <button onclick="location.reload()">&orarr;</button>
   <br/>
 
@@ -88,9 +96,13 @@
   <button id="stop_btn" onclick="stop()" disabled="disabled">&squf;</button>
   <br/>
 
-  <canvas id="myCanvas" width="160" height="120" style="border:1px solid #000000;">
+  <canvas id="op_Canvas" width="160" height="120" style="border:1px solid #000000;">
   </canvas>
-  <div id="timestamp"></div>
+  <div id="op_timestamp"></div>
+  <br/>
+  <canvas id="ow_Canvas" width="160" height="120" style="border:1px solid #000000;">
+  </canvas>
+  <div id="ow_timestamp"></div>
 </body>
 </html>
 
