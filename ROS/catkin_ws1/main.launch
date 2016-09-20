@@ -1,0 +1,4 @@
+<launch>
+	<include file="$(find raspicam_nd)/launch/raspicam_nd.launch">
+	</include>
+</launch>
