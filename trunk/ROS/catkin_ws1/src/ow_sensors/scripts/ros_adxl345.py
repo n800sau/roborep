@@ -16,7 +16,7 @@ if __name__ == '__main__':
 		adxl345.setFIFOmode(adxl345.FIFO_BYPASS, adxl345.FIFO_TRIGGER_INT2, 2)
 		adxl345.setFIFOmode(adxl345.FIFO_FIFO, adxl345.FIFO_TRIGGER_INT2, 2)
 		rospy.init_node('adxl345', anonymous = True)
-		r = rospy.Rate(0.01)
+		r = rospy.Rate(10)
 		pub = rospy.Publisher('/sensors/adxl345', Vector3, queue_size=5)
 		while not rospy.is_shutdown():
 			if pub.get_num_connections() > 0:
