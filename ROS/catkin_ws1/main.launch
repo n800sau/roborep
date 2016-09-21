@@ -1,4 +1,9 @@
 <launch>
-	<include file="$(find raspicam_nd)/launch/raspicam_nd.launch">
+	<include file="$(find ow_sensors)/launch/sensors.launch">
 	</include>
+	<node name="ow_chassis" pkg="fchassis" type="ros_fchassis.py" output="screen">
+	</node>
+<!--	<include file="$(find raspicam_nd)/launch/raspicam_nd.launch">
+	</include>
+-->
 </launch>
