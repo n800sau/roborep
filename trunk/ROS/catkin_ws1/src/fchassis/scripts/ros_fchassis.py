@@ -20,6 +20,7 @@ import traceback
 import pycmds
 import time
 import datetime
+import inspect
 import rospy
 from fchassis import msg
 from bin2uno_inf import bin2uno_inf
@@ -200,6 +201,7 @@ class fchassis_ng(bin2uno_inf):
 		i = 0
 		r = rospy.Rate(1./SENSORS_SHOW_PERIOD)
 		pub_state = rospy.Publisher('/fchassis/state', msg.state, queue_size=1)
+		rospy.Subscriber("/fchassis/cmd", msg.command, self.on_command)
 		while not rospy.is_shutdown():
 			if pub_state.get_num_connections() > 0 and not self.wait4sensors:
 				self.update_state()
@@ -208,6 +210,17 @@ class fchassis_ng(bin2uno_inf):
 					pub_state.publish(**self.state)
 			self.flush()
 			r.sleep()
+
+	def on_command(self, data):
+		rospy.loginfo('%s calling %s' % (rospy.get_caller_id(), data.command))
+		func = getattr(self, 'cmd_' + data.command)
+		argspec = inspect.getargspec(func)
+		params = []
+		for a in argspec.args:
+			if a != 'self':
+				params.append(getattr(data, a))
+		func(*params)
+		rospy.loginfo('%s executed %s%s' % (rospy.get_caller_id(), func.__name__, params))
 
 if __name__ == '__main__':
 
