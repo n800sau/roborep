@@ -3,7 +3,6 @@
 
 import sys, os
 import rospy
-from time import time, sleep
 from l3g4200d import l3g4200
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import Float32
