@@ -13,12 +13,14 @@ if __name__ == '__main__':
 		hmc = hmc5883l(gauss = 4.7, declination = (-2,5))
 		rospy.loginfo("HMC5883l on address 0x%x" % (hmc.address))
 		rospy.init_node('hmc5883l', anonymous = True)
+		r = rospy.Rate(0.01)
 		pub = rospy.Publisher('/sensors/hmc5883l', Float32, queue_size=5)
 		while not rospy.is_shutdown():
-			heading = hmc.heading()
-			if heading != last_heading:
-				pub.publish(Float32(heading))
-				last_heading = heading
-			rospy.sleep(0.01)
+			if pub.get_num_connections() > 0:
+				heading = hmc.heading()
+				if heading != last_heading:
+					pub.publish(Float32(heading))
+					last_heading = heading
+			r.sleep()
 	except rospy.ROSInterruptException:
 		pass

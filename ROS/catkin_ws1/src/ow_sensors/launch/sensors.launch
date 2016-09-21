@@ -1,0 +1,8 @@
+<launch>
+	<node name="ow_accel" pkg="ow_sensors" type="ros_adxl345.py" output="screen">
+	</node>
+	<node name="ow_gyro" pkg="ow_sensors" type="ros_l3g4200d.py" output="screen">
+	</node>
+	<node name="ow_compas" pkg="ow_sensors" type="ros_hmc5883l.py" output="screen">
+	</node>
+</launch>
