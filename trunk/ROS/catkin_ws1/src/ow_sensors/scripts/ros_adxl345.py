@@ -3,7 +3,6 @@
 
 import sys, os
 import rospy
-from time import time, sleep
 from adxl345 import ADXL345
 from geometry_msgs.msg import Vector3
 

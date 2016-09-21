@@ -3,7 +3,6 @@
 
 import sys, os
 import rospy
-from time import time, sleep
 from hmc5883l import hmc5883l
 from std_msgs.msg import Float32
 

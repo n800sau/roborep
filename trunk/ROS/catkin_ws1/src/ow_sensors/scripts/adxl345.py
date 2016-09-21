@@ -142,7 +142,6 @@ if __name__ == "__main__":
 	sleep(0.03)
 	print "ADXL345 on address 0x%x:" % (adxl345.address)
 	st = adxl345.getFIFOstatus()
-	print st
 	for i in range(st['entries']):
 		axes = adxl345.getAxes(True)
 		print "%d:\n	  x = %.3fG" % ( i, axes['x'] )
