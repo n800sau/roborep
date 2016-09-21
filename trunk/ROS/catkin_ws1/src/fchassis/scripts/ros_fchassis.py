@@ -201,7 +201,7 @@ class fchassis_ng(bin2uno_inf):
 		i = 0
 		r = rospy.Rate(1./SENSORS_SHOW_PERIOD)
 		pub_state = rospy.Publisher('/fchassis/state', msg.state, queue_size=1)
-		rospy.Subscriber("/fchassis/cmd", msg.command, self.on_command)
+		rospy.Subscriber("/fchassis/command", msg.command, self.on_command)
 		while not rospy.is_shutdown():
 			if pub_state.get_num_connections() > 0 and not self.wait4sensors:
 				self.update_state()
