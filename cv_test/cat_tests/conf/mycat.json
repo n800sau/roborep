@@ -3,6 +3,7 @@
   # DATASET SAMPLING CONFIGURATION
   #######
   "dataset_path": "mycat",
+#  "dataset_path": "generated",
   "masked_path": "mycat_masked",
   "features_path": "myoutput/features.hdf5",
   "output_path": "myoutput/data",
@@ -37,7 +38,7 @@
   "labels": "myoutput/models/label_list.json",
   "test_size": 0.25,
   "dropout": 1,
-  "batch_size": 32,
+  "batch_size": 5,
   "activation": "relu",
 #  "activation": "tanh",
   "epochs": 80

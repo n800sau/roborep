@@ -18,7 +18,9 @@
 			var reloadData = function() {
 				$http.get('thumbs.php?load_id=' + $scope.load_id + '&start=' + $scope.start + '&count=' + $scope.count).success(
 					function(data) {
-						$scope.data = data;
+						$scope.data = data.data;
+						$scope.first = data.first;
+						$scope.last = data.last;
 					}
 				);
 			}
@@ -59,17 +61,18 @@
 		<button ng-click="nextPage()" ng-disabled="count > data.length">&sc;</button>
 	</div>
 
-	{{start}} - {{start+count-1}}
+	{{start}} - {{start+count-1}}<br/>
+	{{first}} - {{last}}<br/>
 
 	<table>
 		<tr class="thumb" style="width: 100px;margin: 5px; border: none;" ng-repeat="el in data">
 			<td>
-				<img ng-src="{{el.thumb}}" alt="{{el.bname}}" ng-click="thumb_click(el)"></img>
+				<img ng-src="{{el.thumb}}" title="{{el.bname}}" ng-click="thumb_click(el)"></img>{{el.bname}}
 			</td>
 		</tr>
 	</table>
 
-	<img src="{{el.image}}" width="150" ng-if="el"></img>
+	<img src="{{el.image}}" width="150" ng-if="el" title="{{el.image}}"></img>
 
 </div>
 

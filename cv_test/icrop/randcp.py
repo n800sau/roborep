@@ -3,8 +3,8 @@
 import sys, os, random, glob, shutil
 
 
-#BASEPATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
-BASEPATH = os.path.expanduser('~/work/opencv/PyImageSearch/Caltech101/256_ObjectCategories/031.car-tire')
+BASEPATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
+#BASEPATH = os.path.expanduser('~/work/opencv/PyImageSearch/Caltech101/256_ObjectCategories/031.car-tire')
 
 dlist = glob.glob(os.path.join(BASEPATH, '*'))
 n = len(dlist)

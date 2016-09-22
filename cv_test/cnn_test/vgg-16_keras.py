@@ -15,6 +15,7 @@ MODEL_PATH = 'vgg-16_model.json'
 WEIGHTS_PATH = '../../../datasets/vgg16/vgg16_weights.h5'
 SYNSETS_PATH = '../../../datasets/vgg16/synsets.txt'
 SYNSET_WORDS_PATH = '../../../datasets/vgg16/synset_words.txt'
+OUTPUT_PATH = 'vgg-16'
 
 def dbprint(*args):
 	for el in args:
@@ -125,36 +126,49 @@ if __name__ == "__main__":
 	tdiff = int(time.time() - t)
 	dbprint('Loaded in %s:%s' % (tdiff // 60, tdiff % 60))
 
+	i = 0
 	for fname in paths.list_files(IMAGE_PATH):
 
 		t = time.time()
 		image = cv2.imread(fname)
-		image = cv2.resize(image, (224*4, 244*4) )
+		sq_image = cv2.resize(image, (224, 224) )
+#		sq_image = cv2.resize(image, (224*2, 224*2) )
 
 		wlist = set()
+		window = sq_image
 		# loop over the image pyramid
-		for layer in pyramid(image, scale=4):
+#		for layer in pyramid(sq_image, scale=2):
 			# loop over the sliding window for each layer of the pyramid
-			for (x, y, window) in sliding_window(layer):
+#			for (x, y, window) in sliding_window(layer, windowSize=(224, 224)):
 
 #				window = cv2.resize(window, (224, 224))
-				im = window.astype(np.float32)
-				im[:,:,0] -= 103.939
-				im[:,:,1] -= 116.779
-				im[:,:,2] -= 123.68
-				im = im.transpose((2,0,1))
-				im = np.expand_dims(im, axis=0)
+		im = window.astype(np.float32)
+		im[:,:,0] -= 103.939
+		im[:,:,1] -= 116.779
+		im[:,:,2] -= 123.68
+		im = im.transpose((2,0,1))
+		im = np.expand_dims(im, axis=0)
 
-				out = model.predict(im)
-				pos = np.argmax(out)
-				aword = word_names[words[pos]]
-				dbprint(os.path.basename(fname), aword)
-				wlist.add(aword)
+		out = model.predict(im)
+		pos = np.argmax(out)
+		out_idx = np.argsort(out)[0,-5:]
+		aword = word_names[words[pos]]
+		dbprint(os.path.basename(fname), aword)
+		for idx in reversed(out_idx):
+			dbprint(word_names[words[idx]], out[0, idx])
+		wlist.add(aword)
 
 		w = ';'.join(list(wlist))
 		tdiff = int(time.time() - t)
+		image = imutils.resize(image, width=360)
 		cv2.putText(image, w, (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-		cv2.imwrite(os.path.join('vgg-16', os.path.basename(fname)), imutils.resize(image, width=360))
+		dpath = os.path.join(OUTPUT_PATH, w)
+		if not os.path.exists(dpath):
+			os.makedirs(dpath) 
+		cv2.imwrite(os.path.join(dpath, os.path.basename(fname)), image)
 		dbprint(os.path.basename(fname), w, ('%s:%s' % (tdiff // 60, tdiff % 60)))
+		i += 1
+		if i > 5:
+			break
 
 	dbprint('Finished')
