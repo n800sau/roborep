@@ -2,7 +2,10 @@
 
 import glob, random, os, shutil
 
-srcdir = 'dogs_and_cats'
+srcdir = 'birds'
+
+#srcdir = 'dogs_and_cats'
+#srcdir = 'robo_data'
 dstdir = 'data'
 
 classes = [os.path.basename(d) for d in glob.glob(os.path.join(srcdir, '*')) if os.path.isdir(d)]
@@ -14,7 +17,7 @@ shutil.rmtree(dstdir)
 fnames = {}
 
 for cl in classes:
-	fnames[cl] = glob.glob(os.path.join(srcdir, cl, '*.jpg'))
+	fnames[cl] = glob.glob(os.path.join(srcdir, cl, '*.jpg')) + glob.glob(os.path.join(srcdir, cl, '*.jpeg'))
 	random.shuffle(fnames[cl])
 	for v,part in (('train', (0, 0.5, 1)), ('validation', (0, 0.5, -1))):
 		dp = os.path.join(dstdir, v, cl)

@@ -20,7 +20,7 @@ from keras.models import Sequential
 
 from image_data import extract_image_data
 
-DO_TRAIN = 0
+DO_TRAIN = 1
 DO_TEST = 1
 
 # construct the argument parser and parse the command line arguments

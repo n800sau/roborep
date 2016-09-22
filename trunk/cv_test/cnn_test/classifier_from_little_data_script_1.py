@@ -53,12 +53,13 @@ DO_TRAIN = 0
 # dimensions of our images.
 img_width, img_height = 150, 150
 
+prefix = 'robo_'
 train_data_dir = 'data/train'
 validation_data_dir = 'data/validation'
 nb_train_samples = 2000
 nb_validation_samples = 800
 nb_epoch = 1
-weights_fname = 'weights.h5'
+weights_fname = prefix + 'weights.h5'
 
 model = Sequential()
 
@@ -119,7 +120,7 @@ if DO_TRAIN:
         class_mode='binary')
 
 	print 'train=', validation_generator.class_indices
-	json.dump(validation_generator.class_indices, open('labels.json', "w"), indent=2)
+	json.dump(validation_generator.class_indices, open(prefix + 'labels.json', "w"), indent=2)
 
 	rs = model.fit_generator(
         train_generator,
@@ -130,7 +131,7 @@ if DO_TRAIN:
 
 	print rs.epoch
 
-	open('model.json', "w").write(model.to_json(indent=2))
+	open(prefix + 'model.json', "w").write(model.to_json(indent=2))
 
 	if os.path.exists(weights_fname):
 		os.unlink(weights_fname)

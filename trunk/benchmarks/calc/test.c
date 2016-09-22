@@ -28,7 +28,7 @@ int main()
 #pragma omp parallel for
 //#pragma omp simd collapse(2)
 		for(int j=0; j<H; j++) {
-			(*a)[j][i] = j * i;
+			(*a)[j][i] = j & i;
 		}
 	}
 	t2 = time(NULL);
@@ -40,7 +40,7 @@ int main()
 #pragma omp parallel for
 //#pragma omp simd collapse(2)
 		for(int j=0; j<H; j++) {
-			(*b)[j][i] = j * i;
+			(*b)[j][i] = j & i;
 		}
 	}
 	t2 = time(NULL);
