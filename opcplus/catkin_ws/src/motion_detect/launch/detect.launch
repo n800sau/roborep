@@ -1,5 +1,6 @@
 <launch>
 	<node name="motion_detect" pkg="motion_detect" type="motion_detect.py" output="screen">
+		<remap from="" to="ow_camera/image_raw"/>
 		<param name="min_area" type="int" value="700"/>
 	</node>
 	<node name="web_video_server" pkg="web_video_server" type="web_video_server">

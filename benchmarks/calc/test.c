@@ -6,8 +6,8 @@
 #define W 10000
 #define H 10000
 
-#define FLOAT double
-#define INT long long
+#define FLOAT float
+#define INT int
 
 typedef FLOAT FA[H][W];
 typedef INT IA[H][W];

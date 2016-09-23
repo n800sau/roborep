@@ -35,7 +35,7 @@ void setup(void)
 {
 	Serial.begin(57600);
 	inputString.reserve(80);
-//	Serial.println(F("PC to nrf network interface"));
+	Serial.println(F("PC to nrf network interface"));
  
 	SPI.begin();
 	radio.begin();

@@ -36,9 +36,14 @@ icount = 1
 hdata = None
 
 model1 = model_from_json(open(conf["arch"], "r").read())
+model1.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['accuracy'])
 model1.load_weights(conf["weights"])
 
-label_list1 = json.load(file(conf["labels"], "r"))
+labels = json.load(file(conf["labels"], "r"))
+
+print 'Start processing'
 
 t = time.time()
 
@@ -65,14 +70,12 @@ try:
 
 		hdata[0][0] = data
 
-		proba = model1.predict(hdata, batch_size=1, verbose=0)
+		proba = model1.predict_classes(hdata, batch_size=1, verbose=0)
 
 #		print('PROBA:', proba)
-		predictions = proba.argmax(axis=1)
+		predict_label = labels[proba[0]]
 
-		predict_label = label_list1[predictions[0]]
-
-		print '%5d %s %.2f-%.2f' % (i, predict_label, proba[0][0], proba[0][1])
+		print '%5d %s' % (i, predict_label)
 		r.set(REDIS_KEY, time.strftime('%H:%M:%S') + '\n' + predict_label)
 		r.expire(REDIS_KEY, 5)
 

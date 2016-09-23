@@ -49,6 +49,7 @@ import com.androidplot.xy.*;
 
 public class RoboSensorView extends Activity implements OnClickListener
 {
+//	public static final String SERVERIP = "123.243.40.133";
 	public static final String SERVERIP = "n800s.ddns.org";
 	public static final String SERVERPORT = "7980";
 	public Handler Handler;

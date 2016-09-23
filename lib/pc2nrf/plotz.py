@@ -19,7 +19,7 @@ from conf_ino import configure
 import libcommon_py as common
 
 # wait before start for 5 mins
-#time.sleep(300)
+time.sleep(300)
 
 
 NEXT_EVENT_TIMEOUT = 120 #secs
@@ -44,6 +44,7 @@ def send_email(msgtxt, fnamelist):
 def draw_plot(ldict):
 
 	fig = plt.figure()
+	fig.suptitle('Data count %d' % len(ldict), fontsize=12)
 
 	if data_x:
 		ax1 = fig.add_subplot(221)
@@ -94,7 +95,7 @@ for row in vf:
 	ldict = dict(zip(row[::2], row[1::2]))
 	t = datetime.fromtimestamp(float(ldict['secs']) + float(ldict['moffset'])/1000)
 	if int(ldict['type']) == common.PL_ACC:
-		if last_t is None or last_t + timeout < t:
+		if last_t is None or last_t + timeout < t or last_t > t:
 			# draw plot and start next plot
 			if (data_x and max(data_x)-min(data_x) > 100) or (data_y and max(data_y)-min(data_y) > 100) or (data_z and max(data_z)-min(data_z) > 100):
 				# draw plot

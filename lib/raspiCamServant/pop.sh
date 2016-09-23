@@ -1,3 +1,5 @@
-redis-cli lpop raspiCamServant.js.obj >popped.txt
+HOST=hubee
+
+redis-cli -h $HOST lpop raspiCamServant.js.obj >popped.txt
 
 

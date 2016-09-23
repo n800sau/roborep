@@ -1,4 +1,5 @@
 gcc -std=c99 -fopenmp test.c -o test && \
+echo Start && \
 ./test &> result.log
 
 
