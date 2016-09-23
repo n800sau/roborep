@@ -9,9 +9,11 @@
 <script type="text/javascript" type="text/javascript">
   // Connecting to ROS
   // -----------------
+  // opcplus 34293 -> 9093
+  // radxa 33293 -> 9093, 33299 -> 9094
 
   var ros = new ROSLIB.Ros({
-    url : 'ws://n800s.ddns.net:33292'
+    url : 'ws://n800s.ddns.net:33293'
   });
 
   ros.on('connection', function() {
