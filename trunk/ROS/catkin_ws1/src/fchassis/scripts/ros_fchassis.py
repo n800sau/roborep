@@ -22,11 +22,12 @@ import time
 import datetime
 import inspect
 import rospy
+from std_msgs.msg import Header
 from fchassis import msg
 from bin2uno_inf import bin2uno_inf
 from serial import Serial
 
-SENSORS_SHOW_PERIOD = 0.1
+SENSORS_SHOW_PERIOD = 0.3
 
 class fchassis_ng(bin2uno_inf):
 
@@ -137,7 +138,6 @@ class fchassis_ng(bin2uno_inf):
 						elif data['cmd'] == pycmds.R_MOTION_1F:
 							self.state['motion'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_MCOUNTS_2F:
-							self.state['tick_time'] = time.time()
 							self.state['lcount'] = data['vals'][0]
 							self.state['rcount'] = data['vals'][1]
 						elif data['cmd'] == pycmds.R_MCURRENT_2F:
@@ -151,6 +151,7 @@ class fchassis_ng(bin2uno_inf):
 							self.state['ldist'] = data['vals'][0]
 							self.state['rdist'] = data['vals'][1]
 						elif data['cmd'] == pycmds.R_END:
+							self.state['tick_time'] = time.time()
 							break
 				else:
 					rospy.sleep(0.01)
@@ -200,14 +201,14 @@ class fchassis_ng(bin2uno_inf):
 	def run(self):
 		i = 0
 		r = rospy.Rate(1./SENSORS_SHOW_PERIOD)
-		pub_state = rospy.Publisher('/fchassis/state', msg.state, queue_size=1)
+		pub_state = rospy.Publisher('/fchassis/state', msg.state, queue_size=5)
 		rospy.Subscriber("/fchassis/command", msg.command, self.on_command)
 		while not rospy.is_shutdown():
 			if pub_state.get_num_connections() > 0 and not self.wait4sensors:
 				self.update_state()
 				if self.state['tick_time'] > self.last_tick:
 					self.last_tick = self.state['tick_time']
-					pub_state.publish(**self.state)
+					pub_state.publish(header=Header(stamp=rospy.Time.now()), **self.state)
 			self.flush()
 			r.sleep()
 

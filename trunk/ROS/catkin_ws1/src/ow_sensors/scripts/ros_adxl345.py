@@ -4,7 +4,8 @@
 import sys, os
 import rospy
 from adxl345 import ADXL345
-from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3Stamped, Vector3
+from std_msgs.msg import Header
 
 if __name__ == '__main__':
 
@@ -17,13 +18,13 @@ if __name__ == '__main__':
 		adxl345.setFIFOmode(adxl345.FIFO_FIFO, adxl345.FIFO_TRIGGER_INT2, 2)
 		rospy.init_node('adxl345', anonymous = True)
 		r = rospy.Rate(10)
-		pub = rospy.Publisher('/sensors/adxl345', Vector3, queue_size=5)
+		pub = rospy.Publisher('/sensors/adxl345/axes', Vector3Stamped, queue_size=1)
 		while not rospy.is_shutdown():
 			if pub.get_num_connections() > 0:
 				axes_list = adxl345.getAxesList()
 				if axes_list:
 					axes = axes_list[-1]
-					pub.publish(Vector3(axes['x'], axes['y'], axes['z']))
+					pub.publish(header=Header(stamp=rospy.Time.now()), vector=Vector3(**axes))
 			r.sleep()
 	except rospy.ROSInterruptException:
 		pass
