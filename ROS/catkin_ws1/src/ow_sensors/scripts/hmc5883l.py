@@ -61,8 +61,8 @@ class hmc5883l:
 		z = self.__convert(data, 5)
 		return (x,y,z)
 
-	def heading(self):
-		(x, y, z) = self.axes()
+	def heading(self, axes=None):
+		(x, y, z) = self.axes() if axes is None else axes
 		headingRad = math.atan2(y, x)
 		headingRad += self.__declination
 
