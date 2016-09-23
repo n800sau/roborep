@@ -4,10 +4,17 @@ import os
 import numpy as np
 import cv2
 import imutils
+import math
 
-FNAME = os.path.expanduser('~/work/roborep/cv_test/video_shots/data/input/v.MOV')
+#FNAME = os.path.expanduser('~/work/roborep/cv_test/video_shots/data/input/v.MOV')
+FNAME = 0
+fps = 0.3
 
 cap = cv2.VideoCapture(FNAME)
+
+cap.set(cv2.cv.CV_CAP_PROP_FPS, fps)
+#cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 320)
+#cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
 
 # params for ShiTomasi corner detection
 feature_params = dict( maxCorners = 100,
@@ -63,11 +70,21 @@ while True:
 				for i,(new,old) in enumerate(zip(good_new,good_old)):
 					a,b = new.ravel()
 					c,d = old.ravel()
-#					cv2.line(mask, (a,b),(c,d), color[i].tolist(), 2)
-					if apply_warp:
-						cv2.circle(frame,(c,d),5,color[i].tolist(),-1)
-					else:
-						cv2.circle(frame,(a,b),5,color[i].tolist(),-1)
+					dist = math.hypot(c - a, d - b)
+					if dist > 2:
+						vecs.append(((a, b), (c, d)))
+
+				if len(vecs) == 0:
+					print 'Small motion'
+
+				else:
+					print 'Found %d' % len(vecs)
+					for (a,b),(c,d) in vecs:
+						cv2.line(mask, (a,b),(c,d), color[i].tolist(), 2)
+#					if apply_warp:
+#						cv2.circle(frame,(c,d),5,color[i].tolist(),-1)
+#					else:
+#						cv2.circle(frame,(a,b),5,color[i].tolist(),-1)
 
 #				img = cv2.bitwise_and(frame, frame, mask=mask)
 #				img = cv2.add(frame, mask)

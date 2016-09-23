@@ -4,7 +4,6 @@ import time
 
 import Adafruit_CharLCD as LCD
 
-
 # Raspberry Pi pin configuration:
 #lcd_rs        = 27  # Note this might need to be changed to 21 for older revision Pi's.
 #lcd_en        = 22

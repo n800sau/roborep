@@ -32,5 +32,5 @@ if state:
 #		cmdlst = ['echo', text]
 #		cmd = '%s | text2wave -f 44100 |aplay -v' % subprocess.list2cmdline(cmdlst)
 #		dbprint(cmd)
-		p = subprocess.Popen(cmd, shell=True)
-		p.wait()
+#		p = subprocess.Popen(cmd, shell=True)
+#		p.wait()

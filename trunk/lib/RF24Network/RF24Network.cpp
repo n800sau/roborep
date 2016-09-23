@@ -409,7 +409,7 @@ bool is_valid_address( uint16_t node )
     if (digit < 1 || digit > 5)
     {
       result = false;
-      printf_P(PSTR("*** WARNING *** Invalid address 0%o\n\r"),node);
+      printf_P(PSTR("*** WARNING *** Invalid NRF node address 0%o\n\r"),node);
       break;
     }
     node >>= 3;
