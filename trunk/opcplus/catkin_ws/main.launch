@@ -1,9 +1,11 @@
 <launch>
+	<include file="rmaster.launch">
+	</include>
 	<include file="topcam_server.launch">
 	</include>
+	<node name="joined_images" pkg="image2video" type="img2join.py" output="screen">
+	</node>
 	<include file="mmaster.launch">
-	</include>
-	<include file="rmaster.launch">
 	</include>
 <!--	<node pkg="image_view" type="image_saver" name="image_saver" output="screen">
 		<remap from="image" to="image_raw" />
