@@ -9,6 +9,7 @@ from lib.camera import update_img
 from lib.utils import dbprint
 from lib.marker import collect_markers, use_camera, release_camera, make_shot
 from lib.utils import html_data_path
+from lib.udp_send import udp_send
 
 # 0.87 m - 3cm -> 55.4564987823 px
 
@@ -63,16 +64,20 @@ if __name__ == '__main__':
 #		use_camera(r, brightness=90, contrast=90)
 		time.sleep(4)
 		try:
-			markers = collect_markers(r, fpath = html_data_path('markers.jpg'))
-			print json.dumps(dict([(m['id'], m['distance']) for m in markers]), indent=2)
+			pass
+#			markers = collect_markers(r, fpath = html_data_path('markers.jpg'))
+#			print json.dumps(dict([(m['id'], m['distance']) for m in markers]), indent=2)
 		finally:
 			time.sleep(1)
 			make_shot(r, fpath='redis:image')
-			imgdata = np.asarray(bytearray(r.get('image')), dtype=np.uint8)
+			rimg = r.get('image')
+			udp_send('opcplus', data_name='hubee.jpg', data=rimg)
+			imgdata = np.asarray(bytearray(rimg), dtype=np.uint8)
 			img = cv2.imdecode(imgdata, cv2.CV_LOAD_IMAGE_COLOR)
 			cv2.imwrite(html_data_path('picam_0.jpg'), img)
 			release_camera(r)
 	else:
 		cam = picamera.PiCamera()
 		time.sleep(2)
+#		update_img(cam, brightness=90, contrast=90, exposure_mode='off')
 		update_img(cam)

@@ -1,3 +1,3 @@
-#ino serial
+ino serial
 
-ino serial &> serial.log
+#ino serial &> serial.log

@@ -1,4 +1,4 @@
-﻿/*
+/*
 HMC5883L_Example.pde - Example sketch for integration with an HMC5883L triple axis magnetomerwe.
 Copyright (C) 2011 Love Electronics (loveelectronics.co.uk)
 

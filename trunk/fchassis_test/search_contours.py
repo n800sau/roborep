@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
 	clockwise = int(sys.argv[1])
 
-	with picamera.PiCamera(brightness=90, contrast=100) as camera:
+	with picamera.PiCamera() as camera:
 
 		c = frobo_ng()
 		c.debug = True

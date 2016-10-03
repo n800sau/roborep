@@ -6,17 +6,19 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 import cv2
 import datetime
 import json
+import traceback
 import time
 import shutil
 import redis
 import traceback
 from fractions import Fraction
+import numpy as np
 import picamera
 from picamera.array import PiRGBArray
 
 COMMAND_QUEUE = 'camera'
-UPDATE_IMG_PERIOD = 1
-REDUCIBLE = ['update']
+UPDATE_IMG_PERIOD = 1200
+REDUCIBLE = ['update', 'primeupdate']
 
 
 class picamserver:
@@ -41,8 +43,8 @@ class picamserver:
 			for cmd in commands:
 				try:
 					cmd = json.loads(cmd)
-				except Exception, e:
-					self.dbprint(e)
+				except Exception:
+					self.dbprint(traceback.format_exc())
 					continue
 				if cmd['command'] in REDUCIBLE:
 					rs[cmd['command']] = cmd
@@ -61,6 +63,7 @@ class picamserver:
 								self.settings['iso'] = 800
 								self.settings['use_video_port'] = False
 							else:
+								self.settings['iso'] = 0
 								self.settings['exposure_mode'] = 'auto'
 								self.settings['use_video_port'] = True
 					self.dbprint('Adjust: %s' % self.settings)
@@ -78,7 +81,7 @@ class picamserver:
 	def img_fname_tmp(self, ndx):
 		return os.path.expanduser('~/public_html/tmp_picam_%d.jpg' % ndx)
 
-	def threshold_image(self, fname, sti):
+	def threshold_image(self, img, fname, sti):
 		style = (
 			cv2.THRESH_BINARY,
 			cv2.THRESH_BINARY_INV,
@@ -86,31 +89,70 @@ class picamserver:
 			cv2.THRESH_TOZERO,
 			cv2.THRESH_TOZERO_INV,
 		)
-		# initialize the camera and grab a reference to the raw camera capture
-		rawCapture = PiRGBArray(self.camera)
-		# grab an image from the camera
-		self.camera.capture(rawCapture, format="bgr", use_video_port=self.settings.get('use_video_port',True))
-		img = rawCapture.array
-		img = cv2.medianBlur(img, 5)
-		ret,img = cv2.threshold(img, 127, 255, style[sti])
+		bimg = cv2.medianBlur(img, 5)
+		ret,bimg = cv2.threshold(bimg, 127, 255, style[sti])
+		cv2.imwrite(fname, bimg)
+		return fname
+
+	def filter_image_color(self, img, fname, fmask):
+		# Convert BGR to HSV
+		hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+		#H - 0-360 .. 0-180 (coef = *2)
+		#S - 0-100 .. 0-255 (coef = 0.39)
+		#V - 0-100 .. 0-255 (coef = 0.39)
+
+		# define range of blue color in HSV
+		lower_orange = np.array([6,50,50])
+		upper_orange = np.array([16,255,255])
+
+		# Threshold the HSV image to get only orange colors
+		mask = cv2.inRange(hsv, lower_orange, upper_orange)
+
+		# Bitwise-AND mask and original image
+		res = cv2.bitwise_and(img, img, mask=mask)
+
+		cv2.imwrite(fmask, mask)
+		cv2.imwrite(fname, res)
+
+	def photo_image(self, img, fname):
 		cv2.imwrite(fname, img)
 		return fname
 
-	def photo_image(self, fname):
-		self.camera.capture(fname, use_video_port=self.settings.get('use_video_port',True))
-		return fname
-
 	def fast_image(self, fname):
+		self.camera.exposure_mode = 'auto'
 		self.camera.capture(fname, use_video_port=True)
 		return fname
 
+	def capture_cvimage(self):
+		# initialize the camera and grab a reference to the raw camera capture
+		stream = PiRGBArray(self.camera)
+		# grab an image from the camera
+		self.camera.capture(stream, format="bgr", use_video_port=self.settings.get('use_video_port',True))
+		return stream.array
+
 	def pub_update(self):
 		self.apply_settings()
-		shutil.move(self.photo_image(self.img_fname_tmp(1)), self.img_fname(1))
-		shutil.move(self.threshold_image(self.img_fname_tmp(2), 1), self.img_fname(2))
-		shutil.move(self.threshold_image(self.img_fname_tmp(3), 2), self.img_fname(3))
-		shutil.move(self.threshold_image(self.img_fname_tmp(4), 3), self.img_fname(4))
-		shutil.move(self.threshold_image(self.img_fname_tmp(5), 4), self.img_fname(5))
+		img = self.capture_cvimage()
+		i = 1
+		shutil.move(self.photo_image(img, self.img_fname_tmp(i)), self.img_fname(i))
+		i += 1
+		shutil.move(self.threshold_image(img, self.img_fname_tmp(i), 1), self.img_fname(i))
+		i += 1
+		shutil.move(self.threshold_image(img, self.img_fname_tmp(i), 2), self.img_fname(i))
+		i += 1
+		shutil.move(self.threshold_image(img, self.img_fname_tmp(i), 3), self.img_fname(i))
+		i += 1
+		shutil.move(self.threshold_image(img, self.img_fname_tmp(i), 4), self.img_fname(i))
+		i += 1
+		self.filter_image_color(img, self.img_fname_tmp(i), self.img_fname_tmp(i+1))
+		shutil.move(self.img_fname_tmp(i), self.img_fname(i))
+		i += 1
+		shutil.move(self.img_fname_tmp(i), self.img_fname(i))
+		i += 1
+
+	def pub_primeupdate(self):
+		self.update_img()
 
 	def execute_cmd(self, cmd):
 		self.dbprint('execute %s' % cmd)
@@ -136,8 +178,9 @@ class picamserver:
 				elif time.time() - t > UPDATE_IMG_PERIOD:
 					self.update_img()
 					t = time.time()
-			except Exception, e:
-				self.dbprint(e)
+				time.sleep(0.2)
+			except Exception:
+				self.dbprint(traceback.format_exc())
 				time.sleep(2)
 
 if __name__ == '__main__':
