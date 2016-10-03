@@ -6,8 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'ino', 'lib_py'))
 if socket.gethostname() == 'orange':
 	ino_path = 'orange_on_track'
 elif socket.gethostname() == 'hubee':
-	ino_path = 'ros_icc_base'
-#	ino_path = 'orange_on_wheels'
+	ino_path = 'orange_on_wheels'
 else:
 	raise Exception('Hostname %s not in list' % socket.gethostname())
 
@@ -196,6 +195,10 @@ class fchassis_ng(bin2uno_inf):
 
 	def cmd_mright(self, rpwm, rfwd):
 		self.send_command(pycmds.C_MRIGHT, struct.pack('BB', min(255, rpwm), rfwd))
+		self.wait_reply()
+
+	def cmd_walk_around(self, lpwm, rpwm):
+		self.send_command(pycmds.C_WALK_AROUND, struct.pack('BB', min(255, lpwm), min(255, rpwm)))
 		self.wait_reply()
 
 	def run(self):
