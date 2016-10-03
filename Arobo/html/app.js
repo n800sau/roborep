@@ -7,8 +7,8 @@
 	app.controller("rocontrol", ['$scope', '$http', '$interval', '$timeout', '$element', 'usSpinnerService',
 			function($scope, $http, $interval, $timeout, $element, usSpinnerService) {
 
-		$scope.brightness = 50;
-		$scope.contrast = 50;
+		$scope.brightness = 70;
+		$scope.contrast = 70;
 		$scope.shutter = 0;
 
 		var param_update_timeout;
@@ -50,7 +50,7 @@
 		);
 
 		$scope.wait_till_stop = 1;
-		$scope.power = 255;
+		$scope.power = 20;
 		$scope.steps = 3;
 		$scope.cmd_json = {};
 		$scope.picam_pfx = 'picam_';
@@ -72,10 +72,8 @@
 				if($scope.cmd_json.command != stop_json.command) {
 					$timeout(
 						function() {
-							$scope.cmd_json = stop_json
-							if($scope.last_img_uri) {
-								$scope.update_img($scope.last_img_uri);
-							}
+							$scope.cmd_json = stop_json;
+							$scope.primeupdate_img();
 						}, $scope.wait_till_stop * 1000);
 				}
 			}).error(function(data) {
@@ -86,9 +84,39 @@
 
 		$scope.reload_imgs = function() {
 			$scope.picam_img = [];
-			for(var i=0; i<6; i++) {
+			for(var i=0; i<20; i++) {
 				$scope.picam_img.push('picam_' + i + '.jpg?time=' + (new Date()).toString());
 			}
+		}
+
+		$scope.primeupdate_img = function() {
+			$scope.busy = true;
+			$scope.error_text = '';
+			var cam_json = JSON.stringify({
+				command: 'primeupdate',
+			});
+			usSpinnerService.spin('spinner-busy');
+			$http.get('camera.php',{
+				params: { camera: cam_json }
+			}).success(function(data) {
+				$scope.busy = false;
+				usSpinnerService.stop('spinner-busy');
+				$scope.reply_message = $scope.cmd_json.command + ': ' + (data.result || data);
+				$timeout($scope.reload_imgs, 1000);
+				try {
+					if(data.result) {
+						$scope.reply_message = data.result;
+					} else {
+						$scope.error_text = data;
+					}
+				} catch(err) {
+					$scope.error_text = err;
+				}
+			}).error(function(data) {
+				$scope.busy = false;
+				usSpinnerService.stop('spinner-busy');
+				$scope.error_text = data;
+			});
 		}
 
 		$scope.update_imgs = function() {

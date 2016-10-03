@@ -1,5 +1,5 @@
 CC=g++
-CCOPTS=-I/usr/local/include -I/usr/include/hiredis -I../ReServant -L/opt/vc/lib -L/usr/local/lib
+CCOPTS=-std=c++11 -I/usr/local/include -I/usr/include/hiredis -I../ReServant -L/opt/vc/lib -L/usr/local/lib
 STRIP=-strip
 SRCS=raspiCamServantd.cpp raspiCamServant.cpp
 OBJECTS=raspiCamServantd.o raspiCamServant.o

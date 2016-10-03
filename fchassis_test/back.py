@@ -14,16 +14,16 @@ try:
 	h = c.heading()
 	c.update_state()
 	dbprint('BEFORE %d (%d:%d) dist=%g(%g)' % (h, c.state['lcount'], c.state['rcount'], c.state['sonar'], c.state.get('irdist', -1)))
-	c.move_straight(fwd=False, max_steps=c.m2steps(dist), max_secs=50, power=40)
+	c.move_straight(fwd=False, max_steps=c.m2steps(dist), max_secs=10, power=70)
 	dbprint('AFTER %d (%d:%d)' % (c.heading(), c.state['lcount'], c.state['rcount']))
 	c.update_state()
 	json.dump(c.dots, file('dots.json', 'w'), indent=2)
 finally:
-	cam = picamera.PiCamera()
+#	cam = picamera.PiCamera()
 	c.update_state()
 	change = c.heading() - h
 	dbprint('EVENTUALLY %d (%d(%.2fm):%d(%.2fm)) dist=%g(%g), turn=%d' % (
 			c.heading(), c.state['lcount'], c.steps2m(c.state['lcount']),
 			c.state['rcount'], c.steps2m(c.state['rcount']), c.state['sonar'], c.state.get('irdist', -1), change))
 	time.sleep(2)
-	update_img(cam)
+#	update_img(cam)

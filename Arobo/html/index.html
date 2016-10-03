@@ -27,7 +27,7 @@
 		<span us-spinner="{radius:30, width:8, length: 16}" spinner-key="spinner-busy"></span>
 
 		<div>
-			MaxP: <rzslider rz-slider-step="2" rz-slider-precision="2" rz-slider-model="power" rz-slider-ceil="255" rz-slider-floor="55"/>
+			MaxP: <rzslider rz-slider-step="2" rz-slider-precision="2" rz-slider-model="power" rz-slider-ceil="100" rz-slider-floor="1"/>
 		</div>
 
 		<div>
@@ -111,26 +111,32 @@
 		<table>
 			<tr>
 				<td>
-					<img width="80" height="60" alt="image" ng-src="{{picam_img[0]}}"/>
-					<img width="80" height="60" alt="image" ng-src="{{picam_img[1]}}"/>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[0]}}"/>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[1]}}"/>
 				</td>
-				<td rowspan="3" class="btn-cell">
+				<td rowspan="4" class="btn-cell">
 					<button ng-click="reload_imgs()">Reload</button><br/>
 					<button ng-click="param_update(update_imgs)">Update</button><br/>
 				</td>
-				<td rowspan="3">
+				<td rowspan="4">
 				</td>
 			</tr>
 			<tr>
 				<td>
-					<img width="80" height="60" alt="image" ng-src="{{picam_img[2]}}"/>
-					<img width="80" height="60" alt="image" ng-src="{{picam_img[3]}}"/>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[2]}}"/>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[3]}}"/>
 				</td>
 			</tr>
 			<tr>
 				<td>
-					<img width="80" height="60" alt="image" ng-src="{{picam_img[4]}}"/>
-					<img width="80" height="60" alt="image" ng-src="{{picam_img[5]}}"/>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[4]}}"/>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[5]}}"/>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[6]}}"/>
+					<img width="80" height="60" alt="image" ng-src="data/{{picam_img[7]}}"/>
 				</td>
 			</tr>
 		</table>

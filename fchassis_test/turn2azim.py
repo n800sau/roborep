@@ -15,6 +15,7 @@ if __name__ == '__main__':
 	c = frobo_ng()
 	c.debug = True
 
+	cam = picamera.PiCamera()
 	t = time.time()
 	try:
 		dbprint('BEFORE %d (%d:%d), TARGET: %d' % (c.heading(), c.state['lcount'], c.state['rcount'], azim))
@@ -24,7 +25,6 @@ if __name__ == '__main__':
 		json.dump(c.dots, file('dots.json', 'w'), indent=2)
 	finally:
 		c.cmd_mstop()
-		cam = picamera.PiCamera()
 		time.sleep(2)
 		update_img(cam)
 		dbprint('EVENTUALLY %d (%d:%d), TARGET: %d dist:%g, dT:%d' % (c.heading(), c.state['lcount'], c.state['rcount'], azim, c.state['sonar'], time.time()-t))

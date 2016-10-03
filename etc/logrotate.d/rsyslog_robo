@@ -4,6 +4,7 @@
 /var/log/roborep/hmc5883l.log
 /var/log/roborep/hd44780.log
 /var/log/roborep/kalman.log
+/var/log/roborep/raspiCamServant.log
 /var/log/roborep/l3g4200d.log
 /var/log/roborep/lsm303.log
 /var/log/roborep/mag3110.log

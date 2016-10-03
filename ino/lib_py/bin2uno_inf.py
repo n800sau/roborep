@@ -98,7 +98,7 @@ class bin2uno_inf(object):
 						self.recv_data[:sz+4]
 						# test crc
 						c_crc = self.crc8(self.recv_data[:sz+3])
-						r_crc = ord(self.recv_data[sz+3])
+						r_crc = ord(self.recv_data[sz+3]) if len(self.recv_data) > sz+3 else 0
 #						self.dbprint('%s vs %s' % (c_crc, r_crc))
 						if c_crc == r_crc:
 							# ok

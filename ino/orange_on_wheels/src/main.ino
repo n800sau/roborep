@@ -2,10 +2,12 @@
 #include "SerialProtocol.h"
 #include "commands.h"
 #include "crc.h"
+#include <EventFuse.h>
 
 // sonar
 int maximumRange = 200; // Maximum range needed
 int minimumRange = 0; // Minimum range needed
+const int MAX_STOP_DIST = 30;
 long duration = -1, distance = -1; // Duration used to calculate distance
 
 const float COUNT_PER_REV = 20.0;
@@ -65,7 +67,12 @@ volatile uint8_t intRhistory = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
 volatile int lPower = 0;
-volatile int rPower = 0; 
+volatile int rPower = 0;
+volatile bool lFwd = true;
+volatile bool rFwd = true;
+volatile bool full_stopped = true;
+
+#define DEFAULT_PWM 70
 
 void resetCounters()
 {
@@ -113,12 +120,13 @@ IccBase base;
 
 void lIntCB()
 {
-	if( micros() - intLtime > threshold )
+	unsigned long t = micros();
+	if( t - intLtime > threshold )
 	{
 		intLhistory = intLsignal;
 		intLsignal = bitRead(PIND,Eright);
 		if (intLhistory != intLsignal) {
-			intLtime = micros();
+			intLtime = t;
 			lCounter++;
 		}
 	}
@@ -126,12 +134,13 @@ void lIntCB()
 
 void rIntCB()
 {
-	if( micros() - intRtime > threshold )
+	unsigned long t = micros();
+	if( t - intRtime > threshold )
 	{
 		intRhistory = intRsignal;
 		intRsignal = bitRead(PIND,Eleft);
 		if (intRhistory != intRsignal) {
-			intRtime = micros();
+			intRtime = t;
 			rCounter++;
 		}
 	}
@@ -148,9 +157,22 @@ int power2pwm(int power)
 	return rs;
 }
 
+void stop(bool full=false)
+{
+	if(full) {
+		full_stopped = true;
+	}
+	setLeftMotor(0, false);
+	setRightMotor(0, false);
+}
+
 void setLeftMotor(int power, bool fwd)
 {
+	if(full_stopped) {
+		power = 0;
+	}
 	lPower = power;
+	lFwd = fwd;
 	if(power == 0) {
 		digitalWrite(LEFT_MOTOR_1, LOW);
 		digitalWrite(LEFT_MOTOR_2, LOW);
@@ -172,7 +194,11 @@ void setLeftMotor(int power, bool fwd)
 
 void setRightMotor(int power, bool fwd)
 {
+	if(full_stopped) {
+		power = 0;
+	}
 	rPower = power;
+	rFwd = fwd;
 	if(power == 0) {
 		digitalWrite(RIGHT_MOTOR_1, LOW);
 		digitalWrite(RIGHT_MOTOR_2, LOW);
@@ -225,8 +251,7 @@ void execute()
 {
 	switch(*base.command) {
 		case C_MSTOP:
-			setLeftMotor(0, false);
-			setRightMotor(0, false);
+			stop();
 			base.ok();
 			break;
 		case C_MLEFT:
@@ -253,6 +278,13 @@ void execute()
 				setLeftMotor(base.dataBuf[0], base.dataBuf[1]);
 				setRightMotor(base.dataBuf[2], base.dataBuf[3]);
 				base.ok();
+			} else {
+				base.error();
+			}
+			break;
+		case C_WALK_AROUND:
+			if(*base.datasize >= 2) {
+				walk_around(base.dataBuf[0], base.dataBuf[1]);
 			} else {
 				base.error();
 			}
@@ -289,17 +321,58 @@ void setup()
 	digitalWrite(Eleft, HIGH);
 	digitalWrite(Eright, HIGH);
 
-//	attachInterrupt(lInt, rIntCB, CHANGE);
-//	attachInterrupt(rInt, lIntCB, CHANGE);
+	attachInterrupt(lInt, rIntCB, CHANGE);
+	attachInterrupt(rInt, lIntCB, CHANGE);
+
+	EventFuse::newFuse(50, INF_REPEAT, evCommunicate);
+	EventFuse::newFuse(50, INF_REPEAT, evSonar);
 
 	Serial.println("Setup finished.");
+	walk_around(DEFAULT_PWM, DEFAULT_PWM);
+}
+
+void evFullStop(FuseID fuse, int& userData)
+{
+	stop(true);
+	Serial.print(millis());
+	Serial.println("Full stop");
+}
+
+void evStop(FuseID fuse, int& userData)
+{
+	Serial.print(millis());
+	stop();
+}
+
+void evLeftRight(FuseID fuse, int& userData)
+{
+	Serial.print(millis());
+	if(random(1)) {
+		setLeftMotor(DEFAULT_PWM, false);
+		setRightMotor(DEFAULT_PWM, true);
+	} else {
+		setLeftMotor(DEFAULT_PWM, true);
+		setRightMotor(DEFAULT_PWM, false);
+	}
+	EventFuse::newFuse(500, 1, evForward);
+}
+
+void evSonar(FuseID fuse, int& userData)
+{
+	sonar();
+	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd and (lPower > 0 || rPower > 0)) {
+		Serial.print(millis());
+		Serial.println("Too close");
+		setLeftMotor(DEFAULT_PWM, false);
+		setRightMotor(DEFAULT_PWM, false);
+		EventFuse::newFuse(1000, 1, evLeftRight);
+	}
 }
 
 unsigned long last_ping = millis();
 
-void loop()
+void evCommunicate(FuseID fuse, int& userData)
 {
-	sonar();
 	if(base.available()) {
 //		Serial.println("available");
 		last_ping = millis();
@@ -308,10 +381,29 @@ void loop()
 	} else {
 		if(last_ping + 60000 < millis()) {
 			Serial.println("Control timeout. Stopping");
-			setLeftMotor(0, false);
-			setRightMotor(0, false);
+			stop(true);
 		}
 	}
-	delay(50);
+}
+
+void evForward(FuseID fuse, int& userData)
+{
+	setLeftMotor(DEFAULT_PWM, true);
+	setRightMotor(DEFAULT_PWM, true);
+}
+
+void walk_around(int lPwr, int rPwr) {
+	full_stopped = false;
+	Serial.print(millis());
+	Serial.println("Start walking");
+	setLeftMotor(lPwr, true);
+	setRightMotor(rPwr, true);
+	EventFuse::newFuse(30000, 1, evFullStop);
+}
+
+void loop()
+{
+	EventFuse::burn();
+	delayMicroseconds(100);
 }
 
