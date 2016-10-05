@@ -4,11 +4,12 @@ import rosbag, sys, os, csv
 import time
 
 tlist = {
-	'/sensors/l3g4200/axes':  '   gyro',
-	'/sensors/adxl345/axes':  '        acc',
-	'/sensors/hmc5883l/heading': '            compass',
-	'/fchassis/state':        '                    state',
-	'/fchassis/command':      '                          command',
+	'/sensors/l3g4200/axes':     '  gyro',
+	'/sensors/adxl345/axes':     '    acc',
+	'/sensors/hmc5883l/heading': '      compass',
+	'/sensors/imu/angle':        '        imu',
+	'/fchassis/state':        '             state',
+	'/fchassis/command':      '               command',
 }
 
 #tlist = None
@@ -27,6 +28,8 @@ with open(bagfname + '.csv', 'w+') as csvfile:
 		if name.strip() == 'state':
 			vals = ['%.2f' % msg.sonar]
 		elif name.strip() == 'compass':
+			vals = ['%d' % msg.heading]
+		elif name.strip() == 'imu':
 			vals = ['%d' % msg.heading]
 		elif name.strip() == 'command':
 			vals = [msg.command]

@@ -20,6 +20,8 @@ xgyro = []
 ygyro = [[], [], []]
 xacc = []
 yacc = [[], [], []]
+ximu = []
+yimu = []
 
 # start with the first command
 # stop after 10 secs after the mstop command unless another command occurs
@@ -40,6 +42,9 @@ with open(fname) as csvfile:
 			if name == 'compass':
 				xcompass.append(x[-1])
 				ycompass.append(r[3])
+			if name == 'imu':
+				ximu.append(x[-1])
+				yimu.append(r[3])
 			ysonar.append(r[3] if name == 'state' else None)
 			if name == 'gyro':
 				xgyro.append(x[-1])
@@ -81,7 +86,12 @@ legends.append(axes[1].legend(loc='upper right', shadow=True))
 if len(ycompass) > 3:
 	y = np.interp(x, xcompass, ycompass)
 	axes[2].plot(x, y, color='blue', linestyle='-', marker='.', markersize=2, label='Head')
-	legends.append(axes[2].legend(loc='upper right', shadow=True))
+
+if len(yimu) > 3:
+	y = np.interp(x, ximu, yimu)
+	axes[2].plot(x, y, color='green', linestyle='-', marker='.', markersize=2, label='Angl')
+
+legends.append(axes[2].legend(loc='upper right', shadow=True))
 
 for i,l,c in ((0, 'Gx', 'green'), (1, 'Gy', 'blue'), (2, 'Gz', 'orange')):
 	if len(ygyro[i]) > 3:
