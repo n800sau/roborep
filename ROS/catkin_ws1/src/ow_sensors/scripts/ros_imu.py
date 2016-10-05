@@ -13,7 +13,7 @@ class IMUcalc:
 		self.last_acc = None
 		self.last_gyro = None
 		self.last_ts = None
-		self.angle = 0
+		self.angle = None
 		# Ordered this way to minimize wait time.
 		rospy.init_node('imu', anonymous = True)
 		self.r = rospy.Rate(10)
@@ -22,11 +22,13 @@ class IMUcalc:
 		self.pub_angle = rospy.Publisher('/sensors/imu/angle', HeadingStamped, queue_size=1)
 
 	def run(self):
+		msg = rospy.wait_for_message('/sensors/hmc5883l/heading', HeadingStamped)
+		self.angle = msg.heading
 		rospy.spin()
 
 	def publish_imu(self):
 		if self.pub_angle.get_num_connections() > 0:
-			if not (self.last_acc is None or self.last_gyro is None):
+			if not (self.last_acc is None or self.last_gyro is None or self.angle is None):
 				last_acc_ts = self.last_acc.header.stamp.secs + self.last_acc.header.stamp.nsecs / 1000000000.
 				last_gyro_ts = self.last_gyro.header.stamp.secs + self.last_gyro.header.stamp.nsecs / 1000000000.
 				if self.last_ts is None:
