@@ -118,7 +118,7 @@ class fchassis_ng(bin2uno_inf):
 	def update_state(self):
 		self.wait4sensors = True
 		old_debug = self.debug
-#		self.debug = False
+		self.debug = False
 		rs = False
 		try:
 			self.send_command(pycmds.C_STATE)
@@ -171,8 +171,8 @@ class fchassis_ng(bin2uno_inf):
 			data = self.read_bin()
 			if data:
 				self.dbprint('Received BIN: %s' % data)
-			else:
-				self.dbprint('no BIN replied')
+#			else:
+#				self.dbprint('no BIN replied')
 
 	def cmd_mstop(self):
 		self.send_command(pycmds.C_MSTOP)
@@ -185,20 +185,22 @@ class fchassis_ng(bin2uno_inf):
 		self.state['lcount'] = 0
 		self.state['rcount'] = 0
 
-	def cmd_mboth(self, lpwm, lfwd, rpwm, rfwd):
-		self.send_command(pycmds.C_MBOTH, struct.pack('BBBB', min(255, lpwm), lfwd, min(255, rpwm), rfwd))
+	# timeout in secs (float) step 0.5 sec
+	def cmd_mboth(self, lpwr, lfwd, rpwr, rfwd, timeout):
+		self.send_command(pycmds.C_MBOTH, struct.pack('BBBBB', min(255, lpwr), lfwd, min(255, rpwr), rfwd, min(255, round(timeout * 2))))
 		self.wait_reply()
 
-	def cmd_mleft(self, lpwm, lfwd):
-		self.send_command(pycmds.C_MLEFT, struct.pack('BB', min(255, lpwm), lfwd))
+	def cmd_mleft(self, lpwr, lfwd, timeout):
+		self.send_command(pycmds.C_MLEFT, struct.pack('BBB', min(255, lpwr), lfwd, min(255, round(timeout * 2))))
 		self.wait_reply()
 
-	def cmd_mright(self, rpwm, rfwd):
-		self.send_command(pycmds.C_MRIGHT, struct.pack('BB', min(255, rpwm), rfwd))
+	def cmd_mright(self, rpwr, rfwd, timeout):
+		self.send_command(pycmds.C_MRIGHT, struct.pack('BBB', min(255, rpwr), rfwd, min(255, round(timeout * 2))))
 		self.wait_reply()
 
-	def cmd_walk_around(self, lpwm, rpwm):
-		self.send_command(pycmds.C_WALK_AROUND, struct.pack('BB', min(255, lpwm), min(255, rpwm)))
+	def cmd_walk_around(self, lpwr, rpwr, timeout):
+		self.dbprint('')
+		self.send_command(pycmds.C_WALK_AROUND, struct.pack('BBB', min(255, lpwr), min(255, rpwr), min(255, round(timeout * 2))))
 		self.wait_reply()
 
 	def run(self):
@@ -223,6 +225,7 @@ class fchassis_ng(bin2uno_inf):
 		for a in argspec.args:
 			if a != 'self':
 				params.append(getattr(data, a))
+		self.dbprint('Calling %s%s' % (func.__name__, params))
 		func(*params)
 		rospy.loginfo('%s executed %s%s' % (rospy.get_caller_id(), func.__name__, params))
 
