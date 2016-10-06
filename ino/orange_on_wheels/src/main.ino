@@ -247,6 +247,13 @@ void serialEvent() {
 	base.serialEvent();
 }
 
+// timeout in halve seconds
+void stop_after(int timeout) {
+	if(timeout) {
+		EventFuse::newFuse(base.dataBuf[2] * 500, 1, evFullStop);
+	}
+}
+
 void execute()
 {
 	switch(*base.command) {
@@ -255,36 +262,40 @@ void execute()
 			base.ok();
 			break;
 		case C_MLEFT:
-			// bytes: power, direction
+			// bytes: power, direction, timeout
 			if(*base.datasize >= 2) {
 				setLeftMotor(base.dataBuf[0], base.dataBuf[1]);
+				stop_after(base.dataBuf[2]);
 				base.ok();
 			} else {
 				base.error();
 			}
 			break;
 		case C_MRIGHT:
-			// bytes: power, direction
+			// bytes: power, direction, timeout
 			if(*base.datasize >= 2) {
 				setRightMotor(base.dataBuf[0], base.dataBuf[1]);
+				stop_after(base.dataBuf[2]);
 				base.ok();
 			} else {
 				base.error();
 			}
 			break;
 		case C_MBOTH:
-			// bytes: lpower, lfwd, rpower, rfwd
+			// bytes: lpower, lfwd, rpower, rfwd, timeout
 			if(*base.datasize >= 4) {
 				setLeftMotor(base.dataBuf[0], base.dataBuf[1]);
 				setRightMotor(base.dataBuf[2], base.dataBuf[3]);
+				stop_after(base.dataBuf[4]);
 				base.ok();
 			} else {
 				base.error();
 			}
 			break;
 		case C_WALK_AROUND:
+			// bytes: lpower, rpower, timeout
 			if(*base.datasize >= 2) {
-				walk_around(base.dataBuf[0], base.dataBuf[1]);
+				walk_around(base.dataBuf[0], base.dataBuf[1], base.dataBuf[2]);
 			} else {
 				base.error();
 			}
@@ -327,8 +338,9 @@ void setup()
 	EventFuse::newFuse(50, INF_REPEAT, evCommunicate);
 	EventFuse::newFuse(50, INF_REPEAT, evSonar);
 
-	Serial.println("Setup finished.");
-	walk_around(DEFAULT_PWM, DEFAULT_PWM);
+	Serial.println("Setup finished");
+
+//	walk_around(DEFAULT_PWM, DEFAULT_PWM, 60);
 }
 
 void evFullStop(FuseID fuse, int& userData)
@@ -354,7 +366,7 @@ void evLeftRight(FuseID fuse, int& userData)
 		setLeftMotor(DEFAULT_PWM, true);
 		setRightMotor(DEFAULT_PWM, false);
 	}
-	EventFuse::newFuse(500, 1, evForward);
+	EventFuse::newFuse(300, 1, evForward);
 }
 
 void evSonar(FuseID fuse, int& userData)
@@ -365,7 +377,7 @@ void evSonar(FuseID fuse, int& userData)
 		Serial.println("Too close");
 		setLeftMotor(DEFAULT_PWM, false);
 		setRightMotor(DEFAULT_PWM, false);
-		EventFuse::newFuse(1000, 1, evLeftRight);
+		EventFuse::newFuse(500, 1, evLeftRight);
 	}
 }
 
@@ -392,13 +404,16 @@ void evForward(FuseID fuse, int& userData)
 	setRightMotor(DEFAULT_PWM, true);
 }
 
-void walk_around(int lPwr, int rPwr) {
+void walk_around(int lPwr, int rPwr, int timeout) {
 	full_stopped = false;
 	Serial.print(millis());
 	Serial.println("Start walking");
 	setLeftMotor(lPwr, true);
 	setRightMotor(rPwr, true);
-	EventFuse::newFuse(30000, 1, evFullStop);
+	if(timeout <= 0) {
+		timeout = 60;
+	}
+	EventFuse::newFuse(timeout * 500, 1, evFullStop);
 }
 
 void loop()
