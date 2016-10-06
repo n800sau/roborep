@@ -13,40 +13,57 @@ class MoveAvoid:
 
 	def run(self):
 		rospy.init_node('move_avoid', anonymous = True)
-#		rospy.Subscriber("/fchassis/state", msg.state, self.on_state)
 		self.pub_command = rospy.Publisher('/fchassis/command', msg.command, queue_size=1)
+#		rospy.loginfo('Move back')
+#		self.pub_command.publish(command='mboth', lpwr=50, lfwd=False, rpwr=50, rfwd=False, timeout=0.5)
 		rospy.sleep(10)
-		self.pub_command.publish(command='mboth', lpwm=40, lfwd=False, rpwm=40, rfwd=False)
-		rospy.sleep(10)
-		self.pub_command.publish(command='walk_around', lpwm=50, rpwm=50)
-		rospy.loginfo('Start walking')
-		rospy.sleep(60)
-		self.pub_command.publish(command='mstop')
-		rospy.loginfo('Stop')
-#		rospy.signal_shutdown("Walk around shutdown")
+		rospy.loginfo('Here 1')
+		self.pub_command.publish(command='walk_around', lpwr=90, rpwr=90, timeout=30)
+		rospy.loginfo('Here 2')
+#		self.commandlist = [
+#			dict(command='walk_around', lpwr=90, rpwr=90, timeout=30)
+#		]
+#		self.subs = rospy.Subscriber("/fchassis/state", msg.state, self.wait_move_state)
+		rospy.spin()
 
-	def on_state(self, data):
+	def wait_move_state(self, state):
+		if state.lpwr > 0 and state.rpwr > 0:
+			rospy.loginfo('Moving')
+			self.subs.unregister()
+			self.subs = rospy.Subscriber("/fchassis/state", msg.state, self.on_state)
+
+	def on_state(self, state):
+		if state.lpwr == 0 and state.rpwr == 0:
+			rospy.loginfo('Stopped')
+			if len(self.commandlist):
+				cmd = self.commandlist.pop(-1)
+				self.pub_command.publish(**cmd)
+				rospy.loginfo('Send cmd:' + cmd)
+			else:
+				self.subs.unregister()
+
+	def on_state1(self, data):
 		if data.sonar > 0:
 			if data.sonar < 0.5:
 				# back
 				self.direction = 'back'
-				self.pub_command.publish(command='mboth', lpwm=40, lfwd=False, rpwm=40, rfwd=False)
+				self.pub_command.publish(command='mboth', lpwr=40, lfwd=False, rpwr=40, rfwd=False)
 				rospy.loginfo('Back')
 				rospy.sleep(2)
 				if random.choice([True, False]):
 					self.direction = 'right'
-					self.pub_command.publish(command='mright', rpwm=50, rfwd=False)
+					self.pub_command.publish(command='mright', rpwr=50, rfwd=False)
 					rospy.loginfo('Right')
 					rospy.sleep(2)
 				else:
 					self.direction = 'left'
-					self.pub_command.publish(command='mleft', lpwm=50, lfwd=False)
+					self.pub_command.publish(command='mleft', lpwr=50, lfwd=False)
 					rospy.loginfo('Left')
 					rospy.sleep(2)
 			else:
 				# forward
 				self.direction = 'forward'
-				self.pub_command.publish(command='mboth', lpwm=50, lfwd=True, rpwm=50, rfwd=True)
+				self.pub_command.publish(command='mboth', lpwr=50, lfwd=True, rpwr=50, rfwd=True)
 				rospy.loginfo('Forward')
 				rospy.sleep(2)
 		else:
