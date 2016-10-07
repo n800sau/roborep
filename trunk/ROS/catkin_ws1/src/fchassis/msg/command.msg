@@ -5,3 +5,5 @@ bool lfwd
 uint8 rpwr
 bool rfwd
 uint8 timeout
+uint8 pwr
+bool fwd

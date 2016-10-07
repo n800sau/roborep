@@ -187,20 +187,25 @@ class fchassis_ng(bin2uno_inf):
 
 	# timeout in secs (float) step 0.5 sec
 	def cmd_mboth(self, lpwr, lfwd, rpwr, rfwd, timeout):
-		self.send_command(pycmds.C_MBOTH, struct.pack('BBBBB', min(255, lpwr), lfwd, min(255, rpwr), rfwd, min(255, round(timeout * 2))))
+		self.send_command(pycmds.C_MBOTH, struct.pack('BBBBB', min(100, lpwr), lfwd, min(100, rpwr), rfwd, min(255, round(timeout * 2))))
 		self.wait_reply()
 
 	def cmd_mleft(self, lpwr, lfwd, timeout):
-		self.send_command(pycmds.C_MLEFT, struct.pack('BBB', min(255, lpwr), lfwd, min(255, round(timeout * 2))))
+		self.send_command(pycmds.C_MLEFT, struct.pack('BBB', min(100, lpwr), lfwd, min(255, round(timeout * 2))))
 		self.wait_reply()
 
 	def cmd_mright(self, rpwr, rfwd, timeout):
-		self.send_command(pycmds.C_MRIGHT, struct.pack('BBB', min(255, rpwr), rfwd, min(255, round(timeout * 2))))
+		self.send_command(pycmds.C_MRIGHT, struct.pack('BBB', min(100, rpwr), rfwd, min(255, round(timeout * 2))))
 		self.wait_reply()
 
 	def cmd_walk_around(self, lpwr, rpwr, timeout):
 		self.dbprint('')
-		self.send_command(pycmds.C_WALK_AROUND, struct.pack('BBB', min(255, lpwr), min(255, rpwr), min(255, round(timeout * 2))))
+		self.send_command(pycmds.C_WALK_AROUND, struct.pack('BBB', min(100, lpwr), min(100, rpwr), min(255, round(timeout * 2))))
+		self.wait_reply()
+
+	def cmd_move2release(self, pwr, fwd, timeout):
+		self.dbprint('')
+		self.send_command(pycmds.C_MOVE2RELEASE, struct.pack('BBB', min(100, pwr), fwd, min(255, round(timeout * 2))))
 		self.wait_reply()
 
 	def run(self):
