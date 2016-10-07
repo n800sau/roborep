@@ -1,1 +1,1 @@
-roslaunch rosbridge_websocket.launch &> run.log
+roslaunch main.launch &> run.log
