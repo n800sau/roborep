@@ -27,7 +27,7 @@ from fchassis import msg
 from bin2uno_inf import bin2uno_inf
 from serial import Serial
 
-SENSORS_SHOW_PERIOD = 0.1
+SENSORS_SHOW_PERIOD = 0.05
 
 class fchassis_ng(bin2uno_inf):
 
