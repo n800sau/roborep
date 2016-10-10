@@ -404,7 +404,11 @@ void setup()
 
 	stop(true);
 	delay(1000);
-	process_sensors();
+
+	process_compass();
+	process_accel();
+	process_gyro();
+	process_bmp085();
 
 	stop_acc_x = adxl345_state.event.acceleration.x;
 	stop_acc_y = adxl345_state.event.acceleration.y;
@@ -413,8 +417,10 @@ void setup()
 	attachInterrupt(lInt, rIntCB, CHANGE);
 	attachInterrupt(rInt, lIntCB, CHANGE);
 
-	EventFuse::newFuse(50, INF_REPEAT, evCommunicate);
+	EventFuse::newFuse(20, INF_REPEAT, evCommunicate);
 	EventFuse::newFuse(50, INF_REPEAT, evSonar);
+	EventFuse::newFuse(10, INF_REPEAT, evIMU);
+	EventFuse::newFuse(2000, INF_REPEAT, evBMP85);
 
 	Serial.println("Setup finished");
 
@@ -525,18 +531,20 @@ void move2release(int pwr, bool fwd, int timeout) {
 	EventFuse::newFuse(timeout * 500, 1, evFullStop);
 }
 
-void process_sensors()
+void evIMU(FuseID fuse, int& userData)
 {
 	process_compass();
 	process_accel();
 	process_gyro();
+}
+
+void evBMP85(FuseID fuse, int& userData)
+{
 	process_bmp085();
 }
 
 void loop()
 {
-	process_sensors();
 	EventFuse::burn();
-	delayMicroseconds(10);
 }
 
