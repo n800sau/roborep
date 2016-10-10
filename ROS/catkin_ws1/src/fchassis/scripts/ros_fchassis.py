@@ -22,11 +22,12 @@ import datetime
 import inspect
 import rospy
 from std_msgs.msg import Header
+from geometry_msgs.msg import Vector3
 from fchassis import msg
 from bin2uno_inf import bin2uno_inf
 from serial import Serial
 
-SENSORS_SHOW_PERIOD = 0.3
+SENSORS_SHOW_PERIOD = 0.1
 
 class fchassis_ng(bin2uno_inf):
 
@@ -146,9 +147,21 @@ class fchassis_ng(bin2uno_inf):
 							self.state['lpwr'] = data['vals'][0]
 							self.state['rpwr'] = data['vals'][1]
 						elif data['cmd'] == pycmds.R_MDIST_2F:
-							self.dbprint(json.dumps(data, indent=4))
+#							self.dbprint(json.dumps(data, indent=4))
 							self.state['ldist'] = data['vals'][0]
 							self.state['rdist'] = data['vals'][1]
+						elif data['cmd'] == pycmds.R_ACC_3F:
+							self.state['acc'] = Vector3(x = data['vals'][0], y=data['vals'][1], z=data['vals'][2])
+						elif data['cmd'] == pycmds.R_GYRO_3F:
+							self.state['gyro'] = Vector3(x = data['vals'][0], y=data['vals'][1], z=data['vals'][2])
+						elif data['cmd'] == pycmds.R_COMPASS_3F:
+							self.state['compass'] = Vector3(x = data['vals'][0], y=data['vals'][1], z=data['vals'][2])
+						elif data['cmd'] == pycmds.R_HEADING_1F:
+							self.state['heading'] = data['vals'][0]
+						elif data['cmd'] == pycmds.R_TEMPERATURE_1F:
+							self.state['t'] = data['vals'][0]
+						elif data['cmd'] == pycmds.R_PRESSURE_1F:
+							self.state['pressure'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_END:
 							self.state['tick_time'] = time.time()
 							break
