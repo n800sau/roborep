@@ -12,7 +12,14 @@ from matplotlib.lines import Line2D
 fname = sys.argv[1]
 
 x = []
+xstate = []
 ysonar = []
+ylpwr = []
+yrpwr = []
+ylcurrent = []
+yrcurrent = []
+ylcount = []
+yrcount = []
 ycommand = []
 xcompass = []
 ycompass = []
@@ -45,7 +52,15 @@ with open(fname) as csvfile:
 			if name == 'imu':
 				ximu.append(x[-1])
 				yimu.append(r[3])
-			ysonar.append(r[3] if name == 'state' else None)
+			if name == 'state':
+				xstate.append(x[-1])
+				ysonar.append(r[3])
+				ylpwr.append(r[4])
+				yrpwr.append(r[5])
+				ylcurrent.append(r[6])
+				yrcurrent.append(r[7])
+				ylcount.append(r[8])
+				yrcount.append(r[9])
 			if name == 'gyro':
 				xgyro.append(x[-1])
 				ygyro[0].append(r[3])
@@ -73,37 +88,47 @@ with open(fname) as csvfile:
 #		if i > 100:
 #			break
 
-fig, axes = plt.subplots(nrows=5, ncols=1, sharex=True, sharey=False)
+fig, axes = plt.subplots(nrows=8, ncols=1, sharex=True, sharey=False)
+fig.set_size_inches(6, 8)
+
+def do_plot(ax, xlist, ylist, color, label):
+	if len(ylist) > 3:
+		y = np.interp(x, xlist, ylist)
+	ax.plot(x, y, color=color, linestyle='-', marker='.', markersize=2, label=label)
 
 #axes[0].bar(x, ycommand, edgecolor='cornflowerblue', color='gray')
+
 axes[0].plot(x, ycommand, marker='x', linestyle='', color='cornflowerblue', markersize=5)
+
 
 legends = []
 
-axes[1].plot(x, ysonar, color='green', linestyle='-', marker='.', markersize=2, label='Dist')
+do_plot(axes[1], xstate, ysonar, 'green', 'Dist')
 legends.append(axes[1].legend(loc='upper right', shadow=True))
 
-if len(ycompass) > 3:
-	y = np.interp(x, xcompass, ycompass)
-	axes[2].plot(x, y, color='blue', linestyle='-', marker='.', markersize=2, label='Head')
-
-if len(yimu) > 3:
-	y = np.interp(x, ximu, yimu)
-	axes[2].plot(x, y, color='green', linestyle='-', marker='.', markersize=2, label='Angl')
-
+do_plot(axes[2], xcompass, ycompass, 'blue', 'Head')
+do_plot(axes[2], ximu, yimu, 'green', 'Angl')
 legends.append(axes[2].legend(loc='upper right', shadow=True))
 
 for i,l,c in ((0, 'Gx', 'green'), (1, 'Gy', 'blue'), (2, 'Gz', 'orange')):
-	if len(ygyro[i]) > 3:
-		y = np.interp(x, xgyro, ygyro[i])
-		axes[3].plot(x, y, color=c, linestyle='-', marker='.', markersize=2, label=l)
+	do_plot(axes[3], xgyro, ygyro[i], c, l)
 legends.append(axes[3].legend(loc='upper right', shadow=True))
 
 for i,l,c in ((0, 'Ax', 'green'), (1, 'Ay', 'blue'), (2, 'Az', 'orange')):
-	if len(yacc[i]) > 3:
-		y = np.interp(x, xacc, yacc[i])
-		axes[4].plot(x, y, color=c, linestyle='-', marker='.', markersize=2, label=l)
+	do_plot(axes[4], xacc, yacc[i], c, l)
 legends.append(axes[4].legend(loc='upper right', shadow=True))
+
+do_plot(axes[5], xstate, ylpwr, 'blue', 'lPwr')
+do_plot(axes[5], xstate, yrpwr, 'green', 'rPwr')
+legends.append(axes[5].legend(loc='upper right', shadow=True))
+
+do_plot(axes[6], xstate, ylcurrent, 'blue', 'lCurr')
+do_plot(axes[6], xstate, yrcurrent, 'green', 'rCurr')
+legends.append(axes[6].legend(loc='upper right', shadow=True))
+
+do_plot(axes[7], xstate, ylcount, 'blue', 'lCnt')
+do_plot(axes[7], xstate, yrcount, 'green', 'rCnt')
+legends.append(axes[7].legend(loc='upper right', shadow=True))
 
 for legend in legends:
 
@@ -118,6 +143,6 @@ for legend in legends:
 	for label in legend.get_lines():
 		label.set_linewidth(1.5)  # the legend line width
 
-plt.savefig(os.path.expanduser('~/public_html/bag/plot.png'), bbox_inches='tight')
+plt.savefig(os.path.expanduser('~/public_html/bag/plot.png'), bbox_inches='tight', dpi = 100)
 
 #plt.show()
