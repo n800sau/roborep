@@ -12,4 +12,10 @@ float32 lpwr
 float32 rpwr
 float32 ldist
 float32 rdist
+geometry_msgs/Vector3 acc
+geometry_msgs/Vector3 gyro
+geometry_msgs/Vector3 compass
+float32 heading
+float32 t
+float32 pressure
 
