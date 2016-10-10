@@ -52,10 +52,6 @@ const int MIN_PWM = 10;
 const int MAX_PWM = 255;
 
 
-// encoder interrupts
-const int lInt = Eleft - 2;
-const int rInt = Eright - 2;
-
 // 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
 //
 // The threshold value I'm using limits it to 100 half pulses a second
@@ -146,19 +142,19 @@ void IccBase::sendState()
 	vals[2] = acc_z_max() - stop_acc_z;
 	sendFloats(R_ACCMAX_3F, vals, 3);
 
-	vals[0] = adxl345_state.single_tap;
-	sendFloats(R_HIT_1F, vals, 1);
+//	vals[0] = adxl345_state.single_tap;
+//	sendFloats(R_HIT_1F, vals, 1);
 
 	vals[0] = gyro.g.x;
 	vals[1] = gyro.g.y;
 	vals[2] = gyro.g.z;
 	sendFloats(R_GYRO_3F, vals, 3);
 
-	bmp.getTemperature(vals);
-	sendFloats(R_TEMPERATURE_1F, vals, 1);
+//	bmp.getTemperature(vals);
+//	sendFloats(R_TEMPERATURE_1F, vals, 1);
 
-	vals[0] = bmp085_event.pressure;
-	sendFloats(R_PRESSURE_1F, vals, 1);
+//	vals[0] = bmp085_event.pressure;
+//	sendFloats(R_PRESSURE_1F, vals, 1);
 
 	sendFloats(R_END, NULL, 0);
 }
@@ -180,12 +176,8 @@ void lIntCB()
 	unsigned long t = micros();
 	if( t - intLtime > threshold )
 	{
-		intLhistory = intLsignal;
-		intLsignal = bitRead(PIND,Eright);
-		if (intLhistory != intLsignal) {
-			intLtime = t;
-			lCounter++;
-		}
+		intLtime = t;
+		lCounter += (lFwd) ? 1 : -1;
 	}
 }
 
@@ -194,12 +186,8 @@ void rIntCB()
 	unsigned long t = micros();
 	if( t - intRtime > threshold )
 	{
-		intRhistory = intRsignal;
-		intRsignal = bitRead(PIND,Eleft);
-		if (intRhistory != intRsignal) {
-			intRtime = t;
-			rCounter++;
-		}
+		intRtime = t;
+		rCounter += (rFwd) ? 1 : -1;
 	}
 }
 
@@ -394,8 +382,8 @@ void setup()
 	pinMode(Eleft, INPUT);
 	pinMode(Eright, INPUT);
 
-	digitalWrite(Eleft, HIGH);
-	digitalWrite(Eright, HIGH);
+	digitalWrite(Eleft, INPUT_PULLUP);
+	digitalWrite(Eright, INPUT_PULLUP);
 
 	setup_compass();
 	setup_accel();
@@ -414,8 +402,8 @@ void setup()
 	stop_acc_y = adxl345_state.event.acceleration.y;
 	stop_acc_z = adxl345_state.event.acceleration.z;
 
-	attachInterrupt(lInt, rIntCB, CHANGE);
-	attachInterrupt(rInt, lIntCB, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(Eleft), rIntCB, RISING);
+	attachInterrupt(digitalPinToInterrupt(Eright), lIntCB, RISING);
 
 	EventFuse::newFuse(20, INF_REPEAT, evCommunicate);
 	EventFuse::newFuse(50, INF_REPEAT, evSonar);
@@ -474,11 +462,9 @@ void evCommunicate(FuseID fuse, int& userData)
 		last_ping = millis();
 		execute();
 		base.resetInput();
-	} else {
-		if(last_ping + 60000 < millis()) {
+	} else if(last_ping + 60000 < millis() && !full_stopped) {
 			Serial.println("Control timeout. Stopping");
 			stop(true);
-		}
 	}
 }
 
