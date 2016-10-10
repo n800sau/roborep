@@ -26,7 +26,7 @@ with open(bagfname + '.csv', 'w+') as csvfile:
 		name = tlist[topic]
 		vals = []
 		if name.strip() == 'state':
-			vals = ['%.2f' % msg.sonar]
+			vals = ['%.2f' % msg.sonar, '%d' % msg.lpwr, '%d' % msg.rpwr, '%d' % msg.lcurrent, '%d' % msg.rcurrent, '%d' % msg.lcount, '%d' % msg.rcount]
 		elif name.strip() == 'compass':
 			vals = ['%d' % msg.heading]
 		elif name.strip() == 'imu':
