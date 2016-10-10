@@ -4,6 +4,34 @@
 #include "crc.h"
 #include <EventFuse.h>
 
+#include "hmc5883l_proc.h"
+#include "adxl345_proc.h"
+#include "l3g4200d_proc.h"
+#include "bmp085_proc.h"
+
+#if defined(__AVR_ATmega2560__)
+#else
+#endif
+
+
+// motor pins
+const int LEFT_MOTOR_1 = 6;
+const int LEFT_MOTOR_2 = 5;
+
+const int RIGHT_MOTOR_1 = 10;
+const int RIGHT_MOTOR_2 = 9;
+
+const int echoPin = 12; // Echo Pin
+const int trigPin = 11; // Trigger Pin
+
+// encoder pins
+const int Eleft = 2;
+const int Eright = 3;
+
+float stop_acc_x = 0;
+float stop_acc_y = 0;
+float stop_acc_z = 0;
+
 // sonar
 int maximumRange = 200; // Maximum range needed
 int minimumRange = 0; // Minimum range needed
@@ -23,20 +51,6 @@ float count2dist(int count)
 const int MIN_PWM = 10;
 const int MAX_PWM = 255;
 
-
-// motor pins
-const int LEFT_MOTOR_1 = 6;
-const int LEFT_MOTOR_2 = 5;
-
-const int RIGHT_MOTOR_1 = 10;
-const int RIGHT_MOTOR_2 = 9;
-
-const int echoPin = 12; // Echo Pin
-const int trigPin = 11; // Trigger Pin
-
-// encoder pins
-const int Eleft = 2;
-const int Eright = 3;
 
 // encoder interrupts
 const int lInt = Eleft - 2;
@@ -89,20 +103,63 @@ class IccBase: public SerialProtocol {
 
 void IccBase::sendState()
 {
-	float vals[3];
+	float vals[3] = {
+		adxl345_state.event.acceleration.x - stop_acc_x,
+		adxl345_state.event.acceleration.y - stop_acc_y,
+		adxl345_state.event.acceleration.z - stop_acc_z
+	};
+	sendFloats(R_ACC_3F, vals, 3);
+
 	vals[0] = readVccMv() / 1000.;
 	sendFloats(R_VOLTS_1F, vals, 1);
+
 	vals[0] = lCounter;
 	vals[1] = rCounter;
 	sendFloats(R_MCOUNTS_2F, vals, 2);
+
 	vals[0] = lPower;
 	vals[1] = rPower;
 	sendFloats(R_MPOWER_2F, vals, 2);
+
 	vals[0] = count2dist(lCounter);
 	vals[1] = count2dist(rCounter);
 	sendFloats(R_MDIST_2F, vals, 2);
+
 	vals[0] = (distance > 0) ? distance / 100. : distance;
 	sendFloats(R_DIST_1F, vals, 1);
+
+	vals[0] = headingDegrees;
+	sendFloats(R_HEADING_1F, vals, 1);
+
+	vals[0] = compass_x;
+	vals[1] = compass_y;
+	vals[2] = compass_z;
+	sendFloats(R_COMPASS_3F, vals, 3);
+
+	vals[0] = acc_x_avg() - stop_acc_x;
+	vals[1] = acc_y_avg() - stop_acc_y;
+	vals[2] = acc_z_avg() - stop_acc_z;
+	sendFloats(R_ACCAVG_3F, vals, 3);
+
+	vals[0] = acc_x_max() - stop_acc_x;
+	vals[1] = acc_y_max() - stop_acc_y;
+	vals[2] = acc_z_max() - stop_acc_z;
+	sendFloats(R_ACCMAX_3F, vals, 3);
+
+	vals[0] = adxl345_state.single_tap;
+	sendFloats(R_HIT_1F, vals, 1);
+
+	vals[0] = gyro.g.x;
+	vals[1] = gyro.g.y;
+	vals[2] = gyro.g.z;
+	sendFloats(R_GYRO_3F, vals, 3);
+
+	bmp.getTemperature(vals);
+	sendFloats(R_TEMPERATURE_1F, vals, 1);
+
+	vals[0] = bmp085_event.pressure;
+	sendFloats(R_PRESSURE_1F, vals, 1);
+
 	sendFloats(R_END, NULL, 0);
 }
 
@@ -263,7 +320,7 @@ void execute()
 			break;
 		case C_MLEFT:
 			// bytes: power, direction, timeout
-			if(*base.datasize >= 2) {
+			if(*base.datasize >= 3) {
 				setLeftMotor(base.dataBuf[0], base.dataBuf[1]);
 				stop_after(base.dataBuf[2]);
 				base.ok();
@@ -273,7 +330,7 @@ void execute()
 			break;
 		case C_MRIGHT:
 			// bytes: power, direction, timeout
-			if(*base.datasize >= 2) {
+			if(*base.datasize >= 3) {
 				setRightMotor(base.dataBuf[0], base.dataBuf[1]);
 				stop_after(base.dataBuf[2]);
 				base.ok();
@@ -283,7 +340,7 @@ void execute()
 			break;
 		case C_MBOTH:
 			// bytes: lpower, lfwd, rpower, rfwd, timeout
-			if(*base.datasize >= 4) {
+			if(*base.datasize >= 5) {
 				setLeftMotor(base.dataBuf[0], base.dataBuf[1]);
 				setRightMotor(base.dataBuf[2], base.dataBuf[3]);
 				stop_after(base.dataBuf[4]);
@@ -294,8 +351,16 @@ void execute()
 			break;
 		case C_WALK_AROUND:
 			// bytes: lpower, rpower, timeout
-			if(*base.datasize >= 2) {
+			if(*base.datasize >= 3) {
 				walk_around(base.dataBuf[0], base.dataBuf[1], base.dataBuf[2]);
+			} else {
+				base.error();
+			}
+			break;
+		case C_MOVE2RELEASE:
+			// bytes: power, fwd, timeout
+			if(*base.datasize >= 3) {
+				move2release(base.dataBuf[0], base.dataBuf[1], base.dataBuf[2]);
 			} else {
 				base.error();
 			}
@@ -331,6 +396,19 @@ void setup()
 
 	digitalWrite(Eleft, HIGH);
 	digitalWrite(Eright, HIGH);
+
+	setup_compass();
+	setup_accel();
+	setup_gyro();
+	setup_bmp085();
+
+	stop(true);
+	delay(1000);
+	process_sensors();
+
+	stop_acc_x = adxl345_state.event.acceleration.x;
+	stop_acc_y = adxl345_state.event.acceleration.y;
+	stop_acc_z = adxl345_state.event.acceleration.z;
 
 	attachInterrupt(lInt, rIntCB, CHANGE);
 	attachInterrupt(rInt, lIntCB, CHANGE);
@@ -404,6 +482,24 @@ void evForward(FuseID fuse, int& userData)
 	setRightMotor(DEFAULT_PWM, true);
 }
 
+void evChangePower(FuseID fuse, int& userData)
+{
+	const int v = 20 * (random(1)) ? -1 : 1;
+	int lPwr = lPower, rPwr = rPower;
+	static int ldir = random(1);
+	if(ldir>0) {
+		lPwr += v;
+	} else {
+		rPwr += v;
+	}
+	ldir = !ldir;
+	setLeftMotor(max(0, min(lPwr, 100)), lFwd);
+	setRightMotor(max(0, min(rPwr, 100)), rFwd);
+	if(!full_stopped) {
+		EventFuse::newFuse(500, 1, evChangePower);
+	}
+}
+
 void walk_around(int lPwr, int rPwr, int timeout) {
 	full_stopped = false;
 	Serial.print(millis());
@@ -416,9 +512,31 @@ void walk_around(int lPwr, int rPwr, int timeout) {
 	EventFuse::newFuse(timeout * 500, 1, evFullStop);
 }
 
+void move2release(int pwr, bool fwd, int timeout) {
+	full_stopped = false;
+	Serial.print(millis());
+	Serial.println("Start releasing");
+	setLeftMotor(pwr, fwd);
+	setRightMotor(pwr, fwd);
+	EventFuse::newFuse(500, 1, evChangePower);
+	if(timeout <= 0) {
+		timeout = 30;
+	}
+	EventFuse::newFuse(timeout * 500, 1, evFullStop);
+}
+
+void process_sensors()
+{
+	process_compass();
+	process_accel();
+	process_gyro();
+	process_bmp085();
+}
+
 void loop()
 {
+	process_sensors();
 	EventFuse::burn();
-	delayMicroseconds(100);
+	delayMicroseconds(10);
 }
 

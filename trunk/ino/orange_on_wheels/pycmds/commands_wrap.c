@@ -3668,6 +3668,7 @@ SWIG_init(void) {
   SWIG_Python_SetConstant(d, "C_MSTOP",SWIG_From_int((int)(C_MSTOP)));
   SWIG_Python_SetConstant(d, "C_RESET_COUNTERS",SWIG_From_int((int)(C_RESET_COUNTERS)));
   SWIG_Python_SetConstant(d, "C_WALK_AROUND",SWIG_From_int((int)(C_WALK_AROUND)));
+  SWIG_Python_SetConstant(d, "C_MOVE2RELEASE",SWIG_From_int((int)(C_MOVE2RELEASE)));
   SWIG_Python_SetConstant(d, "R_OK_0",SWIG_From_int((int)(R_OK_0)));
   SWIG_Python_SetConstant(d, "R_ERROR_0",SWIG_From_int((int)(R_ERROR_0)));
   SWIG_Python_SetConstant(d, "R_VOLTS_1F",SWIG_From_int((int)(R_VOLTS_1F)));
@@ -3678,6 +3679,15 @@ SWIG_init(void) {
   SWIG_Python_SetConstant(d, "R_DIST_1F",SWIG_From_int((int)(R_DIST_1F)));
   SWIG_Python_SetConstant(d, "R_IRDIST_1F",SWIG_From_int((int)(R_IRDIST_1F)));
   SWIG_Python_SetConstant(d, "R_MOTION_1F",SWIG_From_int((int)(R_MOTION_1F)));
+  SWIG_Python_SetConstant(d, "R_HEADING_1F",SWIG_From_int((int)(R_HEADING_1F)));
+  SWIG_Python_SetConstant(d, "R_COMPASS_3F",SWIG_From_int((int)(R_COMPASS_3F)));
+  SWIG_Python_SetConstant(d, "R_ACC_3F",SWIG_From_int((int)(R_ACC_3F)));
+  SWIG_Python_SetConstant(d, "R_ACCAVG_3F",SWIG_From_int((int)(R_ACCAVG_3F)));
+  SWIG_Python_SetConstant(d, "R_ACCMAX_3F",SWIG_From_int((int)(R_ACCMAX_3F)));
+  SWIG_Python_SetConstant(d, "R_HIT_1F",SWIG_From_int((int)(R_HIT_1F)));
+  SWIG_Python_SetConstant(d, "R_GYRO_3F",SWIG_From_int((int)(R_GYRO_3F)));
+  SWIG_Python_SetConstant(d, "R_TEMPERATURE_1F",SWIG_From_int((int)(R_TEMPERATURE_1F)));
+  SWIG_Python_SetConstant(d, "R_PRESSURE_1F",SWIG_From_int((int)(R_PRESSURE_1F)));
   SWIG_Python_SetConstant(d, "R_END",SWIG_From_int((int)(R_END)));
   SWIG_Python_SetConstant(d, "MAGIC_BYTE",SWIG_From_int((int)(0x85)));
 #if PY_VERSION_HEX >= 0x03000000
