@@ -3,7 +3,7 @@
 #include <Adafruit_ADXL345_U.h>
 #include "limited_queue.h"
 
-#define A_INT1_PIN 5
+//#define A_INT1_PIN 5
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel;
@@ -33,8 +33,10 @@ void setup_accel()
 		// Set the range of the accelerometer to a maximum of 2G.
 		accel.setRange(ADXL345_RANGE_2_G);
 
+#ifdef A_INT1_PIN
 		// interrupts setup
 		pinMode(A_INT1_PIN, INPUT); 
+#endif
 
 		accel.writeRegister(ADXL345_REG_INT_MAP, 0); // send all interrupts to ADXL345's INT1 pin
 		accel.writeRegister(ADXL345_REG_INT_ENABLE, B8(1111100)); // enable signle and double tap, activity, inactivity and free fall detection
@@ -55,6 +57,7 @@ void process_accel()
 		acc_y.push(adxl345_state.event.acceleration.y);
 		acc_z.push(adxl345_state.event.acceleration.z);
 
+#ifdef A_INT1_PIN
 		if(digitalRead(A_INT1_PIN)) {
 			int interruptSource = accel.readRegister(ADXL345_REG_INT_SOURCE);
 			if(interruptSource & B8(1000000)) {
@@ -62,6 +65,7 @@ void process_accel()
 				Serial.println("### SINGLE_TAP ###");
 			}
 		}
+#endif
 	}
 
 }
