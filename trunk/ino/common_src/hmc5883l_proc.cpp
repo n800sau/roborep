@@ -6,6 +6,10 @@ Adafruit_HMC5883_Unified mag;
 float heading = -1;
 float headingDegrees = -1;
 
+float compass_x;
+float compass_y;
+float compass_z;
+
 void setup_compass()
 {
 	mag = Adafruit_HMC5883_Unified(12345);
@@ -23,6 +27,9 @@ void process_compass()
 	// Hold the module so that Z is pointing 'up' and you can measure the heading with x&y
 	// Calculate heading when the magnetometer is level, then correct for signs of axis.
 	heading = atan2(hmc5883_event.magnetic.y, hmc5883_event.magnetic.x);
+	compass_x = hmc5883_event.magnetic.x;
+	compass_y = hmc5883_event.magnetic.y;
+	compass_z = hmc5883_event.magnetic.z;
 
 	// Once you have your heading, you must then add your 'Declination Angle', which is the 'Error' of the magnetic field in your location.
 	// Find yours here: http://www.magnetic-declination.com/
