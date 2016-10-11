@@ -8,6 +8,7 @@
 #include "adxl345_proc.h"
 #include "l3g4200d_proc.h"
 #include "bmp085_proc.h"
+#include "angle.h"
 
 #if defined(__AVR_ATmega2560__)
 #else
@@ -81,8 +82,10 @@ volatile int rPower = 0;
 volatile bool lFwd = true;
 volatile bool rFwd = true;
 volatile bool full_stopped = true;
+bool moving_straight = false;
+int fwd_heading;
 
-#define DEFAULT_PWM 70
+#define DEFAULT_PWR 70
 
 void resetCounters()
 {
@@ -207,8 +210,37 @@ void stop(bool full=false)
 	if(full) {
 		full_stopped = true;
 	}
+	moving_straight = false;
 	setLeftMotor(0, false);
 	setRightMotor(0, false);
+}
+
+void evFixDir(FuseID fuse, int& pwd)
+{
+	if(moving_straight && !full_stopped) {
+		int aoff = angle_offset(fwd_heading, headingDegrees);
+		if(abs(aoff) > 10) {
+			int pwr_off = max(20, 10 * abs(aoff));
+			if((aoff < 0 && lFwd && rFwd) || (aoff > 0 && !lFwd && !rFwd)) {
+				// left more right less
+				setLeftMotor(lPower + pwr_off, lFwd);
+				setRightMotor(rPower - pwr_off, rFwd);
+			} else {
+				// left less right more
+				setLeftMotor(lPower - pwr_off, lFwd);
+				setRightMotor(rPower + pwr_off, rFwd);
+			}
+		}
+		Serial.println(aoff);
+	}
+}
+
+void straight(int pwr, bool fwd)
+{
+	setLeftMotor(pwr, fwd);
+	setRightMotor(pwr, fwd);
+	moving_straight = true;
+	fwd_heading = headingDegrees;
 }
 
 void setLeftMotor(int power, bool fwd)
@@ -338,9 +370,9 @@ void execute()
 			}
 			break;
 		case C_WALK_AROUND:
-			// bytes: lpower, rpower, timeout
-			if(*base.datasize >= 3) {
-				walk_around(base.dataBuf[0], base.dataBuf[1], base.dataBuf[2]);
+			// bytes: power, timeout
+			if(*base.datasize >= 2) {
+				walk_around(base.dataBuf[0], base.dataBuf[1]);
 			} else {
 				base.error();
 			}
@@ -409,10 +441,12 @@ void setup()
 	EventFuse::newFuse(50, INF_REPEAT, evSonar);
 	EventFuse::newFuse(10, INF_REPEAT, evIMU);
 	EventFuse::newFuse(2000, INF_REPEAT, evBMP85);
+	EventFuse::newFuse(100, INF_REPEAT, evFixDir);
 
 	Serial.println("Setup finished");
 
-//	walk_around(DEFAULT_PWM, DEFAULT_PWM, 60);
+//	walk_around(DEFAULT_PWR, 60);
+//	move2release(DEFAULT_PWR, false, 30);
 }
 
 void evFullStop(FuseID fuse, int& userData)
@@ -428,17 +462,17 @@ void evStop(FuseID fuse, int& userData)
 	stop();
 }
 
-void evLeftRight(FuseID fuse, int& userData)
+void evLeftRight(FuseID fuse, int& pwr)
 {
 	Serial.print(millis());
 	if(random(1)) {
-		setLeftMotor(DEFAULT_PWM, false);
-		setRightMotor(DEFAULT_PWM, true);
+		setLeftMotor(pwr, false);
+		setRightMotor(pwr, true);
 	} else {
-		setLeftMotor(DEFAULT_PWM, true);
-		setRightMotor(DEFAULT_PWM, false);
+		setLeftMotor(pwr, true);
+		setRightMotor(pwr, false);
 	}
-	EventFuse::newFuse(300, 1, evForward);
+	EventFuse::newFuse(pwr, 300, 1, evForward);
 }
 
 void evSonar(FuseID fuse, int& userData)
@@ -447,9 +481,8 @@ void evSonar(FuseID fuse, int& userData)
 	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd and (lPower > 0 || rPower > 0)) {
 		Serial.print(millis());
 		Serial.println("Too close");
-		setLeftMotor(DEFAULT_PWM, false);
-		setRightMotor(DEFAULT_PWM, false);
-		EventFuse::newFuse(500, 1, evLeftRight);
+		stop();
+		EventFuse::newFuse(DEFAULT_PWR, 500, 1, evLeftRight);
 	}
 }
 
@@ -468,10 +501,9 @@ void evCommunicate(FuseID fuse, int& userData)
 	}
 }
 
-void evForward(FuseID fuse, int& userData)
+void evForward(FuseID fuse, int& pwr)
 {
-	setLeftMotor(DEFAULT_PWM, true);
-	setRightMotor(DEFAULT_PWM, true);
+	straight(pwr, true);
 }
 
 void evChangePower(FuseID fuse, int& userData)
@@ -492,12 +524,11 @@ void evChangePower(FuseID fuse, int& userData)
 	}
 }
 
-void walk_around(int lPwr, int rPwr, int timeout) {
+void walk_around(int pwr, int timeout) {
 	full_stopped = false;
 	Serial.print(millis());
 	Serial.println("Start walking");
-	setLeftMotor(lPwr, true);
-	setRightMotor(rPwr, true);
+	straight(pwr, true);
 	if(timeout <= 0) {
 		timeout = 60;
 	}
