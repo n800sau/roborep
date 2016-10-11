@@ -18,10 +18,10 @@ class MoveAvoid:
 #		self.pub_command.publish(command='mboth', lpwr=50, lfwd=False, rpwr=50, rfwd=False, timeout=0.5)
 		rospy.sleep(10)
 		rospy.loginfo('Here 1')
-		self.pub_command.publish(command='walk_around', lpwr=90, rpwr=90, timeout=30)
+		self.pub_command.publish(command='walk_around', pwr=90, timeout=30)
 		rospy.loginfo('Here 2')
 #		self.commandlist = [
-#			dict(command='walk_around', lpwr=90, rpwr=90, timeout=30)
+#			dict(command='walk_around', pwr=90, timeout=30)
 #		]
 #		self.subs = rospy.Subscriber("/fchassis/state", msg.state, self.wait_move_state)
 		rospy.spin()
