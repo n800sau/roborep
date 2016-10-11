@@ -71,19 +71,21 @@ volatile unsigned long threshold = 10000;
 //
 volatile unsigned long intLtime = 0;
 volatile unsigned long intRtime = 0;
-volatile uint8_t intLsignal = 0;
-volatile uint8_t intRsignal = 0;
-volatile uint8_t intLhistory = 0;
-volatile uint8_t intRhistory = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
-volatile int lPower = 0;
-volatile int rPower = 0;
+int lPower = 0;
+int rPower = 0;
+// left + powerOffset
+// right - powerOffset
+int powerOffset = 0;
 volatile bool lFwd = true;
 volatile bool rFwd = true;
 volatile bool full_stopped = true;
 bool moving_straight = false;
 int fwd_heading;
+
+unsigned long last_ping = millis();
+
 
 #define DEFAULT_PWR 70
 
@@ -211,28 +213,9 @@ void stop(bool full=false)
 		full_stopped = true;
 	}
 	moving_straight = false;
+	powerOffset = 0;
 	setLeftMotor(0, false);
 	setRightMotor(0, false);
-}
-
-void evFixDir(FuseID fuse, int& pwd)
-{
-	if(moving_straight && !full_stopped) {
-		int aoff = angle_offset(fwd_heading, headingDegrees);
-		if(abs(aoff) > 10) {
-			int pwr_off = max(20, 10 * abs(aoff));
-			if((aoff < 0 && lFwd && rFwd) || (aoff > 0 && !lFwd && !rFwd)) {
-				// left more right less
-				setLeftMotor(lPower + pwr_off, lFwd);
-				setRightMotor(rPower - pwr_off, rFwd);
-			} else {
-				// left less right more
-				setLeftMotor(lPower - pwr_off, lFwd);
-				setRightMotor(rPower + pwr_off, rFwd);
-			}
-		}
-		Serial.println(aoff);
-	}
 }
 
 void straight(int pwr, bool fwd)
@@ -240,11 +223,15 @@ void straight(int pwr, bool fwd)
 	setLeftMotor(pwr, fwd);
 	setRightMotor(pwr, fwd);
 	moving_straight = true;
+	powerOffset = 0;
 	fwd_heading = headingDegrees;
 }
 
 void setLeftMotor(int power, bool fwd)
 {
+	if(moving_straight) {
+		power += powerOffset;
+	}
 	if(full_stopped) {
 		power = 0;
 	}
@@ -271,6 +258,9 @@ void setLeftMotor(int power, bool fwd)
 
 void setRightMotor(int power, bool fwd)
 {
+	if(moving_straight) {
+		power -= powerOffset;
+	}
 	if(full_stopped) {
 		power = 0;
 	}
@@ -322,13 +312,6 @@ void sonar()
 
 void serialEvent() {
 	base.serialEvent();
-}
-
-// timeout in halve seconds
-void stop_after(int timeout) {
-	if(timeout) {
-		EventFuse::newFuse(base.dataBuf[2] * 500, 1, evFullStop);
-	}
 }
 
 void execute()
@@ -445,119 +428,8 @@ void setup()
 
 	Serial.println("Setup finished");
 
-//	walk_around(DEFAULT_PWR, 60);
+//	walk_around(DEFAULT_PWR, 10);
 //	move2release(DEFAULT_PWR, false, 30);
-}
-
-void evFullStop(FuseID fuse, int& userData)
-{
-	stop(true);
-	Serial.print(millis());
-	Serial.println("Full stop");
-}
-
-void evStop(FuseID fuse, int& userData)
-{
-	Serial.print(millis());
-	stop();
-}
-
-void evLeftRight(FuseID fuse, int& pwr)
-{
-	Serial.print(millis());
-	if(random(1)) {
-		setLeftMotor(pwr, false);
-		setRightMotor(pwr, true);
-	} else {
-		setLeftMotor(pwr, true);
-		setRightMotor(pwr, false);
-	}
-	EventFuse::newFuse(pwr, 300, 1, evForward);
-}
-
-void evSonar(FuseID fuse, int& userData)
-{
-	sonar();
-	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd and (lPower > 0 || rPower > 0)) {
-		Serial.print(millis());
-		Serial.println("Too close");
-		stop();
-		EventFuse::newFuse(DEFAULT_PWR, 500, 1, evLeftRight);
-	}
-}
-
-unsigned long last_ping = millis();
-
-void evCommunicate(FuseID fuse, int& userData)
-{
-	if(base.available()) {
-//		Serial.println("available");
-		last_ping = millis();
-		execute();
-		base.resetInput();
-	} else if(last_ping + 60000 < millis() && !full_stopped) {
-			Serial.println("Control timeout. Stopping");
-			stop(true);
-	}
-}
-
-void evForward(FuseID fuse, int& pwr)
-{
-	straight(pwr, true);
-}
-
-void evChangePower(FuseID fuse, int& userData)
-{
-	const int v = 20 * (random(1)) ? -1 : 1;
-	int lPwr = lPower, rPwr = rPower;
-	static int ldir = random(1);
-	if(ldir>0) {
-		lPwr += v;
-	} else {
-		rPwr += v;
-	}
-	ldir = !ldir;
-	setLeftMotor(max(0, min(lPwr, 100)), lFwd);
-	setRightMotor(max(0, min(rPwr, 100)), rFwd);
-	if(!full_stopped) {
-		EventFuse::newFuse(500, 1, evChangePower);
-	}
-}
-
-void walk_around(int pwr, int timeout) {
-	full_stopped = false;
-	Serial.print(millis());
-	Serial.println("Start walking");
-	straight(pwr, true);
-	if(timeout <= 0) {
-		timeout = 60;
-	}
-	EventFuse::newFuse(timeout * 500, 1, evFullStop);
-}
-
-void move2release(int pwr, bool fwd, int timeout) {
-	full_stopped = false;
-	Serial.print(millis());
-	Serial.println("Start releasing");
-	setLeftMotor(pwr, fwd);
-	setRightMotor(pwr, fwd);
-	EventFuse::newFuse(500, 1, evChangePower);
-	if(timeout <= 0) {
-		timeout = 30;
-	}
-	EventFuse::newFuse(timeout * 500, 1, evFullStop);
-}
-
-void evIMU(FuseID fuse, int& userData)
-{
-	process_compass();
-	process_accel();
-	process_gyro();
-}
-
-void evBMP85(FuseID fuse, int& userData)
-{
-	process_bmp085();
 }
 
 void loop()
