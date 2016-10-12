@@ -23,7 +23,7 @@ import inspect
 import rospy
 from std_msgs.msg import Header
 from geometry_msgs.msg import Vector3
-from fchassis import msg
+from fchassis_msgs import msg
 from bin2uno_inf import bin2uno_inf
 from serial import Serial
 
