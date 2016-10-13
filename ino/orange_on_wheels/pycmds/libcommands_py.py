@@ -84,6 +84,7 @@ R_VOLTS_1F = _libcommands_py.R_VOLTS_1F
 R_MCOUNTS_2F = _libcommands_py.R_MCOUNTS_2F
 R_MCURRENT_2F = _libcommands_py.R_MCURRENT_2F
 R_MPOWER_2F = _libcommands_py.R_MPOWER_2F
+R_MPOWEROFFSET_1F = _libcommands_py.R_MPOWEROFFSET_1F
 R_MDIST_2F = _libcommands_py.R_MDIST_2F
 R_DIST_1F = _libcommands_py.R_DIST_1F
 R_IRDIST_1F = _libcommands_py.R_IRDIST_1F

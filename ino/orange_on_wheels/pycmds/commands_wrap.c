@@ -3675,6 +3675,7 @@ SWIG_init(void) {
   SWIG_Python_SetConstant(d, "R_MCOUNTS_2F",SWIG_From_int((int)(R_MCOUNTS_2F)));
   SWIG_Python_SetConstant(d, "R_MCURRENT_2F",SWIG_From_int((int)(R_MCURRENT_2F)));
   SWIG_Python_SetConstant(d, "R_MPOWER_2F",SWIG_From_int((int)(R_MPOWER_2F)));
+  SWIG_Python_SetConstant(d, "R_MPOWEROFFSET_1F",SWIG_From_int((int)(R_MPOWEROFFSET_1F)));
   SWIG_Python_SetConstant(d, "R_MDIST_2F",SWIG_From_int((int)(R_MDIST_2F)));
   SWIG_Python_SetConstant(d, "R_DIST_1F",SWIG_From_int((int)(R_DIST_1F)));
   SWIG_Python_SetConstant(d, "R_IRDIST_1F",SWIG_From_int((int)(R_IRDIST_1F)));
