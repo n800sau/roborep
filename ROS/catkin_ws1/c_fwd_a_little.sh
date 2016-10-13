@@ -1,1 +1,0 @@
-rostopic pub -1 /fchassis/command fchassis/command '{command: mboth, lpwr: 70, lfwd: true, rpwr: 70, rfwd: true, timeout: 1}'

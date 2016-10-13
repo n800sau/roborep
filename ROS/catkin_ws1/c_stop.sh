@@ -1,0 +1,1 @@
+rostopic pub -1 /fchassis/command fchassis_msgs/command '{command: mstop}'

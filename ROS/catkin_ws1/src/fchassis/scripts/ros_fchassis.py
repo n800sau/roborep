@@ -146,6 +146,8 @@ class fchassis_ng(bin2uno_inf):
 						elif data['cmd'] == pycmds.R_MPOWER_2F:
 							self.state['lpwr'] = data['vals'][0]
 							self.state['rpwr'] = data['vals'][1]
+						elif data['cmd'] == pycmds.R_MPOWEROFFSET_1F:
+							self.state['pwroffset'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_MDIST_2F:
 #							self.dbprint(json.dumps(data, indent=4))
 							self.state['ldist'] = data['vals'][0]
