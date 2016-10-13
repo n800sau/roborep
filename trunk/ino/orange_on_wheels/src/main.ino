@@ -122,6 +122,9 @@ void IccBase::sendState()
 	vals[1] = rPower;
 	sendFloats(R_MPOWER_2F, vals, 2);
 
+	vals[0] = powerOffset;
+	sendFloats(R_MPOWEROFFSET_1F, vals, 1);
+
 	vals[0] = count2dist(lCounter);
 	vals[1] = count2dist(rCounter);
 	sendFloats(R_MDIST_2F, vals, 2);
@@ -229,13 +232,13 @@ void straight(int pwr, bool fwd)
 
 void setLeftMotor(int power, bool fwd)
 {
-	if(moving_straight) {
-		power += powerOffset;
-	}
 	if(full_stopped) {
 		power = 0;
 	}
 	lPower = power;
+	if(moving_straight && !full_stopped) {
+		power += powerOffset;
+	}
 	lFwd = fwd;
 	if(power == 0) {
 		digitalWrite(LEFT_MOTOR_1, LOW);
@@ -258,13 +261,13 @@ void setLeftMotor(int power, bool fwd)
 
 void setRightMotor(int power, bool fwd)
 {
-	if(moving_straight) {
-		power -= powerOffset;
-	}
 	if(full_stopped) {
 		power = 0;
 	}
 	rPower = power;
+	if(moving_straight && !full_stopped) {
+		power -= powerOffset;
+	}
 	rFwd = fwd;
 	if(power == 0) {
 		digitalWrite(RIGHT_MOTOR_1, LOW);
@@ -318,12 +321,13 @@ void execute()
 {
 	switch(*base.command) {
 		case C_MSTOP:
-			stop();
+			stop(true);
 			base.ok();
 			break;
 		case C_MLEFT:
 			// bytes: power, direction, timeout
 			if(*base.datasize >= 3) {
+				full_stopped = false;
 				setLeftMotor(base.dataBuf[0], base.dataBuf[1]);
 				stop_after(base.dataBuf[2]);
 				base.ok();
@@ -334,6 +338,7 @@ void execute()
 		case C_MRIGHT:
 			// bytes: power, direction, timeout
 			if(*base.datasize >= 3) {
+				full_stopped = false;
 				setRightMotor(base.dataBuf[0], base.dataBuf[1]);
 				stop_after(base.dataBuf[2]);
 				base.ok();
@@ -344,6 +349,7 @@ void execute()
 		case C_MBOTH:
 			// bytes: lpower, lfwd, rpower, rfwd, timeout
 			if(*base.datasize >= 5) {
+				full_stopped = false;
 				setLeftMotor(base.dataBuf[0], base.dataBuf[1]);
 				setRightMotor(base.dataBuf[2], base.dataBuf[3]);
 				stop_after(base.dataBuf[4]);

@@ -1,19 +1,18 @@
 void evFixDir(FuseID fuse, int& data)
 {
+	const float Kp = 1;
 	if(moving_straight && !full_stopped) {
 		int aoff = angle_offset(fwd_heading, headingDegrees);
-		if(abs(aoff) > 10) {
-			if((aoff < 0 && lFwd && rFwd) || (aoff > 0 && !lFwd && !rFwd)) {
-				powerOffset = -10;
-				// left more right less
-			} else {
-				powerOffset = 10;
-				// left less right more
-			}
-			setLeftMotor(lPower, lFwd);
-			setRightMotor(rPower, rFwd);
+		if((aoff < 0 && lFwd && rFwd) || (aoff > 0 && (!lFwd) && (!rFwd))) {
+			powerOffset = -Kp * abs(aoff);
+			// left more right less
+		} else {
+			powerOffset = Kp * abs(aoff);
+			// left less right more
 		}
-		Serial.println(aoff);
+		setLeftMotor(lPower, lFwd);
+		setRightMotor(rPower, rFwd);
+//		Serial.println(aoff);
 	}
 }
 
@@ -74,7 +73,7 @@ void evForward(FuseID fuse, int& pwr)
 
 void evChangePower(FuseID fuse, int& userData)
 {
-	const int v = 20 * (random(1)) ? -1 : 1;
+	int v = 10 * (random(1)) ? -1 : 1;
 	int lPwr = lPower, rPwr = rPower;
 	static int ldir = random(1);
 	if(ldir>0) {
