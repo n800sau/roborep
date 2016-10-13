@@ -21,8 +21,10 @@ yrcurrent = []
 ylcount = []
 yrcount = []
 ycommand = []
+xheading = []
+yheading = []
 xcompass = []
-ycompass = []
+ycompass = [[], [], []]
 xgyro = []
 ygyro = [[], [], []]
 xacc = []
@@ -33,6 +35,9 @@ yimu = []
 # start with the first command
 # stop after 10 secs after the mstop command unless another command occurs
 
+MAX_NO_PWR = 10
+
+no_pwr = 0
 cmd_val = 0
 active = False
 stopsecs = None
@@ -41,36 +46,61 @@ with open(fname) as csvfile:
 	for r in csv.reader(csvfile, delimiter = ','):
 		name = r[2].strip()
 		if not active:
-			if name == 'command':
+			if name == 'command' and r[3] == 'walk_around':
 				active = True
 		if active:
 			secs = int(r[0])
 			x.append(secs + float(r[1]) / 1000000000)
-			if name == 'compass':
-				xcompass.append(x[-1])
-				ycompass.append(r[3])
+#			if name == 'compass':
+#				xheading.append(x[-1])
+#				yheading.append(r[3])
 			if name == 'imu':
 				ximu.append(x[-1])
 				yimu.append(r[3])
 			if name == 'state':
 				xstate.append(x[-1])
+
 				ysonar.append(r[3])
-				ylpwr.append(r[4])
-				yrpwr.append(r[5])
+				ylpwr.append(int(r[4]))
+				yrpwr.append(int(r[5]))
+
+				if ylpwr[-1] == 0 and yrpwr[-1] == 0:
+					no_pwr += 1
+				else:
+					no_pwr = 0
+
 				ylcurrent.append(r[6])
 				yrcurrent.append(r[7])
 				ylcount.append(r[8])
 				yrcount.append(r[9])
-			if name == 'gyro':
+
+				xheading.append(x[-1])
+				yheading.append(r[10])
+
+				xcompass.append(x[-1])
+				ycompass[0].append(r[11])
+				ycompass[1].append(r[12])
+				ycompass[2].append(r[13])
+
 				xgyro.append(x[-1])
-				ygyro[0].append(r[3])
-				ygyro[1].append(r[4])
-				ygyro[2].append(r[5])
-			if name == 'acc':
+				ygyro[0].append(r[14])
+				ygyro[1].append(r[15])
+				ygyro[2].append(r[16])
+
 				xacc.append(x[-1])
-				yacc[0].append(r[3])
-				yacc[1].append(r[4])
-				yacc[2].append(r[5])
+				yacc[0].append(r[17])
+				yacc[1].append(r[18])
+				yacc[2].append(r[19])
+#			if name == 'gyro':
+#				xgyro.append(x[-1])
+#				ygyro[0].append(r[3])
+#				ygyro[1].append(r[4])
+#				ygyro[2].append(r[5])
+#			if name == 'acc':
+#				xacc.append(x[-1])
+#				yacc[0].append(r[3])
+#				yacc[1].append(r[4])
+#				yacc[2].append(r[5])
 			if name == 'command':
 				if r[3] == 'mstop':
 					cmd_val = 0
@@ -85,6 +115,8 @@ with open(fname) as csvfile:
 			if not stopsecs is None:
 				if stopsecs < secs:
 					break
+			if no_pwr > MAX_NO_PWR:
+				break
 #		if i > 100:
 #			break
 
@@ -94,7 +126,7 @@ fig.set_size_inches(6, 8)
 def do_plot(ax, xlist, ylist, color, label):
 	if len(ylist) > 3:
 		y = np.interp(x, xlist, ylist)
-	ax.plot(x, y, color=color, linestyle='-', marker='.', markersize=2, label=label)
+		ax.plot(x, y, color=color, linestyle='-', marker='.', markersize=2, label=label)
 
 #axes[0].bar(x, ycommand, edgecolor='cornflowerblue', color='gray')
 
@@ -106,7 +138,7 @@ legends = []
 do_plot(axes[1], xstate, ysonar, 'green', 'Dist')
 legends.append(axes[1].legend(loc='upper right', shadow=True))
 
-do_plot(axes[2], xcompass, ycompass, 'blue', 'Head')
+do_plot(axes[2], xheading, yheading, 'blue', 'Head')
 do_plot(axes[2], ximu, yimu, 'green', 'Angl')
 legends.append(axes[2].legend(loc='upper right', shadow=True))
 
@@ -132,16 +164,17 @@ legends.append(axes[7].legend(loc='upper right', shadow=True))
 
 for legend in legends:
 
-	# The frame is matplotlib.patches.Rectangle instance surrounding the legend.
-	frame = legend.get_frame()
-	frame.set_facecolor('0.90')
+	if not legend is None:
+		# The frame is matplotlib.patches.Rectangle instance surrounding the legend.
+		frame = legend.get_frame()
+		frame.set_facecolor('0.90')
 
-	# Set the fontsize
-	for label in legend.get_texts():
-		label.set_fontsize('small')
+		# Set the fontsize
+		for label in legend.get_texts():
+			label.set_fontsize('small')
 
-	for label in legend.get_lines():
-		label.set_linewidth(1.5)  # the legend line width
+		for label in legend.get_lines():
+			label.set_linewidth(1.5)  # the legend line width
 
 plt.savefig(os.path.expanduser('~/public_html/bag/plot.png'), bbox_inches='tight', dpi = 100)
 
