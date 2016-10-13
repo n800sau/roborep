@@ -1,1 +1,1 @@
-rostopic pub -1 /fchassis/command fchassis/command '{command: walk_around, pwr: 70, timeout: 30}'
+rostopic pub -1 /fchassis/command fchassis_msgs/command '{command: walk_around, pwr: 60, timeout: 60}'

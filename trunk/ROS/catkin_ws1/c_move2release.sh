@@ -1,1 +1,1 @@
-rostopic pub -1 /fchassis/command fchassis/command '{command: move2release, pwr: 70, fwd: false, timeout: 30}'
+rostopic pub -1 /fchassis/command fchassis_msgs/command '{command: move2release, pwr: 50, fwd: false, timeout: 10}'

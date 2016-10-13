@@ -10,6 +10,7 @@ float32 lcurrent
 float32 rcurrent
 float32 lpwr
 float32 rpwr
+float32 pwroffset
 float32 ldist
 float32 rdist
 geometry_msgs/Vector3 acc
