@@ -1,1 +1,1 @@
-picaxe20m2 bath_timer.bas
+picaxe20m2 -dh bath_timer.bas
