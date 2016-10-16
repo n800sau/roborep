@@ -10,9 +10,9 @@ symbol seg7 = B.3
 symbol seg8 = B.2
 
 symbol touch_btn = B.6
+symbol bstate = b0
 
 main:
-	gosub reset_leds
 	touch touch_btn, bstate
 	if bstate > 100 then
 		high seg1
