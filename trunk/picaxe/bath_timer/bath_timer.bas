@@ -109,25 +109,28 @@ start2:
 			dot_on = 0
 		else
 			low seg_dot
+			dot_on = 1
 		end if
-		dot_on = not dot_on
 	else
 		high seg_dot
 		suspend 2
 	end if
-	pause blink_period
+	b20 = time % 60
+	b20 = 120 - b20
+	b20 = blink_period  * b20 / 120
+	pause b20
 	goto start2
 
 show_digit:
 	for b10 = 0 to 7
 		b11 = curr_digit * 7 + b10
 		read b11, b12
-		b12 = a_pins_addr + b10
-		read b12, b13
+		b13 = a_pins_addr + b10
+		read b13, b14
 		if b12 = 0 then
-			high b13
+			high b14
 		else
-			low b13
+			low b14
 		end if
 	next
 	return
