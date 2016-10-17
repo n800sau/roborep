@@ -57,7 +57,7 @@ symbol blink_period = 200
 
 start0:
 	touch16 touch_btn, wstate
-	if wstate > 0x0b00 then
+	if wstate > 0x0c00 then
 		time = 0
 		in_action = 1
 		dot_on = 0
@@ -104,21 +104,11 @@ start1:
 
 start2:
 	if in_action = 1 then
-		if dot_on = 1 then
-			high seg_dot
-			dot_on = 0
-		else
-			low seg_dot
-			dot_on = 1
-		end if
-	else
+		low seg_dot
+		pause blink_period
 		high seg_dot
-		suspend 2
 	end if
-	b20 = time % 60
-	b20 = 120 - b20
-	b20 = blink_period  * b20 / 120
-	pause b20
+	suspend 2
 	goto start2
 
 show_digit:
