@@ -44,57 +44,79 @@ EEPROM 56, (1, 1, 1, 1, 1, 1, 1)
 ' none
 EEPROM 63, (1, 1, 1, 1, 0, 1, 1)
 
-
 symbol touch_btn = B.6
 symbol wstate = w0
 
 symbol curr_digit = b2
+symbol last_curr_digit = b3
+symbol in_action = b4
+symbol dot_on = b5
+symbol digit_on = b6
 
-main:
+symbol blink_period = 200
+
+start0:
 	touch16 touch_btn, wstate
-	debug
 	if wstate > 0x0b00 then
-		curr_digit = 0
-		gosub show_digit
-		pause 1000
-		curr_digit = 0
-		gosub show_digit
-		pause 1000
-		curr_digit = 1
-		gosub show_digit
-		pause 1000
-		curr_digit = 2
-		gosub show_digit
-		pause 1000
-		curr_digit = 3
-		gosub show_digit
-		pause 1000
-		curr_digit = 4
-		gosub show_digit
-		pause 1000
-		curr_digit = 6
-		gosub show_digit
-		pause 1000
-		curr_digit = 7
-		gosub show_digit
-		pause 1000
-		curr_digit = 8
-		gosub show_digit
-		pause 1000
-		curr_digit = 9
-		gosub show_digit
-		pause 1000
-		high seg_lt
-		high seg_m
-		high seg_lb
-		high seg_b
-		high seg_rb
-		high seg_dot
-		high seg_rt
-		high seg_t
+		time = 0
+		in_action = 1
+		dot_on = 0
+		digit_on = 0
+		restart 1
+		restart 2
+	end if
+	if in_action = 0 then
+'		disablebod
+'		sleep 1
+'		enablebod
+		nap 3
+	else
+		pause 100
+	end if
+	goto start0
+
+start1:
+	if in_action = 1 then
+		curr_digit = time / 60
+		if curr_digit >= 10 then
+			gosub hide_digit
+			in_action = 0
+		else
+			if last_curr_digit = curr_digit then
+				if digit_on = 1 then
+					gosub show_digit
+					digit_on = 0
+				else
+					gosub hide_digit
+					digit_on = 1
+				end if
+			else
+				gosub show_digit
+				last_curr_digit = curr_digit
+			end if
+		end if
+	else
+		gosub hide_digit
+		suspend 1
 	endif
-	pause 100
-	goto main
+	pause blink_period
+	goto start1
+
+start2:
+	if in_action = 1 then
+		if dot_on = 1 then
+			high seg_dot
+			dot_on = 0
+		else
+			low seg_dot
+		end if
+		dot_on = not dot_on
+	else
+		high seg_dot
+		suspend 2
+	end if
+	pause blink_period
+	goto start2
 
 show_digit:
 	for b10 = 0 to 7
@@ -107,5 +129,13 @@ show_digit:
 		else
 			low b13
 		end if
+	next
+	return
+
+hide_digit:
+	for b10 = 0 to 7
+		b12 = a_pins_addr + b10
+		read b12, b13
+		high b13
 	next
 	return
