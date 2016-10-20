@@ -27,7 +27,7 @@ from fchassis_msgs import msg
 from bin2uno_inf import bin2uno_inf
 from serial import Serial
 
-SENSORS_SHOW_PERIOD = 0.05
+SENSORS_SHOW_PERIOD = 0.5
 
 class fchassis_ng(bin2uno_inf):
 
@@ -103,14 +103,14 @@ class fchassis_ng(bin2uno_inf):
 		rs = None
 		for i in range(4):
 			data = self.read_bin()
-#			self.dbprint('Reply=%s' % data)
+			self.dbprint('Reply=%s' % data)
 			if data:
 				if data['cmd'] == pycmds.R_OK_0:
 #					self.dbprint('Ok')
 					rs = True
 					break
 				elif data['cmd'] == pycmds.R_ERROR_0:
-					self.dbprint('Error')
+					self.dbprint('Error returned by a microcontroller')
 					rs = False
 					break
 			time.sleep(0.1)
@@ -135,6 +135,15 @@ class fchassis_ng(bin2uno_inf):
 							self.state['irdist'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_VOLTS_1F:
 							self.state['v'] = data['vals'][0]
+						elif data['cmd'] == pycmds.R_COMMAND_1F:
+							self.state['command_code'] = int(data['vals'][0])
+							if self.state['command_code'] > 0:
+								for k,v in vars(pycmds).items():
+									if k.startswith('C_') and v == self.state['command_code']:
+										self.state['command'] = k.split('_')[1].lower()
+										break
+							else:
+								self.state['command'] = ''
 						elif data['cmd'] == pycmds.R_MOTION_1F:
 							self.state['motion'] = data['vals'][0]
 						elif data['cmd'] == pycmds.R_MCOUNTS_2F:
@@ -168,7 +177,7 @@ class fchassis_ng(bin2uno_inf):
 							self.state['tick_time'] = time.time()
 							break
 				else:
-					rospy.sleep(0.01)
+					time.sleep(0.01)
 			if rs:
 				self.dbprint(json.dumps(self.state, indent=4))
 		except Exception, e:
@@ -184,8 +193,8 @@ class fchassis_ng(bin2uno_inf):
 		if self.ser.inWaiting() > 0:
 			self.spin()
 			data = self.read_bin()
-			if data:
-				self.dbprint('Received BIN: %s' % data)
+#			if data:
+#				self.dbprint('Received BIN: %s' % data)
 #			else:
 #				self.dbprint('no BIN replied')
 
@@ -227,7 +236,7 @@ class fchassis_ng(bin2uno_inf):
 		i = 0
 		r = rospy.Rate(1./SENSORS_SHOW_PERIOD)
 		pub_state = rospy.Publisher('/fchassis/state', msg.state, queue_size=5)
-		rospy.Subscriber("/fchassis/command", msg.command, self.on_command)
+		rospy.Subscriber("/fchassis/command", msg.mcommand, self.on_command)
 		while not rospy.is_shutdown():
 			if pub_state.get_num_connections() > 0 and not self.wait4sensors:
 				self.update_state()
@@ -238,21 +247,26 @@ class fchassis_ng(bin2uno_inf):
 			r.sleep()
 
 	def on_command(self, data):
-		rospy.loginfo('%s calling %s' % (rospy.get_caller_id(), data.command))
-		func = getattr(self, 'cmd_' + data.command)
+		rospy.loginfo('%s calling %s' % (rospy.get_caller_id(), data.mcommand))
+		func = getattr(self, 'cmd_' + data.mcommand)
 		argspec = inspect.getargspec(func)
 		params = []
 		for a in argspec.args:
 			if a != 'self':
 				params.append(getattr(data, a))
+		if self.wait4sensors:
+			self.dbprint('Waiting for reading state finish')
+		while self.wait4sensors:
+			rospy.sleep(0.01)
 		self.dbprint('Calling %s%s' % (func.__name__, params))
+		self.flush()
 		func(*params)
 		rospy.loginfo('%s executed %s%s' % (rospy.get_caller_id(), func.__name__, params))
 
 if __name__ == '__main__':
 
 	try:
-		f = fchassis_ng(False)
+		f = fchassis_ng(True)
 		# Ordered this way to minimize wait time.
 		rospy.init_node('fchassis', anonymous = True)
 		f.run()

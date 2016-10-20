@@ -1,5 +1,5 @@
 Header header
-string command
+string mcommand
 uint8 lpwr
 bool lfwd
 uint8 rpwr

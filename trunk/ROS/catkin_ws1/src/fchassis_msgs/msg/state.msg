@@ -19,4 +19,6 @@ geometry_msgs/Vector3 compass
 float32 heading
 float32 t
 float32 pressure
+uint8 command_code
+string command
 
