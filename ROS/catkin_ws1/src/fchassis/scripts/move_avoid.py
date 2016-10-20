@@ -3,7 +3,7 @@
 
 import sys, os, random
 import rospy
-from fchassis import msg
+from fchassis_msgs import msg
 
 class MoveAvoid:
 
@@ -13,7 +13,7 @@ class MoveAvoid:
 
 	def run(self):
 		rospy.init_node('move_avoid', anonymous = True)
-		self.pub_command = rospy.Publisher('/fchassis/command', msg.command, queue_size=1)
+		self.pub_command = rospy.Publisher('/fchassis/command', msg.mcommand, queue_size=1)
 #		rospy.loginfo('Move back')
 #		self.pub_command.publish(command='mboth', lpwr=50, lfwd=False, rpwr=50, rfwd=False, timeout=0.5)
 		rospy.sleep(10)
