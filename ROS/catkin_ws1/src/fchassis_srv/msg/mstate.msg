@@ -1,0 +1,19 @@
+Header header
+float32 irdist
+float32 v
+float32 motion
+int32 lcount
+int32 rcount
+float32 lcurrent
+float32 rcurrent
+float32 lpwr
+float32 rpwr
+float32 pwroffset
+float32 ldist
+float32 rdist
+float32 heading
+float32 t
+float32 pressure
+uint8 command_code
+string command
+
