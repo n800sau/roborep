@@ -1,0 +1,11 @@
+string  mcommand
+uint8   lPwr
+uint8   rPwr
+bool    lFwd
+bool    rFwd
+uint8   pwr
+bool    fwd
+uint32  timeout
+---
+bool error
+string reply
