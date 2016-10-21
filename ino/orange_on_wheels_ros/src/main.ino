@@ -6,9 +6,11 @@
 #include <sensor_msgs/Range.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
-#include <fchassis_msgs/FCommand.h>
+#include <fchassis_srv/FCommand.h>
+#include <fchassis_srv/mstate.h>
 
 #include "angle.h"
+#include <voltage.h>
 #include <EventFuse.h>
 
 #include "hmc5883l_proc.h"
@@ -52,63 +54,66 @@ const int MAX_PWM = 255;
 // might possibly need to adjust it to 25000. However, this threshold
 // value is working perfectly for my situation
 //
-volatile unsigned long threshold = 10000;
+const unsigned long threshold = 10000;
 volatile unsigned long intLtime = 0;
 volatile unsigned long intRtime = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
-int lPower = 0;
-int rPower = 0;
+volatile int lPower = 0;
+volatile int rPower = 0;
 // left + powerOffset
 // right - powerOffset
-int powerOffset = 0;
+volatile int powerOffset = 0;
 volatile bool lFwd = true;
 volatile bool rFwd = true;
 volatile bool full_stopped = true;
 bool moving_straight = false;
 int fwd_heading;
-String current_command;
+char current_command[20];
 
-using fchassis_msgs::FCommand;
+using fchassis_srv::FCommand;
 ros::NodeHandle  nh;
 
 sensor_msgs::Range range_msg;
 sensor_msgs::Imu imu_msg;
 sensor_msgs::MagneticField mf_msg;
+fchassis_srv::mstate state_msg;
 
-ros::Publisher pub_range( "/ultrasound", &range_msg);
-ros::Publisher pub_imu( "/imu", &imu_msg);
-ros::Publisher pub_mf( "/mf", &mf_msg);
+ros::Publisher pub_range( "/fchassis/sonar", &range_msg);
+ros::Publisher pub_imu( "/fchassis/imu", &imu_msg);
+ros::Publisher pub_mf( "/fchassis/mf", &mf_msg);
+ros::Publisher pub_state( "/fchassis/state", &state_msg);
 
 void command_callback(const FCommand::Request & req, FCommand::Response & res) {
 	if(strcmp(req.mcommand, "mstop") == 0) {
+		strncpy(current_command, req.mcommand, sizeof(current_command));
 		stop(true);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "mleft") == 0) {
-		current_command = req.mcommand;
+		strncpy(current_command, req.mcommand, sizeof(current_command));
 		full_stopped = false;
 		setLeftMotor(req.lPwr, req.lFwd);
 		stop_after(req.timeout);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "mright") == 0) {
-		current_command = req.mcommand;
+		strncpy(current_command, req.mcommand, sizeof(current_command));
 		full_stopped = false;
 		setRightMotor(req.rPwr, req.rFwd);
 		stop_after(req.timeout);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "mboth") == 0) {
-		current_command = req.mcommand;
+		strncpy(current_command, req.mcommand, sizeof(current_command));
 		full_stopped = false;
 		setLeftMotor(req.lPwr, req.lFwd);
 		setRightMotor(req.rPwr, req.rFwd);
 		stop_after(req.timeout);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "walk_around") == 0) {
-		current_command = req.mcommand;
+		strncpy(current_command, req.mcommand, sizeof(current_command));
 		walk_around(req.pwr, req.timeout);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "move2release") == 0) {
-		current_command = req.mcommand;
+		strncpy(current_command, req.mcommand, sizeof(current_command));
 		move2release(req.pwr, req.fwd, req.timeout);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "reset_counters") == 0) {
@@ -124,6 +129,7 @@ ros::ServiceServer<FCommand::Request, FCommand::Response> server("exec_command",
 
 const char range_frameid[] = "/ultrasound";
 const char imu_frameid[] = "/imu";
+const char base_frameid[] = "/base_link";
 
 void lIntCB()
 {
@@ -164,6 +170,7 @@ void setup()
 	setup_compass();
 	setup_accel();
 	setup_gyro();
+	setup_bmp085();
 
 	attachInterrupt(digitalPinToInterrupt(Eleft), rIntCB, RISING);
 	attachInterrupt(digitalPinToInterrupt(Eright), lIntCB, RISING);
@@ -174,6 +181,7 @@ void setup()
 	nh.advertise(pub_range);
 	nh.advertise(pub_imu);
 	nh.advertise(pub_mf);
+	nh.advertise(pub_state);
 	nh.advertiseService(server);
 
 	range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
@@ -184,37 +192,60 @@ void setup()
 
 	imu_msg.header.frame_id = imu_frameid;
 
+	mf_msg.header.frame_id = imu_frameid;
+
+	state_msg.header.frame_id = base_frameid;
+
 }
 
 
 unsigned long msg_time = 0;
 
+//publish values every 100 milliseconds
+#define PUBLISH_PERIOD 100
+
 void loop()
 {
 	EventFuse::burn();
-	//publish the adc value every 50 milliseconds
-	//since it takes that long for the sensor to stablize
 	if ( millis() >= msg_time ){
-				range_msg.range = getRange_Ultrasound();
-				range_msg.header.stamp = nh.now();
-				pub_range.publish(&range_msg);
-				process_compass();
-				mf_msg.header.stamp = nh.now();
-				mf_msg.magnetic_field.x = compass_x;
-				mf_msg.magnetic_field.y = compass_y;
-				mf_msg.magnetic_field.z = compass_z;
-				pub_mf.publish(&mf_msg);
-				process_accel();
-				process_gyro();
-				imu_msg.header.stamp = nh.now();
-				imu_msg.angular_velocity.x = gyro.g.x;
-				imu_msg.angular_velocity.y = gyro.g.y;
-				imu_msg.angular_velocity.z = gyro.g.z;
-				imu_msg.linear_acceleration.x = acc_x_avg();
-				imu_msg.linear_acceleration.y = acc_y_avg();
-				imu_msg.linear_acceleration.z = acc_z_avg();
-				pub_imu.publish(&imu_msg);
-		msg_time = millis() + 50;
+		range_msg.range = getRange_Ultrasound();
+		range_msg.header.stamp = nh.now();
+		pub_range.publish(&range_msg);
+		process_compass();
+		mf_msg.header.stamp = nh.now();
+		mf_msg.magnetic_field.x = compass_x;
+		mf_msg.magnetic_field.y = compass_y;
+		mf_msg.magnetic_field.z = compass_z;
+		pub_mf.publish(&mf_msg);
+		process_accel();
+		process_gyro();
+		imu_msg.header.stamp = nh.now();
+		imu_msg.angular_velocity.x = gyro.g.x;
+		imu_msg.angular_velocity.y = gyro.g.y;
+		imu_msg.angular_velocity.z = gyro.g.z;
+		imu_msg.linear_acceleration.x = acc_x_avg();
+		imu_msg.linear_acceleration.y = acc_y_avg();
+		imu_msg.linear_acceleration.z = acc_z_avg();
+		pub_imu.publish(&imu_msg);
+
+		process_bmp085();
+		state_msg.v = readVccMv() / 1000.;
+		state_msg.lcount = lCounter;
+		state_msg.rcount = rCounter;
+		state_msg.lpwr = lPower * ((lFwd) ? 1 : -1);
+		state_msg.rpwr = rPower * ((rFwd) ? 1 : -1);
+		state_msg.pwroffset = powerOffset;
+		state_msg.ldist = count2dist(lCounter);
+		state_msg.rdist = count2dist(rCounter);
+		state_msg.heading = headingDegrees;
+		state_msg.single_tap = adxl345_state.single_tap;
+		float temp;
+		bmp.getTemperature(&temp);
+		state_msg.t = temp;
+		state_msg.pressure = bmp085_event.pressure;
+		state_msg.command = current_command;
+		pub_state.publish(&state_msg);
+		msg_time = millis() + PUBLISH_PERIOD;
 	}
 	nh.spinOnce();
 }
