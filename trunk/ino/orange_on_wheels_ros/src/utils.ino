@@ -23,7 +23,6 @@ void stop(bool full)
 {
 	if(full) {
 		full_stopped = true;
-		current_command = "";
 	}
 	moving_straight = false;
 	powerOffset = 0;
