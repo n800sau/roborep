@@ -19,13 +19,15 @@ symbol stage1end = stagelen
 symbol stage2end = stagelen * 2
 
 main:
-	gosub reset_leds
 	if btn = 0 then
 		let timeval = 0
 		gosub action
-		pause 1000
+		gosub reset_leds
 	endif
-	pause 100
+' sleep consumption 0.07
+	disablebod
+	sleep 1
+	enablebod
 	goto main
 
 action:

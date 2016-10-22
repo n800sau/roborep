@@ -26,9 +26,11 @@ main:
 		let timeval = 0
 'sertxd("The value of timeval is ",#timeval,13,10)
 		gosub action
-		pause 1000
 	endif
-	pause 100
+' sleep consumption 0.07
+	disablebod
+	sleep 1
+	enablebod
 	goto main
 
 action:
