@@ -50,7 +50,6 @@ symbol wstate = w0
 symbol curr_digit = b2
 symbol last_curr_digit = b3
 symbol in_action = b4
-symbol dot_on = b5
 symbol digit_on = b6
 
 symbol blink_period = 200
@@ -58,18 +57,31 @@ symbol blink_period = 200
 start0:
 	touch16 touch_btn, wstate
 	if wstate > 0x0c00 then
-		time = 0
-		in_action = 1
-		dot_on = 0
-		digit_on = 0
-		restart 1
-		restart 2
+		low seg_dot
+		pause 1000
+		high seg_dot
+		touch16 touch_btn, wstate
+		if wstate > 0x0c00 then
+			in_action = 0
+			suspend 1
+			suspend 2
+			gosub hide_digit
+		else
+			time = 0
+			in_action = 1
+			digit_on = 0
+			restart 1
+			restart 2
+		end if
+		pause 500
 	end if
 	if in_action = 0 then
-'		disablebod
-'		sleep 1
-'		enablebod
-		nap 3
+' sleep consumption 0.07
+		disablebod
+		sleep 1
+		enablebod
+' nap consumes 0.14
+'		nap 3
 	else
 		pause 100
 	end if
@@ -103,11 +115,11 @@ start1:
 	goto start1
 
 start2:
-	if in_action = 1 then
-		low seg_dot
-		pause blink_period
-		high seg_dot
-	end if
+'	if in_action = 1 then
+'		low seg_dot
+'		pause blink_period
+'		high seg_dot
+'	end if
 	suspend 2
 	goto start2
 
