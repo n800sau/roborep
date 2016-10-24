@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lijun // Using nRF24L01+ as A Bluetooth Low Energy Broadcaster/Beacon</title>
+  <meta name="author" content="Lijun" />
+
+  <link href="//fonts.googleapis.com/css?family=Open+Sans:600,800" rel="stylesheet" type="text/css">
+  <link rel="shortcut icon" href="/favicon.png">
+
+
+  <link rel="stylesheet" href="/assets/css/all.css">
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.min.css">
+
+
+
+</head>
+<body>
+  <div class="container">
+    <div class="four columns sidebar">
+      <nav>
+  <h1><a href="/">Lijun's Docs</a></h1>
+  <a href="/">
+     <img src="/favicon.png" id="logo" alt="logo"/>
+  </a>
+  <hr/>
+  <ul>
+  <p>“Education is the path... the path from cocky ignorance to miserable uncertainty.” &nbsp&nbsp (Mark Twain) </p>
+  <hr/>
+  <div>
+    <div id="social">
+      <div id="stalker">
+  
+  <a title="lijunhw on Github" href="https://github.com/lijunhw">
+    <i class="fa fa-github-square"></i>
+  </a>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  <a title="lijunhw on Twitter" href="https://twitter.com/lijunhw">
+    <i class="fa fa-twitter-square"></i>
+  </a>
+  
+
+  
+
+  
+
+  
+
+  
+
+
+</div>
+
+    </div>
+  </div>
+  </ul>
+</nav>
+
+    </div>
+
+    <div class="eleven columns content">
+      <a href="http://www.lijun.li">about</a> // <a href="/">doc</a>
+      <hr/>
+      <p class="meta">
+   
+  <a href="/">
+    <i class="home fa fa-home"></i>
+  </a>
+</p>
+
+<h1 class="title">Using nRF24L01+ as A Bluetooth Low Energy Broadcaster/Beacon</h1>
+
+<div id="post">
+  <p><em>First created: Aug, 2014 // Last updated: Aug, 2014</em></p>
+
+<p>This project is inspired by Dmitry Grinberg’s idea <a href="http://dmitry.gr/index.php?r=05.Projects&amp;proj=11.%20Bluetooth%20LE%20fakery">“Bit-banging Bluetooth Low Energy”</a>, which is hacking an nRF24L01+ module (which is under $1 per unit on eBay) as a low-cost Bluetooth Low Energy (BLE) advertizer. This can be used in various applications, such as sending small amount of insensitive data from a sensor to a smartphone, or things similar to iBeacon. Dmitry demonstrated the idea with a <a href="https://www.sparkfun.com/products/retired/8602">Nordic key fob</a> which was retired by SparkFun, and the code was written for ATtiny24 microcontroller. What I intend to do here is to implement it on Arduino instead, layering the ground for other general purpose applications on Arduino. I also try to document the whole thing with more details. Luckily, it is not very hard after some research.</p>
+
+<p>Parts needed:</p>
+
+<ul>
+  <li>nRF24L01+ module, available from various source such as <a href="(http://www.ebay.com/sch/i.html?_from=R40&amp;_trksid=p2050601.m570.l1311.R1.TR11.TRC1.A0.H0.Xnrf24L.TRS0&amp;_nkw=nrf24l01&amp;_sacat=0)">eBay</a>, AliExpress, SparkFun, etc.</li>
+  <li>Arduino (I use Arduino Nano, but other flavors also work)</li>
+  <li>Wires (to be soldered to nRF24 module)</li>
+  <li>A smartphone with BLE capability</li>
+  <li><a href="https://github.com/lijunhw/nRF24_BLE/blob/master/Arduino/nRF24_BLE_advertizer_demo/nRF24_BLE_advertizer_demo.ino">My source code</a></li>
+</ul>
+
+<h2 id="principles">Principles</h2>
+
+<p>As Dmitry explained in <a href="http://dmitry.gr/index.php?r=05.Projects&amp;proj=11.%20Bluetooth%20LE%20fakery">his post</a>, a “fake” BLE connection cannot be established between an nRF24 module (peripheral) and a BLE central device because of its hardware limitation. But BLE broadcasting from a nRF24 module is possible.</p>
+
+<p>To understand how to fake BLE broadcasting with nRF24L01+, a comparison between the packet structure of BLE (Figure 1) and nRF24 (Figure 2) can be very helpful.</p>
+
+<p><img src="./assets/files/wiki/img18_BLE_packet_structure.png" alt="BLE packet structure" /></p>
+
+<p><em>Figure 1: Advertizing packet structure of BLE.</em></p>
+
+<p>BLE advertizing packet is made up of three sections:</p>
+
+<ul>
+  <li>1 byte of preamble (either 01010101 or 10101010, depending on the first bit of the access address).</li>
+  <li>4 byte of access address, which is always 0x8E89BED6 for advertizing packets.</li>
+  <li>Variable size of payload, which is made up of the following:
+    <ul>
+      <li>The first byte of payload is header, specifying the advertizing type, as well as TX and RX types;</li>
+      <li>The second byte is the length of the rest of the payload <strong>excluding</strong> CRC bytes.</li>
+      <li>The last three bytes are 24-bit CRC checksum of the payload before it.</li>
+      <li>Everything in the middle is the data section, which is made up data “containers”. In each data container, the first byte is the length of the rest bytes in the data container (excluding the length byte itself), and the rest bytes are data. Data whitening is also imposed on the payload.</li>
+    </ul>
+  </li>
+</ul>
+
+<p><img src="./assets/files/wiki/img19_nRF24_ShockBurst_packet_structure.png" alt="nRF24 ShockBurst packet structure" /></p>
+
+<p><em>Figure 2: nRF24 ShockBust(TM) packet structure. Note that there is no whitening as in BLE.</em></p>
+
+<p>The nRF24L01+ actually has two different types of packet structures: ShockBurst and Enhanced ShockBurst. We want to use the old ShockBurst format, because the 9-bit packet control section between access address and payload in the Enhanced ShockBurst format makes it impossible for BLE fakery. From Figure 2, the packet format is similar to BLE, except that nRF24L01+ has 16-bit CRC rather than 24-bit, and there is no whitening. The way around is that we disable CRC on nRF24L01+ and compute it on our own; data whitening must be implemented in software as well. Also, <em>for each packet section</em>, nRF24L01+ transmits the most significant byte first, and also transmits the most significant bit first in each byte. This is just the opposite of BLE which transmits the least significant byte first with least significant bit first in each byte. So bit order reversal is required for access address and payload sections (preamble is automatically assembled based on the first bit in the access address).</p>
+
+<p>The CRC-24 of BLE is implemented with linear feedback shift registers (LFSR) in hardware (Figure 3), which is the “btLeCrc()” function in the code (see the next section). It is a basic bit-by-bit manipulation (exclusive-or) to implement the modulo 2 division of 24-bit polynomials. Details of CRC can be found in the reference near the end of this article.</p>
+
+<p><img src="./assets/files/wiki/img20_LFSR_implementation_CRC-24_BLE.png" alt="LFSR_CRC24" />
+<em>Figure 3: LFSR implementation of CRC-24 in BLE. The “dst” corresponds to the CRC buffer with the same name in the source code in the next section.</em></p>
+
+<p>On the nRF24L01+ side, the pinout of the module is in Figure 4. It is relatively easy to operate with nRF24L01+ since both data transfer and configuration is carried out via SPI interface, by reading from and writing to the registers in nRF24L01+. Detailed information on how to use nRF24L01+ can be found in <a href="./assets/files/wiki/nRF24L01plus_datasheet.pdf">its datasheet</a>. You are encouraged to go through the datasheet since it is not very long (less than 100 pages) and has everything you need to know.</p>
+
+<p><img src="./assets/files/wiki/img21_nRF24L01p_board_pinout.png" alt="nRF24L01+ board pinout" /></p>
+
+<p><em>Figure 4: nRF24L01+ module pinout.</em></p>
+
+<h2 id="implementation">Implementation</h2>
+
+<p>You probably get nRF24L01+ modules with 4-by-2 headers, which cannot be directly mounted onto a breadboard. Here I solder a few wires to those headers to interface with a breadboard. The circuit is wired on breadboard as in Figure 5:</p>
+
+<p><img src="./assets/files/wiki/img22_nRF24L01_BLE_wiring.jpg" alt="nRF24L01+ BLE wiring" /></p>
+
+<p><em>Figure 5: nRF24L01+ BLE broadcaster breadboarding.</em></p>
+
+<p>The Arduino demo code can be found in my github repo <a href="https://github.com/lijunhw/nRF24_BLE/blob/master/Arduino/nRF24_BLE_advertizer_demo/nRF24_BLE_advertizer_demo.ino">here</a>. After borrowing a few key functions from Dmitry’s code, it initializes nRF24L01+ with a few register writes, and then broadcasts with a device name “nRF24” and two bytes of custom data 0x0102 (for testing purchase) in BLE’s language. You can easily substitute the “0x0102” with other useful data such as an ADC reading from a sensor. Remember change the payload length and data container length accordingly to make the whole thing work.</p>
+
+<p>After programming the Arduino, a BLE broadcaster named “nRF24” can be seen on my Android smartphone with BLE enabled. To view the custom data, I install the Android app “<a href="https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&amp;hl=en">nRF Master Control Panel</a>”, and I do see the “0x0102” custom data (Figure 6). Hooray!</p>
+
+<p><img src="./assets/files/wiki/img23_nRF24L01plus_BLE_broadcaster_testing.jpg" alt="nRF24L01+ BLE broadcaster testing" /></p>
+
+<p><em>Figure 6: nRF24L01+ BLE testing. Note that the custom data “0x0102” is recognized.</em></p>
+
+<h2 id="reference">Reference</h2>
+
+<ul>
+  <li><a href="http://dmitry.gr/index.php?r=05.Projects&amp;proj=11.%20Bluetooth%20LE%20fakery">“Bit-banging Bluetooth Low Energy”</a></li>
+  <li><a href="http://www.amazon.com/Bluetooth-Low-Energy-Developers-Handbook/dp/013288836X">Bluetooth Low Energy: The Developer’s Handbook</a>: highly recommended for both beginners and advanced developers.</li>
+  <li><a href="./assets/files/wiki/nRF24L01plus_datasheet.pdf">nRF24L01+ datasheet</a></li>
+  <li><a href="http://www.ross.net/crc/download/crc_v3.txt">A Painless Guide to CRC Error Detection Algorithms</a>: a fantastic tutorial on CRC from the ground up; discussing both the basic bit-by-bit implementation and more advanced table-driven method.</li>
+  <li><a href="http://www.cs.jhu.edu/~scheideler/courses/600.344_S02/CRC.html">This CRC class note</a> also gives easy-to-follow phenomenal procedure on how CRC works</li>
+  <li><a href="crc_hackers_delight.pdf">CRC notes from Hacker’s Delight</a>: it discusses how to implement CRC in hardware using LFSR</li>
+</ul>
+
+</div>
+
+
+
+
+
+<div id="comments">
+  <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'lijun'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+
+
+      <div class="footer">
+        <div class="disclaimer">
+  
+
+  <p>
+    Built with <a href="http://jekyllrb.com">Jekyll</a> and <a href="https://github.com/swanson/lagom">Lagom</a> // Disclaimer: pages on domain lijun.li do not represent the views of Lijun's employees
+  </p>
+</div>
+
+      </div>
+    </div>
+  </div>
+
+<!-- doesn't need to change anything in this file. The Google Analytics key is included in _config.yml -->
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-45440216-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+
+</body>
+</html>
