@@ -1,0 +1,31 @@
+<launch>
+
+	<node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
+
+	<node pkg="nodelet" type="nodelet" name="RaspiCamNd" args="load raspicam_nd/RaspiCamNd standalone_nodelet" output="screen">
+		<remap from="image_raw" to="$(optenv IMAGE /sm_camera/image_raw)" />
+<!--		<param name="fps" type="int" value="25"/> -->
+--		<param name="color_mode" type="str" value="rgb8"/>
+		<param name="camera_info_url" type="str" value="file://$(find raspicam_nd)/pi_camera.yaml" />
+<!--
+		<param name="width" type="int" value="320"/>
+		<param name="height" type="int" value="240"/>
+-->
+
+		<param name="width" type="int" value="640"/>
+		<param name="height" type="int" value="480"/>
+
+<!--
+		<param name="width" type="int" value="2560"/>
+		<param name="height" type="int" value="1920"/>
+-->
+
+	</node>
+
+	<arg name="master_html" default="radxa"/>
+	<node pkg="multimaster" type="master_sync.py" name="master_html" output="screen"> 
+		<param name="foreign_master" value="http://$(arg master_html):11311" />
+		<rosparam command="load" file="mm2radxa.yaml" />
+	</node>
+
+</launch>

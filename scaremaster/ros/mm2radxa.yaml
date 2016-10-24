@@ -1,0 +1,2 @@
+local_pubs: [sm_camera/camera_info, sm_camera/image_raw/compressed]
+foreign_pubs: []
