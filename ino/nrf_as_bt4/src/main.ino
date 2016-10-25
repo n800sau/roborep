@@ -7,13 +7,31 @@
 #define PIN_CSN 53   // chip select (for SPI)
 
 // The MAC address of BLE advertizer -- just make one up
-const byte mac[6] = {
+const byte mac1[6] = {
 	0x11,
 	0x22,
 	0x33,
 	0x44,
 	0x55,
 	0x66
+};
+
+const byte mac2[6] = {
+	0x12,
+	0x23,
+	0x34,
+	0x45,
+	0x56,
+	0x67
+};
+
+const byte mac3[6] = {
+	0xA2,
+	0xFF,
+	0x01,
+	0xF8,
+	0x34,
+	0x12
 };
 
 uint8_t buf[32];
@@ -168,7 +186,7 @@ void setup()
 	nrf_manybytes(buf, 5);
 }
 
-int make_packet(const char name[], const byte payload[], int payload_size)
+int make_packet(const byte mac[], const char name[], const byte payload[], int payload_size)
 {
 		int i, L=0;
 		int namelen = strlen(name);
@@ -181,29 +199,34 @@ int make_packet(const char name[], const byte payload[], int payload_size)
 			buf[L++] = mac[i];
 		}
 
+// raw data start
+
 		buf[L++] = 2;   //flags (LE-only, general discoverable mode)
-		buf[L++] = 0x01;
-		buf[L++] = 0x06;
+		buf[L++] = 0x01; // type
+		buf[L++] = 0x06;  // value
 
 		buf[L++] = namelen + 1;   // length of the name, including type byte
-		buf[L++] = 0x08;
+		buf[L++] = 0x08; // type Shorten Local Name
 		for(i=0; i<namelen; i++) {
-			buf[L++] = name[i];
+			buf[L++] = name[i]; // value
 		}
 
 		buf[L++] = payload_size + 1;   // length of custom data, including type byte
-		buf[L++] = 0xff;
+		buf[L++] = 0xFF; // type manufacture Specific Data
 		for(i=0; i<payload_size; i++) {
-			buf[L++] = payload[i];
+			buf[L++] = payload[i]; //value
 		}
+
+		buf[1] = L - 2;
 
 		buf[L++] = 0x55;  //CRC start value: 0x555555
 		buf[L++] = 0x55;
 		buf[L++] = 0x55;
+		// write size
 		return L;
 }
 
-void publish(const char name[], const byte payload[], int payload_size)
+void publish(const byte mac[], const char name[], const byte payload[], int payload_size)
 {
 	uint8_t ch = 0, i;  // RF channel for frequency hopping
 
@@ -211,41 +234,7 @@ void publish(const char name[], const byte payload[], int payload_size)
 	for (ch=0; ch<sizeof(chRf); ch++)
 	{
 
-/*
-		uint8_t i, L=0;
-		buf[L++] = 0x42;  //PDU type, given address is random; 0x42 for Android and 0x40 for iPhone
-		buf[L++] = 16+5+1; // length of payload
-
-		// mac
-		for(i=0, i<6; i++) {
-			buf[L++] = mac[i];
-		}
-
-		buf[L++] = 2;   //flags (LE-only, general discoverable mode)
-		buf[L++] = 0x01;
-		buf[L++] = 0x06;
-
-		buf[L++] = 6;   // length of the name, including type byte
-		buf[L++] = 0x08;
-		buf[L++] = 'n';
-		buf[L++] = 'R';
-		buf[L++] = 'F';
-		buf[L++] = '2';
-		buf[L++] = '4';
-
-		buf[L++] = 5;   // length of custom data, including type byte
-		buf[L++] = 0xff;
-
-		buf[L++] = 0x06;
-		buf[L++] = 0x03;
-		buf[L++] = 0x03;// some test data
-		buf[L++] = 0x04;// some test data
-
-		buf[L++] = 0x55;  //CRC start value: 0x555555
-		buf[L++] = 0x55;
-		buf[L++] = 0x55;
-*/
-		int L = make_packet(name, payload, payload_size);
+		int L = make_packet(mac, name, payload, payload_size);
 
 		nrf_cmd(0x25, chRf[ch]);
 		nrf_cmd(0x27, 0x6E);  // Clear flags
@@ -269,8 +258,10 @@ void publish(const char name[], const byte payload[], int payload_size)
 
 void loop()
 {
-	publish("POCKEMON", (byte*)"\x12\x40\x11\x23", 4);
-	delay(200);    // Broadcasting interval
-	publish("PIKACHU", (byte*)"\xAA\xC0\x07", 3);
-	delay(200);    // Broadcasting interval
+	publish(mac1, "CATERPIE", (byte*)"\x2d\x01\x11\x23", 4);
+	delay(100);    // Broadcasting interval
+	publish(mac2, "PIKACHU", (byte*)"\x2d\x01\x07", 3);
+	delay(100);    // Broadcasting interval
+	publish(mac3, "POKEMON", (byte*)"\x2d\x01\x07\x33\x56\x11\x04", 7);
+	delay(100);    // Broadcasting interval
 }
