@@ -14,6 +14,6 @@ float32 rdist
 float32 heading
 float32 t
 float32 pressure
-bool single_tap
+uint16 single_tap
 string command
 

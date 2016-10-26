@@ -5,7 +5,9 @@ bool    lFwd
 bool    rFwd
 uint8   pwr
 bool    fwd
-uint32  timeout
+uint16  timeout
 ---
 bool error
 string reply
+uint16 timeout
+
