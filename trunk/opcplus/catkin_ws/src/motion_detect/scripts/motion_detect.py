@@ -3,8 +3,6 @@
 from __future__ import print_function
 import roslib
 
-roslib.load_manifest('cv_experiments')
-
 import sys
 import rospy
 import cv2
