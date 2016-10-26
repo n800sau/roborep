@@ -11,21 +11,8 @@
 	<node name="master_discovery_radxa" pkg="master_discovery_fkie" type="zeroconf">
 	</node>
 
-<!--
-	<include file="master_discovery.launch">
-	</include>
-
-	<include file="master_sync.launch">
-	</include>
--->
-
 	<include file="rosbridge_websocket.launch">
 	</include>
-
-<!--
-	<include file="hubee.launch">
-	</include>
--->
 
 </launch>
 
