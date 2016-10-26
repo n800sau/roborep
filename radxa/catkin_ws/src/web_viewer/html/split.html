@@ -33,13 +33,25 @@
 
   var op_listener = new ROSLIB.Topic({
     ros : ros,
-    name : '/image_raw/compressed',
+    name : '/opcplus/image_raw/compressed',
     messageType : 'sensor_msgs/CompressedImage'
   });
 
   var ow_listener = new ROSLIB.Topic({
     ros : ros,
     name : '/ow_camera/image_raw/compressed',
+    messageType : 'sensor_msgs/CompressedImage'
+  });
+
+  var sm_listener = new ROSLIB.Topic({
+    ros : ros,
+    name : '/sm_camera/image_raw/compressed',
+    messageType : 'sensor_msgs/CompressedImage'
+  });
+
+  var dn_listener = new ROSLIB.Topic({
+    ros : ros,
+    name : '/dn_object_detect/debug_view/compressed',
     messageType : 'sensor_msgs/CompressedImage'
   });
 
@@ -71,6 +83,8 @@
     document.getElementById('start_btn').disabled = true;
     subscribe(op_listener, 'op_');
     subscribe(ow_listener, 'ow_');
+    subscribe(sm_listener, 'sm_');
+    subscribe(dn_listener, 'dn_');
   }
 
   var stop = function() {
@@ -79,6 +93,8 @@
     document.getElementById('start_btn').disabled = false;
     op_listener.unsubscribe();
     ow_listener.unsubscribe();
+    sm_listener.unsubscribe();
+    dn_listener.unsubscribe();
   }
 
   var subscribe = function(listener, prefix) {
@@ -103,6 +119,13 @@
   <canvas id="ow_Canvas" width="160" height="120" style="border:1px solid #000000;">
   </canvas>
   <div id="ow_timestamp"></div>
+  <canvas id="dn_Canvas" width="160" height="120" style="border:1px solid #000000;">
+  </canvas>
+  <div id="dn_timestamp"></div>
+  <br/>
+  <canvas id="sm_Canvas" width="160" height="120" style="border:1px solid #000000;">
+  </canvas>
+  <div id="sm_timestamp"></div>
 </body>
 </html>
 
