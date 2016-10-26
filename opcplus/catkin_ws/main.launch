@@ -1,13 +1,36 @@
 <launch>
+<!--
 	<include file="rmaster.launch">
 	</include>
+-->
+
+	<node name="master_sync_opcplus" pkg="master_sync_fkie" type="master_sync">
+	</node>
+
+	<node name="master_discovery_opcplus" pkg="master_discovery_fkie" type="zeroconf">
+	</node>
+
+<!--
+	<node name="master_discovery_opcplus" pkg="master_discovery_fkie" type="master_discovery">
+	</node>
+-->
+
+
 	<include file="topcam_server.launch">
 	</include>
+
 	<node name="joined_images" pkg="image2video" type="img2join.py" output="screen">
 	</node>
-	<include file="mmaster.launch">
+
+
+<!--
+	<include file="mm_radxa.launch">
 	</include>
-<!--	<node pkg="image_view" type="image_saver" name="image_saver" output="screen">
+-->
+
+
+<!--
+	<node pkg="image_view" type="image_saver" name="image_saver" output="screen">
 		<remap from="image" to="image_raw" />
 		<param name="filename_format" value="/home/n800s/public_html/protopupis/last_tmp.png" />
 		<param name="save_all_image" value="false" />
@@ -16,7 +39,9 @@
 		<remap from="image" to="/ow_camera/image_raw" />
 		<param name="filename_format" value="/home/n800s/public_html/protopupis/last_rasp_tmp.png" />
 		<param name="save_all_image" value="false" />
-	</node> -->
+	</node>
+-->
+
 </launch>
 
 
