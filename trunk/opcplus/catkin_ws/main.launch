@@ -1,8 +1,4 @@
 <launch>
-<!--
-	<include file="rmaster.launch">
-	</include>
--->
 
 	<node name="master_sync_opcplus" pkg="master_sync_fkie" type="master_sync">
 	</node>
@@ -21,12 +17,6 @@
 
 	<node name="joined_images" pkg="image2video" type="img2join.py" output="screen">
 	</node>
-
-
-<!--
-	<include file="mm_radxa.launch">
-	</include>
--->
 
 
 <!--

@@ -1,2 +1,0 @@
-local_pubs: [camera_info, image_raw/compressed, duplex/image_raw/compressed, dn_object_detect/debug_view/compressed ]
-foreign_pubs: []
