@@ -5,12 +5,21 @@
 		<param name="baud" value="57600"/>
 	</node>
 
+	<node name="master_sync_hubee" pkg="master_sync_fkie" type="master_sync">
+	</node>
+
+	<node name="master_discovery_hubee" pkg="master_discovery_fkie" type="zeroconf">
+	</node>
+
+<!--
+	<node name="master_discovery_hubee" pkg="master_discovery_fkie" type="master_discovery">
+	</node>
+-->
 
 <!--
 	<node name="ow_chassis" pkg="fchassis" type="ros_fchassis.py" output="screen">
 	</node>
 -->
-
 
 <!-- sensors now formed from state of fchassis
 	<include file="$(find ow_sensors)/launch/sensors.launch">
@@ -19,18 +28,5 @@
 
 	<include file="$(find raspicam_nd)/launch/raspicam_nd.launch">
 	</include>
-
-	<arg name="master_html" default="radxa"/>
-	<node pkg="multimaster" type="master_sync.py" name="master_html" output="screen"> 
-		<param name="foreign_master" value="http://$(arg master_html):11311" />
-		<rosparam command="load" file="mm2radxa.yaml" />
-	</node>
-
-	<arg name="master_op" default="opcplus"/>
-	<node pkg="multimaster" type="master_sync.py" name="master_op" output="screen"> 
-		<param name="foreign_master" value="http://$(arg master_op):11311" />
-		<rosparam command="load" file="mm2opcplus.yaml" />
-	</node>
-
 
 </launch>
