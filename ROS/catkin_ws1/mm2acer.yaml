@@ -1,0 +1,2 @@
+local_pubs: [ow_camera/camera_info, ow_camera/image_raw/compressed, fchassis/state, fchassis/imu, fchassis/mf]
+foreign_pubs: []
