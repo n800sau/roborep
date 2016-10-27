@@ -19,7 +19,7 @@
 		<remap from="image_raw/compressed" to="/opcplus/image_raw/compressed" />
 	</node>
 
-<!--
+
 	<node pkg="dn_object_detect" type="dn_object_detect" name="dn_object_detect" output="screen">
 		<param name="_image_transport" type="str" value="raw"/>
 		<param name="camera" type="str" value="/videofile/image_raw"/>
@@ -48,7 +48,7 @@
 			<!-- visualize on an image_view window the stream generated -->
 			<arg name="visualize" value="false" />
 	</include>
--->
+
 
 <!--
 	<node pkg="image_view" type="image_saver" name="image_saver" output="screen">
