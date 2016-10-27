@@ -39,64 +39,63 @@ class image2join:
 
 	def callback_ow(self, ros_data):
 		self.ow_img = self.data2img(ros_data)
-		if not self.uvc_img is None:
-			self.make_frame()
+		self.make_frame()
 
 	def callback_uvc(self, ros_data):
 		self.uvc_img = self.data2img(ros_data)
-		if not self.ow_img is None:
-			self.make_frame()
+		self.make_frame()
 
 	def data2img(self, ros_data):
 		if VERBOSE :
 			print 'received image of type: "%s"' % ros_data.format
-
 		#### direct conversion to CV2 ####
 		np_arr = np.fromstring(ros_data.data, np.uint8)
-		return cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
+		rs = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
+		return None if rs.shape[0] < 100 or rs.shape[1] < 100 else rs
 
 	def make_frame(self):
-		#### Create Image ####
-		sz = (160, 120)
-		img_left = cv2.resize(self.ow_img, sz)
-		img_right = cv2.resize(self.uvc_img, sz)
-		montage = ResultsMontage((sz[1], sz[0]), 1, 2)
-		montage.addResult(img_left)
-		montage.addResult(img_right)
-		msg = Image()
-		msg.header.stamp = rospy.Time.now()
-		msg.encoding = 'bgr8'
-		msg.step = montage.montage.shape[1] * 3
-		msg.height = montage.montage.shape[0]
-		msg.width = montage.montage.shape[1]
-		msg.data = np.array(montage.montage).tostring()
-		# Publish new image
-		self.image_pub.publish(msg)
-		msg = CompressedImage()
-		msg.header.stamp = rospy.Time.now()
-		msg.format = 'jpeg'
-		msg.data = np.array(cv2.imencode('.jpg', montage.montage)[1]).tostring()
-		self.image_pub_jpg.publish(msg)
-		montage = ResultsMontage((sz[1], sz[0]), 2, 2)
-		montage.addResult(img_left)
-		montage.addResult(img_right)
-		msg = Image()
-		msg.header.stamp = rospy.Time.now()
-		msg.encoding = 'bgr8'
-		msg.step = montage.montage.shape[1] * 3
-		msg.height = montage.montage.shape[0]
-		msg.width = montage.montage.shape[1]
-		msg.data = np.array(montage.montage).tostring()
-		# Publish new image
-		self.image_pub_h.publish(msg)
-		msg = CompressedImage()
-		msg.header.stamp = rospy.Time.now()
-		msg.format = 'jpeg'
-		msg.data = np.array(cv2.imencode('.jpg', montage.montage)[1]).tostring()
-		self.image_pub_jpg_h.publish(msg)
-
-		self.ow_img = None
-		self.uvc_img = None
+		if not (self.ow_img is None or self.uvc_img is None):
+			#### Create Image ####
+			sz = (160, 120)
+			img_left = cv2.resize(self.ow_img, sz)
+			img_right = cv2.resize(self.uvc_img, sz)
+			montage = ResultsMontage((sz[1], sz[0]), 1, 2)
+			montage.addResult(img_left)
+			montage.addResult(img_right)
+			msg = Image()
+			msg.header.stamp = rospy.Time.now()
+			msg.encoding = 'bgr8'
+			msg.step = montage.montage.shape[1] * 3
+			msg.height = montage.montage.shape[0]
+			msg.width = montage.montage.shape[1]
+			msg.data = np.array(montage.montage).tostring()
+			# Publish new image
+			self.image_pub.publish(msg)
+			msg = CompressedImage()
+			msg.header.stamp = rospy.Time.now()
+			msg.format = 'jpeg'
+			msg.data = np.array(cv2.imencode('.jpg', montage.montage)[1]).tostring()
+			self.image_pub_jpg.publish(msg)
+			montage = ResultsMontage((sz[1], sz[0]), 2, 2)
+			montage.addResult(img_left)
+			montage.addResult(img_right)
+			msg = Image()
+			msg.header.stamp = rospy.Time.now()
+			msg.encoding = 'bgr8'
+			msg.step = montage.montage.shape[1] * 3
+			msg.height = montage.montage.shape[0]
+			msg.width = montage.montage.shape[1]
+			msg.data = np.array(montage.montage).tostring()
+			# Publish new image
+			self.image_pub_h.publish(msg)
+			msg = CompressedImage()
+			msg.header.stamp = rospy.Time.now()
+			msg.format = 'jpeg'
+			msg.data = np.array(cv2.imencode('.jpg', montage.montage)[1]).tostring()
+			self.image_pub_jpg_h.publish(msg)
+    
+			self.ow_img = None
+			self.uvc_img = None
 
 def main(args):
 	'''Initializes and cleanup ros node'''
