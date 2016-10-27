@@ -41,5 +41,9 @@ rosrun image_view image_saver image:=/dn_object_detect/debug_view
 #rosrun image_view image_view image:=/oculus2wd/signal_image_nd
 
 #rosrun image_view image_view image:=/camera/rgb/image_raw
+
+DISPLAY=:5 rosrun image_view image_view image:=/motion/image_raw
+
+#rosrun image_view extract_images image:=/motion/image_raw
 #rosrun image_view image_view image:=/labrob/camera/image_raw
 #rosrun image_view image_view image:=/dn_object_detect/debug_view
