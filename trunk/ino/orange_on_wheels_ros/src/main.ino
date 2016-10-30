@@ -85,6 +85,7 @@ ros::Publisher pub_mf( "/fchassis/mf", &mf_msg);
 ros::Publisher pub_state( "/fchassis/state", &state_msg);
 
 void command_callback(const FCommand::Request & req, FCommand::Response & res) {
+	res.timeout = req.timeout;
 	if(strcmp(req.mcommand, "mstop") == 0) {
 		strncpy(current_command, req.mcommand, sizeof(current_command));
 		stop(true);
@@ -110,11 +111,15 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res) {
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "walk_around") == 0) {
 		strncpy(current_command, req.mcommand, sizeof(current_command));
-		walk_around(req.pwr, req.timeout);
+		full_stopped = false;
+		straight(req.pwr, true);
+		stop_after(req.timeout);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "move2release") == 0) {
 		strncpy(current_command, req.mcommand, sizeof(current_command));
-		move2release(req.pwr, req.fwd, req.timeout);
+		full_stopped = false;
+		move2release(req.pwr, req.fwd);
+		stop_after(req.timeout);
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "reset_counters") == 0) {
 		resetCounters();
@@ -175,6 +180,7 @@ void setup()
 	attachInterrupt(digitalPinToInterrupt(Eleft), rIntCB, RISING);
 	attachInterrupt(digitalPinToInterrupt(Eright), lIntCB, RISING);
 
+	EventFuse::newFuse(100, INF_REPEAT, evSonar);
 	EventFuse::newFuse(100, INF_REPEAT, evFixDir);
 
 	nh.initNode();

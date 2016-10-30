@@ -17,6 +17,7 @@ def proc_line(msg):
 	return [
 #		'%.2f' % msg.sonar,
 		msg.command,
+		'%d' % msg.single_tap,
 		'%d' % msg.lpwr,
 		'%d' % msg.rpwr,
 		'%d' % msg.pwroffset,

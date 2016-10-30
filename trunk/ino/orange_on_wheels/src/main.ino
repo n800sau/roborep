@@ -16,11 +16,11 @@
 
 
 // motor pins
-const int LEFT_MOTOR_1 = 6;
-const int LEFT_MOTOR_2 = 5;
+const int LEFT_MOTOR_1 = 10;
+const int LEFT_MOTOR_2 = 9;
 
-const int RIGHT_MOTOR_1 = 10;
-const int RIGHT_MOTOR_2 = 9;
+const int RIGHT_MOTOR_1 = 6;
+const int RIGHT_MOTOR_2 = 5;
 
 const int echoPin = 12; // Echo Pin
 const int trigPin = 11; // Trigger Pin
@@ -83,11 +83,12 @@ volatile bool rFwd = true;
 volatile bool full_stopped = true;
 bool moving_straight = false;
 int fwd_heading;
+int current_command=0;
 
 unsigned long last_ping = millis();
 
 
-#define DEFAULT_PWR 70
+#define DEFAULT_PWR 50
 
 void resetCounters()
 {
@@ -114,12 +115,15 @@ void IccBase::sendState()
 	vals[0] = readVccMv() / 1000.;
 	sendFloats(R_VOLTS_1F, vals, 1);
 
+	vals[0] = current_command;
+	sendFloats(R_COMMAND_1F, vals, 1);
+
 	vals[0] = lCounter;
 	vals[1] = rCounter;
 	sendFloats(R_MCOUNTS_2F, vals, 2);
 
-	vals[0] = lPower;
-	vals[1] = rPower;
+	vals[0] = lPower * ((lFwd) ? 1 : -1);
+	vals[1] = rPower * ((rFwd) ? 1 : -1);
 	sendFloats(R_MPOWER_2F, vals, 2);
 
 	vals[0] = powerOffset;
@@ -214,6 +218,7 @@ void stop(bool full=false)
 {
 	if(full) {
 		full_stopped = true;
+		current_command = 0;
 	}
 	moving_straight = false;
 	powerOffset = 0;
@@ -243,7 +248,7 @@ void setLeftMotor(int power, bool fwd)
 	if(power == 0) {
 		digitalWrite(LEFT_MOTOR_1, LOW);
 		digitalWrite(LEFT_MOTOR_2, LOW);
-		Serial.println("Left stopped");
+//		Serial.println("Left stopped");
 	} else {
 		int pwm = power2pwm(power);
 		if(fwd) {
@@ -253,9 +258,9 @@ void setLeftMotor(int power, bool fwd)
 			analogWrite(LEFT_MOTOR_2, pwm);
 			digitalWrite(LEFT_MOTOR_1, LOW);
 		}
-		Serial.print("Left:");
-		Serial.print(pwm);
-		Serial.println((fwd) ? ", fwd": ", back");
+//		Serial.print("Left:");
+//		Serial.print(pwm);
+//		Serial.println((fwd) ? ", fwd": ", back");
 	}
 }
 
@@ -272,7 +277,7 @@ void setRightMotor(int power, bool fwd)
 	if(power == 0) {
 		digitalWrite(RIGHT_MOTOR_1, LOW);
 		digitalWrite(RIGHT_MOTOR_2, LOW);
-		Serial.println("Right stopped");
+//		Serial.println("Right stopped");
 	} else {
 		int pwm = power2pwm(power);
 		if(fwd) {
@@ -282,9 +287,9 @@ void setRightMotor(int power, bool fwd)
 			analogWrite(RIGHT_MOTOR_2, pwm);
 			digitalWrite(RIGHT_MOTOR_1, LOW);
 		}
-		Serial.print("Right:");
-		Serial.print(pwm);
-		Serial.println((fwd) ? ", fwd": ", back");
+//		Serial.print("Right:");
+//		Serial.print(pwm);
+//		Serial.println((fwd) ? ", fwd": ", back");
 	}
 }
 
@@ -325,6 +330,7 @@ void execute()
 			base.ok();
 			break;
 		case C_MLEFT:
+			current_command = *base.command;
 			// bytes: power, direction, timeout
 			if(*base.datasize >= 3) {
 				full_stopped = false;
@@ -336,6 +342,7 @@ void execute()
 			}
 			break;
 		case C_MRIGHT:
+			current_command = *base.command;
 			// bytes: power, direction, timeout
 			if(*base.datasize >= 3) {
 				full_stopped = false;
@@ -347,6 +354,7 @@ void execute()
 			}
 			break;
 		case C_MBOTH:
+			current_command = *base.command;
 			// bytes: lpower, lfwd, rpower, rfwd, timeout
 			if(*base.datasize >= 5) {
 				full_stopped = false;
@@ -359,17 +367,21 @@ void execute()
 			}
 			break;
 		case C_WALK_AROUND:
+			current_command = *base.command;
 			// bytes: power, timeout
 			if(*base.datasize >= 2) {
 				walk_around(base.dataBuf[0], base.dataBuf[1]);
+				base.ok();
 			} else {
 				base.error();
 			}
 			break;
 		case C_MOVE2RELEASE:
+			current_command = *base.command;
 			// bytes: power, fwd, timeout
 			if(*base.datasize >= 3) {
 				move2release(base.dataBuf[0], base.dataBuf[1], base.dataBuf[2]);
+				base.ok();
 			} else {
 				base.error();
 			}

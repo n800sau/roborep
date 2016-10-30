@@ -18,6 +18,8 @@ class bin2uno_inf(object):
 		self.magic_byte = magic_byte
 		self.recv_data = ''
 		self.dbg_data = ''
+		# in secs
+		self.rb_timeout = 2
 
 	# should write data
 	def send2ino(self, s):
@@ -84,7 +86,7 @@ class bin2uno_inf(object):
 		rs = None
 		bin_read = False
 		while rs is None:
-			if t + 1 < time.time():
+			if t + self.rb_timeout < time.time():
 				# timeout
 				rs = None
 				break

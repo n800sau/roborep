@@ -98,6 +98,7 @@ R_HIT_1F = _libcommands_py.R_HIT_1F
 R_GYRO_3F = _libcommands_py.R_GYRO_3F
 R_TEMPERATURE_1F = _libcommands_py.R_TEMPERATURE_1F
 R_PRESSURE_1F = _libcommands_py.R_PRESSURE_1F
+R_COMMAND_1F = _libcommands_py.R_COMMAND_1F
 R_END = _libcommands_py.R_END
 MAGIC_BYTE = _libcommands_py.MAGIC_BYTE
 # This file is compatible with both classic and new-style classes.

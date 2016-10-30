@@ -3,7 +3,7 @@
 #include <Adafruit_ADXL345_U.h>
 #include "limited_queue.h"
 
-//#define A_INT1_PIN 5
+#define A_INT1_PIN 19
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345_Unified accel;
@@ -42,9 +42,11 @@ void setup_accel()
 		accel.writeRegister(ADXL345_REG_INT_ENABLE, B8(1111100)); // enable signle and double tap, activity, inactivity and free fall detection
 
 		// single tap configuration
-		accel.writeRegister(ADXL345_REG_DUR, 0x1f); // 625us/LSB
+//		accel.writeRegister(ADXL345_REG_DUR, 0x1f); // 625us/LSB
+		accel.writeRegister(ADXL345_REG_DUR, 0x32); // 1000us/LSB
 		accel.writeRegister(ADXL345_REG_THRESH_TAP, 24); // 62.5mg/LSB  <==> 3000mg/62.5mg = 48 LSB as datasheet suggestion
-		accel.writeRegister(ADXL345_REG_TAP_AXES, B8(111)); // enable tap detection on x,y,z axes
+//		accel.writeRegister(ADXL345_REG_TAP_AXES, B8(111)); // enable tap detection on x,y,z axes
+		accel.writeRegister(ADXL345_REG_TAP_AXES, B8(110)); // enable tap detection on x,y axes ?
 
 	}
 }

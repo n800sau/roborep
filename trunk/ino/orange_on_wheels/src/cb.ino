@@ -1,13 +1,14 @@
+// straight move deviation fix
 void evFixDir(FuseID fuse, int& data)
 {
-	const float Kp = 1;
+	const float Kp = 0.3;
 	if(moving_straight && !full_stopped) {
 		int aoff = angle_offset(fwd_heading, headingDegrees);
 		if((aoff < 0 && lFwd && rFwd) || (aoff > 0 && (!lFwd) && (!rFwd))) {
-			powerOffset = -Kp * abs(aoff);
+			powerOffset = Kp * abs(aoff);
 			// left more right less
 		} else {
-			powerOffset = Kp * abs(aoff);
+			powerOffset = -Kp * abs(aoff);
 			// left less right more
 		}
 		setLeftMotor(lPower, lFwd);
@@ -46,10 +47,10 @@ void evSonar(FuseID fuse, int& userData)
 {
 	sonar();
 	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd and (lPower > 0 || rPower > 0)) {
-		Serial.print(millis());
-		Serial.println("Too close");
+//		Serial.print(millis());
+//		Serial.println("Too close");
 		stop();
-		EventFuse::newFuse(DEFAULT_PWR, 500, 1, evLeftRight);
+		EventFuse::newFuse(lPower+rPower/2, 500, 1, evLeftRight);
 	}
 }
 
