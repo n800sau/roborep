@@ -66,3 +66,14 @@ void evChangePower(FuseID fuse, int& userData)
 	}
 }
 
+void evSonar(FuseID fuse, int& userData)
+{
+	float distance = getRange_Ultrasound();
+	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd and (lPower > 0 || rPower > 0)) {
+//		Serial.print(millis());
+//		Serial.println("Too close");
+		EventFuse::newFuse((lPower+rPower)/2, 500, 1, evLeftRight);
+//		stop();
+	}
+}
+

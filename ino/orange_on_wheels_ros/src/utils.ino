@@ -23,20 +23,12 @@ void stop(bool full)
 {
 	if(full) {
 		full_stopped = true;
+		strncpy(current_command, "", sizeof(current_command));
 	}
 	moving_straight = false;
 	powerOffset = 0;
 	setLeftMotor(0, false);
 	setRightMotor(0, false);
-}
-
-void straight(int pwr, bool fwd)
-{
-	setLeftMotor(pwr, fwd);
-	setRightMotor(pwr, fwd);
-	moving_straight = true;
-	powerOffset = 0;
-	fwd_heading = headingDegrees;
 }
 
 void setLeftMotor(int power, bool fwd)

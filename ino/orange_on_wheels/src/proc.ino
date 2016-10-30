@@ -1,4 +1,5 @@
 void walk_around(int pwr, int timeout) {
+	stop(true);
 	full_stopped = false;
 //	Serial.print(millis());
 //	Serial.println("Start walking");
@@ -10,6 +11,7 @@ void walk_around(int pwr, int timeout) {
 }
 
 void move2release(int pwr, bool fwd, int timeout) {
+	stop(true);
 	full_stopped = false;
 //	Serial.print(millis());
 //	Serial.println("Start releasing");

@@ -37,6 +37,7 @@ enum REPLY {
 	R_GYRO_3F,     //17
 	R_TEMPERATURE_1F, //18
 	R_PRESSURE_1F,    //19
+	R_COMMAND_1F,    //20
 	R_END                // end of block marker
 };
 
