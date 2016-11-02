@@ -1,0 +1,11 @@
+<launch>
+
+	<node name="master_sync_acer" pkg="master_sync_fkie" type="master_sync">
+	</node>
+
+	<node name="master_discovery_acer" pkg="master_discovery_fkie" type="zeroconf">
+	</node>
+
+</launch>
+
+
