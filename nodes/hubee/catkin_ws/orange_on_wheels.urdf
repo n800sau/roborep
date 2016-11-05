@@ -3,7 +3,7 @@
 	<link name="base_link">
 		<visual>
 			<geometry>
-				<box size="0.16 0.16 0.12"/>
+				<box size="0.21 0.17 0.29"/>
 			</geometry>
 			<origin rpy="0 0 0" xyz="0 0 0.085"/>
 			<material name="white">
@@ -15,7 +15,7 @@
 	<link name="lwheel">
 		<visual>
 			<geometry>
-				<cylinder length="0.008" radius="0.046"/>
+				<cylinder length="0.025" radius="0.0325"/>
 			</geometry>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 			<material name="black">
@@ -33,7 +33,7 @@
 	<link name="rwheel">
 		<visual>
 			<geometry>
-				<cylinder length="0.008" radius="0.046"/>
+				<cylinder length="0.025" radius="0.0325"/>
 			</geometry>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 			<material name="black">
@@ -69,7 +69,7 @@
 	<link name="fwheel">
 		<visual>
 			<geometry>
-				<cylinder length="0.005" radius="0.020"/>
+				<cylinder length="0.014" radius="0.033"/>
 			</geometry>
 			<origin rpy="1.578 0 0" xyz="0 0 0"/>
 			<material name="black">
@@ -81,7 +81,7 @@
 	<joint name="base_to_fwheel" type="fixed">
 		<parent link="base_link"/>
 		<child link="fwheel"/>
-		<origin xyz="0.13 0 0.02" rpy="0 0 0"/>
+		<origin xyz="0.9 0 0.02" rpy="0 0 0"/>
 	</joint>
 
 	<link name="scanner">
