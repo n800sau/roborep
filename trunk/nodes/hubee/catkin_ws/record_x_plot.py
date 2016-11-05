@@ -28,6 +28,10 @@ xgyro = []
 ygyro = [[], [], []]
 xacc = []
 yacc = [[], [], []]
+xgyro_raw = []
+ygyro_raw = [[], [], []]
+xacc_raw = []
+yacc_raw = [[], [], []]
 xsonar = []
 ysonar = []
 
@@ -40,7 +44,7 @@ MAX_PERIOD = 10
 
 no_pwr = 0
 cmd_val = 0
-active = False
+active = True
 stopsecs = None
 i = 0
 with open(fname) as csvfile:
@@ -63,6 +67,15 @@ with open(fname) as csvfile:
 				ygyro[0].append(r[-4])
 				ygyro[1].append(r[-3])
 				ygyro[2].append(r[-2])
+			if name == 'imu_raw':
+				xgyro_raw.append(x[-1])
+				xacc_raw.append(x[-1])
+				yacc_raw[0].append(r[-7])
+				yacc_raw[1].append(r[-6])
+				yacc_raw[2].append(r[-5])
+				ygyro_raw[0].append(r[-4])
+				ygyro_raw[1].append(r[-3])
+				ygyro_raw[2].append(r[-2])
 			if name == 'sonar':
 				xsonar.append(x[-1])
 				ysonar.append(r[-2])
@@ -127,11 +140,15 @@ legends.append(axes[1].legend(loc='upper right', shadow=True))
 do_plot(axes[2], xheading, yheading, 'blue', 'Head')
 legends.append(axes[2].legend(loc='upper right', shadow=True))
 
-for i,l,c in ((0, 'Gx', 'green'), (1, 'Gy', 'blue'), (2, 'Gz', 'orange')):
+for i,l,c in ((0, 'GRx', 'green'), (1, 'GRy', 'blue'), (2, 'GRz', 'orange')):
+	do_plot(axes[3], xgyro_raw, ygyro_raw[i], c, l)
+for i,l,c in ((0, 'Gx', 'DarkGreen'), (1, 'Gy', 'DarkBlue'), (2, 'Gz', 'brown')):
 	do_plot(axes[3], xgyro, ygyro[i], c, l)
 legends.append(axes[3].legend(loc='upper right', shadow=True))
 
-for i,l,c in ((0, 'Ax', 'green'), (1, 'Ay', 'blue'), (2, 'Az', 'orange')):
+for i,l,c in ((0, 'ARx', 'green'), (1, 'ARy', 'blue'), (2, 'ARz', 'orange')):
+	do_plot(axes[4], xacc_raw, yacc_raw[i], c, l)
+for i,l,c in ((0, 'Ax', 'DarkGreen'), (1, 'Ay', 'DarkBlue'), (2, 'Az', 'brown')):
 	do_plot(axes[4], xacc, yacc[i], c, l)
 legends.append(axes[4].legend(loc='upper right', shadow=True))
 
