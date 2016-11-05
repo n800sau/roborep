@@ -1,2 +1,2 @@
 #rostopic pub -1 /fchassis/command fchassis_msgs/command '{mcommand: mright, rpwr: 80, rfwd: false, timeout: 2}'
-rosservice call /exec_command '{mcommand: mright, rPwr: 50, rFwd: false, timeout: 3}'
+rosservice call /exec_command '{mcommand: mright, rPwr: 50, rFwd: false, timeout: 5}'

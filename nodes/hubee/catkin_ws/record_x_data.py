@@ -7,10 +7,11 @@ bagfname = sys.argv[1]
 #bagfname = 'record_2016-10-14T09:29+1100.bag' if len(sys.argv) < 2 else sys.argv[1]
 
 tlist = {
-	'/fchassis/mf':          '          mf',
-	'/fchassis/imu':          '     imu',
-	'/fchassis/state':        '             state',
+	'/fchassis/state':   '             state',
+	'/fchassis/mf':      '          mf',
+	'/fchassis/imu':     '     imu_raw',
 	'/fchassis/sonar':   'sonar',
+	'/imu/data':         '                 imu',
 }
 
 def proc_line(msg):
@@ -54,7 +55,7 @@ with open(bagfname + '_x.csv', 'w+') as csvfile:
 			vals = proc_line(msg)
 		if name.strip() == 'sonar':
 			vals = ['%.2f' % msg.range]
-		if name.strip() == 'imu':
+		if name.strip() in ('imu', 'imu_raw'):
 			vals = [
 				'%.2f' % msg.linear_acceleration.x,
 				'%.2f' % msg.linear_acceleration.y,
