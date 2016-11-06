@@ -6,6 +6,7 @@
 #include <sensor_msgs/Range.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
+#include <nav_msgs/Odometry.h>
 #include <fchassis_srv/FCommand.h>
 #include <fchassis_srv/mstate.h>
 
@@ -59,6 +60,8 @@ volatile unsigned long intLtime = 0;
 volatile unsigned long intRtime = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
+volatile float lVel = 0;
+volatile float rVel = 0; 
 volatile int lPower = 0;
 volatile int rPower = 0;
 // left + powerOffset
@@ -141,8 +144,10 @@ void lIntCB()
 	unsigned long t = micros();
 	if( t - intLtime > threshold )
 	{
+		int step = (lFwd) ? 1 : -1;
+		lVel = step * ENC_STEP/t;
 		intLtime = t;
-		lCounter += (lFwd) ? 1 : -1;
+		lCounter += step;
 	}
 }
 
@@ -151,8 +156,10 @@ void rIntCB()
 	unsigned long t = micros();
 	if( t - intRtime > threshold )
 	{
+		int step = (rFwd) ? 1 : -1;
+		rVel = step * ENC_STEP/t;
 		intRtime = t;
-		rCounter += (rFwd) ? 1 : -1;
+		rCounter += step;
 	}
 }
 
@@ -201,7 +208,6 @@ void setup()
 	mf_msg.header.frame_id = imu_frameid;
 
 	state_msg.header.frame_id = base_frameid;
-
 }
 
 
@@ -213,28 +219,31 @@ unsigned long msg_time = 0;
 void loop()
 {
 	EventFuse::burn();
-	if ( millis() >= msg_time ){
+	unsigned long m = millis();
+	if ( m >= msg_time ){
+		ros::Time now = nh.now();
 		range_msg.range = getRange_Ultrasound();
-		range_msg.header.stamp = nh.now();
+		range_msg.header.stamp = now;
 		pub_range.publish(&range_msg);
 		process_compass();
-		mf_msg.header.stamp = nh.now();
+		mf_msg.header.stamp = now;
 		mf_msg.magnetic_field.x = compass_x;
 		mf_msg.magnetic_field.y = compass_y;
 		mf_msg.magnetic_field.z = compass_z;
 		pub_mf.publish(&mf_msg);
 		process_accel();
 		process_gyro();
-		imu_msg.header.stamp = nh.now();
-		imu_msg.angular_velocity.x = gyro.g.x;
-		imu_msg.angular_velocity.y = gyro.g.y;
-		imu_msg.angular_velocity.z = gyro.g.z;
-		imu_msg.linear_acceleration.x = acc_x_avg();
-		imu_msg.linear_acceleration.y = acc_y_avg();
-		imu_msg.linear_acceleration.z = acc_z_avg();
+		imu_msg.header.stamp = now;
+		imu_msg.angular_velocity.x = gyro.g.x * PI / 180;
+		imu_msg.angular_velocity.y = gyro.g.y * PI / 180;
+		imu_msg.angular_velocity.z = gyro.g.z * PI / 180;
+		imu_msg.linear_acceleration.x = adxl345_state.event.acceleration.x;
+		imu_msg.linear_acceleration.y = adxl345_state.event.acceleration.y;
+		imu_msg.linear_acceleration.z = adxl345_state.event.acceleration.z;
 		pub_imu.publish(&imu_msg);
 
 		process_bmp085();
+		state_msg.header.stamp = now;
 		state_msg.v = readVccMv() / 1000.;
 		state_msg.lcount = lCounter;
 		state_msg.rcount = rCounter;
