@@ -12,14 +12,15 @@ from nec_codes import *
 #IRCODE = VOL_DOWN
 #IRCODE = VOL_UP
 #IRCODE = IR_GREEN
-#IRCODE = IR_YELLOW
-IRCODE = IR_RED
+IRCODE = IR_YELLOW
+#IRCODE = IR_RED
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-sock.sendto(json.dumps({
+#sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
+r = sock.sendto(json.dumps({
 	'encoding': MODEL,
 	'ircode': IRCODE,
 }), (MCAST_GRP, MCAST_PORT))
-print 'sent'
+print 'sent', r
 time.sleep(1)
