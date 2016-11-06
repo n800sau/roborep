@@ -3,11 +3,11 @@
 	<link name="base_link">
 		<visual>
 			<geometry>
-				<box size="0.21 0.17 0.29"/>
+				<box size="0.21 0.17 0.003"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0 0 0.085"/>
-			<material name="white">
-				<color rgba="1 1 1 1"/>
+			<origin xyz="0 0 0.015" rpy="0 0 0"/>
+			<material name="yellow">
+				<color rgba="1 1 0 0.5"/>
 			</material>
 		</visual>
 	</link>
@@ -27,7 +27,7 @@
 	<joint name="base_to_lwheel" type="fixed">
 		<parent link="base_link"/>
 		<child link="lwheel"/>
-		<origin xyz="0 0.115 0.046" rpy="1.5708 0 0"/>
+		<origin xyz="0 0.115 -0.01" rpy="1.5708 0 0"/>
 	</joint>
 
 	<link name="rwheel">
@@ -45,61 +45,98 @@
 	<joint name="base_to_rwheel" type="fixed">
 		<parent link="base_link"/>
 		<child link="rwheel"/>
-		<origin xyz="0 -0.115 0.046" rpy="-1.5708 0 0"/>
+		<origin xyz="0 -0.115 -0.01" rpy="-1.5708 0 0"/>
 	</joint>
 
-	<link name="fwheel_attach">
+	<link name="back_wheel">
 		<visual>
 			<geometry>
-				<cylinder length="0.060" radius="0.023"/>
-			</geometry>
-			<origin rpy="0 0 0" xyz="0.13 0 0.08"/>
-			<material name="white">
-				<color rgba="1 1 1 1"/>
-			</material>
-		</visual>
-	</link>
-
-	<joint name="base_to_fattach" type="fixed">
-		<parent link="base_link"/>
-		<child link="fwheel_attach"/>
-		<origin xyz="0 0 0" rpy="0 0 0"/>
-	</joint>
-
-	<link name="fwheel">
-		<visual>
-			<geometry>
-				<cylinder length="0.014" radius="0.033"/>
+				<cylinder length="0.014" radius="0.0165"/>
 			</geometry>
 			<origin rpy="1.578 0 0" xyz="0 0 0"/>
-			<material name="black">
-				<color rgba="0 0 0 1"/>
+			<material name="white">
+				<color rgba="0.9 0.9 0.9 1"/>
 			</material>
 		</visual>
 	</link>
 
-	<joint name="base_to_fwheel" type="fixed">
+	<link name="back_wheel_attach">
+		<visual>
+			<geometry>
+				<box size="0.02 0.025 0.02"/>
+			</geometry>
+			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<material name="gray">
+				<color rgba="0.5 0.5 0.5 1"/>
+			</material>
+		</visual>
+	</link>
+
+	<joint name="base_to_back_attach" type="fixed">
 		<parent link="base_link"/>
-		<child link="fwheel"/>
-		<origin xyz="0.9 0 0.02" rpy="0 0 0"/>
+		<child link="back_wheel_attach"/>
+		<origin xyz="-0.08 0 0" rpy="0 0 0"/>
 	</joint>
 
-	<link name="scanner">
+	<joint name="back_wheel_attach_to_back_wheel" type="fixed">
+		<parent link="back_wheel_attach"/>
+		<child link="back_wheel"/>
+		<origin xyz="0 0 -0.02" rpy="0 0 0"/>
+	</joint>
+
+	<link name="ultrasound">
 		<visual>
 			<geometry>
 				<box size="0.015 0.045 0.015"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="0.022 0 0.015"/>
-			<material name="black">
-				<color rgba="0 0 0 1"/>
+			<origin rpy="0 0 0" xyz="0.022 0 0.007"/>
+			<material name="green">
+				<color rgba="0 1 0 1"/>
 			</material>
 		</visual>
 	</link>
 
 	<joint name="base_to_scanner" type="fixed">
 		<parent link="base_link"/>
-		<child link="scanner"/>
-		<origin xyz="0.105 0 0.22" rpy="0 0 0"/>
+		<child link="ultrasound"/>
+		<origin xyz="0.095 0 0.007" rpy="0 0 0"/>
 	</joint>
+
+	<joint name="base_to_imu_frame" type="fixed">
+		<parent link="base_link"/>
+		<child link="imu_frame"/>
+		<origin xyz="0.04 0 0.135" rpy="0 0 0"/>
+	</joint>
+
+	<joint name="imu_frame_to_imu" type="fixed">
+		<parent link="imu_frame"/>
+		<child link="imu"/>
+		<origin xyz="0 0 0.1" rpy="0 0 0"/>
+	</joint>
+
+	<link name="imu_frame">
+		<visual>
+			<geometry>
+				<box size="0.01 0.12 0.255"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="orange">
+				<color rgba="1 0.5 0.5 0.5"/>
+			</material>
+		</visual>
+	</link>
+
+	<link name="imu">
+		<visual>
+			<geometry>
+				<box size="0.01 0.01 0.01"/>
+			</geometry>
+			<origin rpy="0 0 0" xyz="0 0 0.03"/>
+			<material name="blue">
+				<color rgba="0 0 1 1"/>
+			</material>
+		</visual>
+	</link>
+
 
 </robot>
