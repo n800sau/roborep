@@ -102,19 +102,19 @@
 		<origin xyz="0.095 0 0.007" rpy="0 0 0"/>
 	</joint>
 
-	<joint name="base_to_imu_frame" type="fixed">
+	<joint name="base_to_base_footprint" type="fixed">
 		<parent link="base_link"/>
-		<child link="imu_frame"/>
+		<child link="base_footprint"/>
 		<origin xyz="0.04 0 0.135" rpy="0 0 0"/>
 	</joint>
 
-	<joint name="imu_frame_to_imu" type="fixed">
-		<parent link="imu_frame"/>
+	<joint name="base_footprint_to_imu" type="fixed">
+		<parent link="base_footprint"/>
 		<child link="imu"/>
 		<origin xyz="0 0 0.1" rpy="0 0 0"/>
 	</joint>
 
-	<link name="imu_frame">
+	<link name="base_footprint">
 		<visual>
 			<geometry>
 				<box size="0.01 0.12 0.255"/>
@@ -138,5 +138,13 @@
 		</visual>
 	</link>
 
+	<link name="odom">
+	</link>
+
+	<joint name="base_to_odom" type="fixed">
+		<parent link="base_link"/>
+		<child link="odom"/>
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+	</joint>
 
 </robot>
