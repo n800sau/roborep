@@ -3,6 +3,7 @@
 #include <ros.h>
 
 #include <ros/time.h>
+#include <std_msgs/Int16.h>
 #include <sensor_msgs/Range.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
@@ -81,10 +82,14 @@ sensor_msgs::Range range_msg;
 sensor_msgs::Imu imu_msg;
 sensor_msgs::MagneticField mf_msg;
 fchassis_srv::mstate state_msg;
+std_msgs::Int16 lwheel_msg;
+std_msgs::Int16 rwheel_msg;
 
 ros::Publisher pub_range( "/fchassis/sonar", &range_msg);
 ros::Publisher pub_imu( "/fchassis/imu", &imu_msg);
 ros::Publisher pub_mf( "/fchassis/mf", &mf_msg);
+ros::Publisher pub_lwheel("/fchassis/lwheel", &lwheel_msg);
+ros::Publisher pub_rwheel("/fchassis/rwheel", &rwheel_msg);
 ros::Publisher pub_state( "/fchassis/state", &state_msg);
 
 void command_callback(const FCommand::Request & req, FCommand::Response & res) {
@@ -195,6 +200,8 @@ void setup()
 	nh.advertise(pub_imu);
 	nh.advertise(pub_mf);
 	nh.advertise(pub_state);
+	nh.advertise(pub_lwheel);
+	nh.advertise(pub_rwheel);
 	nh.advertiseService(server);
 
 	range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
@@ -204,6 +211,15 @@ void setup()
 	range_msg.max_range = 2.0;
 
 	imu_msg.header.frame_id = imu_frameid;
+	imu_msg.orientation_covariance[0] = -1;
+	imu_msg.orientation_covariance[4] = -1;
+	imu_msg.orientation_covariance[8] = -1;
+	imu_msg.angular_velocity_covariance[0] = 0.1;
+	imu_msg.angular_velocity_covariance[4] = 0.1;
+	imu_msg.angular_velocity_covariance[8] = 0.1;
+	imu_msg.linear_acceleration_covariance[0] = 0.1;
+	imu_msg.linear_acceleration_covariance[4] = 0.1;
+	imu_msg.linear_acceleration_covariance[8] = 0.1;
 
 	mf_msg.header.frame_id = imu_frameid;
 
@@ -213,8 +229,8 @@ void setup()
 
 unsigned long msg_time = 0;
 
-//publish values every 100 milliseconds
-#define PUBLISH_PERIOD 100
+//publish values every 10 milliseconds
+#define PUBLISH_PERIOD 10
 
 void loop()
 {
@@ -260,6 +276,10 @@ void loop()
 		state_msg.pressure = bmp085_event.pressure;
 		state_msg.command = current_command;
 		pub_state.publish(&state_msg);
+		lwheel_msg.data = lCounter;
+		rwheel_msg.data = rCounter;
+		pub_lwheel.publish(&lwheel_msg);
+		pub_rwheel.publish(&rwheel_msg);
 		msg_time = millis() + PUBLISH_PERIOD;
 	}
 	nh.spinOnce();
