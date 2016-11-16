@@ -15,6 +15,8 @@
 #include <voltage.h>
 #include <EventFuse.h>
 
+#include <Servo.h>
+
 #include "hmc5883l_proc.h"
 #include "adxl345_proc.h"
 #include "l3g4200d_proc.h"
@@ -23,10 +25,15 @@
 const int echoPin = 12; // Echo Pin
 const int trigPin = 11; // Trigger Pin
 
+int sonarAngle = 90;
+const int SONAR_INCR = 5;
+int sonarIncr = SONAR_INCR;
+const int SONAR_CENTER_OFFSET = 10;
+
 const int bEchoPin = 22; // Echo Pin
 const int bTrigPin = 23; // Trigger Pin
 
-const int pwmPin = 46
+const int headServoPin = 46;
 
 // encoder pins
 const int Eleft = 2;
@@ -79,6 +86,8 @@ volatile bool full_stopped = true;
 bool moving_straight = false;
 int fwd_heading;
 char current_command[20];
+
+Servo head_servo;
 
 using fchassis_srv::FCommand;
 ros::NodeHandle  nh;
@@ -189,6 +198,10 @@ void setup()
 	digitalWrite(Eleft, INPUT_PULLUP);
 	digitalWrite(Eright, INPUT_PULLUP);
 
+	head_servo.attach(headServoPin);
+	head_servo.write(90 + SONAR_CENTER_OFFSET);
+//	head_servo.detach();
+
 	setup_compass();
 	setup_accel();
 	setup_gyro();
@@ -199,6 +212,8 @@ void setup()
 
 	EventFuse::newFuse(100, INF_REPEAT, evSonar);
 	EventFuse::newFuse(100, INF_REPEAT, evFixDir);
+
+//	EventFuse::newFuse(100, INF_REPEAT, evMoveSonar);
 
 	nh.initNode();
 	nh.advertise(pub_range);
@@ -287,5 +302,6 @@ void loop()
 		pub_rwheel.publish(&rwheel_msg);
 		msg_time = millis() + PUBLISH_PERIOD;
 	}
+//	Servo::refresh();
 	nh.spinOnce();
 }

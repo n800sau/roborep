@@ -77,3 +77,15 @@ void evSonar(FuseID fuse, int& userData)
 	}
 }
 
+void evMoveSonar(FuseID fuse, int &userData)
+{
+	sonarAngle += sonarIncr;
+	if(sonarAngle >= 180) {
+		sonarIncr = -SONAR_INCR;
+	} else if(sonarAngle < 20) {
+		sonarIncr = SONAR_INCR;
+	}
+	head_servo.attach(headServoPin);
+	head_servo.write(sonarAngle);
+//	head_servo.detach();
+}
