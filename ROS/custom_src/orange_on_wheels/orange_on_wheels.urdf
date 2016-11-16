@@ -142,8 +142,8 @@
 	</link>
 
 	<joint name="base_to_odom" type="fixed">
-		<parent link="base_link"/>
-		<child link="odom"/>
+		<parent link="odom"/>
+		<child link="base_link"/>
 		<origin xyz="0 0 0" rpy="0 0 0"/>
 	</joint>
 

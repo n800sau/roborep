@@ -23,6 +23,11 @@
 const int echoPin = 12; // Echo Pin
 const int trigPin = 11; // Trigger Pin
 
+const int bEchoPin = 22; // Echo Pin
+const int bTrigPin = 23; // Trigger Pin
+
+const int pwmPin = 46
+
 // encoder pins
 const int Eleft = 2;
 const int Eright = 3;
