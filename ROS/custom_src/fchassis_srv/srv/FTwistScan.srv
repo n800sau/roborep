@@ -1,4 +1,6 @@
 uint8 scan_id
+uint8 scan_attempts
 ---
 AngleRange[] ranges
+uint32 timeit
 

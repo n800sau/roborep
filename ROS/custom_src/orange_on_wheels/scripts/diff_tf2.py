@@ -161,8 +161,8 @@ class DiffTf:
             # publish the odom information
             t = TransformStamped()
             t.header.stamp = rospy.Time.now()
-            t.header.frame_id = self.base_frame_id
-            t.child_frame_id = self.odom_frame_id
+            t.header.frame_id = self.odom_frame_id
+            t.child_frame_id = self.base_frame_id
             t.transform.translation.x = self.x
             t.transform.translation.y = self.y
             t.transform.translation.z = 0.0
