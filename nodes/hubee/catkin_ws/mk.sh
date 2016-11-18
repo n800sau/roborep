@@ -1,4 +1,4 @@
 #!/bin/bash
 
-catkin_make &>make.log
+catkin_make install &>make.log
 echo $?
