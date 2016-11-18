@@ -30,7 +30,7 @@ void evStop(FuseID fuse, int& userData)
 	stop();
 }
 
-void evLeftRight(FuseID fuse, int& pwr)
+void evBackLeftRight(FuseID fuse, int& pwr)
 {
 	Serial.print(millis());
 	if(random(1)) {
@@ -66,13 +66,26 @@ void evChangePower(FuseID fuse, int& userData)
 	}
 }
 
-void evSonar(FuseID fuse, int& userData)
+// to stop movement in case of obstacle
+void evHeadSonar(FuseID fuse, int& userData)
 {
-	float distance = getRange_Ultrasound();
-	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd and (lPower > 0 || rPower > 0)) {
+	float distance = getRange_HeadUltrasound();
+	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd && (lPower > 0 || rPower > 0) && sonarAngle == 90) {
 //		Serial.print(millis());
 //		Serial.println("Too close");
-		EventFuse::newFuse((lPower+rPower)/2, 500, 1, evLeftRight);
+		EventFuse::newFuse((lPower+rPower)/2, 500, 1, evBackLeftRight);
+//		stop();
+	}
+}
+
+// to stop movement in case of obstacle
+void evBackSonar(FuseID fuse, int& userData)
+{
+	float distance = getRange_BackUltrasound();
+	if(distance > 0 && distance < MAX_STOP_DIST && !lFwd && !rFwd && (lPower > 0 || rPower > 0)) {
+//		Serial.print(millis());
+//		Serial.println("Too close");
+		EventFuse::newFuse(500, 1, evStop);
 //		stop();
 	}
 }

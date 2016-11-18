@@ -1,5 +1,6 @@
 #include "orange_on_wheels_ros.h"
 
+#include <limits.h>
 #include <ros.h>
 
 #include <ros/time.h>
@@ -9,7 +10,9 @@
 #include <sensor_msgs/MagneticField.h>
 #include <nav_msgs/Odometry.h>
 #include <fchassis_srv/FCommand.h>
+#include <fchassis_srv/FTwistScan.h>
 #include <fchassis_srv/mstate.h>
+#include <fchassis_srv/AngleRange.h>
 
 #include "angle.h"
 #include <voltage.h>
@@ -22,16 +25,19 @@
 #include "l3g4200d_proc.h"
 #include "bmp085_proc.h"
 
-const int echoPin = 12; // Echo Pin
-const int trigPin = 11; // Trigger Pin
+const int MIN_RANGE = 0.0;
+const int MAX_RANGE = 2.0;
+
+const int headEchoPin = 12; // Echo Pin
+const int headTrigPin = 11; // Trigger Pin
 
 int sonarAngle = 90;
 const int SONAR_INCR = 5;
 int sonarIncr = SONAR_INCR;
 const int SONAR_CENTER_OFFSET = 10;
 
-const int bEchoPin = 22; // Echo Pin
-const int bTrigPin = 23; // Trigger Pin
+const int backEchoPin = 22; // Echo Pin
+const int backTrigPin = 23; // Trigger Pin
 
 const int headServoPin = 46;
 
@@ -90,9 +96,12 @@ char current_command[20];
 Servo head_servo;
 
 using fchassis_srv::FCommand;
+using fchassis_srv::FTwistScan;
+using fchassis_srv::AngleRange;
 ros::NodeHandle  nh;
 
 sensor_msgs::Range range_msg;
+sensor_msgs::Range back_range_msg;
 sensor_msgs::Imu imu_msg;
 sensor_msgs::MagneticField mf_msg;
 fchassis_srv::mstate state_msg;
@@ -100,6 +109,7 @@ std_msgs::Int16 lwheel_msg;
 std_msgs::Int16 rwheel_msg;
 
 ros::Publisher pub_range( "/fchassis/sonar", &range_msg);
+ros::Publisher pub_back_range( "/fchassis/back_sonar", &back_range_msg);
 ros::Publisher pub_imu( "/fchassis/imu", &imu_msg);
 ros::Publisher pub_mf( "/fchassis/mf", &mf_msg);
 ros::Publisher pub_lwheel("/fchassis/lwheel", &lwheel_msg);
@@ -152,9 +162,42 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res) {
 	}
 }
 
-ros::ServiceServer<FCommand::Request, FCommand::Response> server("exec_command",&command_callback);
+void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response & res)
+{
+	const int start_angle = max(10, SONAR_CENTER_OFFSET);
+	const int end_angle = min(170, 180 + SONAR_CENTER_OFFSET);
+	const int step = 5;
+	const int n_ranges = (end_angle - start_angle) / step;
+	const int step_wait_pause = 50;
+	static AngleRange ranges[n_ranges];
+	res.ranges_length = n_ranges;
+	res.ranges = ranges;
+	unsigned long start_ms = millis();
+	head_servo.attach(headServoPin);
+	int i;
+	for(i=0; i<res.ranges_length; i++) {
+		AngleRange r;
+		r.angle = start_angle + i * step;
+		head_servo.write(r.angle + SONAR_CENTER_OFFSET);
+		delay(step_wait_pause);
+		r.range = getRange_HeadUltrasound(req.scan_attempts);
+		res.ranges[i] = r;
+	}
+	head_servo.write(sonarAngle);
+	unsigned long end_ms = millis();
+	if(start_ms < end_ms) {
+		res.timeit = (start_ms < end_ms) ? end_ms - start_ms : ULONG_MAX - start_ms + end_ms;
+	}
+	delay(200);
+	head_servo.detach();
+}
+
+
+ros::ServiceServer<FCommand::Request, FCommand::Response> exec_command("exec_command",&command_callback);
+ros::ServiceServer<FTwistScan::Request, FTwistScan::Response> twist_scan("twist_scan",&twist_scan_callback);
 
 const char range_frameid[] = "/ultrasound";
+const char back_range_frameid[] = "/back_ultrasound";
 const char imu_frameid[] = "/imu";
 const char base_frameid[] = "/base_link";
 
@@ -184,8 +227,10 @@ void rIntCB()
 
 void setup()
 {
-	pinMode(trigPin, OUTPUT);
-	pinMode(echoPin, INPUT);
+	pinMode(headTrigPin, OUTPUT);
+	pinMode(headEchoPin, INPUT);
+	pinMode(backTrigPin, OUTPUT);
+	pinMode(backEchoPin, INPUT);
 
 	pinMode(LEFT_MOTOR_1, OUTPUT);
 	pinMode(LEFT_MOTOR_2, OUTPUT);
@@ -210,25 +255,34 @@ void setup()
 	attachInterrupt(digitalPinToInterrupt(Eleft), rIntCB, RISING);
 	attachInterrupt(digitalPinToInterrupt(Eright), lIntCB, RISING);
 
-	EventFuse::newFuse(100, INF_REPEAT, evSonar);
+	EventFuse::newFuse(100, INF_REPEAT, evHeadSonar);
+	EventFuse::newFuse(100, INF_REPEAT, evBackSonar);
 	EventFuse::newFuse(100, INF_REPEAT, evFixDir);
 
 //	EventFuse::newFuse(100, INF_REPEAT, evMoveSonar);
 
 	nh.initNode();
 	nh.advertise(pub_range);
+	nh.advertise(pub_back_range);
 	nh.advertise(pub_imu);
 	nh.advertise(pub_mf);
 	nh.advertise(pub_state);
 	nh.advertise(pub_lwheel);
 	nh.advertise(pub_rwheel);
-	nh.advertiseService(server);
+	nh.advertiseService(exec_command);
+	nh.advertiseService(twist_scan);
 
 	range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
 	range_msg.header.frame_id = range_frameid;
 	range_msg.field_of_view = 0.1; // fake
-	range_msg.min_range = 0.0;
-	range_msg.max_range = 2.0;
+	range_msg.min_range = MIN_RANGE;
+	range_msg.max_range = MAX_RANGE;
+
+	back_range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
+	back_range_msg.header.frame_id = back_range_frameid;
+	back_range_msg.field_of_view = 0.1; // fake
+	back_range_msg.min_range = MIN_RANGE;
+	back_range_msg.max_range = MAX_RANGE;
 
 	imu_msg.header.frame_id = imu_frameid;
 	imu_msg.orientation_covariance[0] = -1;
@@ -258,9 +312,12 @@ void loop()
 	unsigned long m = millis();
 	if ( m >= msg_time ){
 		ros::Time now = nh.now();
-		range_msg.range = getRange_Ultrasound();
+		range_msg.range = getRange_HeadUltrasound();
 		range_msg.header.stamp = now;
 		pub_range.publish(&range_msg);
+		back_range_msg.range = getRange_BackUltrasound();
+		back_range_msg.header.stamp = now;
+		pub_range.publish(&back_range_msg);
 		process_compass();
 		mf_msg.header.stamp = now;
 		mf_msg.magnetic_field.x = compass_x;
