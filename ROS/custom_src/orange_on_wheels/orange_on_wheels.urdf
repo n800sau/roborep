@@ -89,7 +89,7 @@
 			<geometry>
 				<box size="0.015 0.045 0.015"/>
 			</geometry>
-			<origin rpy="0 0 0" xyz="-0.022 0 0.007"/>
+			<origin rpy="3.14 0 0" xyz="-0.022 0 0.007"/>
 			<material name="green">
 				<color rgba="0 1 0 1"/>
 			</material>
