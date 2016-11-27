@@ -7,12 +7,15 @@
 #include <std_msgs/Int16.h>
 #include <sensor_msgs/Range.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/MagneticField.h>
 #include <nav_msgs/Odometry.h>
 #include <fchassis_srv/FCommand.h>
 #include <fchassis_srv/FTwistScan.h>
 #include <fchassis_srv/mstate.h>
 #include <fchassis_srv/AngleRange.h>
+#include <fchassis_srv/FScannerSwitch.h>
+#include <stuck_detector/Stuck.h>
 
 #include "angle.h"
 #include <voltage.h>
@@ -93,17 +96,24 @@ bool moving_straight = false;
 int fwd_heading;
 char current_command[20];
 
+unsigned long last_laser_scan_ms = 0;
+bool laser_scan_allowed = false;
+int laser_scan_attempts = 2;
+
 Servo head_servo;
 
 using fchassis_srv::FCommand;
 using fchassis_srv::FTwistScan;
+using fchassis_srv::FScannerSwitch;
 using fchassis_srv::AngleRange;
+using stuck_detector::Stuck;
 ros::NodeHandle  nh;
 
 sensor_msgs::Range range_msg;
 sensor_msgs::Range back_range_msg;
 sensor_msgs::Imu imu_msg;
 sensor_msgs::MagneticField mf_msg;
+sensor_msgs::LaserScan laser_scan_msg;
 fchassis_srv::mstate state_msg;
 std_msgs::Int16 lwheel_msg;
 std_msgs::Int16 rwheel_msg;
@@ -111,10 +121,21 @@ std_msgs::Int16 rwheel_msg;
 ros::Publisher pub_range( "/fchassis/sonar", &range_msg);
 ros::Publisher pub_back_range( "/fchassis/back_sonar", &back_range_msg);
 ros::Publisher pub_imu( "/fchassis/imu", &imu_msg);
+ros::Publisher pub_laser_scan( "/fchassis/laser_scan", &laser_scan_msg);
 ros::Publisher pub_mf( "/fchassis/mf", &mf_msg);
 ros::Publisher pub_lwheel("/fchassis/lwheel", &lwheel_msg);
 ros::Publisher pub_rwheel("/fchassis/rwheel", &rwheel_msg);
 ros::Publisher pub_state( "/fchassis/state", &state_msg);
+
+void stuckCb(const stuck_detector::Stuck &msg)
+{
+	if(msg.stuck) {
+		move2release(60, 60);
+		stop_after(10);
+	}
+}
+
+ros::Subscriber<stuck_detector::Stuck> sub_stuck("/fchassis/stuck", &stuckCb);
 
 void command_callback(const FCommand::Request & req, FCommand::Response & res) {
 	res.timeout = req.timeout;
@@ -149,7 +170,6 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res) {
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "move2release") == 0) {
 		strncpy(current_command, req.mcommand, sizeof(current_command));
-		full_stopped = false;
 		move2release(req.pwr, req.fwd);
 		stop_after(req.timeout);
 		res.reply = "ok";
@@ -168,7 +188,7 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	const int end_angle = min(170, 180 + SONAR_CENTER_OFFSET);
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
-	const int step_wait_pause = 50;
+	const int step_wait_pause = 30;
 	static AngleRange ranges[n_ranges];
 	res.ranges_length = n_ranges;
 	res.ranges = ranges;
@@ -192,9 +212,49 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	head_servo.detach();
 }
 
+void scanner_switch_callback(const FScannerSwitch::Request & req, FScannerSwitch::Response & res)
+{
+	laser_scan_attempts = req.scan_attempts;
+	laser_scan_allowed = req.scan_allowed;
+	res.scan_allowed = laser_scan_allowed;
+}
+
+void fill_laser_scan()
+{
+	const int start_angle = max(10, SONAR_CENTER_OFFSET);
+	const int end_angle = min(170, 180 + SONAR_CENTER_OFFSET);
+	const int step = 5;
+	const int n_ranges = (end_angle - start_angle) / step;
+	const int step_wait_pause = 30;
+	static float ranges[n_ranges];
+	unsigned long start_ms = millis();
+	laser_scan_msg.angle_min = -(end_angle - start_angle) / 2 * PI / 180;
+	laser_scan_msg.angle_max = (end_angle - start_angle) / 2 * PI / 180;
+	laser_scan_msg.angle_increment = step * PI / 180;
+	laser_scan_msg.time_increment = step_wait_pause / 1000.;
+	laser_scan_msg.scan_time = ((last_laser_scan_ms < start_ms) ? start_ms - last_laser_scan_ms : ULONG_MAX - last_laser_scan_ms + start_ms) / 1000.;
+	laser_scan_msg.range_min = MIN_RANGE;
+	laser_scan_msg.range_max = MAX_RANGE;
+	laser_scan_msg.ranges_length = n_ranges;
+	laser_scan_msg.ranges = ranges;
+	head_servo.attach(headServoPin);
+	int i;
+	for(i=0; i<n_ranges; i++) {
+		int angle = start_angle + i * step;
+		head_servo.write(angle + SONAR_CENTER_OFFSET);
+		delay(step_wait_pause);
+		laser_scan_msg.ranges[i] = getRange_HeadUltrasound(laser_scan_attempts);
+	}
+	head_servo.write(sonarAngle);
+	delay(200);
+	head_servo.detach();
+	last_laser_scan_ms = millis();
+}
+
 
 ros::ServiceServer<FCommand::Request, FCommand::Response> exec_command("exec_command",&command_callback);
 ros::ServiceServer<FTwistScan::Request, FTwistScan::Response> twist_scan("twist_scan",&twist_scan_callback);
+ros::ServiceServer<FScannerSwitch::Request, FScannerSwitch::Response> scanner_switch("scanner_switch",&scanner_switch_callback);
 
 const char range_frameid[] = "/ultrasound";
 const char back_range_frameid[] = "/back_ultrasound";
@@ -255,22 +315,19 @@ void setup()
 	attachInterrupt(digitalPinToInterrupt(Eleft), rIntCB, RISING);
 	attachInterrupt(digitalPinToInterrupt(Eright), lIntCB, RISING);
 
-	EventFuse::newFuse(100, INF_REPEAT, evHeadSonar);
-	EventFuse::newFuse(100, INF_REPEAT, evBackSonar);
-	EventFuse::newFuse(100, INF_REPEAT, evFixDir);
-
-//	EventFuse::newFuse(100, INF_REPEAT, evMoveSonar);
-
 	nh.initNode();
 	nh.advertise(pub_range);
 	nh.advertise(pub_back_range);
 	nh.advertise(pub_imu);
+	nh.advertise(pub_laser_scan);
 	nh.advertise(pub_mf);
 	nh.advertise(pub_state);
 	nh.advertise(pub_lwheel);
 	nh.advertise(pub_rwheel);
 	nh.advertiseService(exec_command);
 	nh.advertiseService(twist_scan);
+	nh.advertiseService(scanner_switch);
+	nh.subscribe(sub_stuck);
 
 	range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
 	range_msg.header.frame_id = range_frameid;
@@ -295,9 +352,19 @@ void setup()
 	imu_msg.linear_acceleration_covariance[4] = 0.1;
 	imu_msg.linear_acceleration_covariance[8] = 0.1;
 
+	laser_scan_msg.header.frame_id = range_frameid;
+
 	mf_msg.header.frame_id = imu_frameid;
 
 	state_msg.header.frame_id = base_frameid;
+
+	EventFuse::newFuse(100, INF_REPEAT, evHeadSonar);
+	EventFuse::newFuse(100, INF_REPEAT, evBackSonar);
+	EventFuse::newFuse(100, INF_REPEAT, evFixDir);
+
+//	EventFuse::newFuse(100, INF_REPEAT, evMoveSonar);
+
+	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
 }
 
 

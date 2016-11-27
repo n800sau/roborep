@@ -102,3 +102,11 @@ void evMoveSonar(FuseID fuse, int &userData)
 	head_servo.write(sonarAngle);
 //	head_servo.detach();
 }
+
+void evLaserScan(FuseID fuse, int &userData)
+{
+	if(laser_scan_allowed) {
+		fill_laser_scan();
+		pub_laser_scan.publish(&laser_scan_msg);
+	}
+}
