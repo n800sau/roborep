@@ -7,5 +7,7 @@ void stop_after(int timeout);
 void move2release(int pwr, bool fwd);
 void straight(int pwr, bool fwd);
 void resetCounters();
+float getRange_HeadUltrasound(int attempts=2);
+float getRange_BackUltrasound(int attempts=2);
 
 
