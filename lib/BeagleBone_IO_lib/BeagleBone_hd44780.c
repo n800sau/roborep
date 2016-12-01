@@ -72,7 +72,7 @@ void initialize_Screen(struct gpioID enabled_gpio[],const int selectedPins[])
 	pinMode_multiple(enabled_gpio,selectedPins,nbr_selectedPins,"out");
 
 	//E RS DB4 DB5 DB6 DB7 = 001100 (2) = 12 (10)
-    data_to_write=12;    
+    data_to_write=12;
     digitalWrite_multiple(enabled_gpio,6,data_to_write);  
 	pulsePin(enabled_gpio,data_to_write,6,5,delay);
 	delayms(delay);

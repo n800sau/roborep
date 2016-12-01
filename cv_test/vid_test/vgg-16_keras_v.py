@@ -8,12 +8,16 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2
 from keras.optimizers import SGD
 import cv2, numpy as np
 
-VID_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/bike/FILE0001.MOV')
+VID_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/bike/FILE0002.MOV')
 MODEL_PATH = 'vgg-16_model.json'
-WEIGHTS_PATH = '../../datasets/vgg16/vgg16_weights.h5'
-SYNSETS_PATH = '../../datasets/vgg16/synsets.txt'
-SYNSET_WORDS_PATH = '../../datasets/vgg16/synset_words.txt'
-fps = 2
+WEIGHTS_PATH = '../../../datasets/vgg16/vgg16_weights.h5'
+SYNSETS_PATH = '../../../datasets/vgg16/synsets.txt'
+SYNSET_WORDS_PATH = '../../../datasets/vgg16/synset_words.txt'
+FPS = 2
+FRAME_WIDTH = 320
+FRAME_HEIGHT = 240
+
+OUTPUT_PATH = os.path.splitext(os.path.basename(VID_PATH))[0] + '.avi'
 
 def dbprint(*args):
 	for el in args:
@@ -93,9 +97,13 @@ if __name__ == "__main__":
 	dbprint('Loaded in %s:%s' % (tdiff // 60, tdiff % 60))
 
 	camera = cv2.VideoCapture(VID_PATH)
-	camera.set(cv2.cv.CV_CAP_PROP_FPS, fps)
-	camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 320)
-	camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
+	camera.set(cv2.cv.CV_CAP_PROP_FPS, FPS)
+
+	# Define the codec and create VideoWriter object
+	fourcc = cv2.cv.CV_FOURCC('X', 'V', 'I', 'D')
+	sz = (FRAME_WIDTH, FRAME_HEIGHT)
+	output = cv2.VideoWriter(OUTPUT_PATH, fourcc, FPS, sz)
+
 	i = 0
 	while True:
 
@@ -103,7 +111,7 @@ if __name__ == "__main__":
 		(grabbed, image) = camera.read()
 
 		if not grabbed:
-			continue
+			break
 
 		t = time.time()
 
@@ -119,10 +127,14 @@ if __name__ == "__main__":
 		pos = np.argmax(out)
 		aword = word_names[words[pos]]
 		tdiff = int(time.time() - t)
-		cv2.putText(image, aword, (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-#		cv2.imwrite(os.path.join('vgg-16', os.path.basename(fname)), imutils.resize(image, width=360))
+		image = cv2.resize(image, (FRAME_WIDTH, FRAME_HEIGHT))
+		cv2.putText(image, aword, (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 #		dbprint(os.path.basename(fname), aword, ('%s:%s' % (tdiff // 60, tdiff % 60)))
 		dbprint(i, aword, ('%s:%s' % (tdiff // 60, tdiff % 60)))
+		output.write(image)
 		i += 1
 
 	dbprint('Finished')
+
+camera.release()
+output.release()

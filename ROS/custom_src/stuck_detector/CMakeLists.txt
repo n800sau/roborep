@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(orange_on_wheels)
+project(stuck_detector)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -8,8 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   geometry_msgs
-  nav_msgs
-  tf2_ros
+  message_generation
+  opencv_apps
 )
 
 ## System dependencies are found with CMake's conventions
@@ -46,13 +46,15 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-#add_message_files(
-#   FILES
-#)
+add_message_files(
+   FILES
+   Stuck.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
+#   Service1.srv
 #   Service2.srv
 # )
 
@@ -64,11 +66,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-#   geometry_msgs
-#)
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+   geometry_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -103,7 +105,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES fchassis
 #  CATKIN_DEPENDS rospy std_msgs
-#  DEPENDS message_runtime
+  DEPENDS message_runtime
 )
 
 ###########
@@ -149,7 +151,7 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
-   scripts/diff_tf2.py
+   scripts/stuck_detect.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -186,3 +188,4 @@ install(PROGRAMS
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+

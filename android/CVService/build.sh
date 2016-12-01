@@ -1,6 +1,6 @@
-ant debug &>build.log
+ant debug &>build.log && \
+cp bin/CVService-debug.apk ~/public_html/android
 echo $?
-#&& sudo cp -v bin/RoboSensorView-debug.apk /var/www/android
 #ant debug && adb install -r bin/RoboSensorView-debug.apk
 
 #ant release
