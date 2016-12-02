@@ -1,7 +1,6 @@
 #include "orange_on_wheels_ros.h"
 
 #include <limits.h>
-#include <ros.h>
 
 #include <ros/time.h>
 #include <std_msgs/Int16.h>
@@ -9,12 +8,14 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/MagneticField.h>
+#include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <fchassis_srv/FCommand.h>
 #include <fchassis_srv/FTwistScan.h>
 #include <fchassis_srv/mstate.h>
 #include <fchassis_srv/AngleRange.h>
 #include <fchassis_srv/FScannerSwitch.h>
+#include <fchassis_srv/FScannerSetDirection.h>
 #include <stuck_detector/Stuck.h>
 
 #include "angle.h"
@@ -28,56 +29,10 @@
 #include "l3g4200d_proc.h"
 #include "bmp085_proc.h"
 
-const int MIN_RANGE = 0.0;
-const int MAX_RANGE = 2.0;
-
-const int headEchoPin = 12; // Echo Pin
-const int headTrigPin = 11; // Trigger Pin
 
 int sonarAngle = 90;
-const int SONAR_INCR = 5;
 int sonarIncr = SONAR_INCR;
-const int SONAR_CENTER_OFFSET = 10;
 
-const int backEchoPin = 22; // Echo Pin
-const int backTrigPin = 23; // Trigger Pin
-
-const int headServoPin = 46;
-
-// encoder pins
-const int Eleft = 2;
-const int Eright = 3;
-
-// motor pins
-const int LEFT_MOTOR_1 = 10;
-const int LEFT_MOTOR_2 = 9;
-
-const int RIGHT_MOTOR_1 = 6;
-const int RIGHT_MOTOR_2 = 5;
-
-const float COUNT_PER_REV = 20.0;
-const float WHEEL_DIAMETER = 0.065;
-const float BASELINE = 0.14;
-const float ENC_STEP = WHEEL_DIAMETER * PI / COUNT_PER_REV;
-
-const int MIN_PWM = 10;
-const int MAX_PWM = 255;
-
-#define DEFAULT_PWR 50
-
-// 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
-//
-// The threshold value I'm using limits it to 100 half pulses a second
-//
-// My encoder has 12 pulses per 360deg rotation and the specs say
-// it is rated at a maximum of 100rpm.
-//
-// This threshold will permit my encoder to reach 250rpm so if it was connected
-// to a motor instead of a manually operated knob I
-// might possibly need to adjust it to 25000. However, this threshold
-// value is working perfectly for my situation
-//
-const unsigned long threshold = 10000;
 volatile unsigned long intLtime = 0;
 volatile unsigned long intRtime = 0;
 volatile int lCounter = 0;
@@ -96,18 +51,26 @@ bool moving_straight = false;
 int fwd_heading;
 char current_command[20];
 
+// cmd_vel vars
+volatile bool cmd_vel_mode = false;
+
 unsigned long last_laser_scan_ms = 0;
 bool laser_scan_allowed = false;
 int laser_scan_attempts = 2;
 
 Servo head_servo;
+unsigned long last_head_servo_move_ts = 0;
 
 using fchassis_srv::FCommand;
 using fchassis_srv::FTwistScan;
 using fchassis_srv::FScannerSwitch;
+using fchassis_srv::FScannerSetDirection;
 using fchassis_srv::AngleRange;
 using stuck_detector::Stuck;
 ros::NodeHandle  nh;
+
+const int SONAR_ANGLE_MIN = 10;
+const int SONAR_ANGLE_MAX = 170;
 
 sensor_msgs::Range range_msg;
 sensor_msgs::Range back_range_msg;
@@ -137,7 +100,39 @@ void stuckCb(const stuck_detector::Stuck &msg)
 
 ros::Subscriber<stuck_detector::Stuck> sub_stuck("/fchassis/stuck", &stuckCb);
 
-void command_callback(const FCommand::Request & req, FCommand::Response & res) {
+void cmd_velCb(const geometry_msgs::Twist &msg)
+{
+	float left, right;
+	float x = msg.linear.x; // m/s
+	float th = msg.angular.z; // rad/s
+	nh.loginfo(("l X:" + String(x) + ", a Z:" + String(th)).c_str());
+	cmd_vel_mode = true;
+	full_stopped = false;
+	if(x == 0) {
+		// Turn in place
+		right = th * WHEEL_TRACK  * GEAR_REDUCTION / 2.0;
+		left = -right;
+	} else if(th == 0) {
+		// Pure forward/backward motion
+		left = right = x;
+	} else {
+		// Rotation about a point in space
+		left = x - th * WHEEL_TRACK * GEAR_REDUCTION / 2;
+		right = x + th * WHEEL_TRACK  * GEAR_REDUCTION / 2.0;
+	}
+//		nh.loginfo(("Left:" + String(left, 2)).c_str());
+//		nh.loginfo(("Right:" + String(right, 2)).c_str());
+	leftPID.TargetTicksPerFrame = round(left * TICKS_PER_METER / PID_RATE);
+	rightPID.TargetTicksPerFrame = round(right * TICKS_PER_METER / PID_RATE);
+//		nh.loginfo(("Left ticks:" + String(leftPID.TargetTicksPerFrame)).c_str());
+//		nh.loginfo(("Right ticks:" + String(rightPID.TargetTicksPerFrame)).c_str());
+}
+
+ros::Subscriber<geometry_msgs::Twist> sub_cmd_vel("/fchassis/cmd_vel", &cmd_velCb);
+
+void command_callback(const FCommand::Request & req, FCommand::Response & res)
+{
+	nh.loginfo(("Cmd:" + String(req.mcommand)).c_str());
 	res.timeout = req.timeout;
 	if(strcmp(req.mcommand, "mstop") == 0) {
 		strncpy(current_command, req.mcommand, sizeof(current_command));
@@ -184,8 +179,8 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res) {
 
 void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response & res)
 {
-	const int start_angle = max(10, SONAR_CENTER_OFFSET);
-	const int end_angle = min(170, 180 + SONAR_CENTER_OFFSET);
+	const int start_angle = max(SONAR_ANGLE_MIN, SONAR_CENTER_OFFSET);
+	const int end_angle = min(SONAR_ANGLE_MAX, 180 + SONAR_CENTER_OFFSET);
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
 	const int step_wait_pause = 30;
@@ -193,23 +188,20 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	res.ranges_length = n_ranges;
 	res.ranges = ranges;
 	unsigned long start_ms = millis();
-	head_servo.attach(headServoPin);
 	int i;
 	for(i=0; i<res.ranges_length; i++) {
 		AngleRange r;
 		r.angle = start_angle + i * step;
-		head_servo.write(r.angle + SONAR_CENTER_OFFSET);
+		head_servo_move_to(r.angle + SONAR_CENTER_OFFSET);
 		delay(step_wait_pause);
 		r.range = getRange_HeadUltrasound(req.scan_attempts);
 		res.ranges[i] = r;
 	}
-	head_servo.write(sonarAngle);
+	head_servo_move_to(sonarAngle);
 	unsigned long end_ms = millis();
 	if(start_ms < end_ms) {
 		res.timeit = (start_ms < end_ms) ? end_ms - start_ms : ULONG_MAX - start_ms + end_ms;
 	}
-	delay(200);
-	head_servo.detach();
 }
 
 void scanner_switch_callback(const FScannerSwitch::Request & req, FScannerSwitch::Response & res)
@@ -217,6 +209,12 @@ void scanner_switch_callback(const FScannerSwitch::Request & req, FScannerSwitch
 	laser_scan_attempts = req.scan_attempts;
 	laser_scan_allowed = req.scan_allowed;
 	res.scan_allowed = laser_scan_allowed;
+}
+
+void scanner_set_direction_callback(const FScannerSetDirection::Request & req, FScannerSetDirection::Response & res)
+{
+	sonarAngle = req.direction + SONAR_ANGLE_MIN + (SONAR_ANGLE_MAX - SONAR_ANGLE_MIN) / 2;
+	head_servo_move_to(sonarAngle);
 }
 
 void fill_laser_scan()
@@ -241,20 +239,19 @@ void fill_laser_scan()
 	int i;
 	for(i=0; i<n_ranges; i++) {
 		int angle = start_angle + i * step;
-		head_servo.write(angle + SONAR_CENTER_OFFSET);
+		head_servo_move_to(angle + SONAR_CENTER_OFFSET);
 		delay(step_wait_pause);
 		laser_scan_msg.ranges[i] = getRange_HeadUltrasound(laser_scan_attempts);
 	}
-	head_servo.write(sonarAngle);
-	delay(200);
-	head_servo.detach();
+	head_servo_move_to(sonarAngle);
 	last_laser_scan_ms = millis();
 }
 
 
-ros::ServiceServer<FCommand::Request, FCommand::Response> exec_command("exec_command",&command_callback);
-ros::ServiceServer<FTwistScan::Request, FTwistScan::Response> twist_scan("twist_scan",&twist_scan_callback);
-ros::ServiceServer<FScannerSwitch::Request, FScannerSwitch::Response> scanner_switch("scanner_switch",&scanner_switch_callback);
+ros::ServiceServer<FCommand::Request, FCommand::Response> exec_command("/fchassis/exec_command",&command_callback);
+ros::ServiceServer<FTwistScan::Request, FTwistScan::Response> twist_scan("/fchassis/twist_scan",&twist_scan_callback);
+ros::ServiceServer<FScannerSwitch::Request, FScannerSwitch::Response> scanner_switch("/fchassis/scanner_switch",&scanner_switch_callback);
+ros::ServiceServer<FScannerSetDirection::Request, FScannerSetDirection::Response> scanner_set_direction("/fchassis/scanner_set_direction",&scanner_set_direction_callback);
 
 const char range_frameid[] = "/ultrasound";
 const char back_range_frameid[] = "/back_ultrasound";
@@ -285,6 +282,17 @@ void rIntCB()
 	}
 }
 
+void head_servo_move_to(int pos)
+{
+	if(!head_servo.attached()) {
+		head_servo.attach(headServoPin);
+	}
+	if(pos < SONAR_ANGLE_MIN) pos = SONAR_ANGLE_MIN;
+	if(pos > SONAR_ANGLE_MAX) pos = SONAR_ANGLE_MAX;
+	head_servo.write(pos + SONAR_CENTER_OFFSET);
+	last_head_servo_move_ts = millis();
+}
+
 void setup()
 {
 	pinMode(headTrigPin, OUTPUT);
@@ -303,9 +311,7 @@ void setup()
 	digitalWrite(Eleft, INPUT_PULLUP);
 	digitalWrite(Eright, INPUT_PULLUP);
 
-	head_servo.attach(headServoPin);
-	head_servo.write(90 + SONAR_CENTER_OFFSET);
-//	head_servo.detach();
+	head_servo_move_to(90 + SONAR_CENTER_OFFSET);
 
 	setup_compass();
 	setup_accel();
@@ -327,7 +333,9 @@ void setup()
 	nh.advertiseService(exec_command);
 	nh.advertiseService(twist_scan);
 	nh.advertiseService(scanner_switch);
+	nh.advertiseService(scanner_set_direction);
 	nh.subscribe(sub_stuck);
+	nh.subscribe(sub_cmd_vel);
 
 	range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
 	range_msg.header.frame_id = range_frameid;
@@ -365,6 +373,8 @@ void setup()
 //	EventFuse::newFuse(100, INF_REPEAT, evMoveSonar);
 
 	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
+	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
+	EventFuse::newFuse(2000, INF_REPEAT, evHeadServoDetach);
 }
 
 

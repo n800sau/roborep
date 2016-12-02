@@ -20,19 +20,19 @@ void evFixDir(FuseID fuse, int& data)
 void evFullStop(FuseID fuse, int& userData)
 {
 	stop(true);
-	Serial.print(millis());
-	Serial.println("Full stop");
+//	Serial.print(millis());
+//	Serial.println("Full stop");
 }
 
 void evStop(FuseID fuse, int& userData)
 {
-	Serial.print(millis());
+//	Serial.print(millis());
 	stop();
 }
 
 void evBackLeftRight(FuseID fuse, int& pwr)
 {
-	Serial.print(millis());
+//	Serial.print(millis());
 	if(random(1)) {
 		setLeftMotor(pwr, false);
 		setRightMotor(pwr, true);
@@ -98,9 +98,7 @@ void evMoveSonar(FuseID fuse, int &userData)
 	} else if(sonarAngle < 20) {
 		sonarIncr = SONAR_INCR;
 	}
-	head_servo.attach(headServoPin);
-	head_servo.write(sonarAngle);
-//	head_servo.detach();
+	head_servo_move_to(sonarAngle);
 }
 
 void evLaserScan(FuseID fuse, int &userData)
@@ -110,3 +108,18 @@ void evLaserScan(FuseID fuse, int &userData)
 		pub_laser_scan.publish(&laser_scan_msg);
 	}
 }
+
+void evPIDupdate(FuseID fuse, int &userData)
+{
+	if(cmd_vel_mode) {
+		updatePID();
+	}
+}
+
+void evHeadServoDetach(FuseID fuse, int& userData)
+{
+	if(millis() - last_head_servo_move_ts > 1000 && head_servo.attached()) {
+		head_servo.detach();
+	}
+}
+
