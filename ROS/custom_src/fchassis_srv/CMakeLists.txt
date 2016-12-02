@@ -56,6 +56,8 @@ add_message_files(
    FILES
    FCommand.srv
    FTwistScan.srv
+   FScannerSwitch.srv
+   FScannerSetDirection.srv
  )
 
 ## Generate actions in the 'action' folder
