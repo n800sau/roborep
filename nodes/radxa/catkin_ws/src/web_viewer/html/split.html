@@ -3,11 +3,14 @@
 <head>
 <meta charset="utf-8" />
 
+<script type="text/javascript" src="http://cdn.robotwebtools.org/threejs/current/three.js"></script>
 <script type="text/javascript" src="http://cdn.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
 <script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
 <script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
 <script type="text/javascript" src="http://cdn.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
-
+<!-- 
+<script type="text/javascript" src="http://cdn.robotwebtools.org/ros3djs/current/ros3d.js"></script>
+-->
 
 <script type="text/javascript" type="text/javascript">
 	// Connecting to ROS
@@ -36,25 +39,41 @@
 
 		var op_listener = new ROSLIB.Topic({
 			ros : ros,
-			name : '/opcplus/image_raw/compressed',
+//			name : '/camera/depth/points',
+			name : '/camera/ir/image/compressed',
+//			name : '/right/image_raw/compressed',
+//			name : '/right/image_rect_color/compressed',
+// not compressed does not work
+//			messageType : 'sensor_msgs/Image'
+//			name : '/opcplus/image_raw/compressed',
 			messageType : 'sensor_msgs/CompressedImage'
+//			messageType : 'sensor_msgs/PointCloud2'
 		});
 
 		var ow_listener = new ROSLIB.Topic({
 			ros : ros,
-			name : '/no/ow_camera/image_raw/compressed',
-			messageType : 'sensor_msgs/CompressedImage'
-		});
-
-		var sm_listener = new ROSLIB.Topic({
-			ros : ros,
-			name : '/phase_corr/image/compressed',
+			name : '/camera/rgb/image_raw/compressed',
+//			name : '/left/image_rect_color/compressed',
+//			name : '/left/image_raw',
+//			name : '/ow_camera/image_raw/compressed',
+//			messageType : 'sensor_msgs/Image'
 			messageType : 'sensor_msgs/CompressedImage'
 		});
 
 		var dn_listener = new ROSLIB.Topic({
 			ros : ros,
+//			name: '/camera/depth_registered/hw_registered/image_rect_raw/compressed',
 			name : '/dn_object_detect/debug_view/compressed',
+			messageType : 'sensor_msgs/CompressedImage'
+		});
+
+		var sm_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/camera/depth/image_raw/compressed',
+//			messageType : 'sensor_msgs/Image'
+			name : '/disparity',
+//			messageType : 'stereo_msgs/DisparityImage'
+//			name : '/phase_corr/image/compressed',
 			messageType : 'sensor_msgs/CompressedImage'
 		});
 
@@ -65,21 +84,54 @@
 		});
 
 		// Create the main viewer.
-		var viewer = new ROS2D.Viewer({
+		var viewer2d = new ROS2D.Viewer({
 			divID : 'map',
 			width : 100,
 			height : 100
 		});
 
+		// Setup Kinect DepthCloud stream
+//		depthCloud = new ROS3D.DepthCloud({
+//			url : 'http://'+window.location.hostname + ':9999/streams/depthcloud_encoded.webm',
+//			f : 525.0
+//		});
+//		depthCloud.startStream();
+
+//		// Create the main viewer.
+//		var viewer3d = new ROS3D.Viewer({
+//			divID : '3Dviewer',
+//			width : 100,
+//			height : 100,
+//			antialias : true
+//		})
+
+		// Setup a client to listen to TFs.
+		var tfClient = new ROSLIB.TFClient({
+			ros : ros,
+			angularThres : 0.01,
+			transThres : 0.01,
+			rate : 3.0,
+			fixedFrame : '/camera_link'
+		});
+
+		// Create Kinect scene node
+//		var kinectNode = new ROS3D.SceneNode({
+//			rameID : '/camera_rgb_optical_frame',
+//			fClient : tfClient,
+//			object : depthCloud
+//		});
+//		viewer3d.scene.add(kinectNode);
+
 		// Setup the map client.
 		var gridClient = new ROS2D.OccupancyGridClient({
 			ros : ros,
-			rootObject : viewer.scene
+			topic : '/rtabmap/grid_map',
+			rootObject : viewer2d.scene
 		});
 
 		// Scale the canvas to fit to the map
 		gridClient.on('change', function(){
-			viewer.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
+			viewer2d.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
 		});
 
 		var go_on = false;
@@ -169,6 +221,7 @@
 	<br/>
 
 	<div id="map"></div>
+	<div id="3Dviewer"></div>
 
 </body>
 </html>
