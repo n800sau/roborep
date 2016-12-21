@@ -1,3 +1,11 @@
+const unsigned long IR_VOL_UP = 0xfdb04f;
+const unsigned long IR_VOL_DOWN = 0xfd8877;
+const unsigned long IR_UP = 0xfd609f;
+const unsigned long IR_DOWN = 0xfd6897;
+const unsigned long IR_LEFT = 0xfd5aa5;
+const unsigned long IR_RIGHT = 0xfdd827;
+const unsigned long IR_OK = 0xfd58a7;
+
 // straight move deviation fix
 void evFixDir(FuseID fuse, int& data)
 {
@@ -120,6 +128,19 @@ void evHeadServoDetach(FuseID fuse, int& userData)
 {
 	if(millis() - last_head_servo_move_ts > 1000 && head_servo.attached()) {
 		head_servo.detach();
+	}
+}
+
+void evIR(FuseID fuse, int &userData)
+{
+	static decode_results results;
+	if(irrecv.decode(&results)) {
+		if(results.decode_type == NEC) {
+			if(results.value == IR_OK) {
+				stop(true);
+			}
+		}
+		irrecv.resume(); // Receive the next value
 	}
 }
 

@@ -21,6 +21,7 @@
 #include "angle.h"
 #include <voltage.h>
 #include <EventFuse.h>
+#include <IRremote.h>
 
 #include <Servo.h>
 
@@ -71,6 +72,9 @@ ros::NodeHandle  nh;
 
 const int SONAR_ANGLE_MIN = 10;
 const int SONAR_ANGLE_MAX = 170;
+
+const int IRRECV_PIN = 25;
+IRrecv irrecv(IRRECV_PIN);
 
 sensor_msgs::Range range_msg;
 sensor_msgs::Range back_range_msg;
@@ -124,8 +128,12 @@ void cmd_velCb(const geometry_msgs::Twist &msg)
 //		nh.loginfo(("Right:" + String(right, 2)).c_str());
 	leftPID.TargetTicksPerFrame = round(left * TICKS_PER_METER / PID_RATE);
 	rightPID.TargetTicksPerFrame = round(right * TICKS_PER_METER / PID_RATE);
+	setLeftMotor(30, left > 0);
+	setRightMotor(30, right > 0);
+	
 //		nh.loginfo(("Left ticks:" + String(leftPID.TargetTicksPerFrame)).c_str());
 //		nh.loginfo(("Right ticks:" + String(rightPID.TargetTicksPerFrame)).c_str());
+	stop_after(5);
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub_cmd_vel("/fchassis/cmd_vel", &cmd_velCb);
@@ -375,6 +383,9 @@ void setup()
 	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
 	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
 	EventFuse::newFuse(2000, INF_REPEAT, evHeadServoDetach);
+	irrecv.enableIRIn();
+	EventFuse::newFuse(200, INF_REPEAT, evIR);
+
 }
 
 

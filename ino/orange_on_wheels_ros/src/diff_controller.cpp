@@ -13,10 +13,14 @@
 SetPointInfo leftPID, rightPID;
 
 /* PID Parameters */
+// proportional
 int Kp = 20;
+// derivative
 int Kd = 12;
+// integral
 int Ki = 0;
-int Ko = 50;
+//int Ko = 50;
+int Ko = 40;
 
 /* PID routine to compute the next motor commands */
 void doPID(SetPointInfo * p)
@@ -81,8 +85,8 @@ void updatePID()
 		doPID(&rightPID);
 		doPID(&leftPID);
 
-//		nh.loginfo(("Left PID output:" + String(leftPID.output)).c_str());
-//		nh.loginfo(("Right PID output:" + String(rightPID.output)).c_str());
+		nh.loginfo(("L PID:" + String(leftPID.output)).c_str());
+		nh.loginfo(("R PID:" + String(rightPID.output)).c_str());
 
 		/* Set the motor speeds accordingly */
 		setLeftMotor(fabs(leftPID.output), leftPID.output >= 0);
