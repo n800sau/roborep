@@ -168,7 +168,7 @@ include_directories(
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
-   v3/camera.yaml
+   v3/ost.yaml
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/v3
 )
 

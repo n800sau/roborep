@@ -167,11 +167,27 @@ include_directories(
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(FILES
+   v3/left.yaml
+   v3/right.yaml
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/v3
+)
+
+install(FILES
+   v2/left.yaml
+   v2/right.yaml
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/v2
+)
+
+install(FILES
+   v4/left/ost.yaml
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/v4/left
+)
+
+install(FILES
+   v4/right/ost.yaml
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/v4/right
+)
 
 #############
 ## Testing ##
