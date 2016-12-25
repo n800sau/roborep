@@ -20,8 +20,8 @@
 
 		<param name="left/device" type="string" value="/dev/video0" />
 		<param name="right/device" type="string" value="/dev/video1" />
-		<param name="left/camera_info_url" type="string" value="package://custom_stereo_camera/v1/left.yaml" />
-		<param name="right/camera_info_url" type="string" value="package://custom_stereo_camera/v1/right.yaml" />
+		<param name="left/camera_info_url" type="string" value="package://custom_stereo_camera/v4/left/ost.yaml" />
+		<param name="right/camera_info_url" type="string" value="package://custom_stereo_camera/v4/right/ost.yaml" />
 	</node>
 </launch>
 
