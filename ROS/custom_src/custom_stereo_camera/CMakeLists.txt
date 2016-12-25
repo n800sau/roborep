@@ -189,6 +189,12 @@ install(FILES
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/v4/right
 )
 
+install(FILES
+   v5/left.yaml
+   v5/right.yaml
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/v5
+)
+
 #############
 ## Testing ##
 #############
