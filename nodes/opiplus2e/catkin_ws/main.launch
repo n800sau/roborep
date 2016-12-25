@@ -25,84 +25,13 @@
 
 		<param name="left/device" type="string" value="/dev/video0" />
 		<param name="right/device" type="string" value="/dev/video1" />
-
-		<param name="left/camera_info_url" type="string" value="package://custom_stereo_camera/v1/left.yaml" />
-		<param name="right/camera_info_url" type="string" value="package://custom_stereo_camera/v1/right.yaml" />
+		<param name="left/camera_info_url" type="string" value="package://custom_stereo_camera/v4/left/ost.yaml" />
+		<param name="right/camera_info_url" type="string" value="package://custom_stereo_camera/v4/right/ost.yaml" />
 	</node>
 
 	<node name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc">
 		<env name="ROS_NAMESPACE" value="/"/>
 	</node>
-
-
-   <!-- Choose visualization -->
-   <arg name="rviz" default="false" />
-   <arg name="rtabmapviz" default="false" />
-
-   <!-- Stereo Odometry -->
-   <node pkg="rtabmap_ros" type="stereo_odometry" name="stereo_odometry" output="screen">
-      <remap from="odom"                  to="/stereo_odometry"/>
-
-      <param name="frame_id" type="string" value="base_footprint"/>
-      <param name="odom_frame_id" type="string" value="odom"/>
-
-      <param name="Vis/Strategy" type="string" value="0"/> <!-- 0=BOW, 1=OpticalFlow -->
-      <param name="Vis/EstimationType" type="string" value="1"/> <!-- 3D->2D (PnP) -->
-      <param name="Vis/MinInliers" type="string" value="10"/>
-      <param name="Vis/RoiRatios" type="string" value="0.03 0.03 0.04 0.04"/>
-      <param name="Vis/MaxDepth" type="string" value="10"/>
-      <param name="Vis/CorNNDR" type="string" value="0.8"/>
-      <param name="Vis/MaxFeatures" type="string" value="1000"/>
-      <param name="Vis/FillInfoData" type="string" value="$(arg rtabmapviz)"/>
-      <param name="GFTT/MinDistance" type="string" value="10"/>
-      <param name="GFTT/QualityLevel" type="string" value="0.00001"/>
-   </node>
-
-   <group ns="rtabmap">
-
-      <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="--delete_db_on_start">
-         <param name="frame_id" type="string" value="base_footprint"/>
-         <param name="subscribe_stereo" type="bool" value="true"/>
-         <param name="subscribe_depth" type="bool" value="false"/>
-
-         <remap from="left/image_rect" to="/left/image_rect_color"/>
-         <remap from="right/image_rect" to="/right/image_rect"/>
-         <remap from="left/camera_info" to="/left/camera_info"/>
-         <remap from="right/camera_info" to="/right/camera_info"/>
-
-         <remap from="odom" to="/stereo_odometry"/>
-
-         <param name="queue_size" type="int" value="30"/>
-
-         <param name="Rtabmap/TimeThr" type="string" value="700"/>
-         <param name="Rtabmap/DetectionRate" type="string" value="1"/>
-
-         <param name="Kp/WordsPerImage" type="string" value="200"/>
-         <param name="Kp/RoiRatios" type="string" value="0.03 0.03 0.04 0.04"/>
-         <param name="Kp/DetectorStrategy" type="string" value="0"/>   <!-- use SURF -->
-         <param name="Kp/NNStrategy" type="string" value="1"/>         <!-- kdTree -->
-
-         <param name="SURF/HessianThreshold" type="string" value="1000"/>
-
-         <param name="Vis/MinInliers" type="string" value="10"/>
-         <param name="Vis/EstimationType" type="string" value="1"/> <!-- 3D->2D (PnP) -->
-
-         <param name="LccReextract/Activated" type="string" value="true"/>
-         <param name="Vis/MaxFeatures" type="string" value="500"/>
-         <param name="Vis/MaxDepth" type="string" value="10"/>
-      </node>
-
-      <node if="$(arg rtabmapviz)" pkg="rtabmap_ros" type="rtabmapviz" name="rtabmapviz" args="-d $(find rtabmap_ros)/launch/config/rgbd_gui.ini" output="screen">
-         <param name="subscribe_stereo" type="bool" value="true"/>
-         <param name="subscribe_odom_info" type="bool" value="true"/>
-         <param name="queue_size" type="int" value="10"/>
-         <param name="frame_id" type="string" value="base_footprint"/>
-         <remap from="left/image_rect" to="/left/image_rect_color"/>
-         <remap from="odom_info" to="/odom_info"/>
-         <remap from="odom" to="/stereo_odometry"/>
-         <remap from="mapData" to="mapData"/>
-      </node>
-   </group>
 
 
 </launch>

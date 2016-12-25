@@ -39,8 +39,8 @@
 
 		var op_listener = new ROSLIB.Topic({
 			ros : ros,
-//			name : '/camera/depth/points',
-			name : '/camera/ir/image/compressed',
+			name : '/right/image_raw/compressed',
+//			name : '/right/image_rect_color/compressed',
 // not compressed does not work
 //			messageType : 'sensor_msgs/Image'
 //			name : '/opcplus/image_raw/compressed',
@@ -50,15 +50,14 @@
 
 		var ow_listener = new ROSLIB.Topic({
 			ros : ros,
-			name : '/camera/rgb/image_raw/compressed',
+//			name : '/left/image_rect_color/compressed',
+			name : '/left/image_raw/compressed',
 //			name : '/ow_camera/image_raw/compressed',
-//			messageType : 'sensor_msgs/Image'
 			messageType : 'sensor_msgs/CompressedImage'
 		});
 
 		var dn_listener = new ROSLIB.Topic({
 			ros : ros,
-//			name: '/camera/depth_registered/hw_registered/image_rect_raw/compressed',
 			name: '/camera/depth_registered/image_raw/compressed',
 //			name : '/dn_object_detect/debug_view/compressed',
 			messageType : 'sensor_msgs/CompressedImage'
@@ -87,21 +86,6 @@
 			height : 100
 		});
 
-		// Setup Kinect DepthCloud stream
-//		depthCloud = new ROS3D.DepthCloud({
-//			url : 'http://'+window.location.hostname + ':9999/streams/depthcloud_encoded.webm',
-//			f : 525.0
-//		});
-//		depthCloud.startStream();
-
-//		// Create the main viewer.
-//		var viewer3d = new ROS3D.Viewer({
-//			divID : '3Dviewer',
-//			width : 100,
-//			height : 100,
-//			antialias : true
-//		})
-
 		// Setup a client to listen to TFs.
 		var tfClient = new ROSLIB.TFClient({
 			ros : ros,
@@ -110,14 +94,6 @@
 			rate : 3.0,
 			fixedFrame : '/camera_link'
 		});
-
-		// Create Kinect scene node
-//		var kinectNode = new ROS3D.SceneNode({
-//			rameID : '/camera_rgb_optical_frame',
-//			fClient : tfClient,
-//			object : depthCloud
-//		});
-//		viewer3d.scene.add(kinectNode);
 
 		// Setup the map client.
 		var gridClient = new ROS2D.OccupancyGridClient({

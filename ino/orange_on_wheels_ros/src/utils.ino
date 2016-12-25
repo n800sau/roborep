@@ -23,6 +23,7 @@ void stop(bool full)
 {
 	if(full) {
 		full_stopped = true;
+		cmd_vel_mode = false;
 		strncpy(current_command, "", sizeof(current_command));
 	}
 	moving_straight = false;
@@ -54,6 +55,7 @@ void setLeftMotor(int power, bool fwd)
 			analogWrite(LEFT_MOTOR_2, pwm);
 			digitalWrite(LEFT_MOTOR_1, LOW);
 		}
+//		nh.loginfo(("Left power:" + String(pwm) + ", fwd:" + String(fwd)).c_str());
 //		Serial.print("Left:");
 //		Serial.print(pwm);
 //		Serial.println((fwd) ? ", fwd": ", back");
@@ -83,6 +85,7 @@ void setRightMotor(int power, bool fwd)
 			analogWrite(RIGHT_MOTOR_2, pwm);
 			digitalWrite(RIGHT_MOTOR_1, LOW);
 		}
+//		nh.loginfo(("Right power:" + String(pwm) + ", fwd:" + String(fwd)).c_str());
 //		Serial.print("Right:");
 //		Serial.print(pwm);
 //		Serial.println((fwd) ? ", fwd": ", back");

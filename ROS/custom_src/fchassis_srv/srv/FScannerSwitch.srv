@@ -1,0 +1,7 @@
+uint8 scan_id
+uint8 scan_attempts
+bool scan_allowed
+---
+bool scan_allowed
+
+
