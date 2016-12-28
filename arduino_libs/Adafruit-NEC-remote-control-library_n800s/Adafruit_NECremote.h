@@ -25,7 +25,7 @@
 // what our timing resolution should be, larger is better
 // as its more 'precise' - but too large and you wont get
 // accurate timing
-#define RESOLUTION 20 
+#define RESOLUTION 20
 
 class Adafruit_NECremote {
  public:
