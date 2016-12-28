@@ -53,21 +53,22 @@ void setup(void) {
 
 int lastcode = -1;
 
-const int CMD_BIAS = 1;
+const uint8_t CMD_BIAS = 1;
 
 void send_code(uint16_t code)
 {
-	bool found = false;
-	for(int i=0; i<sizeof(ir_code) / sizeof(ir_code[0]); i++) {
+	uint8_t ss_code = 0x80 | (code & 0xff);
+	Serial.print(F("Received code #")); 
+	Serial.print(code, HEX);
+	for(uint8_t i=0; i<sizeof(ir_code) / sizeof(ir_code[0]); i++) {
 		if(ir_code[i] == code) {
-			ss.write(i + CMD_BIAS);
-			found = true;
+			ss_code = i + CMD_BIAS;
 			break;
 		}
 	}
-	if(!found) {
-		ss.write(0xff);
-	}
+	ss.write(ss_code);
+	Serial.print(F(", Send code #")); 
+	Serial.println(ss_code, HEX);
 }
 
 void loop(void)
@@ -75,15 +76,14 @@ void loop(void)
 //	int c = remote.listen(200);  // milliseconds to wait before timing out!
 	int c = remote.listen();  // Without a #, it means wait forever
 	if (c >= 0) {
-		Serial.print("Received code #"); 
-		Serial.println(c, HEX);
 		lastcode = c;
 		send_code(lastcode);
 	} else if (c == -3) {
-		Serial.print("Repeat (");
-		Serial.print(lastcode, HEX);
-		Serial.println(")");
-		send_code(lastcode);
+		// bug: it happends once after each code
+//		Serial.print("Repeat (");
+//		Serial.print(lastcode, HEX);
+//		Serial.println(")");
+//		send_code(lastcode);
 	} else if (c == -2) {
 		Serial.println("Data error");
 	} else {
