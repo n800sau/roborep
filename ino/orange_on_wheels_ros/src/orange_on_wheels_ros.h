@@ -22,8 +22,8 @@ const int Eleft = 2;
 const int Eright = 3;
 
 // motor pins
-const int LEFT_MOTOR_1 = 10;
-const int LEFT_MOTOR_2 = 9;
+const int LEFT_MOTOR_1 = 8;
+const int LEFT_MOTOR_2 = 7;
 
 const int RIGHT_MOTOR_1 = 6;
 const int RIGHT_MOTOR_2 = 5;
