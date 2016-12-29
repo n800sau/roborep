@@ -325,8 +325,8 @@ void setup()
 	setup_gyro();
 	setup_bmp085();
 
-	attachInterrupt(digitalPinToInterrupt(Eleft), rIntCB, RISING);
-	attachInterrupt(digitalPinToInterrupt(Eright), lIntCB, RISING);
+	attachInterrupt(digitalPinToInterrupt(Eleft), lIntCB, RISING);
+	attachInterrupt(digitalPinToInterrupt(Eright), rIntCB, RISING);
 
 	nh.initNode();
 	nh.advertise(pub_range);
