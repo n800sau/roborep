@@ -21,8 +21,6 @@
 #include "angle.h"
 #include <voltage.h>
 #include <EventFuse.h>
-#include <IRremote.h>
-
 #include <Servo.h>
 
 #include "hmc5883l_proc.h"
@@ -72,9 +70,6 @@ ros::NodeHandle  nh;
 
 const int SONAR_ANGLE_MIN = 10;
 const int SONAR_ANGLE_MAX = 170;
-
-const int IRRECV_PIN = 25;
-IRrecv irrecv(IRRECV_PIN);
 
 sensor_msgs::Range range_msg;
 sensor_msgs::Range back_range_msg;
@@ -303,6 +298,10 @@ void head_servo_move_to(int pos)
 
 void setup()
 {
+
+	// IR serial
+	Serial3.begin(9600);
+
 	pinMode(headTrigPin, OUTPUT);
 	pinMode(headEchoPin, INPUT);
 	pinMode(backTrigPin, OUTPUT);
@@ -381,10 +380,9 @@ void setup()
 //	EventFuse::newFuse(100, INF_REPEAT, evMoveSonar);
 
 	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
-	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
+//	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
 	EventFuse::newFuse(2000, INF_REPEAT, evHeadServoDetach);
-	irrecv.enableIRIn();
-	EventFuse::newFuse(200, INF_REPEAT, evIR);
+	EventFuse::newFuse(200, INF_REPEAT, evIRcmd);
 
 }
 

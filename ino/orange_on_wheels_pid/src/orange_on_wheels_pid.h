@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <ros.h>
 
 #define MAX_STOP_DIST 0.3
 
@@ -11,11 +10,15 @@ const int headTrigPin = 11; // Trigger Pin
 
 const int SONAR_INCR = 5;
 const int SONAR_CENTER_OFFSET = 10;
+const int SONAR_ANGLE_MIN = 10;
+const int SONAR_ANGLE_MAX = 170;
 
 const int backEchoPin = 22; // Echo Pin
 const int backTrigPin = 23; // Trigger Pin
 
 const int headServoPin = 46;
+
+const int IRRECV_PIN = 25;
 
 // encoder pins
 const int Eleft = 2;
@@ -57,12 +60,27 @@ const int MAX_PWM = 255;
 //
 const unsigned long threshold = 10000;
 
-extern volatile bool cmd_vel_mode;
-extern volatile bool full_stopped;
 extern volatile int lCounter;
 extern volatile int rCounter;
+extern int lDirection;
+extern int rDirection;
 
-extern ros::NodeHandle  nh;
+extern bool full_stopped;
+
+// linear velocity m/s
+extern float linearVel;
+extern float lvStep;
+// angular velocity rad/s
+extern float angVel;
+extern float avStep;
+
+extern volatile float lVel;
+extern volatile float rVel;
+
+template <typename type>
+type sign(type value) {
+	return type((value>0)-(value<0));
+}
 
 /* PID setpoint info For a Motor */
 typedef struct {
@@ -93,11 +111,11 @@ extern SetPointInfo leftPID, rightPID;
 void resetPID();
 
 void stop(bool full=false);
-void setLeftMotor(int power, bool fwd);
-void setRightMotor(int power, bool fwd);
+// timeout in halve seconds
 void stop_after(int timeout);
-void move2release(int pwr, bool fwd);
-void straight(int pwr, bool fwd);
+// power - -100..100, 0 - stop
+void setLeftMotor(int power);
+void setRightMotor(int power);
 void resetCounters();
 float getRange_HeadUltrasound(int attempts=2);
 float getRange_BackUltrasound(int attempts=2);
