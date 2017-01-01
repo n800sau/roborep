@@ -35,15 +35,17 @@ void process_compass()
 	// Find yours here: http://www.magnetic-declination.com/
 	// Mine is: 2 37' W, which is 2.617 Degrees, or (which we need) 0.0456752665 radians, I will use 0.0457
 	// If you cannot find your Declination, comment out these two lines, your compass will be slightly off.
-	float declinationAngle = 0.0457;
+
+	// sydney declination 12°34' E that is 360 W - 12°34' = 347°26' = 347.433 = 6.06384978
+	float declinationAngle = 6.06384978;
 	heading += declinationAngle;
 
 	// Correct for when signs are reversed.
-	if(heading < 0)
+	while(heading < 0)
 		heading += 2*PI;
 
 	// Check for wrap due to addition of declination.
-	if(heading > 2*PI)
+	while(heading > 2*PI)
 		heading -= 2*PI;
 
 	// Convert radians to degrees for readability
