@@ -1,4 +1,4 @@
-PYTHON_BUILD_FLAGS = `python-config --include`
+PYTHON_BUILD_FLAGS = `python-config --includes`
 CC = gcc $(PYTHON_BUILD_FLAGS) -fpic $(INCL)
 SWIG_PYTHON = swig -python -w462
 
