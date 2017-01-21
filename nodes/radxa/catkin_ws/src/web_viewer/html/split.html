@@ -3,129 +3,223 @@
 <head>
 <meta charset="utf-8" />
 
+<script type="text/javascript" src="http://cdn.robotwebtools.org/threejs/current/three.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
 <script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
 <script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
+<!-- 
+<script type="text/javascript" src="http://cdn.robotwebtools.org/ros3djs/current/ros3d.js"></script>
+-->
 
 <script type="text/javascript" type="text/javascript">
-  // Connecting to ROS
-  // -----------------
+	// Connecting to ROS
+	// -----------------
 
-  var ros = new ROSLIB.Ros({
-    url : 'ws://n800s.ddns.net:33293'
-  });
+	var on_load = function() {
 
-  ros.on('connection', function() {
-    console.log('Connected to websocket server.');
-  });
+		var ros = new ROSLIB.Ros({
+			url : 'ws://n800s.ddns.net:33293'
+		});
 
-  ros.on('error', function(error) {
-    console.log('Error connecting to websocket server: ', error);
-  });
+		ros.on('connection', function() {
+			console.log('Connected to websocket server.');
+		});
 
-  ros.on('close', function() {
-    console.log('Connection to websocket server closed.');
-  });
+		ros.on('error', function(error) {
+			console.log('Error connecting to websocket server: ', error);
+		});
 
-  // Subscribing to a Topic
-  // ----------------------
+		ros.on('close', function() {
+			console.log('Connection to websocket server closed.');
+		});
 
+		// Subscribing to a Topic
+		// ----------------------
 
+		var op_listener = new ROSLIB.Topic({
+			ros : ros,
+//			name : '/camera/depth/points',
+			name : '/camera/ir/image/compressed',
+// not compressed does not work
+//			messageType : 'sensor_msgs/Image'
+//			name : '/opcplus/image_raw/compressed',
+			messageType : 'sensor_msgs/CompressedImage'
+//			messageType : 'sensor_msgs/PointCloud2'
+		});
 
-  var op_listener = new ROSLIB.Topic({
-    ros : ros,
-    name : '/opcplus/image_raw/compressed',
-    messageType : 'sensor_msgs/CompressedImage'
-  });
+		var ow_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/camera/rgb/image_raw/compressed',
+//			name : '/ow_camera/image_raw/compressed',
+//			messageType : 'sensor_msgs/Image'
+			messageType : 'sensor_msgs/CompressedImage'
+		});
 
-  var ow_listener = new ROSLIB.Topic({
-    ros : ros,
-    name : '/ow_camera/image_raw/compressed',
-    messageType : 'sensor_msgs/CompressedImage'
-  });
+		var dn_listener = new ROSLIB.Topic({
+			ros : ros,
+//			name: '/camera/depth_registered/hw_registered/image_rect_raw/compressed',
+			name: '/camera/depth_registered/image_raw/compressed',
+//			name : '/dn_object_detect/debug_view/compressed',
+			messageType : 'sensor_msgs/CompressedImage'
+		});
 
-  var sm_listener = new ROSLIB.Topic({
-    ros : ros,
-    name : '/sm_camera/image_raw/compressed',
-    messageType : 'sensor_msgs/CompressedImage'
-  });
+		var sm_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/camera/depth/image_raw/compressed',
+//			messageType : 'sensor_msgs/Image'
+//			name : '/disparity',
+//			messageType : 'stereo_msgs/DisparityImage'
+//			name : '/phase_corr/image/compressed',
+			messageType : 'sensor_msgs/CompressedImage'
+		});
 
-  var dn_listener = new ROSLIB.Topic({
-    ros : ros,
-    name : '/dn_object_detect/debug_view/compressed',
-    messageType : 'sensor_msgs/CompressedImage'
-  });
+		var pos_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/robot_pose',
+			messageType : 'geometry_msgs/Pose'
+		});
 
-  var go_on = false;
-  var period = 1000;
+		// Create the main viewer.
+		var viewer2d = new ROS2D.Viewer({
+			divID : 'map',
+			width : 100,
+			height : 100
+		});
 
-  var image_show = function(listener, prefix, message) {
-    var canvas = document.getElementById(prefix + 'Canvas');
-    var context = canvas.getContext('2d');
-    var imageObj = new Image();
+		// Setup Kinect DepthCloud stream
+//		depthCloud = new ROS3D.DepthCloud({
+//			url : 'http://'+window.location.hostname + ':9999/streams/depthcloud_encoded.webm',
+//			f : 525.0
+//		});
+//		depthCloud.startStream();
 
-    imageObj.onload = function() {
-      context.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
-    };
-    var dataURL="data:image/jpeg;base64," + message.data;
-    imageObj.src = dataURL;
-//    console.log('Received message on ' + listener.name + ': ' + message.data);
-    var ts = document.getElementById(prefix + 'timestamp');
-    ts.innerHTML=message.header.stamp.secs + '.' + Math.round(message.header.stamp.nsecs/1000000);
-//    listener.unsubscribe();
-//    if(go_on) {
-//      setTimeout(subscribe.bind(this, listener, prefix), period);
-//    }
-  }
+//		// Create the main viewer.
+//		var viewer3d = new ROS3D.Viewer({
+//			divID : '3Dviewer',
+//			width : 100,
+//			height : 100,
+//			antialias : true
+//		})
 
-  var start = function() {
-    go_on = true;
-    document.getElementById('stop_btn').disabled = false;
-    document.getElementById('start_btn').disabled = true;
-    subscribe(op_listener, 'op_');
-    subscribe(ow_listener, 'ow_');
-    subscribe(sm_listener, 'sm_');
-    subscribe(dn_listener, 'dn_');
-  }
+		// Setup a client to listen to TFs.
+		var tfClient = new ROSLIB.TFClient({
+			ros : ros,
+			angularThres : 0.01,
+			transThres : 0.01,
+			rate : 3.0,
+			fixedFrame : '/camera_link'
+		});
 
-  var stop = function() {
-    go_on = false;
-    document.getElementById('stop_btn').disabled = true;
-    document.getElementById('start_btn').disabled = false;
-    op_listener.unsubscribe();
-    ow_listener.unsubscribe();
-    sm_listener.unsubscribe();
-    dn_listener.unsubscribe();
-  }
+		// Create Kinect scene node
+//		var kinectNode = new ROS3D.SceneNode({
+//			rameID : '/camera_rgb_optical_frame',
+//			fClient : tfClient,
+//			object : depthCloud
+//		});
+//		viewer3d.scene.add(kinectNode);
 
-  var subscribe = function(listener, prefix) {
-    listener.subscribe(image_show.bind(this, listener, prefix));
-  }
+		// Setup the map client.
+		var gridClient = new ROS2D.OccupancyGridClient({
+			ros : ros,
+			topic : '/rtabmap/grid_map',
+			rootObject : viewer2d.scene
+		});
 
+		// Scale the canvas to fit to the map
+		gridClient.on('change', function(){
+			viewer2d.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
+		});
+
+		var go_on = false;
+		var period = 1000;
+
+		var image_show = function(listener, prefix, message) {
+			var canvas = document.getElementById(prefix + 'Canvas');
+			var context = canvas.getContext('2d');
+			var imageObj = new Image();
+
+			imageObj.onload = function() {
+			  context.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
+			};
+			var dataURL="data:image/jpeg;base64," + message.data;
+			imageObj.src = dataURL;
+////    console.log('Received message on ' + listener.name + ': ' + message.data);
+			var ts = document.getElementById(prefix + 'timestamp');
+			ts.innerHTML=message.header.stamp.secs + '.' + Math.round(message.header.stamp.nsecs/1000000);
+////    listener.unsubscribe();
+////    if(go_on) {
+////      setTimeout(subscribe.bind(this, listener, prefix), period);
+////    }
+		}
+
+		var on_pos_msg = function(listener, message) {
+			var cnt = document.getElementById('position');
+			cnt.innerHTML = Math.round(message.position.x * 100) + ':' + Math.round(message.position.y * 100) + ', ' + Math.round(message.orientation.z * 100);
+		}
+
+		var start = function() {
+			go_on = true;
+			document.getElementById('stop_btn').disabled = false;
+			document.getElementById('start_btn').disabled = true;
+			subscribe(op_listener, 'op_');
+			subscribe(ow_listener, 'ow_');
+			subscribe(sm_listener, 'sm_');
+			subscribe(dn_listener, 'dn_');
+			pos_listener.subscribe(on_pos_msg.bind(this, pos_listener))
+		}
+
+		var stop = function() {
+			go_on = false;
+			document.getElementById('stop_btn').disabled = true;
+			document.getElementById('start_btn').disabled = false;
+			op_listener.unsubscribe();
+			ow_listener.unsubscribe();
+			sm_listener.unsubscribe();
+			dn_listener.unsubscribe();
+		}
+
+		var subscribe = function(listener, prefix) {
+			listener.subscribe(image_show.bind(this, listener, prefix));
+		}
+
+		start();
+	}
 </script>
 </head>
 
-<body onload="start()">
-  <button onclick="location.reload()">&orarr;</button>
-  <br/>
+<body onload="on_load()">
+	<div id="position"></div>
+	<button onclick="location.reload()">&orarr;</button>
+	<br/>
 
-  <button id="start_btn" onclick="start()">&vrtri;</button>
-  <button id="stop_btn" onclick="stop()" disabled="disabled">&squf;</button>
-  <br/>
+	<button id="start_btn" onclick="start()">&vrtri;</button>
+	<button id="stop_btn" onclick="stop()" disabled="disabled">&squf;</button>
+	<br/>
 
-  <canvas id="op_Canvas" width="160" height="120" style="border:1px solid #000000;">
-  </canvas>
-  <div id="op_timestamp"></div>
-  <br/>
-  <canvas id="ow_Canvas" width="160" height="120" style="border:1px solid #000000;">
-  </canvas>
-  <div id="ow_timestamp"></div>
-  <canvas id="dn_Canvas" width="160" height="120" style="border:1px solid #000000;">
-  </canvas>
-  <div id="dn_timestamp"></div>
-  <br/>
-  <canvas id="sm_Canvas" width="160" height="120" style="border:1px solid #000000;">
-  </canvas>
-  <div id="sm_timestamp"></div>
+	<canvas id="op_Canvas" width="160" height="120" style="border:1px solid #000000;">
+	</canvas>
+	<div id="op_timestamp"></div>
+	<br/>
+
+	<canvas id="ow_Canvas" width="160" height="120" style="border:1px solid #000000;">
+	</canvas>
+	<div id="ow_timestamp"></div>
+	<br/>
+
+	<canvas id="dn_Canvas" width="160" height="120" style="border:1px solid #000000;">
+	</canvas>
+	<div id="dn_timestamp"></div>
+	<br/>
+
+	<canvas id="sm_Canvas" width="160" height="120" style="border:1px solid #000000;">
+	</canvas>
+	<div id="sm_timestamp"></div>
+	<br/>
+
+	<div id="map"></div>
+	<div id="3Dviewer"></div>
+
 </body>
 </html>
 
