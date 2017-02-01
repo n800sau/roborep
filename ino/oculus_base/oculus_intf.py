@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import cmd, sys, os, serial, atexit, readline, socket, time
+import cmd, sys, os, serial, atexit, readline, socket, time, struct
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'include', 'swig'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
@@ -59,39 +59,58 @@ class OculusIntf:
 
 	def do_step_fw(self, arg):
 		'Step forward'
-		self.subprocess.write('f%c\n' % 255)
+		self.subprocess.write(struct.pack('cB', 'f', int(arg)) + '\n')
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
+		self.print_reply()
 
 	def do_step_back(self, arg):
 		'Step back'
-		self.subprocess.write('b%c\n' % 255)
+		self.subprocess.write(struct.pack('cB', 'b', int(arg)) + '\n')
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
+		self.print_reply()
 
 	def do_forward(self, arg):
 		'Forward (0-255)'
-		self.subprocess.write('f%c\n' % int(arg))
+		self.subprocess.write(struct.pack('cB', 'f', int(arg)) + '\n')
+		self.print_reply()
 
 	def do_back(self, arg):
 		'Back (0-255)'
-		self.subprocess.write('b%c\n' % int(arg))
+		self.subprocess.write(struct.pack('cB', 'b', int(arg)) + '\n')
+		self.print_reply()
+
+	def do_left(self, arg):
+		self.subprocess.write(struct.pack('cB', 'l', int(arg)) + '\n')
+		self.print_reply()
+
+	def do_right(self, arg):
+		self.subprocess.write(struct.pack('cB', 'r', int(arg)) + '\n')
+		self.print_reply()
+
+	def do_move(self, arg):
+		left,right = ([int(v) for v in arg.split(' ')] + [0, 0])[:2]
+		self.subprocess.write(struct.pack('cbb', 'm', left, right) + '\n')
+		self.print_reply()
 
 	def do_step_left(self, arg):
 		'Step left'
-		self.subprocess.write('l%c\n' % 255)
+		self.subprocess.write(struct.pack('cB', 'l', 255) + '\n')
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
+		self.print_reply()
 
 	def do_step_right(self, arg):
 		'Step right'
-		self.subprocess.write('r%c\n' % 255)
+		self.subprocess.write(struct.pack('cB', 'r', 255) + '\n')
 		time.sleep(min(1,float(arg)))
 		self.do_stop('')
+		self.print_reply()
 
 	def do_setcam(self, arg):
 		'Set cam angle [75-100]'
-		self.subprocess.write('v%c\n' % int(arg))
+		self.subprocess.write(struct.pack('cB', 'v', int(arg)) + '\n')
 		self.print_reply()
 
 	def do_release_cam(self, arg):
@@ -177,12 +196,19 @@ class OculusIntf:
 			rs = self.subprocess.read_replylist(wait=True)
 			if rs:
 				break
-			time.sleep(1)
+			time.sleep(0.001)
 			i += 1
 			if i > 10:
 				break
 		print "\x0d%s\n" % (' ' * i)
 		return ''.join(rs)
+
+	def print_reply(self):
+		reply = self.readreply()
+		if reply:
+			print 'REPLY:', reply
+		else:
+			print 'NO REPLY'
 
 
 
