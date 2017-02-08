@@ -1,0 +1,14 @@
+<launch>
+
+	<node name="master_sync_opcplus" pkg="master_sync_fkie" type="master_sync" respawn="true">
+	</node>
+
+	<node name="master_discovery_opcplus" pkg="master_discovery_fkie" type="zeroconf" respawn="true">
+	</node>
+
+
+
+</launch>
+
+
+

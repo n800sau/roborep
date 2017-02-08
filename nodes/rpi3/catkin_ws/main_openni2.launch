@@ -1,0 +1,31 @@
+<launch>
+
+	<node name="master_sync_opcplus" pkg="master_sync_fkie" type="master_sync" respawn="true">
+	</node>
+
+	<node name="master_discovery_opcplus" pkg="master_discovery_fkie" type="zeroconf" respawn="true">
+	</node>
+
+<!--
+	<node name="master_discovery_opcplus" pkg="master_discovery_fkie" type="master_discovery" respawn="true">
+	</node>
+-->
+
+	<include file="asus_xtion_pro.launch">
+<!--
+		<arg name="rgb_camera_info_url"   default="rgb_PS1080_PrimeSense.yaml" />
+		<arg name="depth_camera_info_url" default="depth_PS1080_PrimeSense.yaml" />
+-->
+	</include>
+
+	<node pkg="tf" type="static_transform_publisher" name="camera_link_to_odom" args="0 0 0 0 0 0 1 camera_link odom 50" respawn="true"/>
+
+	<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
+		<arg name="rtabmap_args" value="--delete_db_on_start --udebug --uinfo"/>
+		<arg name="rviz" value="false"/>
+		<arg name="rtabmapviz" value="true"/>
+	</include>
+
+</launch>
+
+
