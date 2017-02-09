@@ -150,6 +150,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
    bin/oculus_base_node.py
+   bin/oculus_key_teleop.py
    script/oculus_cmdint.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
