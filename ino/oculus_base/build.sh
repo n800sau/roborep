@@ -1,1 +1,0 @@
-ino build && ./upload.sh

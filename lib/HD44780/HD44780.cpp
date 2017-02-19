@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
+//E RS DB4 DB5 DB6 DB7
+//const int HD44780::selectedPins[]={P8_13,P8_15,P8_14,P8_12,P8_10,P8_8};
 const int HD44780::selectedPins[]={P8_14,P8_12,P8_11,P8_5,P8_4,P8_3};
 
 struct HD44780_CMD_FUNC:public CMD_FUNC {
