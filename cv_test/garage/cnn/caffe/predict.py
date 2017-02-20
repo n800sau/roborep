@@ -14,6 +14,7 @@ import random
 import caffe
 import cv2
 import sys
+import time
 
 # construct the argument parser and parse the command line arguments
 ap = argparse.ArgumentParser()
@@ -58,6 +59,7 @@ print("[INFO] testing images from {} directory".format(args["test_images"]))
 for imagePath in paths.list_images(args["test_images"]):
 	# load the image and resize it to a fixed size
 	print("[INFO] classifying {}".format(imagePath[imagePath.rfind("/") + 1:]))
+	t = time.time()
 	image = caffe.io.load_image(imagePath)
 	orig = image.copy()
 	image = cv2.resize(image, (160, 160))
@@ -65,4 +67,4 @@ for imagePath in paths.list_images(args["test_images"]):
 	# make a prediction on the image
 	pred = net.predict([image])
 	i = pred[0].argmax()
-	print("{}: {}".format(gtLabels[i], int(pred[0][i] * 100)))
+	print("{}: {} in {} secs".format(gtLabels[i], int(pred[0][i] * 100), time.time() - t))
