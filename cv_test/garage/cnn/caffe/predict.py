@@ -14,57 +14,68 @@ import random
 import caffe
 import cv2
 import sys
+import os
 import time
 
-# construct the argument parser and parse the command line arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-a", "--arch", required=True,
-	help="path to network architecture definition")
-ap.add_argument("-s", "--snapshot", required=True, help="path network snapsot")
-ap.add_argument("-m", "--mean", required=True, help="path to mean image")
-ap.add_argument("-t", "--test-images", required=True,
-	help="path to the directory of testing images")
-ap.add_argument("-g", "--gpu", type=int, default=-1, help="GPU device index")
-args = vars(ap.parse_args())
+def arg_parser():
+	# construct the argument parser and parse the command line arguments
+	ap = argparse.ArgumentParser()
+	ap.add_argument("-a", "--arch", required=True, help="path to network architecture definition")
+	ap.add_argument("-c", "--classlist", required=True, help="path to class list file")
+	ap.add_argument("-s", "--snapshot", required=True, help="path network snapsot")
+	ap.add_argument("-m", "--mean", required=True, help="path to mean image")
+	ap.add_argument("-g", "--gpu", type=int, default=-1, help="GPU device index")
+	return ap
 
-gtLabels = [v for k,v in sorted([(int(k), v) for k,v in [l.split(' ') for l in file('data/class.lst').read().split('\n') if l]])]
 
-print(gtLabels)
+class CNNClassificator:
 
-#sys.exit()
+	def __init__(self, classlist, snapshot, arch, mean, gpu=-1):
+		self.gtLabels = [v for k,v in sorted([(int(k), v) for k,v in [l.split(' ') for l in file(classlist).read().split('\n') if l]])]
 
-# check to see if the GPU should be utilized
-if args["gpu"] > -1:
-	print("[INFO] using GPU: {}".format(args["gpu"]))
-	caffe.set_mode_gpu()
-	caffe.set_device(args["gpu"])
+#		print('Labels:', self.gtLabels)
 
-# otherwise, the CPU is being used
-else:
-	print("[INFO] using CPU")
+		# check to see if the GPU should be utilized
+		if gpu > -1:
+			print("[INFO] using GPU: {}".format(gpu))
+			caffe.set_mode_gpu()
+			caffe.set_device(gpu)
 
-# load the mean image
-blob = caffe.proto.caffe_pb2.BlobProto()
-data = open(args["mean"], "rb").read()
-blob.ParseFromString(data)
-mean = np.array(caffe.io.blobproto_to_array(blob))
+		# otherwise, the CPU is being used
+		else:
+			print("[INFO] using CPU")
 
-# load the network
-net = caffe.Classifier(args["arch"], args["snapshot"], image_dims=(160, 160), mean=mean[0], raw_scale=255)
+		# load the mean image
+		blob = caffe.proto.caffe_pb2.BlobProto()
+		data = open(mean, "rb").read()
+		blob.ParseFromString(data)
+		self.mean = np.array(caffe.io.blobproto_to_array(blob))
 
-# move on to testing images...
-print("[INFO] testing images from {} directory".format(args["test_images"]))
+		# load the network
+		self.net = caffe.Classifier(arch, snapshot, image_dims=(160, 160), mean=self.mean[0], raw_scale=255)
 
-# loop over the images not part of the CIFAR-10 dataset
-for imagePath in paths.list_images(args["test_images"]):
-	# load the image and resize it to a fixed size
-	print("[INFO] classifying {}".format(imagePath[imagePath.rfind("/") + 1:]))
-	t = time.time()
-	image = caffe.io.load_image(imagePath)
-	orig = image.copy()
-	image = cv2.resize(image, (160, 160))
+	def detect(self, image):
+		image = cv2.resize(image, (160, 160))
 
-	# make a prediction on the image
-	pred = net.predict([image])
-	i = pred[0].argmax()
-	print("{}: {} in {} secs".format(gtLabels[i], int(pred[0][i] * 100), time.time() - t))
+		# make a prediction on the image
+		pred = self.net.predict([image])
+		i = pred[0].argmax()
+		return self.gtLabels[i],pred[0][i]
+
+if __name__ == '__main__':
+
+	ap = arg_parser()
+	ap.add_argument("-t", "--test-images", required=True, help="path to the directory of testing images")
+	args = vars(ap.parse_args())
+
+	co = CNNClassificator(args['classlist'], args['snapshot'], args['arch'], args['mean'], args['gpu'])
+	# move on to testing images...
+	print("[INFO] testing images from {} directory".format(args["test_images"]))
+
+	# loop over the images not part of the CIFAR-10 dataset
+	for imagePath in paths.list_images(args["test_images"]):
+		# load the image and resize it to a fixed size
+		print("[INFO] classifying {}".format(imagePath[imagePath.rfind("/") + 1:]))
+		t = time.time()
+		label,prob = co.detect(caffe.io.load_image(imagePath))
+		print("{}: {} in {} secs".format(label, int(prob * 100), time.time() - t))
