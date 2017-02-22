@@ -11,6 +11,7 @@ from ftplib import FTP, error_temp
 import cPickle
 from StringIO import StringIO
 import numpy as np
+# import skimage
 import redis, cv2
 from predict import CNNClassificator, arg_parser
 
@@ -27,10 +28,21 @@ def detect_image_label(detector, ftp_h, fpath):
 	t = time.time()
 	reader = StringIO()
 	ftp_h.retrbinary("RETR %s" % fpath, reader.write)
-	imgdata = reader.getvalue()
-	img_array = np.asarray(bytearray(imgdata), dtype=np.uint8)
-	image = cv2.imdecode(img_array, cv2.CV_LOAD_IMAGE_UNCHANGED)
-	rs =list(detector.detect(image)) + [imgdata]
+	reader.seek(0)
+#	temp_fname = 'temp.bin'
+#	tf = file(temp_fname, 'wb')
+#	tf.write(reader.getvalue())
+#	tf.close()
+#	imgdata = reader.getvalue()
+#	img_array = np.asarray(bytearray(imgdata), dtype=np.uint8)
+#	image = cv2.imdecode(img_array, cv2.CV_LOAD_IMAGE_UNCHANGED)
+#	image = skimage.img_as_float(image).astype(np.float32)
+#	if image.ndim == 2:
+#		image = image[:, :, np.newaxis]
+#		image = np.tile(image, (1, 1, 3))
+#	elif image.shape[2] == 4:
+#		image = image[:, :, :3]
+	rs =list(detector.detect_from_file(reader)) + [reader.getvalue()]
 	tdiff = int(time.time() - t)
 	print 'image process time: %d:%02d' % (tdiff//60, tdiff%60)
 	return rs
@@ -43,7 +55,7 @@ detector = None
 r = re.compile('^[0-9A-F]+\(.*\)_\d_(\d+)_\d+\.jpg')
 try:
 	redis = redis.Redis()
-	for i in range(100):
+	for i in range(1000):
 		fpath = redis.lpop(REDIS_INPUT_LIST)
 		if fpath is None:
 			print 'End of files'
@@ -76,11 +88,11 @@ try:
 						last_rec = json.loads(last_rec[0])
 						if last_rec['ts'] < ts and last_rec['label'] != label:
 							msg = 'Changed at %s from %s to %s (diff=%d), %s' % (dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'], bname)
-							print msg
+							print '*' * 10, msg, '*' * 10
 							send_email('itmousecage@gmail.com', '%s: %s' % (dt.strftime('%H:%M:%S %d/%m'), label), msg, [imgdata])
 					else:
 						msg = 'Initial at %s %s' % (dt.strftime('%d/%m %H:%M:%S'), label)
-						print msg
+						print '*' * 10, msg, '*' * 10
 						send_email('itmousecage@gmail.com', '%s: %s' % (dt.strftime('%H:%M:%S %d/%m'), label), msg, [imgdata])
 					redis.rpush(output_name, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
 					redis.ltrim(output_name, max(0, redis.llen(output_name) - 100), -1)

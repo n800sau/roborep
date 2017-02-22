@@ -54,11 +54,15 @@ class CNNClassificator:
 		# load the network
 		self.net = caffe.Classifier(arch, snapshot, image_dims=(160, 160), mean=self.mean[0], raw_scale=255)
 
+	def detect_from_file(self, fd):
+		return self.detect(caffe.io.load_image(fd))
+
 	def detect(self, image):
 		image = cv2.resize(image, (160, 160))
 
 		# make a prediction on the image
 		pred = self.net.predict([image])
+		print(','.join([('%d' % (p * 100)) for p in pred[0]]))
 		i = pred[0].argmax()
 		return self.gtLabels[i],pred[0][i]
 
@@ -77,5 +81,5 @@ if __name__ == '__main__':
 		# load the image and resize it to a fixed size
 		print("[INFO] classifying {}".format(imagePath[imagePath.rfind("/") + 1:]))
 		t = time.time()
-		label,prob = co.detect(caffe.io.load_image(imagePath))
+		label,prob = co.detect_from_file(imagePath)
 		print("{}: {} in {} secs".format(label, int(prob * 100), time.time() - t))
