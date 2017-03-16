@@ -8,10 +8,10 @@ layer {
     phase: TRAIN
   }
   transform_param {
-    mean_file: "caffe/dataset_mean.binaryproto"
+    mean_file: "data/dataset_mean.binaryproto"
   }
   data_param {
-    source: "caffe/db/training_lmdb"
+    source: "data/db/training_lmdb"
     batch_size: 100
     backend: LMDB
   }
@@ -25,10 +25,10 @@ layer {
     phase: TEST
   }
   transform_param {
-    mean_file: "caffe/dataset_mean.binaryproto"
+    mean_file: "data/dataset_mean.binaryproto"
   }
   data_param {
-    source: "caffe/db/testing_lmdb"
+    source: "data/db/testing_lmdb"
     batch_size: 100
     backend: LMDB
   }
@@ -209,6 +209,16 @@ layer {
   top: "accuracy"
   include {
     phase: TEST
+  }
+}
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "ip1"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TRAIN
   }
 }
 layer {
