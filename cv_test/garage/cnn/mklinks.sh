@@ -1,2 +1,2 @@
-./mklinks_garage.py &>mklinks.log
+./mklinks.py &>mklinks.log
 echo $?

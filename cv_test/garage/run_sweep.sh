@@ -19,6 +19,6 @@ echo $?
 
 else
 
-echo '###Found already running###'|tee -a ${cur_dir}/run_sweep.log
+echo `date --rfc-3339=seconds`'###Found already running###'|tee -a ${cur_dir}/run_sweep.log
 
 fi
