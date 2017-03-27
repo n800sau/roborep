@@ -29,7 +29,6 @@ def extract_image_hs2c2d(image):
 #	print 'SHAPE', hist.shape
 	hist /= hist.max()
 	return hist
-#	return hist.reshape(16, 16)
 
 def extract_image_hog(image):
 	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -39,4 +38,4 @@ def extract_image_hog(image):
 	return rs
 
 
-extract_image_data = extract_image_h1c2d
+extract_image_data = extract_image_hs2c2d
