@@ -13,6 +13,7 @@ if [ -z "$RUNNING" ]
 then
 
 
+echo `date --rfc-3339=seconds`'###Start sweeping###'|tee -a ${cur_dir}/run_sweep.log
 
 /usr/bin/env python "${cur_dir}/run_sweep.py" &>> ${cur_dir}/run_sweep.log
 echo $?

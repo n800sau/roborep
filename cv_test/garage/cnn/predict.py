@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
-os.environ['THEANO_FLAGS'] = 'blas.ldflags="-L/usr/lib/ -lblas"'
 import cv2, random, json, time, glob, imghdr
-from imutils import paths, resize
 import numpy as np
 from keras.models import model_from_json
 from keras.preprocessing import image
-import imutils
+from detector import Detector
 
 #IMG_PATH = os.path.expanduser('~/work/garage/2016-10-02')
-IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-11-25')
+IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-12-21')
 #IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-10-02')
 #IMG_PATH = os.path.expanduser('data/train/inside')
 DST_PATH = os.path.expanduser('output/images/predict')
@@ -26,8 +23,11 @@ hdata = None
 model = model_from_json(file('model.json').read())
 labels = dict([(v,k) for k,v in json.load(file('labels.json')).items()])
 model.load_weights(weights_fname)
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-#model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+model.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['accuracy'])
+
+detector = Detector()
 
 t = time.time()
 
@@ -37,9 +37,18 @@ try:
 		for name in files:
 			fn = os.path.join(root, name)
 			if imghdr.what(fn) in ('jpeg', 'png'):
+
+				imgdata = cv2.imread(fn)
+				detected_label = detector.detect_label(imgdata)
+				print 'Detected label', detected_label
+
 				img = image.load_img(fn, target_size=(img_width, img_height))
 
+
 				imgdata = image.img_to_array(img)
+
+				print 'img shape', imgdata.shape
+
 				hdata = np.expand_dims(imgdata/255.0, axis=0)
 
 
@@ -78,4 +87,6 @@ try:
 
 
 finally:
-	print 'Finished (%d image/sec)' % (i / (time.time() - t))
+	if i == 0:
+		i = 1
+	print 'Finished (%d image/sec, %d sec/image)' % (i / (time.time() - t), (time.time() - t) / i)

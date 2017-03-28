@@ -20,6 +20,7 @@ import os, sys, imghdr, time
 
 #SRCDIR = os.path.expanduser('~/work/garage/2016-09-07')
 SRCDIR = os.path.expanduser('~/work/garage/2016-11-02')
+#SRCDIR = os.path.expanduser('~/work/garage/random')
 OUTDIR = 'output'
 
 if not os.path.exists(OUTDIR):

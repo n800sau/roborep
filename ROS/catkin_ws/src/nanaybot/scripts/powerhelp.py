@@ -6,7 +6,7 @@ import rospy
 from time import time, sleep
 from sound_play.msg import SoundRequest
 from sound_play.libsoundplay import SoundClient
-from nanaybot.msg import battery
+from oculus2wd.msg import battery
 
 LEVEL_OFFSET = 0 #for debug purpose it is possible to offset levels by this value
 LEVELS = (10, 20, 40)
@@ -90,5 +90,5 @@ def callback(msg):
 rospy.init_node('power_help', anonymous = True)
 soundhandle = SoundClient()
 
-rospy.Subscriber("/nanaybot/battery", battery, callback)
+rospy.Subscriber("/oculus2wd/battery", battery, callback)
 rospy.spin()

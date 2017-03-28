@@ -7,7 +7,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include <nanaybot/distance_sensor.h>
+#include <oculus2wd/distance_sensor.h>
 
 int set_interface_attribs (int fd, int speed, int parity)
 {
@@ -82,7 +82,7 @@ int main(int argc, char ** argv)
 	}
 	set_interface_attribs (fd, B4800, 0);	// set speed to 115,200 bps, 8n1 (no parity)
 	set_blocking (fd, 0);	// set no blocking
-	ros::Publisher pub = nh.advertise<nanaybot::distance_sensor> ("/nanaybot/head_distance", 1);
+	ros::Publisher pub = nh.advertise<oculus2wd::distance_sensor> ("/oculus2wd/head_distance", 1);
 	char buf[100];
 	int pos = 0, n;
 	while(ros::ok()) {
@@ -91,7 +91,7 @@ int main(int argc, char ** argv)
 			if(buf[pos] == '\n') {
 //			printf("buf=%s\n", buf);
 				buf[pos] = 0;
-				nanaybot::distance_sensor msg;
+				oculus2wd::distance_sensor msg;
 				//Range:17
 				char *cptr = strchr(buf, ':');
 				if(cptr) {

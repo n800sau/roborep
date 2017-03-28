@@ -7,7 +7,7 @@ from time import time, sleep
 from sound_play.msg import SoundRequest
 from sound_play.libsoundplay import SoundClient
 from sensor_msgs.msg import Imu
-from nanaybot.msg import drive_status, drive, arduino_power
+from oculus2wd.msg import drive_status, drive, arduino_power
 
 from twisted.internet import reactor, defer
 from twisted.protocols import basic
@@ -56,9 +56,9 @@ class Processor(basic.LineReceiver):
 			'CAM_DOWN': self.do_camdown,
 			'CAM_RELEASE': self.do_release_cam,
 		}
-		self.pub = rospy.Publisher('/nanaybot/imu_raw', Imu)
-		self.cmdpub = rospy.Publisher('/nanaybot/base_command', drive)
-		self.pwrpub = rospy.Publisher('/nanaybot/power', arduino_power)
+		self.pub = rospy.Publisher('/oculus2wd/imu_raw', Imu)
+		self.cmdpub = rospy.Publisher('/oculus2wd/base_command', drive)
+		self.pwrpub = rospy.Publisher('/oculus2wd/power', arduino_power)
 		self.imu = None
 		self.last_cmd = None
 		self.campos = 50
