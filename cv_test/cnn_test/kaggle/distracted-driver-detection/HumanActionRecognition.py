@@ -60,7 +60,7 @@ n_test_samples = 1
 color_type_global = 3
 
 # You can set larger values here, according with the memory of your GPU:
-batch_size = 164
+batch_size = 1
 
 # Enter here the number of training epochs (with 80 epochs the model was positioned among
 # the 29% best competitors in the private leaderboard of state-farm-distracted-driver-detection)
@@ -221,9 +221,11 @@ test_generator = test_datagen.flow_from_directory(
 	target_size=(img_height, img_width),
 	batch_size=batch_size,
 	class_mode=None,
-	shuffle=False)
+	shuffle=True)
 
+t = time.time()
 aux = model.predict_generator(test_generator, n_test_samples)
+print('Predicted {} items in {:.2f} secs'.format(n_test_samples, time.time() - t))
 
 i = 0
 for fn in test_generator.filenames[:aux.shape[0]]:
