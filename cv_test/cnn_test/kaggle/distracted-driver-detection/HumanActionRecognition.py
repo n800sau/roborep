@@ -225,14 +225,16 @@ test_generator = test_datagen.flow_from_directory(
 
 aux = model.predict_generator(test_generator, n_test_samples)
 
+clmap = json.load(file('classes.map'))
+
 i = 0
 for fn in test_generator.filenames[:aux.shape[0]]:
 	cl = classes[np.argmax(aux[i])]
 	srcfn = os.path.abspath(os.path.join(test_data_dir, fn))
-	lname = os.path.join(OUTPUT, cl, os.path.basename(fn))
+	lname = os.path.join(OUTPUT, clmap[cl], os.path.basename(fn))
 	if not os.path.exists(os.path.dirname(lname)):
 		os.makedirs(os.path.dirname(lname))
-	print fn, cl
+	print fn, cl, clmap[cl]
 	os.symlink(srcfn, lname)
 	i += 1
 
