@@ -4,7 +4,7 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import os, sys, re, time, json, traceback
 from datetime import datetime
-from ftplib import FTP
+from ftplib import FTP, error_temp
 import cPickle
 from StringIO import StringIO
 import numpy as np
@@ -22,6 +22,9 @@ REDIS_OUTPUT_PREFIX = 'garage_label_'
 NO_LABEL = '_'
 NO_LABEL_QUEUE_PREFIX = 'no_label_'
 
+def dbprint(text):
+	print >>sys.__stderr__, '[%s]:%s' % (datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
+
 def detect_label(model, image):
 	image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 	hist = feature.hog(image,
@@ -33,8 +36,8 @@ def detect_label(model, image):
 	labels = model.predict_proba(hist)
 	labels = zip(model.classes_, labels[0])
 	labels.sort(key=lambda x: x[1], reverse=True)
-	rs = labels[0][0] if abs(labels[0][1] - labels[1][1]) > 0.5 else '_'
-	print '%s -> %s' % (labels, rs)
+	rs = labels[0][0] if abs(labels[0][1] - labels[1][1]) > 0.4 else '_'
+	dbprint('%s -> %s' % (labels, rs))
 	return rs
 
 
@@ -47,7 +50,7 @@ def detect_image_label(model, ftp_h, fpath):
 	image = cv2.imdecode(img_array, cv2.CV_LOAD_IMAGE_UNCHANGED)
 	rs = (detect_label(model, image), imgdata)
 	tdiff = int(time.time() - t)
-	print 'image process time: %d:%02d' % (tdiff//60, tdiff%60)
+	dbprint('image process time: %d:%02d' % (tdiff//60, tdiff%60))
 	return rs
 
 #00D6FB009223(n800sau)_1_20160516142921_30928.jpg
@@ -57,11 +60,13 @@ models = None
 r = re.compile('^[0-9A-F]+\(.*\)_\d_(\d+)_\d+\.jpg')
 try:
 	redis = redis.Redis()
-	for i in range(5000):
+	for i in range(2):
 		fpath = redis.lpop(REDIS_INPUT_LIST)
 		if fpath is None:
+			print 'End of files'
 			break
 		bname = os.path.basename(fpath)
+		dbprint('popped %s' % fpath)
 		m = r.match(bname)
 		if m:
 			dt = datetime.strptime(m.groups()[0], '%Y%m%d%H%M%S')
@@ -77,12 +82,13 @@ try:
 						models[mname] = cPickle.loads(open(os.path.join(MODELPATH, mname + '.svc')).read())
 #						cPickle.dump(models[mname], open(os.path.join(MODELPATH, mname + '.svc.new'), 'w'), protocol=cPickle.HIGHEST_PROTOCOL)
 					tdiff = int(time.time() - t)
-					print 'models load time: %d:%02d' % (tdiff//60, tdiff%60)
+					dbprint('models load time: %d:%02d' % (tdiff//60, tdiff%60))
 				msglist = []
 				labellist = []
+				dbprint('model names: %s' % models.keys())
 				for mname,model in models.items():
 					output_name = REDIS_OUTPUT_PREFIX + mname
-					print bname,
+					dbprint('Start %s' % bname)
 					label,imgdata = detect_image_label(model, ftp_h, fpath)
 					if label == NO_LABEL:
 						queue_pfx = NO_LABEL_QUEUE_PREFIX + mname
@@ -96,15 +102,15 @@ try:
 							last_rec = json.loads(last_rec[0])
 							if last_rec['ts'] < ts and last_rec['label'] != label:
 								msg = '%s changed at %s from %s to %s (diff=%d), %s' % (mname, dt.strftime('%d/%m %H:%M:%S'), last_rec['label'], label, ts - last_rec['ts'], bname)
-								print msg
+								dbprint('%s %s' % (bname, msg))
 								msglist.append(msg)
 								labellist.append((mname, label))
 						else:
 							msg = 'Initial at %s %s' % (dt.strftime('%d/%m %H:%M:%S'), label)
-							print msg
+							dbprint('%s %s' % (bname, msg))
 							msglist.append(msg)
 							labellist.append((mname, label))
-						print
+						dbprint(bname)
 						redis.rpush(output_name, json.dumps({'label': label, 'ts': ts, 'name': fpath}))
 						redis.ltrim(output_name, max(0, redis.llen(output_name) - 100), -1)
 				if msglist:
@@ -117,8 +123,11 @@ try:
 				redis.rpush(REDIS_FAIL_LIST, fpath)
 				failed_file = fpath
 				raise
+		redis.rpush(REDIS_FAIL_LIST, fpath)
+		break
 except Exception, e:
-	send_email('itmousecage@gmail.com', '%s error occured: %s' % (failed_file, str(e)), 'Error details: %s' % traceback.format_exc())
+	if not isinstance(e, error_temp):
+		send_email('itmousecage@gmail.com', '%s error occured: %s' % (failed_file, str(e)), 'Error details: %s' % traceback.format_exc())
 	traceback.print_exc(sys.stderr)
 
 if not ftp_h is None:

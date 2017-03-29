@@ -19,7 +19,8 @@ from glob import glob
 import os, sys, imghdr, time
 
 #SRCDIR = os.path.expanduser('~/work/garage/2016-09-07')
-SRCDIR = os.path.expanduser('~/work/garage/random')
+SRCDIR = os.path.expanduser('~/work/garage/2016-11-02')
+#SRCDIR = os.path.expanduser('~/work/garage/random')
 OUTDIR = 'output'
 
 if not os.path.exists(OUTDIR):
@@ -62,10 +63,12 @@ for root, dirs, files in os.walk(SRCDIR, followlinks=True):
 	for fname in files:
 		fname = os.path.join(os.path.join(root, fname))
 		try:
-			t = time.time()
 			itype = imghdr.what(fname)
 			if itype :
+				t = time.time()
+				print 'Get Features'
 				features = get_features(fname)
+				print '%3d (%.2f s): %s' % (i, time.time() - t, fname)
 				features = features[0].mean(axis=(1,2))
 				print features.shape
 				np.save(os.path.join(OUTDIR, os.path.basename(fname)), features)
@@ -73,7 +76,6 @@ for root, dirs, files in os.walk(SRCDIR, followlinks=True):
 #				imsave(os.path.join(OUTDIR, os.path.basename(fname)), features)
 				os.symlink(fname, os.path.join(OUTDIR, os.path.basename(fname)))
 				i += 1
-				print '%3d (%.2f s): %s' % (i, time.time() - t, fname)
 		except Exception, e:
 			print e
 

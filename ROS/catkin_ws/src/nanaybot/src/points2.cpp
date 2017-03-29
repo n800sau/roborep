@@ -57,7 +57,7 @@ int main(int argc, char ** argv)
     ros::init(argc, argv, "test_voxel");
     ros::NodeHandle nh;
     ros::Subscriber sub = nh.subscribe("/camera/depth_registered/points", 1, cloud_cb);
-    pub = nh.advertise<sensor_msgs::PointCloud2> ("/nanaybot/processed_points", 1);
+    pub = nh.advertise<sensor_msgs::PointCloud2> ("/oculus2wd/processed_points", 1);
     ros::spin();
 }
 
