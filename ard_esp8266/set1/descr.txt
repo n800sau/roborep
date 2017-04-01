@@ -1,0 +1,6 @@
+v38238 -> io13
+ir led -> io15
+red led -> io12
+orange led -> io14
+green led -> io5
+xpd pin -> io4
