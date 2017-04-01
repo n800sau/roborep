@@ -1,1 +1,1 @@
-sudo service nanaybot stop
+sudo service oculus2wd stop

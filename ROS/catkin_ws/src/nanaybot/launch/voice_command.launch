@@ -1,6 +1,6 @@
 <launch>
 	<node name="recognizer" pkg="pocketsphinx" type="recognizer.py" output="screen">
-		<param name="lm" value="$(find nanaybot)/sphinx/base.lm"/>
-		<param name="dict" value="$(find nanaybot)/sphinx/base.dic"/>
+		<param name="lm" value="$(find oculus2wd)/sphinx/base.lm"/>
+		<param name="dict" value="$(find oculus2wd)/sphinx/base.dic"/>
 	</node>
 </launch>

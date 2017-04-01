@@ -37,7 +37,7 @@ namespace image_signal_nd
 				image_transport::SubscriberStatusCallback connect_cb = boost::bind(&ImageSignalNd::connectCb, this);
 				// Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
-				img_pub  = it->advertise("/nanaybot/signal_image_nd",  1, connect_cb, connect_cb);
+				img_pub  = it->advertise("/oculus2wd/signal_image_nd",  1, connect_cb, connect_cb);
 			}
 
 			// Handles (un)subscribing when clients (un)subscribe
