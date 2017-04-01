@@ -20,15 +20,18 @@ args = vars(ap.parse_args())
 # load the configuration and grab all image paths in the dataset
 conf = Conf(args["conf"])
 
+outlist = {}
+fourcc = cv2.cv.CV_FOURCC('X', 'V', 'I', 'D')
+fps = 2
+
 # if a video path was not supplied, grab the reference to the webcam
 if args.get("video", False):
 	camera = cv2.VideoCapture(args["video"])
 else:
 	camera = cv2.VideoCapture(0)
-
-outlist = {}
-fourcc = cv2.cv.CV_FOURCC('X', 'V', 'I', 'D')
-fps = 25
+	camera.set(cv2.cv.CV_CAP_PROP_FPS, fps)
+	camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 320)
+	camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
 
 icount = 1
 

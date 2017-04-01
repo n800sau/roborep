@@ -7,14 +7,14 @@ label_flist = {}
 
 BPATH = '~/sshfs/asus/root/rus_hard/garage'
 
-IPATH = 'input'
+IPATH = 'input.generated'
 
 if os.path.exists(IPATH):
 	shutil.rmtree(IPATH)
 
 bpath = os.path.expanduser(BPATH)
 
-inside_range = [datetime.time(hour=23), datetime.time(hour=6)]
+inside_range = [datetime.time(hour=22), datetime.time(hour=6)]
 outside_range = [datetime.time(hour=8), datetime.time(hour=17)]
 
 for root, dirs, files in os.walk(bpath, topdown=False, followlinks=True):

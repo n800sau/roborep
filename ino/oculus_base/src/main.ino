@@ -45,7 +45,7 @@ const int MAX_BUFFER = 8;
 int buffer[MAX_BUFFER];
 int commandSize = 0;
 unsigned long lastcmd = 0;
-int timeout = 500;
+int timeout = 50000;
 
 void setup()
 {
@@ -116,8 +116,14 @@ void manageCommand()
 void reply_status()
 {
 	Serial.print(", l:");
+	if(digitalRead(motorA2Pin) == HIGH) {
+		Serial.print("-");
+	}
 	Serial.print(OCR2A);
 	Serial.print(", r:");
+	if(digitalRead(motorB2Pin) == HIGH) {
+		Serial.print("-");
+	}
 	Serial.print(OCR2B);
 	Serial.print(", servo:");
 	Serial.println(camservo.read());
@@ -127,7 +133,7 @@ void reply_status()
 void parseCommand()
 {
 	Serial.println(REPLY_START_MARKER);
-	int mB, mA, n;
+	int mB, mA, n, pA, pB;
 	// always set speed on each move command
 	if((buffer[0] == 'f') || (buffer[0] == 'b') || (buffer[0] == 'l') || (buffer[0] == 'r'))
 	{
@@ -138,13 +144,32 @@ void parseCommand()
 
 	switch(buffer[0]) {
 		case 'm':
-			mB = buffer[1]&255;
-			mA = buffer[2]&255;
+			mA = buffer[1]&0x80;
+			mB = buffer[2]&0x80;
 
-			OCR2A =	 (mB&127)<<1;
-			OCR2B =	 (mA&127)<<1;
+			pA = (buffer[1]&0x7f)<<1;
+			pB = (buffer[2]&0x7f)<<1;
 
-			if (mB<128) {
+			if(mA) {
+				pA = (pA ^ 0xff) + 1;
+			}
+
+			if(mB) {
+				pB = (pB ^ 0xff) + 1;
+			}
+
+//	Serial.print(pA);
+//	Serial.print(":");
+//	Serial.println(pB);
+
+//	Serial.print(mA);
+//	Serial.print(":");
+//	Serial.println(mB);
+
+			OCR2A = pA;
+			OCR2B = pB;
+
+			if (mB) {
 				digitalWrite(motorB1Pin, LOW);
 				digitalWrite(motorB2Pin, HIGH);
 			} else {
@@ -152,7 +177,7 @@ void parseCommand()
 				digitalWrite(motorB2Pin, LOW);
 			}
 
-			if (mA<128) {
+			if (mA) {
 				digitalWrite(motorA1Pin, LOW);
 				digitalWrite(motorA2Pin, HIGH);
 			} else {

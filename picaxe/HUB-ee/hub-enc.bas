@@ -7,8 +7,8 @@
 ;M2 R 15,13,9,5,7,3	   - b.3,b.5,c.1,c.5,c.4,c.7   qb qa stby pwm in2 in1 pw grn
 
 ; new
-;M1 L 16,14,11,6,8,4   - c.6,c.1,b.7,c.3,b.4,b.2   qb qa stby pwm in2 in1	pw grn
-;M2 R 15,13,9,5,7,3	   - c.4,c.2,c.7,c.5,b.3,b.5   qb qa stby pwm in2 in1	pw grn
+;M1 L 4,9,11,7,14,16   - c.6,c.1,b.7,c.3,b.4,b.2   qb qa stby pwm in2 in1	pw grn
+;M2 R 6,8,3,5,15,13	   - c.4,c.2,c.7,c.5,b.3,b.5   qb qa stby pwm in2 in1	pw grn
 ;c.1 - c.5 can be used for setint
 
 symbol M1PWMPin = C.3
@@ -49,16 +49,11 @@ symbol oldM2qA = b11
 setup:
 PWMOUT PWMDIV16, M1PWMPin, 255, 0
 PWMOUT PWMDIV16, M2PWMPin, 255, 0
-gosub setup_int
+;gosub setup_int
 goto main
 
 main:
-	pause 1000
 	gosub print_data
-
-	goto main
-
-
 
 	; Spin Motor1 in direction A at full speed
 	; Set the variables
