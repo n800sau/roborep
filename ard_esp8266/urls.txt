@@ -1,1 +1,5 @@
 http://www.esp8266.com/wiki/doku.php?id=esp8266_gpio_pin_allocations
+
+http://smarpl.com/content/esp8266-esp-201-module-freeing-gpio9-and-gpio10
+
+>> Despite the fact ESP-201 module has D0, D1, D2, D3, CLK, CMD (GPIO6-GPIO11) pins broken out they provide interface to flash chip and cannot be used as regular GPIOs.
