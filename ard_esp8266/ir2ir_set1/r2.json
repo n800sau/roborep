@@ -1,0 +1,9 @@
+{
+	"jsonrpc" : "2.0",
+	"method": "ir_send",
+	"id" : 1,
+	"params" : {
+		"type": "sony",
+		"code" : "0x19A"
+	}
+}
