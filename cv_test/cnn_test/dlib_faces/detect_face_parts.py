@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
 # import the necessary packages
+import os, sys
 from imutils import face_utils
 import numpy as np
 import argparse
 import imutils
 import dlib
 import cv2
+
+OUTPUT = 'output'
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -29,6 +32,8 @@ gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # detect faces in the grayscale image
 rects = detector(gray, 1)
+
+print 'Found %s' % len(rects)
 
 # loop over the face detections
 for (i, rect) in enumerate(rects):
@@ -56,15 +61,17 @@ for (i, rect) in enumerate(rects):
 		roi = imutils.resize(roi, width=250, inter=cv2.INTER_CUBIC)
 
 		# show the particular face part
-		cv2.imshow("ROI", roi)
-		cv2.imshow("Image", clone)
-		cv2.waitKey(0)
+#		cv2.imshow("ROI", roi)
+#		cv2.imshow("Image", clone)
+#		cv2.waitKey(0)
 
-	# visualize all facial landmarks with a transparent overlay
-	output = face_utils.visualize_facial_landmarks(image, shape)
+	if rects:
 
-	# show the output image with the face detections + facial landmarks
-	cv2.imwrite(os.path.join(OUTPUT, os.path.basename(fname)), output)
+		# visualize all facial landmarks with a transparent overlay
+		output = face_utils.visualize_facial_landmarks(image, shape)
+
+		# show the output image with the face detections + facial landmarks
+		cv2.imwrite(os.path.join(OUTPUT, os.path.basename(fname)), output)
 
 #	cv2.imshow("Image", output)
 #	cv2.waitKey(0)
