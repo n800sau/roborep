@@ -1,6 +1,8 @@
 echo  > run.log
+#SRCPATH=/home/n800s/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony/2014-01_01
+SRCPATH=/home/n800s/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony/2015-05-17_bushwalk
 #for IMG in images/*
-for IMG in /home/n800s/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony/2014-01_01/*
+for IMG in "$SRCPATH"/*
 do
 
 echo $IMG >>run.log
