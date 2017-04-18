@@ -63,7 +63,7 @@ while True:
 	
 #	if len(rects) > 0 and args["output"]:
 	if args["output"]:
-		oframe = frame
+		oframe = imutils.resize(frame, width=720)
 		if out is None:
 			sz = list(reversed(oframe.shape[:2]))
 			out = cv2.VideoWriter(args["output"], fourcc, fps, tuple(sz))
