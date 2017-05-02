@@ -256,12 +256,17 @@ void publish(const byte mac[], const char name[], const byte payload[], int payl
 }
 
 
+int i = 0;
+
 void loop()
 {
-	publish(mac1, "CATERPIE", (byte*)"\x2d\x01\x11\x23", 4);
+	String s(i);
+	i++;
+Serial.println(s);
+	publish(mac1, "CATERPIE", (byte*)s.c_str(), s.length());
 	delay(100);    // Broadcasting interval
-	publish(mac2, "PIKACHU", (byte*)"\x2d\x01\x07", 3);
-	delay(100);    // Broadcasting interval
-	publish(mac3, "POKEMON", (byte*)"\x2d\x01\x07\x33\x56\x11\x04", 7);
-	delay(100);    // Broadcasting interval
+//	publish(mac2, "PIKACHU", (byte*)"\x2d\x01\x07", 3);
+//	delay(10);    // Broadcasting interval
+//	publish(mac3, "POKEMON", (byte*)"\x2d\x01\x07\x33\x56\x11\x04", 7);
+//	delay(10);    // Broadcasting interval
 }

@@ -5,28 +5,14 @@
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
-#include <DHT.h>
 #include <voltage.h>
 
-#define DHT_PIN 2
+#include <Wire.h>
+#include <AM2320.h>
 
-// Uncomment whatever type you're using!
-//#define DHTTYPE DHT11		// DHT 11
-#define DHTTYPE DHT22		// DHT 22	 (AM2302)
-//#define DHTTYPE DHT21		// DHT 21 (AM2301)
+AM2320 th;
 
-// Connect pin 1 (on the left) of the sensor to +5V
-// NOTE: If using a board with 3.3V logic like an Arduino Due connect pin 1
-// to 3.3V instead of 5V!
-// Connect pin 2 of the sensor to whatever your DHT_PIN is
-// Connect pin 4 (on the right) of the sensor to GROUND
-// Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
-
-// Initialize DHT sensor.
-// Note that older versions of this library took an optional third parameter to
-// tweak the timings for faster processors.	 This parameter is no longer needed
-// as the current DHT reading algorithm adjusts itself to work on faster procs.
-DHT dht(DHT_PIN, DHTTYPE);
+#define NODE_NAME "AM2320"
 
 #define LED_PIN 6
 
@@ -219,8 +205,8 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 
 	Serial.begin(115200);
-	Serial.println("Start LE advertizing");
-	dht.begin();
+	Serial.println("Start LE data advertizing");
+
 	SPI.begin();
 	SPI.setBitOrder(MSBFIRST);
 
@@ -324,44 +310,38 @@ void loop()
 {
 	// Wait a few seconds between measurements.
 	delay(2000);
-	// Reading temperature or humidity takes about 250 milliseconds!
-	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-	float h = dht.readHumidity();
-	// Read temperature as Celsius (the default)
-	float t = dht.readTemperature();
-
-	// Check if any reads failed and exit early (to try again).
-	if (isnan(h) || isnan(t)) {
-		Serial.println("Failed to read from DHT sensor!");
-		publish(mac1, "DTH", (byte*)"\xff\xff\xff\xff", 4);
+	switch(th.Read()) {
+	case 2:
+		Serial.println("CRC failed");
+		publish(mac1, NODE_NAME, (byte*)"\xff\xff\xff\xff", 4);
+		blink(3);
+		break;
+	case 1:
+		Serial.println("Sensor offline");
+		publish(mac1, NODE_NAME, (byte*)"\xee\xee\xee\xee", 4);
 		blink(5);
-	} else {
-
-		// Compute heat index in Celsius (isFahreheit = false)
-		float hic = dht.computeHeatIndex(t, h, false);
-
+		break;
+	case 0:
 		int v = readVccMv();
 
 		Serial.print("H: ");
-		Serial.print(h);
+		Serial.print(th.h);
 		Serial.print(" %\t");
 		Serial.print("T: ");
-		Serial.print(t);
-		Serial.print(" *C ");
-		Serial.print("Heat: ");
-		Serial.print(hic);
+		Serial.print(th.t);
 		Serial.print(" *C ");
 		Serial.print("V:");
 		Serial.println(v);
 
 
 		char buf[32];
-		("H" + String(long(h*1000)) + "T" + String(long(t*1000)) + "I" + String(long(hic * 1000)) + "V" + String(v)).toCharArray(buf, sizeof(buf));
+		("H" + String(long(th.h*1000)) + "T" + String(long(th.t*1000)) + "V" + String(v)).toCharArray(buf, sizeof(buf));
 
 //		Serial.print(F("Sending:"));
 //		Serial.println(buf);
 
-		publish(mac1, "DTH", (byte*)buf, strlen(buf));
+		publish(mac1, NODE_NAME, (byte*)buf, strlen(buf));
+		break;
 	}
-//	sleep20();
+	sleep20();
 }
