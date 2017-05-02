@@ -28,10 +28,10 @@
 // as the current DHT reading algorithm adjusts itself to work on faster procs.
 DHT dht(DHT_PIN, DHTTYPE);
 
-#define LED_PIN 7
+#define LED_PIN 6
 
-#define PIN_CE  8 // chip enable
-#define PIN_CSN 9   // chip select (for SPI)
+#define PIN_CE  7 // chip enable
+#define PIN_CSN 8   // chip select (for SPI)
 
 // The MAC address of BLE advertizer -- just make one up
 const byte mac1[6] = {
@@ -196,9 +196,6 @@ void sleep20()
 	myWatchdogEnable (0b100001);	// 8 seconds
 	myWatchdogEnable (0b100001);	// 8 seconds
 	myWatchdogEnable (0b100000);	// 4 seconds
-
-	// Wait a few seconds between measurements.
-//	delay(2000);
 }
 
 void blink(int times=1)
@@ -325,6 +322,8 @@ void publish(const byte mac[], const char name[], const byte payload[], int payl
 
 void loop()
 {
+	// Wait a few seconds between measurements.
+	delay(2000);
 	// Reading temperature or humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
 	float h = dht.readHumidity();
@@ -334,6 +333,7 @@ void loop()
 	// Check if any reads failed and exit early (to try again).
 	if (isnan(h) || isnan(t)) {
 		Serial.println("Failed to read from DHT sensor!");
+		publish(mac1, "DTH", (byte*)"\xff\xff\xff\xff", 4);
 		blink(5);
 	} else {
 
@@ -363,5 +363,5 @@ void loop()
 
 		publish(mac1, "DTH", (byte*)buf, strlen(buf));
 	}
-	sleep20();
+//	sleep20();
 }
