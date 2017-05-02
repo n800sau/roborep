@@ -18,7 +18,7 @@
 // Connect pin 1 (on the left) of the sensor to +5V
 // NOTE: If using a board with 3.3V logic like an Arduino Due connect pin 1
 // to 3.3V instead of 5V!
-// Connect pin 2 of the sensor to whatever your DHTPIN is
+// Connect pin 2 of the sensor to whatever your DHT_PIN is
 // Connect pin 4 (on the right) of the sensor to GROUND
 // Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
 
@@ -26,7 +26,7 @@
 // Note that older versions of this library took an optional third parameter to
 // tweak the timings for faster processors.	 This parameter is no longer needed
 // as the current DHT reading algorithm adjusts itself to work on faster procs.
-DHT dht(DHTPIN, DHTTYPE);
+DHT dht(DHT_PIN, DHTTYPE);
 
 #define LED_PIN 7
 
@@ -41,24 +41,6 @@ const byte mac1[6] = {
 	0x44,
 	0x55,
 	0x66
-};
-
-const byte mac2[6] = {
-	0x12,
-	0x23,
-	0x34,
-	0x45,
-	0x56,
-	0x67
-};
-
-const byte mac3[6] = {
-	0xA2,
-	0xFF,
-	0x01,
-	0xF8,
-	0x34,
-	0x12
 };
 
 uint8_t buf[32];
@@ -142,8 +124,8 @@ void btLePacketEncode(uint8_t* packet, uint8_t len, uint8_t chan)
 uint8_t spi_byte(uint8_t byte)
 {
 	// using Arduino's SPI library; clock out one byte
-	SPI.transfer(byte);
-	return byte;
+	uint8_t status = SPI.transfer(byte);
+	return status;
 }
 
 void nrf_cmd(uint8_t cmd, uint8_t data)
@@ -153,6 +135,16 @@ void nrf_cmd(uint8_t cmd, uint8_t data)
 	spi_byte(cmd);
 	spi_byte(data);
 	digitalWrite(PIN_CSN, HIGH);
+}
+
+uint8_t nrf_reg(uint8_t reg)
+{
+	// Write to nRF24's register
+	digitalWrite(PIN_CSN, LOW);
+	spi_byte(0x1f & reg);
+	uint8_t byte = spi_byte(0xff);
+	digitalWrite(PIN_CSN, HIGH);
+	return byte;
 }
 
 void nrf_simplebyte(uint8_t cmd)
@@ -195,7 +187,10 @@ void myWatchdogEnable(const byte interval)
 
 void sleep20()
 {
-	radio.powerDown();
+	digitalWrite(PIN_CE, LOW);   // (in preparation of switching to RX quickly)
+
+	byte cfg_byte = nrf_reg(0x00);
+	nrf_cmd(0x00, cfg_byte & ~0x02);
 
 	// sleep for a total of 20 seconds
 	myWatchdogEnable (0b100001);	// 8 seconds
@@ -222,8 +217,6 @@ void setup()
 {
 	pinMode(PIN_CSN, OUTPUT);
 	pinMode(PIN_CE, OUTPUT);
-//	pinMode(11, OUTPUT);
-//	pinMode(13, OUTPUT);
 	digitalWrite(PIN_CSN, HIGH);
 	digitalWrite(PIN_CE, LOW);
 	pinMode(LED_PIN, OUTPUT);
@@ -318,7 +311,9 @@ void publish(const byte mac[], const char name[], const byte payload[], int payl
 
 		digitalWrite(PIN_CSN, LOW);
 		spi_byte(0xA0);
-		for(i = 0 ; i < L ; i++) spi_byte(buf[i]);
+		for(i = 0 ; i < L ; i++) {
+			spi_byte(buf[i]);
+		}
 		digitalWrite(PIN_CSN, HIGH);
 
 		nrf_cmd(0x20, 0x12);  // TX on
@@ -328,7 +323,7 @@ void publish(const byte mac[], const char name[], const byte payload[], int payl
 	}
 }
 
-void step()
+void loop()
 {
 	// Reading temperature or humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
