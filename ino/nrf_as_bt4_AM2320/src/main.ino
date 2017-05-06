@@ -13,6 +13,7 @@
 AM2320 th;
 
 #define NODE_NAME "AM2320"
+#define RES_ID "\x01"
 
 #define LED_PIN 6
 
@@ -20,8 +21,43 @@ AM2320 th;
 #define PIN_CSN 8   // chip select (for SPI)
 
 // The MAC address of BLE advertizer -- just make one up
-const byte mac1[6] = {
+const byte mac_T[6] = {
 	0x11,
+	0x22,
+	0x33,
+	0x44,
+	0x55,
+	0x66
+};
+
+const byte mac_H[6] = {
+	0x12,
+	0x23,
+	0x34,
+	0x45,
+	0x56,
+	0x67
+};
+const byte mac_V[6] = {
+	0x13,
+	0x24,
+	0x35,
+	0x46,
+	0x57,
+	0x68
+};
+
+const byte mac_CRC[6] = {
+	0x14,
+	0x22,
+	0x33,
+	0x44,
+	0x55,
+	0x66
+};
+
+const byte mac_OFF[6] = {
+	0x15,
 	0x22,
 	0x33,
 	0x44,
@@ -180,8 +216,8 @@ void sleep20()
 
 	// sleep for a total of 20 seconds
 	myWatchdogEnable (0b100001);	// 8 seconds
-	myWatchdogEnable (0b100001);	// 8 seconds
-	myWatchdogEnable (0b100000);	// 4 seconds
+//	myWatchdogEnable (0b100001);	// 8 seconds
+//	myWatchdogEnable (0b100000);	// 4 seconds
 }
 
 void blink(int times=1)
@@ -233,6 +269,7 @@ void setup()
 	nrf_manybytes(buf, 5);
 	buf[0] = 0x2A;    // set RX address in nRF24L01, doesn't matter because RX is ignored in this case
 	nrf_manybytes(buf, 5);
+	blink(2);
 }
 
 int make_packet(const byte mac[], const char name[], const byte payload[], int payload_size)
@@ -311,37 +348,47 @@ void loop()
 	// Wait a few seconds between measurements.
 	delay(2000);
 	switch(th.Read()) {
-	case 2:
-		Serial.println("CRC failed");
-		publish(mac1, NODE_NAME, (byte*)"\xff\xff\xff\xff", 4);
-		blink(3);
-		break;
-	case 1:
-		Serial.println("Sensor offline");
-		publish(mac1, NODE_NAME, (byte*)"\xee\xee\xee\xee", 4);
-		blink(5);
-		break;
-	case 0:
-		int v = readVccMv();
+		case 2:
+			Serial.println("CRC failed");
+			publish(mac_CRC, NODE_NAME "_CRC", (byte*)RES_ID, sizeof(RES_ID)-1);
+			blink(3);
+			break;
+		case 1:
+			Serial.println("Sensor offline");
+			publish(mac_OFF, NODE_NAME "_OFF", (byte*)RES_ID, sizeof(RES_ID)-1);
+			blink(5);
+			break;
+		case 0:
+			int v = readVccMv();
 
-		Serial.print("H: ");
-		Serial.print(th.h);
-		Serial.print(" %\t");
-		Serial.print("T: ");
-		Serial.print(th.t);
-		Serial.print(" *C ");
-		Serial.print("V:");
-		Serial.println(v);
-
-
-		char buf[32];
-		("H" + String(long(th.h*1000)) + "T" + String(long(th.t*1000)) + "V" + String(v)).toCharArray(buf, sizeof(buf));
+			Serial.print("H: ");
+			Serial.print(th.h);
+			Serial.print(" %\t");
+			Serial.print("T: ");
+			Serial.print(th.t);
+			Serial.print(" *C ");
+			Serial.print("V:");
+			Serial.println(v);
 
 //		Serial.print(F("Sending:"));
-//		Serial.println(buf);
+//		Serial.println(s);
 
-		publish(mac1, NODE_NAME, (byte*)buf, strlen(buf));
-		break;
+			const int sz = 2+sizeof(uint32_t);
+			byte buf[sz];
+			uint32_t *pn = (uint32_t *)(buf + 2);
+			buf[0] = 1;
+			buf[1] = 2;
+			*pn = th.t * 1000;
+			publish(mac_T, NODE_NAME "_T", buf, sz);
+			delay(100);
+			*pn = th.h * 1000;
+			publish(mac_H, NODE_NAME "_H", buf, sz);
+			delay(100);
+			*pn = v;
+			publish(mac_V, NODE_NAME "_V", buf, sz);
+
+			blink(1);
+			break;
 	}
 	sleep20();
 }
