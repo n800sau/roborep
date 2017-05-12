@@ -5,37 +5,59 @@
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
-#include <DHT.h>
 #include <voltage.h>
 
-#define DHT_PIN 2
+#include <Wire.h>
+#include <AM2320.h>
 
-// Uncomment whatever type you're using!
-//#define DHTTYPE DHT11		// DHT 11
-#define DHTTYPE DHT22		// DHT 22	 (AM2302)
-//#define DHTTYPE DHT21		// DHT 21 (AM2301)
+AM2320 th;
 
-// Connect pin 1 (on the left) of the sensor to +5V
-// NOTE: If using a board with 3.3V logic like an Arduino Due connect pin 1
-// to 3.3V instead of 5V!
-// Connect pin 2 of the sensor to whatever your DHT_PIN is
-// Connect pin 4 (on the right) of the sensor to GROUND
-// Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
+#define NODE_NAME "AM2320"
+#define RES_ID "\x01"
 
-// Initialize DHT sensor.
-// Note that older versions of this library took an optional third parameter to
-// tweak the timings for faster processors.	 This parameter is no longer needed
-// as the current DHT reading algorithm adjusts itself to work on faster procs.
-DHT dht(DHT_PIN, DHTTYPE);
+#define LED_PIN 6
 
-#define LED_PIN 7
-
-#define PIN_CE  8 // chip enable
-#define PIN_CSN 9   // chip select (for SPI)
+#define PIN_CE  7 // chip enable
+#define PIN_CSN 8   // chip select (for SPI)
 
 // The MAC address of BLE advertizer -- just make one up
-const byte mac1[6] = {
+const byte mac_T[6] = {
 	0x11,
+	0x22,
+	0x33,
+	0x44,
+	0x55,
+	0x66
+};
+
+const byte mac_H[6] = {
+	0x12,
+	0x23,
+	0x34,
+	0x45,
+	0x56,
+	0x67
+};
+const byte mac_V[6] = {
+	0x13,
+	0x24,
+	0x35,
+	0x46,
+	0x57,
+	0x68
+};
+
+const byte mac_CRC[6] = {
+	0x14,
+	0x22,
+	0x33,
+	0x44,
+	0x55,
+	0x66
+};
+
+const byte mac_OFF[6] = {
+	0x15,
 	0x22,
 	0x33,
 	0x44,
@@ -194,11 +216,8 @@ void sleep20()
 
 	// sleep for a total of 20 seconds
 	myWatchdogEnable (0b100001);	// 8 seconds
-	myWatchdogEnable (0b100001);	// 8 seconds
-	myWatchdogEnable (0b100000);	// 4 seconds
-
-	// Wait a few seconds between measurements.
-//	delay(2000);
+//	myWatchdogEnable (0b100001);	// 8 seconds
+//	myWatchdogEnable (0b100000);	// 4 seconds
 }
 
 void blink(int times=1)
@@ -222,8 +241,8 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 
 	Serial.begin(115200);
-	Serial.println("Start LE advertizing");
-	dht.begin();
+	Serial.println("Start LE data advertizing");
+
 	SPI.begin();
 	SPI.setBitOrder(MSBFIRST);
 
@@ -250,6 +269,7 @@ void setup()
 	nrf_manybytes(buf, 5);
 	buf[0] = 0x2A;    // set RX address in nRF24L01, doesn't matter because RX is ignored in this case
 	nrf_manybytes(buf, 5);
+	blink(2);
 }
 
 int make_packet(const byte mac[], const char name[], const byte payload[], int payload_size)
@@ -325,43 +345,50 @@ void publish(const byte mac[], const char name[], const byte payload[], int payl
 
 void loop()
 {
-	// Reading temperature or humidity takes about 250 milliseconds!
-	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-	float h = dht.readHumidity();
-	// Read temperature as Celsius (the default)
-	float t = dht.readTemperature();
+	// Wait a few seconds between measurements.
+	delay(2000);
+	switch(th.Read()) {
+		case 2:
+			Serial.println("CRC failed");
+			publish(mac_CRC, NODE_NAME "_CRC", (byte*)RES_ID, sizeof(RES_ID)-1);
+			blink(3);
+			break;
+		case 1:
+			Serial.println("Sensor offline");
+			publish(mac_OFF, NODE_NAME "_OFF", (byte*)RES_ID, sizeof(RES_ID)-1);
+			blink(5);
+			break;
+		case 0:
+			int v = readVccMv();
 
-	// Check if any reads failed and exit early (to try again).
-	if (isnan(h) || isnan(t)) {
-		Serial.println("Failed to read from DHT sensor!");
-		blink(5);
-	} else {
-
-		// Compute heat index in Celsius (isFahreheit = false)
-		float hic = dht.computeHeatIndex(t, h, false);
-
-		int v = readVccMv();
-
-		Serial.print("H: ");
-		Serial.print(h);
-		Serial.print(" %\t");
-		Serial.print("T: ");
-		Serial.print(t);
-		Serial.print(" *C ");
-		Serial.print("Heat: ");
-		Serial.print(hic);
-		Serial.print(" *C ");
-		Serial.print("V:");
-		Serial.println(v);
-
-
-		char buf[32];
-		("H" + String(long(h*1000)) + "T" + String(long(t*1000)) + "I" + String(long(hic * 1000)) + "V" + String(v)).toCharArray(buf, sizeof(buf));
+			Serial.print("H: ");
+			Serial.print(th.h);
+			Serial.print(" %\t");
+			Serial.print("T: ");
+			Serial.print(th.t);
+			Serial.print(" *C ");
+			Serial.print("V:");
+			Serial.println(v);
 
 //		Serial.print(F("Sending:"));
-//		Serial.println(buf);
+//		Serial.println(s);
 
-		publish(mac1, "DTH", (byte*)buf, strlen(buf));
+			const int sz = 2+sizeof(uint32_t);
+			byte buf[sz];
+			uint32_t *pn = (uint32_t *)(buf + 2);
+			buf[0] = 1;
+			buf[1] = 2;
+			*pn = th.t * 1000;
+			publish(mac_T, NODE_NAME "_T", buf, sz);
+			delay(100);
+			*pn = th.h * 1000;
+			publish(mac_H, NODE_NAME "_H", buf, sz);
+			delay(100);
+			*pn = v;
+			publish(mac_V, NODE_NAME "_V", buf, sz);
+
+			blink(1);
+			break;
 	}
 	sleep20();
 }
