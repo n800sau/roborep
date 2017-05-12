@@ -10,6 +10,9 @@ import time
 import dlib
 import cv2
 
+fourcc = cv2.cv.CV_FOURCC('X', 'V', 'I', 'D')
+out = None
+
 def eye_aspect_ratio(eye):
 	# compute the euclidean distances between the two sets of
 	# vertical eye landmarks (x, y)-coordinates
@@ -58,6 +61,9 @@ predictor = dlib.shape_predictor(args["shape_predictor"])
 # start the video stream thread
 print("[INFO] starting video stream thread...")
 vs = FileVideoStream(args["video"]).start()
+
+fps = vs.stream.get(cv2.cv.CV_CAP_PROP_FPS)
+
 fileStream = True
 # vs = VideoStream(src=0).start()
 # vs = VideoStream(usePiCamera=True).start()
@@ -124,10 +130,18 @@ while True:
 
 		# draw the total number of blinks on the frame along with
 		# the computed eye aspect ratio for the frame
-		cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
+		t2 = "EAR: {:.2f}".format(ear)
+		cv2.putText(frame, t2, (300, 30),
 			cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-		cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
-			cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+		print t1, t2
+	t1 = "Blinks: {}".format(TOTAL)
+	cv2.putText(frame, t1, (10, 30),
+		cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+	if out is None:
+		sz = list(reversed(frame.shape[:2]))
+		out = cv2.VideoWriter('blinks.avi', fourcc, fps, tuple(sz))
+	out.write(frame)
  
 	# show the frame
 	cv2.imshow("Frame", frame)
