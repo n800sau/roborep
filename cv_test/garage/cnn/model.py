@@ -4,9 +4,13 @@ from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense, Input
 from keras.optimizers import SGD, Adam
 
-IMG_TARGET_ROWS = 244
-IMG_TARGET_COLS = 244
+IMG_TARGET_ROWS = 122
+IMG_TARGET_COLS = 122
 N_CLASSES = 1
+
+# LeakyReLU
+# PReLU
+# ELU
 
 def build_model():
 
@@ -25,9 +29,16 @@ def build_model():
 
 	model.add(Conv2D(64, (3, 3)))
 	model.add(Activation('relu'))
-
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Dropout(0.25))
+
+#	model.add(Conv2D(128, (3, 3), padding='same'))
+#	model.add(Activation('relu'))
+
+#	model.add(Conv2D(128, (3, 3)))
+#	model.add(Activation('relu'))
+#	model.add(MaxPooling2D(pool_size=(2, 2)))
+#	model.add(Dropout(0.25))
 
 	model.add(Flatten())
 	model.add(Dense(512))
@@ -46,3 +57,4 @@ def build_model():
 if __name__ == '__main__':
 	model = build_model()
 	model.summary()
+
