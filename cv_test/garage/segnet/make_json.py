@@ -2,8 +2,8 @@
 
 import os, sys, json, random
 
-jfname = 'init.json'
-dirname = 'images'
+jfname = 'garage.json'
+dirname = 'no_car'
 
 if os.path.exists(jfname):
 	js = json.load(file(jfname))

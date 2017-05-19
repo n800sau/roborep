@@ -1,0 +1,2 @@
+class_weighting: 0.578391415818
+class_weighting: 3.68912469421
