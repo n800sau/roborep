@@ -24,7 +24,7 @@ weights = dict([(v, {'pixels': 0, 'total': 0}) for k,v in clabels.items()])
 weights[bg_index] = {'pixels': 0, 'total': 0}
 
 for im in imlist:
-	if im['annotations']:
+	if im.get('annotations', []) or im['filename'].startswith('no_car'):
 		fn = im['filename']
 		image = Image.open(fn)
 		image = np.asarray(image)
@@ -35,7 +35,7 @@ for im in imlist:
 		width, height = image.size
 		annimage = Image.new('L', image.size)
 		pdraw = ImageDraw.Draw(annimage)
-		for ann in im['annotations']:
+		for ann in im.get('annotations', []):
 			xn = [float(v) for v in ann['xn'].split(';')]
 			yn = [float(v) for v in ann['yn'].split(';')]
 			poly = zip(xn, yn)
