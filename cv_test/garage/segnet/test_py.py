@@ -99,7 +99,7 @@ for fname in list_images(INPUT):
 	Car = [128,128,128]
 
 	label_colours = np.array([Unlabelled, Car])
-	print 'labels=', label_colours.shape[0], label_colours.shape
+#	print 'labels=', label_colours.shape[0], label_colours.shape
 
 	for l in range(0, label_colours.shape[0]):
 		r[ind==l] = label_colours[l, 0]
