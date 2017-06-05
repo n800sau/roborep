@@ -1,4 +1,4 @@
-net: "segnet_train.prototxt" 
+net: "segnet_small_train.prototxt" 
 test_initialization: false
 test_iter: 1
 test_interval: 10000000
@@ -11,5 +11,5 @@ momentum: 0.9
 max_iter: 40000
 weight_decay: 0.0005
 snapshot: 1000
-snapshot_prefix: "snapshots"
+snapshot_prefix: "snapshots_small"
 solver_mode: GPU

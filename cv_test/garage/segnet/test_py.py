@@ -14,6 +14,7 @@ from imutils.paths import list_images
 INPUT='garage_tagged'
 #INPUT='data/images'
 OUTPUT='output'
+OUTPUT_MONTAGE = 'output_montage'
 OUTPUT_DATA = 'odata'
 
 LAST_LAYER = 'argmax'
@@ -98,8 +99,8 @@ for fname in list_images(INPUT):
 	Car = [128,128,128]
 
 	label_colours = np.array([Unlabelled, Car])
-	print 'labels=', label_colours.shape[0], label_colours.shape
-	
+#	print 'labels=', label_colours.shape[0], label_colours.shape
+
 	for l in range(0, label_colours.shape[0]):
 		r[ind==l] = label_colours[l, 0]
 		g[ind==l] = label_colours[l, 1]
@@ -126,6 +127,6 @@ for fname in list_images(INPUT):
 	montage.addResult(rgb)
 
 #	np.savetxt(os.path.join(OUTPUT_DATA, os.path.basename(fname) + '.csv'), output, fmt='%d')
-#	cv2.imwrite(os.path.join(OUTPUT, os.path.basename(fname)), output)
-	cv2.imwrite(os.path.join(OUTPUT, os.path.basename(fname)), montage.montage)
+	cv2.imwrite(os.path.join(OUTPUT, os.path.basename(fname)), rgb)
+	cv2.imwrite(os.path.join(OUTPUT_MONTAGE, os.path.basename(fname)), montage.montage)
 
