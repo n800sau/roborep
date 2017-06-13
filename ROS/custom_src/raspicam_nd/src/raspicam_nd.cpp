@@ -87,6 +87,8 @@ namespace raspicam_nd
 						camera_cv.set(CV_CAP_PROP_FPS, fps);
 						camera_cv.set(CV_CAP_PROP_FRAME_WIDTH, width);
 						camera_cv.set(CV_CAP_PROP_FRAME_HEIGHT, height);
+						camera_cv.set(CV_CAP_PROP_EXPOSURE, -1);
+						camera_cv.set(CV_CAP_PROP_GAIN, 0);
 						NODELET_DEBUG_STREAM("fps set to " << fps << ", color_mode: " << color_mode << ", size: " << width << "x" << height);
 						if(!camera_cv.open())
 							ROS_ERROR("Error opening camera");
