@@ -77,7 +77,7 @@ namespace raspicam_nd
 						NODELET_DEBUG("RaspiCamNd Connect callback!");
 						ros::NodeHandle &nh = getNodeHandle();
 						ros::NodeHandle &private_nh = getPrivateNodeHandle();
-						int fps, width, height, rotation, exposure, iso;
+						int fps, width, height, rotation, exposure, iso, brightness, contrast;
 						private_nh.param("fps", fps, 10);
 						private_nh.param<std::string>("color_mode", color_mode, "rgb8");
 						private_nh.param("width", width, 320);
@@ -85,7 +85,17 @@ namespace raspicam_nd
 						private_nh.param("rotation", rotation, 0);
 						private_nh.param("exposure", exposure, -1);
 						private_nh.param("iso", iso, 0);
+						// 0 - 100
+						private_nh.param("brightness", brightness, -1);
+						// 0 - 100
+						private_nh.param("contrast", brightness, -1);
 
+						if(brightness >= 0) {
+							camera_cv.set(CV_CAP_PROP_BRIGHTNESS, brightness);
+						}
+						if(contrast >= 0) {
+							camera_cv.set(CV_CAP_PROP_CONTRAST, contrast);
+						}
 						camera_cv.set(CV_CAP_PROP_FORMAT, color_mode_map[color_mode]);
 						camera_cv.set(CV_CAP_PROP_FPS, fps);
 						camera_cv.set(CV_CAP_PROP_FRAME_WIDTH, width);
