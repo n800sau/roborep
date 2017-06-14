@@ -7,13 +7,13 @@ bagfname = sys.argv[1]
 #bagfname = 'record_2016-10-14T09:29+1100.bag' if len(sys.argv) < 2 else sys.argv[1]
 
 tlist = {
-	'/fchassis/cmd_vel':   '        cmd_vel',
-	'/fchassis/lwheel':   '       lwheel',
-	'/fchassis/rwheel':   '       rwheel',
-	'/fchassis/state':   '      state',
-	'/fchassis/mf':      '    mf',
-	'/fchassis/imu':     '  imu_raw',
-	'/fchassis/sonar':   'sonar',
+	'/ow/cmd_vel':   '        cmd_vel',
+	'/ow/lwheel':   '       lwheel',
+	'/ow/rwheel':   '       rwheel',
+	'/ow/state':   '      state',
+	'/ow/mf':      '    mf',
+	'/ow/imu':     '  imu_raw',
+	'/ow/sonar':   'sonar',
 	'/imu/data':         '                 imu',
 }
 
