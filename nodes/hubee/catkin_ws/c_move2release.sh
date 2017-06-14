@@ -1,2 +1,2 @@
-#rostopic pub -1 /fchassis/command fchassis_msgs/command '{mcommand: move2release, pwr: 50, fwd: false, timeout: 10}'
-rosservice call /fchassis/exec_command '{mcommand: move2release, pwr: 50, fwd: true, timeout: 10}'
+#rostopic pub -1 /ow/command fchassis_msgs/command '{mcommand: move2release, pwr: 50, fwd: false, timeout: 10}'
+rosservice call /ow/exec_command '{mcommand: move2release, pwr: 50, fwd: false, timeout: 10}'
