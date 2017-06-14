@@ -7,9 +7,12 @@ bagfname = sys.argv[1]
 #bagfname = 'record_2016-10-14T09:29+1100.bag' if len(sys.argv) < 2 else sys.argv[1]
 
 tlist = {
-	'/fchassis/state':   '             state',
-	'/fchassis/mf':      '          mf',
-	'/fchassis/imu':     '     imu_raw',
+	'/fchassis/cmd_vel':   '        cmd_vel',
+	'/fchassis/lwheel':   '       lwheel',
+	'/fchassis/rwheel':   '       rwheel',
+	'/fchassis/state':   '      state',
+	'/fchassis/mf':      '    mf',
+	'/fchassis/imu':     '  imu_raw',
 	'/fchassis/sonar':   'sonar',
 	'/imu/data':         '                 imu',
 }
@@ -51,6 +54,12 @@ with open(bagfname + '_x.csv', 'w+') as csvfile:
 	for topic, msg, t in bag.read_messages(topics=tlist.keys()):
 		name = tlist[topic]
 		vals = []
+		if name.strip() == 'cmd_vel':
+			vals = ['%.2f' % msg.linear.x]
+		if name.strip() == 'lwheel':
+			vals = ['%d' % msg.data]
+		if name.strip() == 'rwheel':
+			vals = ['%d' % msg.data]
 		if name.strip() == 'state':
 			vals = proc_line(msg)
 		if name.strip() == 'sonar':
