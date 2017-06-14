@@ -80,14 +80,14 @@ fchassis_srv::mstate state_msg;
 std_msgs::Int16 lwheel_msg;
 std_msgs::Int16 rwheel_msg;
 
-ros::Publisher pub_range( "/fchassis/sonar", &range_msg);
-ros::Publisher pub_back_range( "/fchassis/back_sonar", &back_range_msg);
-ros::Publisher pub_imu( "/fchassis/imu", &imu_msg);
-ros::Publisher pub_laser_scan( "/fchassis/laser_scan", &laser_scan_msg);
-ros::Publisher pub_mf( "/fchassis/mf", &mf_msg);
-ros::Publisher pub_lwheel("/fchassis/lwheel", &lwheel_msg);
-ros::Publisher pub_rwheel("/fchassis/rwheel", &rwheel_msg);
-ros::Publisher pub_state( "/fchassis/state", &state_msg);
+ros::Publisher pub_range( "sonar", &range_msg);
+ros::Publisher pub_back_range( "back_sonar", &back_range_msg);
+ros::Publisher pub_imu( "imu", &imu_msg);
+ros::Publisher pub_laser_scan( "laser_scan", &laser_scan_msg);
+ros::Publisher pub_mf( "mf", &mf_msg);
+ros::Publisher pub_lwheel("lwheel", &lwheel_msg);
+ros::Publisher pub_rwheel("rwheel", &rwheel_msg);
+ros::Publisher pub_state( "state", &state_msg);
 
 void stuckCb(const stuck_detector::Stuck &msg)
 {
@@ -97,7 +97,7 @@ void stuckCb(const stuck_detector::Stuck &msg)
 	}
 }
 
-ros::Subscriber<stuck_detector::Stuck> sub_stuck("/fchassis/stuck", &stuckCb);
+ros::Subscriber<stuck_detector::Stuck> sub_stuck("stuck", &stuckCb);
 
 void cmd_velCb(const geometry_msgs::Twist &msg)
 {
@@ -131,7 +131,7 @@ void cmd_velCb(const geometry_msgs::Twist &msg)
 	stop_after(5);
 }
 
-ros::Subscriber<geometry_msgs::Twist> sub_cmd_vel("/fchassis/cmd_vel", &cmd_velCb);
+ros::Subscriber<geometry_msgs::Twist> sub_cmd_vel("cmd_vel", &cmd_velCb);
 
 void command_callback(const FCommand::Request & req, FCommand::Response & res)
 {
@@ -251,10 +251,10 @@ void fill_laser_scan()
 }
 
 
-ros::ServiceServer<FCommand::Request, FCommand::Response> exec_command("/fchassis/exec_command",&command_callback);
-ros::ServiceServer<FTwistScan::Request, FTwistScan::Response> twist_scan("/fchassis/twist_scan",&twist_scan_callback);
-ros::ServiceServer<FScannerSwitch::Request, FScannerSwitch::Response> scanner_switch("/fchassis/scanner_switch",&scanner_switch_callback);
-ros::ServiceServer<FScannerSetDirection::Request, FScannerSetDirection::Response> scanner_set_direction("/fchassis/scanner_set_direction",&scanner_set_direction_callback);
+ros::ServiceServer<FCommand::Request, FCommand::Response> exec_command("exec_command",&command_callback);
+ros::ServiceServer<FTwistScan::Request, FTwistScan::Response> twist_scan("twist_scan",&twist_scan_callback);
+ros::ServiceServer<FScannerSwitch::Request, FScannerSwitch::Response> scanner_switch("scanner_switch",&scanner_switch_callback);
+ros::ServiceServer<FScannerSetDirection::Request, FScannerSetDirection::Response> scanner_set_direction("scanner_set_direction",&scanner_set_direction_callback);
 
 const char range_frameid[] = "/ultrasound";
 const char back_range_frameid[] = "/back_ultrasound";
