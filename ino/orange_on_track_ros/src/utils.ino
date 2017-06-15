@@ -43,17 +43,17 @@ void setLeftMotor(int power, bool fwd)
 	}
 	lFwd = fwd;
 	if(power == 0) {
-		digitalWrite(LEFT_MOTOR_1, LOW);
-		digitalWrite(LEFT_MOTOR_2, LOW);
+		digitalWrite(LEFT_MOTOR_POWER, LOW);
+		digitalWrite(LEFT_MOTOR_FWD, LOW);
 //		Serial.println("Left stopped");
 	} else {
 		int pwm = power2pwm(power);
 		if(fwd) {
-			analogWrite(LEFT_MOTOR_1, pwm);
-			digitalWrite(LEFT_MOTOR_2, LOW);
+			analogWrite(LEFT_MOTOR_POWER, pwm);
+			digitalWrite(LEFT_MOTOR_FWD, HIGH);
 		} else {
-			analogWrite(LEFT_MOTOR_2, pwm);
-			digitalWrite(LEFT_MOTOR_1, LOW);
+			analogWrite(LEFT_MOTOR_POWER, pwm);
+			digitalWrite(LEFT_MOTOR_FWD, LOW);
 		}
 //		nh.loginfo(("Left power:" + String(pwm) + ", fwd:" + String(fwd)).c_str());
 //		Serial.print("Left:");
@@ -73,17 +73,17 @@ void setRightMotor(int power, bool fwd)
 	}
 	rFwd = fwd;
 	if(power == 0) {
-		digitalWrite(RIGHT_MOTOR_1, LOW);
-		digitalWrite(RIGHT_MOTOR_2, LOW);
+		digitalWrite(RIGHT_MOTOR_POWER, LOW);
+		digitalWrite(RIGHT_MOTOR_FWD, LOW);
 //		Serial.println("Right stopped");
 	} else {
 		int pwm = power2pwm(power);
 		if(fwd) {
-			analogWrite(RIGHT_MOTOR_1, pwm);
-			digitalWrite(RIGHT_MOTOR_2, LOW);
+			analogWrite(RIGHT_MOTOR_POWER, pwm);
+			digitalWrite(RIGHT_MOTOR_FWD, HIGH);
 		} else {
-			analogWrite(RIGHT_MOTOR_2, pwm);
-			digitalWrite(RIGHT_MOTOR_1, LOW);
+			analogWrite(RIGHT_MOTOR_POWER, pwm);
+			digitalWrite(RIGHT_MOTOR_FWD, LOW);
 		}
 //		nh.loginfo(("Right power:" + String(pwm) + ", fwd:" + String(fwd)).c_str());
 //		Serial.print("Right:");

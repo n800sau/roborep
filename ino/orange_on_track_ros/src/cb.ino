@@ -41,16 +41,16 @@ void evIRcmd(FuseID fuse, int& data)
 				stop(true);
 				break;
 			case IR_L:
-				sonarAngle = 70 + SONAR_ANGLE_MIN + (SONAR_ANGLE_MAX - SONAR_ANGLE_MIN) / 2;
-				head_servo_move_to(sonarAngle);
+				sonarAngle = 70 + SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+				head_pan_servo_move_to(sonarAngle);
 				break;
 			case IR_R:
-				sonarAngle = -70 + SONAR_ANGLE_MIN + (SONAR_ANGLE_MAX - SONAR_ANGLE_MIN) / 2;
-				head_servo_move_to(sonarAngle);
+				sonarAngle = -70 + SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+				head_pan_servo_move_to(sonarAngle);
 				break;
 			case IR_ENTER:
-				sonarAngle = SONAR_ANGLE_MIN + (SONAR_ANGLE_MAX - SONAR_ANGLE_MIN) / 2;
-				head_servo_move_to(sonarAngle);
+				sonarAngle = SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+				head_pan_servo_move_to(sonarAngle);
 				break;
 			case IR_2:
 				ir_power += 5;
@@ -98,6 +98,7 @@ void evFixDir(FuseID fuse, int& data)
 void evFullStop(FuseID fuse, int& userData)
 {
 	stop(true);
+	nh.loginfo("Full stop");
 //	Serial.print(millis());
 //	Serial.println("Full stop");
 }
@@ -176,7 +177,7 @@ void evMoveSonar(FuseID fuse, int &userData)
 	} else if(sonarAngle < 20) {
 		sonarIncr = SONAR_INCR;
 	}
-	head_servo_move_to(sonarAngle);
+	head_pan_servo_move_to(sonarAngle);
 }
 
 void evLaserScan(FuseID fuse, int &userData)
@@ -196,8 +197,9 @@ void evPIDupdate(FuseID fuse, int &userData)
 
 void evHeadServoDetach(FuseID fuse, int& userData)
 {
-	if(millis() - last_head_servo_move_ts > 1000 && head_servo.attached()) {
-		head_servo.detach();
+	if(millis() - last_head_pan_servo_move_ts > 1000 && head_pan_servo.attached()) {
+		head_pan_servo.detach();
+		head_tilt_servo.detach();
 	}
 }
 

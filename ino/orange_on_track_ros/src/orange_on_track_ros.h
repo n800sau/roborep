@@ -10,7 +10,13 @@ const int headEchoPin = 12; // Echo Pin
 const int headTrigPin = 11; // Trigger Pin
 
 const int SONAR_INCR = 5;
-const int SONAR_CENTER_OFFSET = 10;
+const int SONAR_CENTER_OFFSET = 0;
+
+const int SONAR_PAN_ANGLE_MIN = 40;
+const int SONAR_PAN_ANGLE_MAX = 150;
+
+const int SONAR_TILT_ANGLE_MIN = 40;
+const int SONAR_TILT_ANGLE_MAX = 150;
 
 const int backEchoPin = 22; // Echo Pin
 const int backTrigPin = 23; // Trigger Pin
@@ -18,18 +24,18 @@ const int backTrigPin = 23; // Trigger Pin
 // up-down
 const int headTiltServoPin = 45;
 // left-right
-const int headServoPin = 46;
+const int headPanServoPin = 46;
 
 // encoder pins
 const int Eleft = 2;
 const int Eright = 3;
 
 // motor pins
-const int LEFT_MOTOR_1 = 6;
-const int LEFT_MOTOR_2 = 5;
+const int LEFT_MOTOR_FWD = 6;
+const int LEFT_MOTOR_POWER = 5;
 
-const int RIGHT_MOTOR_1 = 9;
-const int RIGHT_MOTOR_2 = 10;
+const int RIGHT_MOTOR_FWD = 9;
+const int RIGHT_MOTOR_POWER = 10;
 
 const float COUNT_PER_REV = 20.0;
 const float WHEEL_DIAMETER = 0.065;
@@ -104,7 +110,7 @@ void straight(int pwr, bool fwd);
 void resetCounters();
 float getRange_HeadUltrasound(int attempts=2);
 float getRange_BackUltrasound(int attempts=2);
-void head_servo_move_to(int pos);
+void head_pan_servo_move_to(int pos, int tilt=-1);
 
 void updatePID();
 

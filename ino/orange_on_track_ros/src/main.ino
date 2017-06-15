@@ -57,8 +57,9 @@ unsigned long last_laser_scan_ms = 0;
 bool laser_scan_allowed = false;
 int laser_scan_attempts = 2;
 
-Servo head_servo;
-unsigned long last_head_servo_move_ts = 0;
+Servo head_pan_servo;
+Servo head_tilt_servo;
+unsigned long last_head_pan_servo_move_ts = 0;
 
 using fchassis_srv::FCommand;
 using fchassis_srv::FTwistScan;
@@ -67,9 +68,6 @@ using fchassis_srv::FScannerSetDirection;
 using fchassis_srv::AngleRange;
 using stuck_detector::Stuck;
 ros::NodeHandle  nh;
-
-const int SONAR_ANGLE_MIN = 10;
-const int SONAR_ANGLE_MAX = 170;
 
 sensor_msgs::Range range_msg;
 sensor_msgs::Range back_range_msg;
@@ -182,8 +180,8 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res)
 
 void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response & res)
 {
-	const int start_angle = max(SONAR_ANGLE_MIN, SONAR_CENTER_OFFSET);
-	const int end_angle = min(SONAR_ANGLE_MAX, 180 + SONAR_CENTER_OFFSET);
+	const int start_angle = max(SONAR_PAN_ANGLE_MIN, SONAR_CENTER_OFFSET);
+	const int end_angle = min(SONAR_PAN_ANGLE_MAX, 180 + SONAR_CENTER_OFFSET);
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
 	const int step_wait_pause = 30;
@@ -195,12 +193,12 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	for(i=0; i<res.ranges_length; i++) {
 		AngleRange r;
 		r.angle = start_angle + i * step;
-		head_servo_move_to(r.angle + SONAR_CENTER_OFFSET);
+		head_pan_servo_move_to(r.angle + SONAR_CENTER_OFFSET, req.tilt);
 		delay(step_wait_pause);
 		r.range = getRange_HeadUltrasound(req.scan_attempts);
 		res.ranges[i] = r;
 	}
-	head_servo_move_to(sonarAngle);
+	head_pan_servo_move_to(sonarAngle);
 	unsigned long end_ms = millis();
 	if(start_ms < end_ms) {
 		res.timeit = (start_ms < end_ms) ? end_ms - start_ms : ULONG_MAX - start_ms + end_ms;
@@ -216,8 +214,8 @@ void scanner_switch_callback(const FScannerSwitch::Request & req, FScannerSwitch
 
 void scanner_set_direction_callback(const FScannerSetDirection::Request & req, FScannerSetDirection::Response & res)
 {
-	sonarAngle = req.direction + SONAR_ANGLE_MIN + (SONAR_ANGLE_MAX - SONAR_ANGLE_MIN) / 2;
-	head_servo_move_to(sonarAngle);
+	sonarAngle = req.direction + SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+	head_pan_servo_move_to(sonarAngle);
 }
 
 void fill_laser_scan()
@@ -238,15 +236,16 @@ void fill_laser_scan()
 	laser_scan_msg.range_max = MAX_RANGE;
 	laser_scan_msg.ranges_length = n_ranges;
 	laser_scan_msg.ranges = ranges;
-	head_servo.attach(headServoPin);
+	head_pan_servo.attach(headPanServoPin);
+	head_tilt_servo.attach(headTiltServoPin);
 	int i;
 	for(i=0; i<n_ranges; i++) {
 		int angle = start_angle + i * step;
-		head_servo_move_to(angle + SONAR_CENTER_OFFSET);
+		head_pan_servo_move_to(angle + SONAR_CENTER_OFFSET);
 		delay(step_wait_pause);
 		laser_scan_msg.ranges[i] = getRange_HeadUltrasound(laser_scan_attempts);
 	}
-	head_servo_move_to(sonarAngle);
+	head_pan_servo_move_to(sonarAngle);
 	last_laser_scan_ms = millis();
 }
 
@@ -285,15 +284,21 @@ void rIntCB()
 	}
 }
 
-void head_servo_move_to(int pos)
+void head_pan_servo_move_to(int pos, int tilt)
 {
-	if(!head_servo.attached()) {
-		head_servo.attach(headServoPin);
+	if(!head_pan_servo.attached()) {
+		head_pan_servo.attach(headPanServoPin);
+		head_tilt_servo.attach(headTiltServoPin);
 	}
-	if(pos < SONAR_ANGLE_MIN) pos = SONAR_ANGLE_MIN;
-	if(pos > SONAR_ANGLE_MAX) pos = SONAR_ANGLE_MAX;
-	head_servo.write(pos + SONAR_CENTER_OFFSET);
-	last_head_servo_move_ts = millis();
+	if(pos < SONAR_PAN_ANGLE_MIN) pos = SONAR_PAN_ANGLE_MIN;
+	if(pos > SONAR_PAN_ANGLE_MAX) pos = SONAR_PAN_ANGLE_MAX;
+	head_pan_servo.write(pos + SONAR_CENTER_OFFSET);
+	if(tilt>=0) {
+		if(tilt < SONAR_TILT_ANGLE_MIN) tilt = SONAR_TILT_ANGLE_MIN;
+		if(tilt > SONAR_TILT_ANGLE_MAX) tilt = SONAR_TILT_ANGLE_MAX;
+		head_tilt_servo.write(tilt);
+	}
+	last_head_pan_servo_move_ts = millis();
 }
 
 void setup()
@@ -307,10 +312,10 @@ void setup()
 	pinMode(backTrigPin, OUTPUT);
 	pinMode(backEchoPin, INPUT);
 
-	pinMode(LEFT_MOTOR_1, OUTPUT);
-	pinMode(LEFT_MOTOR_2, OUTPUT);
-	pinMode(RIGHT_MOTOR_1, OUTPUT);
-	pinMode(RIGHT_MOTOR_2, OUTPUT);
+	pinMode(LEFT_MOTOR_POWER, OUTPUT);
+	pinMode(LEFT_MOTOR_FWD, OUTPUT);
+	pinMode(RIGHT_MOTOR_POWER, OUTPUT);
+	pinMode(RIGHT_MOTOR_FWD, OUTPUT);
 
 	pinMode(Eleft, INPUT);
 	pinMode(Eright, INPUT);
@@ -318,7 +323,7 @@ void setup()
 	digitalWrite(Eleft, INPUT_PULLUP);
 	digitalWrite(Eright, INPUT_PULLUP);
 
-	head_servo_move_to(90 + SONAR_CENTER_OFFSET);
+	head_pan_servo_move_to(90 + SONAR_CENTER_OFFSET);
 
 	setup_compass();
 	setup_accel();
