@@ -37,13 +37,13 @@ const int LEFT_MOTOR_POWER = 5;
 const int RIGHT_MOTOR_FWD = 9;
 const int RIGHT_MOTOR_POWER = 10;
 
-const float COUNT_PER_REV = 20.0;
-const float WHEEL_DIAMETER = 0.065;
+const float COUNT_PER_REV = 70.0; // truck wheel
+const float WHEEL_DIAMETER = 0.05; // truck wheels
 // distance between wheels
-const float WHEEL_TRACK = 0.14;
+const float WHEEL_TRACK = 0.082; // truck width
 const float ENC_STEP = WHEEL_DIAMETER * PI / COUNT_PER_REV;
 const float TICKS_PER_METER = 1 / ENC_STEP;
-const float GEAR_REDUCTION = 1.48; // from doc for chassis
+const float GEAR_REDUCTION = 1.48; // from doc for chassis ???
 
 const float PID_RATE = 10; // hz
 
