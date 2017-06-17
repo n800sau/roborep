@@ -21,7 +21,7 @@ void stop_after(int timeout)
 void straight(int pwr, bool fwd)
 {
 	moving_straight = true;
-	powerOffset = 0;
+	pid_powerOffset = 0;
 	fwd_heading = headingDegrees;
 	setLeftMotor(pwr, fwd);
 	setRightMotor(pwr, fwd);

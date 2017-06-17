@@ -12,8 +12,8 @@ const int headTrigPin = 11; // Trigger Pin
 const int SONAR_INCR = 5;
 const int SONAR_CENTER_OFFSET = 0;
 
-const int SONAR_PAN_ANGLE_MIN = 40;
-const int SONAR_PAN_ANGLE_MAX = 150;
+const int SONAR_PAN_ANGLE_MIN = 0;
+const int SONAR_PAN_ANGLE_MAX = 140;
 
 const int SONAR_TILT_ANGLE_MIN = 40;
 const int SONAR_TILT_ANGLE_MAX = 150;
@@ -47,10 +47,8 @@ const float GEAR_REDUCTION = 1.48; // from doc for chassis
 
 const float PID_RATE = 10; // hz
 
-const int MIN_PWM = 160;
+const int MIN_PWM = 15;
 const int MAX_PWM = 255;
-
-#define DEFAULT_PWR 50
 
 // 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
 //

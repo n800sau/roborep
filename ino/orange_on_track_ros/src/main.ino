@@ -40,9 +40,9 @@ volatile float lVel = 0;
 volatile float rVel = 0; 
 volatile int lPower = 0;
 volatile int rPower = 0;
-// left + powerOffset
-// right - powerOffset
-volatile int powerOffset = 0;
+// left + pid_powerOffset
+// right - pid_powerOffset
+volatile int pid_powerOffset = 0;
 volatile bool lFwd = true;
 volatile bool rFwd = true;
 volatile bool full_stopped = true;
@@ -433,7 +433,7 @@ void loop()
 		state_msg.rcount = rCounter;
 		state_msg.lpwr = lPower * ((lFwd) ? 1 : -1);
 		state_msg.rpwr = rPower * ((rFwd) ? 1 : -1);
-		state_msg.pwroffset = powerOffset;
+		state_msg.pwroffset = pid_powerOffset;
 		state_msg.ldist = count2dist(lCounter);
 		state_msg.rdist = count2dist(rCounter);
 		state_msg.heading = headingDegrees;

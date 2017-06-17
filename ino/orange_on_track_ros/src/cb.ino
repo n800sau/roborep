@@ -83,10 +83,10 @@ void evFixDir(FuseID fuse, int& data)
 	if(moving_straight && !full_stopped) {
 		int aoff = angle_offset(fwd_heading, headingDegrees);
 		if((aoff < 0 && lFwd && rFwd) || (aoff > 0 && (!lFwd) && (!rFwd))) {
-			powerOffset = Kp * abs(aoff);
+			pid_powerOffset = Kp * abs(aoff);
 			// left more right less
 		} else {
-			powerOffset = -Kp * abs(aoff);
+			pid_powerOffset = -Kp * abs(aoff);
 			// left less right more
 		}
 		setLeftMotor(lPower, lFwd);
