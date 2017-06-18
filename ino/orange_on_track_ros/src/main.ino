@@ -59,7 +59,7 @@ int laser_scan_attempts = 2;
 
 Servo head_pan_servo;
 Servo head_tilt_servo;
-unsigned long last_head_pan_servo_move_ts = 0;
+unsigned long last_head_servos_move_ts = 0;
 
 using fchassis_srv::FCommand;
 using fchassis_srv::FTwistScan;
@@ -180,8 +180,8 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res)
 
 void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response & res)
 {
-	const int start_angle = max(SONAR_PAN_ANGLE_MIN, SONAR_CENTER_OFFSET);
-	const int end_angle = min(SONAR_PAN_ANGLE_MAX, 180 + SONAR_CENTER_OFFSET);
+	const int start_angle = SONAR_PAN_ANGLE_MIN;
+	const int end_angle = SONAR_PAN_ANGLE_MAX;
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
 	const int step_wait_pause = 30;
@@ -189,11 +189,11 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	res.ranges_length = n_ranges;
 	res.ranges = ranges;
 	unsigned long start_ms = millis();
-	int i;
-	for(i=0; i<res.ranges_length; i++) {
+	head_tilt_servo_move_to(req.tilt);
+	for(int i=0; i<res.ranges_length; i++) {
 		AngleRange r;
 		r.angle = start_angle + i * step;
-		head_pan_servo_move_to(r.angle + SONAR_CENTER_OFFSET, req.tilt);
+		head_pan_servo_move_to(r.angle);
 		delay(step_wait_pause);
 		r.range = getRange_HeadUltrasound(req.scan_attempts);
 		res.ranges[i] = r;
@@ -214,14 +214,14 @@ void scanner_switch_callback(const FScannerSwitch::Request & req, FScannerSwitch
 
 void scanner_set_direction_callback(const FScannerSetDirection::Request & req, FScannerSetDirection::Response & res)
 {
-	sonarAngle = req.direction + SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+	sonarAngle = req.direction + SONAR_PAN_CENTER;
 	head_pan_servo_move_to(sonarAngle);
 }
 
 void fill_laser_scan()
 {
-	const int start_angle = max(10, SONAR_CENTER_OFFSET);
-	const int end_angle = min(170, 180 + SONAR_CENTER_OFFSET);
+	const int start_angle = SONAR_PAN_ANGLE_MIN;
+	const int end_angle =SONAR_PAN_ANGLE_MAX;
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
 	const int step_wait_pause = 30;
@@ -236,12 +236,10 @@ void fill_laser_scan()
 	laser_scan_msg.range_max = MAX_RANGE;
 	laser_scan_msg.ranges_length = n_ranges;
 	laser_scan_msg.ranges = ranges;
-	head_pan_servo.attach(headPanServoPin);
-	head_tilt_servo.attach(headTiltServoPin);
-	int i;
-	for(i=0; i<n_ranges; i++) {
+	head_tilt_servo_move_to(SONAR_TILT_CENTER);
+	for(int i=0; i<n_ranges; i++) {
 		int angle = start_angle + i * step;
-		head_pan_servo_move_to(angle + SONAR_CENTER_OFFSET);
+		head_pan_servo_move_to(angle);
 		delay(step_wait_pause);
 		laser_scan_msg.ranges[i] = getRange_HeadUltrasound(laser_scan_attempts);
 	}
@@ -284,21 +282,26 @@ void rIntCB()
 	}
 }
 
-void head_pan_servo_move_to(int pos, int tilt)
+void head_pan_servo_move_to(int pos)
 {
 	if(!head_pan_servo.attached()) {
 		head_pan_servo.attach(headPanServoPin);
-		head_tilt_servo.attach(headTiltServoPin);
 	}
 	if(pos < SONAR_PAN_ANGLE_MIN) pos = SONAR_PAN_ANGLE_MIN;
 	if(pos > SONAR_PAN_ANGLE_MAX) pos = SONAR_PAN_ANGLE_MAX;
-	head_pan_servo.write(pos + SONAR_CENTER_OFFSET);
-	if(tilt>=0) {
-		if(tilt < SONAR_TILT_ANGLE_MIN) tilt = SONAR_TILT_ANGLE_MIN;
-		if(tilt > SONAR_TILT_ANGLE_MAX) tilt = SONAR_TILT_ANGLE_MAX;
-		head_tilt_servo.write(tilt);
+	head_pan_servo.write(pos);
+	last_head_servos_move_ts = millis();
+}
+
+void head_tilt_servo_move_to(int pos)
+{
+	if(!head_tilt_servo.attached()) {
+		head_tilt_servo.attach(headTiltServoPin);
 	}
-	last_head_pan_servo_move_ts = millis();
+	if(pos < SONAR_TILT_ANGLE_MIN) pos = SONAR_TILT_ANGLE_MIN;
+	if(pos > SONAR_TILT_ANGLE_MAX) pos = SONAR_TILT_ANGLE_MAX;
+	head_tilt_servo.write(pos);
+	last_head_servos_move_ts = millis();
 }
 
 void setup()
@@ -323,7 +326,8 @@ void setup()
 	digitalWrite(Eleft, INPUT_PULLUP);
 	digitalWrite(Eright, INPUT_PULLUP);
 
-	head_pan_servo_move_to(90 + SONAR_CENTER_OFFSET);
+	head_pan_servo_move_to(SONAR_PAN_CENTER);
+	head_tilt_servo_move_to(SONAR_PAN_CENTER);
 
 	setup_compass();
 	setup_accel();
@@ -387,7 +391,7 @@ void setup()
 	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
 //	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
 	EventFuse::newFuse(2000, INF_REPEAT, evHeadServoDetach);
-	EventFuse::newFuse(200, INF_REPEAT, evIRcmd);
+	EventFuse::newFuse(5, INF_REPEAT, evIRcmd);
 
 }
 

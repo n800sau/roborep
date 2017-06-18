@@ -10,13 +10,14 @@ const int headEchoPin = 12; // Echo Pin
 const int headTrigPin = 11; // Trigger Pin
 
 const int SONAR_INCR = 5;
-const int SONAR_CENTER_OFFSET = 0;
 
-const int SONAR_PAN_ANGLE_MIN = 0;
-const int SONAR_PAN_ANGLE_MAX = 140;
+const int SONAR_PAN_ANGLE_MIN = 35;
+const int SONAR_PAN_ANGLE_MAX = 135;
+const int SONAR_PAN_CENTER = SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
 
-const int SONAR_TILT_ANGLE_MIN = 40;
-const int SONAR_TILT_ANGLE_MAX = 150;
+const int SONAR_TILT_ANGLE_MIN = 80;
+const int SONAR_TILT_ANGLE_MAX = 145;
+const int SONAR_TILT_CENTER = SONAR_TILT_ANGLE_MIN + (SONAR_TILT_ANGLE_MAX - SONAR_TILT_ANGLE_MIN) / 2;
 
 const int backEchoPin = 22; // Echo Pin
 const int backTrigPin = 23; // Trigger Pin
@@ -37,13 +38,13 @@ const int LEFT_MOTOR_POWER = 5;
 const int RIGHT_MOTOR_FWD = 9;
 const int RIGHT_MOTOR_POWER = 10;
 
-const float COUNT_PER_REV = 70.0; // truck wheel
+const float COUNT_PER_REV = 70.0; // truck wheel 18 stripes (625 edges per rev)
 const float WHEEL_DIAMETER = 0.05; // truck wheels
 // distance between wheels
 const float WHEEL_TRACK = 0.082; // truck width
 const float ENC_STEP = WHEEL_DIAMETER * PI / COUNT_PER_REV;
 const float TICKS_PER_METER = 1 / ENC_STEP;
-const float GEAR_REDUCTION = 1.48; // from doc for chassis ???
+const float GEAR_REDUCTION = 50 / 12. * 50 / 12.; // from doc for chassis ???
 
 const float PID_RATE = 10; // hz
 
@@ -108,7 +109,8 @@ void straight(int pwr, bool fwd);
 void resetCounters();
 float getRange_HeadUltrasound(int attempts=2);
 float getRange_BackUltrasound(int attempts=2);
-void head_pan_servo_move_to(int pos, int tilt=-1);
+void head_pan_servo_move_to(int pos);
+void head_tilt_servo_move_to(int pos);
 
 void updatePID();
 
