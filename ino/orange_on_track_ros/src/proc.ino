@@ -14,7 +14,7 @@ void stop_after(int timeout)
 	if(timeout < 0) {
 		timeout = 60;
 	} else {
-		EventFuse::newFuse(timeout * 500, 1, evFullStop);
+		EventFuse::newFuse(timeout * 100, 1, evFullStop);
 	}
 }
 

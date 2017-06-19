@@ -160,6 +160,8 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res)
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "walk_around") == 0) {
 		strncpy(current_command, req.mcommand, sizeof(current_command));
+		head_tilt_servo_move_to(SONAR_TILT_CENTER);
+		head_pan_servo_move_to(SONAR_PAN_CENTER);
 		full_stopped = false;
 		straight(req.pwr, true);
 		stop_after(req.timeout);
@@ -398,10 +400,15 @@ unsigned long msg_time = 0;
 //publish values every 10 milliseconds
 #define PUBLISH_PERIOD 10
 
+unsigned long last_millis = 0;
+
 void loop()
 {
-	EventFuse::burn();
 	unsigned long m = millis();
+	if(last_millis > 0) {
+		EventFuse::burn((m - last_millis) / 10);
+	}
+	last_millis = m;
 	if ( m >= msg_time ){
 		ros::Time now = nh.now();
 		process_vl53l0x();

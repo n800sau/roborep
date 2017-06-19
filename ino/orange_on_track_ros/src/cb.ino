@@ -132,19 +132,21 @@ void evStop(FuseID fuse, int& userData)
 
 void evBackLeftRight(FuseID fuse, int& pwr)
 {
-//	Serial.print(millis());
 	if(random(1)) {
+		nh.loginfo("Back Left");
 		setLeftMotor(pwr, false);
 		setRightMotor(pwr, true);
 	} else {
+		nh.loginfo("Back Right");
 		setLeftMotor(pwr, true);
 		setRightMotor(pwr, false);
 	}
-	EventFuse::newFuse(pwr, 300, 1, evForward);
+	EventFuse::newFuse(pwr, 200, 1, evForward);
 }
 
 void evForward(FuseID fuse, int& pwr)
 {
+	nh.loginfo("Forward");
 	straight(pwr, true);
 }
 
@@ -162,19 +164,21 @@ void evChangePower(FuseID fuse, int& userData)
 	setLeftMotor(max(0, min(lPwr, 100)), lFwd);
 	setRightMotor(max(0, min(rPwr, 100)), rFwd);
 	if(!full_stopped) {
-		EventFuse::newFuse(500, 1, evChangePower);
+		EventFuse::newFuse(50, 1, evChangePower);
 	}
 }
 
 // to stop movement in case of obstacle
 void evHeadSonar(FuseID fuse, int& userData)
 {
-	float distance = getRange_HeadUltrasound();
+	float distance = (ir4scan) ? getRange_tof() : getRange_HeadUltrasound();
+//	nh.loginfo(("Check dist:" + String(distance)).c_str());
 	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd && (lPower > 0 || rPower > 0) && sonarAngle == 90) {
-//		Serial.print(millis());
-//		Serial.println("Too close");
-		EventFuse::newFuse((lPower+rPower)/2, 500, 1, evBackLeftRight);
-//		stop();
+		nh.loginfo("Back");
+		int pwr = (lPower+rPower)/2;
+		setLeftMotor(pwr, false);
+		setRightMotor(pwr, false);
+		EventFuse::newFuse(pwr, 50, 1, evBackLeftRight);
 	}
 }
 

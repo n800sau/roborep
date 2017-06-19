@@ -3,7 +3,7 @@
 
 #define MAX_STOP_DIST 0.3
 
-const int MIN_RANGE = 0.0;
+const int MIN_RANGE = 0.05;
 const int MAX_RANGE = 2.0;
 
 const int headEchoPin = 12; // Echo Pin
