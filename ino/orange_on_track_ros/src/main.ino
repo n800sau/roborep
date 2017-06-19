@@ -32,12 +32,8 @@
 int sonarAngle = 90;
 int sonarIncr = SONAR_INCR;
 
-volatile unsigned long intLtime = 0;
-volatile unsigned long intRtime = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
-volatile float lVel = 0;
-volatile float rVel = 0; 
 volatile int lPower = 0;
 volatile int rPower = 0;
 // left + pid_powerOffset
@@ -260,26 +256,12 @@ const char base_frameid[] = "/base_link";
 
 void lIntCB()
 {
-	unsigned long t = micros();
-	if( t - intLtime > threshold )
-	{
-		int step = (lFwd) ? 1 : -1;
-		lVel = step * ENC_STEP/t;
-		intLtime = t;
-		lCounter += step;
-	}
+	lCounter += (lFwd) ? 1 : -1;
 }
 
 void rIntCB()
 {
-	unsigned long t = micros();
-	if( t - intRtime > threshold )
-	{
-		int step = (rFwd) ? 1 : -1;
-		rVel = step * ENC_STEP/t;
-		intRtime = t;
-		rCounter += step;
-	}
+	rCounter += (rFwd) ? 1 : -1;
 }
 
 void head_pan_servo_move_to(int pos)
@@ -334,8 +316,8 @@ void setup()
 	setup_gyro();
 	setup_bmp085();
 
-	attachInterrupt(digitalPinToInterrupt(Eleft), lIntCB, RISING);
-	attachInterrupt(digitalPinToInterrupt(Eright), rIntCB, RISING);
+	attachInterrupt(digitalPinToInterrupt(Eleft), lIntCB, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(Eright), rIntCB, CHANGE);
 
 	nh.initNode();
 	nh.advertise(pub_range);

@@ -51,20 +51,6 @@ const float PID_RATE = 10; // hz
 const int MIN_PWM = 15;
 const int MAX_PWM = 255;
 
-// 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
-//
-// The threshold value I'm using limits it to 100 half pulses a second
-//
-// My encoder has 12 pulses per 360deg rotation and the specs say
-// it is rated at a maximum of 100rpm.
-//
-// This threshold will permit my encoder to reach 250rpm so if it was connected
-// to a motor instead of a manually operated knob I
-// might possibly need to adjust it to 25000. However, this threshold
-// value is working perfectly for my situation
-//
-const unsigned long threshold = 10000;
-
 extern volatile bool cmd_vel_mode;
 extern volatile bool full_stopped;
 extern volatile int lCounter;
