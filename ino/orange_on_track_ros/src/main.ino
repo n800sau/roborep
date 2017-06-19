@@ -27,7 +27,7 @@
 #include "adxl345_proc.h"
 #include "l3g4200d_proc.h"
 #include "bmp085_proc.h"
-
+#include "vl53l0x_proc.h"
 
 int sonarAngle = 90;
 int sonarIncr = SONAR_INCR;
@@ -45,6 +45,8 @@ volatile bool full_stopped = true;
 bool moving_straight = false;
 int fwd_heading;
 char current_command[20];
+// use ir dist for scan
+int ir4scan = 0;
 
 // cmd_vel vars
 volatile bool cmd_vel_mode = false;
@@ -65,6 +67,7 @@ using fchassis_srv::AngleRange;
 using stuck_detector::Stuck;
 ros::NodeHandle  nh;
 
+sensor_msgs::Range tof_msg;
 sensor_msgs::Range range_msg;
 sensor_msgs::Range back_range_msg;
 sensor_msgs::Imu imu_msg;
@@ -74,11 +77,12 @@ fchassis_srv::mstate state_msg;
 std_msgs::Int16 lwheel_msg;
 std_msgs::Int16 rwheel_msg;
 
-ros::Publisher pub_range( "sonar", &range_msg);
-ros::Publisher pub_back_range( "back_sonar", &back_range_msg);
-ros::Publisher pub_imu( "imu", &imu_msg);
-ros::Publisher pub_laser_scan( "laser_scan", &laser_scan_msg);
-ros::Publisher pub_mf( "mf", &mf_msg);
+ros::Publisher pub_range("sonar", &range_msg);
+ros::Publisher pub_tof("tof", &tof_msg);
+ros::Publisher pub_back_range("back_sonar", &back_range_msg);
+ros::Publisher pub_imu("imu", &imu_msg);
+ros::Publisher pub_laser_scan("laser_scan", &laser_scan_msg);
+ros::Publisher pub_mf("mf", &mf_msg);
 ros::Publisher pub_lwheel("lwheel", &lwheel_msg);
 ros::Publisher pub_rwheel("rwheel", &rwheel_msg);
 ros::Publisher pub_state( "state", &state_msg);
@@ -191,7 +195,7 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 		r.angle = start_angle + i * step;
 		head_pan_servo_move_to(r.angle);
 		delay(step_wait_pause);
-		r.range = getRange_HeadUltrasound(req.scan_attempts);
+		r.range = (ir4scan) ? getRange_tof() : getRange_HeadUltrasound(req.scan_attempts);
 		res.ranges[i] = r;
 	}
 	head_pan_servo_move_to(sonarAngle);
@@ -237,7 +241,7 @@ void fill_laser_scan()
 		int angle = start_angle + i * step;
 		head_pan_servo_move_to(angle);
 		delay(step_wait_pause);
-		laser_scan_msg.ranges[i] = getRange_HeadUltrasound(laser_scan_attempts);
+		laser_scan_msg.ranges[i] = (ir4scan) ? getRange_tof() : getRange_HeadUltrasound(laser_scan_attempts);
 	}
 	head_pan_servo_move_to(sonarAngle);
 	last_laser_scan_ms = millis();
@@ -250,6 +254,7 @@ ros::ServiceServer<FScannerSwitch::Request, FScannerSwitch::Response> scanner_sw
 ros::ServiceServer<FScannerSetDirection::Request, FScannerSetDirection::Response> scanner_set_direction("scanner_set_direction",&scanner_set_direction_callback);
 
 const char range_frameid[] = "/ultrasound";
+const char tof_frameid[] = "/tof";
 const char back_range_frameid[] = "/back_ultrasound";
 const char imu_frameid[] = "/imu";
 const char base_frameid[] = "/base_link";
@@ -315,12 +320,14 @@ void setup()
 	setup_accel();
 	setup_gyro();
 	setup_bmp085();
+	setup_vl53l0x();
 
 	attachInterrupt(digitalPinToInterrupt(Eleft), lIntCB, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(Eright), rIntCB, CHANGE);
 
 	nh.initNode();
 	nh.advertise(pub_range);
+	nh.advertise(pub_tof);
 	nh.advertise(pub_back_range);
 	nh.advertise(pub_imu);
 	nh.advertise(pub_laser_scan);
@@ -335,11 +342,19 @@ void setup()
 	nh.subscribe(sub_stuck);
 	nh.subscribe(sub_cmd_vel);
 
+	getParam("~ir4scan", &ir4scan, 1);
+
 	range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
 	range_msg.header.frame_id = range_frameid;
 	range_msg.field_of_view = 0.1; // fake
 	range_msg.min_range = MIN_RANGE;
 	range_msg.max_range = MAX_RANGE;
+
+	tof_msg.radiation_type = sensor_msgs::Range::INFRARED;
+	tof_msg.header.frame_id = tof_frameid;
+	tof_msg.field_of_view = 0.01; // fake
+	tof_msg.min_range = MIN_RANGE;
+	tof_msg.max_range = MAX_RANGE;
 
 	back_range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
 	back_range_msg.header.frame_id = back_range_frameid;
@@ -389,6 +404,12 @@ void loop()
 	unsigned long m = millis();
 	if ( m >= msg_time ){
 		ros::Time now = nh.now();
+		process_vl53l0x();
+		tof_msg.range = vl53l0x_mm / 1000.;
+		tof_msg.header.stamp = now;
+		if(vl53l0x_mm > 0) {
+			pub_tof.publish(&tof_msg);
+		}
 		range_msg.range = getRange_HeadUltrasound();
 		range_msg.header.stamp = now;
 		pub_range.publish(&range_msg);
@@ -412,9 +433,14 @@ void loop()
 		imu_msg.linear_acceleration.z = adxl345_state.event.acceleration.z;
 		pub_imu.publish(&imu_msg);
 
+	nh.loginfo(("ir4scan=" + String(ir4scan)).c_str());
+
+
 		process_bmp085();
 		state_msg.header.stamp = now;
 		state_msg.v = readVccMv() / 1000.;
+		state_msg.irdist = tof_msg.range;
+		state_msg.sonar = range_msg.range;
 		state_msg.lcount = lCounter;
 		state_msg.rcount = rCounter;
 		state_msg.lpwr = lPower * ((lFwd) ? 1 : -1);

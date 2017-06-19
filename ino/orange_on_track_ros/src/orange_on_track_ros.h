@@ -100,3 +100,14 @@ void head_tilt_servo_move_to(int pos);
 
 void updatePID();
 
+extern ros::NodeHandle  nh;
+
+template <class type> void getParam(const char *name, type *ptr, int count)
+{
+	bool param_success = false;
+	do {
+		param_success = nh.getParam(name, ptr, count);
+		nh.spinOnce();
+	} while(!param_success);
+}
+
