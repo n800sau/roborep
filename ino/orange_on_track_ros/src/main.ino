@@ -411,8 +411,10 @@ void loop()
 			pub_tof.publish(&tof_msg);
 		}
 		range_msg.range = getRange_HeadUltrasound();
-		range_msg.header.stamp = now;
-		pub_range.publish(&range_msg);
+		if(range_msg.range > 0) {
+			range_msg.header.stamp = now;
+			pub_range.publish(&range_msg);
+		}
 		back_range_msg.range = getRange_BackUltrasound();
 		back_range_msg.header.stamp = now;
 		pub_range.publish(&back_range_msg);
@@ -432,9 +434,6 @@ void loop()
 		imu_msg.linear_acceleration.y = adxl345_state.event.acceleration.y;
 		imu_msg.linear_acceleration.z = adxl345_state.event.acceleration.z;
 		pub_imu.publish(&imu_msg);
-
-	nh.loginfo(("ir4scan=" + String(ir4scan)).c_str());
-
 
 		process_bmp085();
 		state_msg.header.stamp = now;
