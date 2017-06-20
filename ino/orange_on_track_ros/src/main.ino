@@ -27,28 +27,26 @@
 #include "adxl345_proc.h"
 #include "l3g4200d_proc.h"
 #include "bmp085_proc.h"
-
+#include "vl53l0x_proc.h"
 
 int sonarAngle = 90;
 int sonarIncr = SONAR_INCR;
 
-volatile unsigned long intLtime = 0;
-volatile unsigned long intRtime = 0;
 volatile int lCounter = 0;
 volatile int rCounter = 0; 
-volatile float lVel = 0;
-volatile float rVel = 0; 
 volatile int lPower = 0;
 volatile int rPower = 0;
-// left + powerOffset
-// right - powerOffset
-volatile int powerOffset = 0;
+// left + pid_powerOffset
+// right - pid_powerOffset
+volatile int pid_powerOffset = 0;
 volatile bool lFwd = true;
 volatile bool rFwd = true;
 volatile bool full_stopped = true;
 bool moving_straight = false;
 int fwd_heading;
 char current_command[20];
+// use ir dist for scan
+int ir4scan = 0;
 
 // cmd_vel vars
 volatile bool cmd_vel_mode = false;
@@ -59,7 +57,7 @@ int laser_scan_attempts = 2;
 
 Servo head_pan_servo;
 Servo head_tilt_servo;
-unsigned long last_head_pan_servo_move_ts = 0;
+unsigned long last_head_servos_move_ts = 0;
 
 using fchassis_srv::FCommand;
 using fchassis_srv::FTwistScan;
@@ -69,6 +67,7 @@ using fchassis_srv::AngleRange;
 using stuck_detector::Stuck;
 ros::NodeHandle  nh;
 
+sensor_msgs::Range tof_msg;
 sensor_msgs::Range range_msg;
 sensor_msgs::Range back_range_msg;
 sensor_msgs::Imu imu_msg;
@@ -78,11 +77,12 @@ fchassis_srv::mstate state_msg;
 std_msgs::Int16 lwheel_msg;
 std_msgs::Int16 rwheel_msg;
 
-ros::Publisher pub_range( "sonar", &range_msg);
-ros::Publisher pub_back_range( "back_sonar", &back_range_msg);
-ros::Publisher pub_imu( "imu", &imu_msg);
-ros::Publisher pub_laser_scan( "laser_scan", &laser_scan_msg);
-ros::Publisher pub_mf( "mf", &mf_msg);
+ros::Publisher pub_range("sonar", &range_msg);
+ros::Publisher pub_tof("tof", &tof_msg);
+ros::Publisher pub_back_range("back_sonar", &back_range_msg);
+ros::Publisher pub_imu("imu", &imu_msg);
+ros::Publisher pub_laser_scan("laser_scan", &laser_scan_msg);
+ros::Publisher pub_mf("mf", &mf_msg);
 ros::Publisher pub_lwheel("lwheel", &lwheel_msg);
 ros::Publisher pub_rwheel("rwheel", &rwheel_msg);
 ros::Publisher pub_state( "state", &state_msg);
@@ -160,6 +160,8 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res)
 		res.reply = "ok";
 	} else if(strcmp(req.mcommand, "walk_around") == 0) {
 		strncpy(current_command, req.mcommand, sizeof(current_command));
+		head_tilt_servo_move_to(SONAR_TILT_CENTER);
+		head_pan_servo_move_to(SONAR_PAN_CENTER);
 		full_stopped = false;
 		straight(req.pwr, true);
 		stop_after(req.timeout);
@@ -180,8 +182,8 @@ void command_callback(const FCommand::Request & req, FCommand::Response & res)
 
 void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response & res)
 {
-	const int start_angle = max(SONAR_PAN_ANGLE_MIN, SONAR_CENTER_OFFSET);
-	const int end_angle = min(SONAR_PAN_ANGLE_MAX, 180 + SONAR_CENTER_OFFSET);
+	const int start_angle = SONAR_PAN_ANGLE_MIN;
+	const int end_angle = SONAR_PAN_ANGLE_MAX;
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
 	const int step_wait_pause = 30;
@@ -189,13 +191,13 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	res.ranges_length = n_ranges;
 	res.ranges = ranges;
 	unsigned long start_ms = millis();
-	int i;
-	for(i=0; i<res.ranges_length; i++) {
+	head_tilt_servo_move_to(req.tilt);
+	for(int i=0; i<res.ranges_length; i++) {
 		AngleRange r;
 		r.angle = start_angle + i * step;
-		head_pan_servo_move_to(r.angle + SONAR_CENTER_OFFSET, req.tilt);
+		head_pan_servo_move_to(r.angle);
 		delay(step_wait_pause);
-		r.range = getRange_HeadUltrasound(req.scan_attempts);
+		r.range = (ir4scan) ? getRange_tof() : getRange_HeadUltrasound(req.scan_attempts);
 		res.ranges[i] = r;
 	}
 	head_pan_servo_move_to(sonarAngle);
@@ -214,14 +216,14 @@ void scanner_switch_callback(const FScannerSwitch::Request & req, FScannerSwitch
 
 void scanner_set_direction_callback(const FScannerSetDirection::Request & req, FScannerSetDirection::Response & res)
 {
-	sonarAngle = req.direction + SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+	sonarAngle = req.direction + SONAR_PAN_CENTER;
 	head_pan_servo_move_to(sonarAngle);
 }
 
 void fill_laser_scan()
 {
-	const int start_angle = max(10, SONAR_CENTER_OFFSET);
-	const int end_angle = min(170, 180 + SONAR_CENTER_OFFSET);
+	const int start_angle = SONAR_PAN_ANGLE_MIN;
+	const int end_angle =SONAR_PAN_ANGLE_MAX;
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
 	const int step_wait_pause = 30;
@@ -236,14 +238,12 @@ void fill_laser_scan()
 	laser_scan_msg.range_max = MAX_RANGE;
 	laser_scan_msg.ranges_length = n_ranges;
 	laser_scan_msg.ranges = ranges;
-	head_pan_servo.attach(headPanServoPin);
-	head_tilt_servo.attach(headTiltServoPin);
-	int i;
-	for(i=0; i<n_ranges; i++) {
+	head_tilt_servo_move_to(SONAR_TILT_CENTER);
+	for(int i=0; i<n_ranges; i++) {
 		int angle = start_angle + i * step;
-		head_pan_servo_move_to(angle + SONAR_CENTER_OFFSET);
+		head_pan_servo_move_to(angle);
 		delay(step_wait_pause);
-		laser_scan_msg.ranges[i] = getRange_HeadUltrasound(laser_scan_attempts);
+		laser_scan_msg.ranges[i] = (ir4scan) ? getRange_tof() : getRange_HeadUltrasound(laser_scan_attempts);
 	}
 	head_pan_servo_move_to(sonarAngle);
 	last_laser_scan_ms = millis();
@@ -256,49 +256,41 @@ ros::ServiceServer<FScannerSwitch::Request, FScannerSwitch::Response> scanner_sw
 ros::ServiceServer<FScannerSetDirection::Request, FScannerSetDirection::Response> scanner_set_direction("scanner_set_direction",&scanner_set_direction_callback);
 
 const char range_frameid[] = "/ultrasound";
+const char tof_frameid[] = "/tof";
 const char back_range_frameid[] = "/back_ultrasound";
 const char imu_frameid[] = "/imu";
 const char base_frameid[] = "/base_link";
 
 void lIntCB()
 {
-	unsigned long t = micros();
-	if( t - intLtime > threshold )
-	{
-		int step = (lFwd) ? 1 : -1;
-		lVel = step * ENC_STEP/t;
-		intLtime = t;
-		lCounter += step;
-	}
+	lCounter += (lFwd) ? 1 : -1;
 }
 
 void rIntCB()
 {
-	unsigned long t = micros();
-	if( t - intRtime > threshold )
-	{
-		int step = (rFwd) ? 1 : -1;
-		rVel = step * ENC_STEP/t;
-		intRtime = t;
-		rCounter += step;
-	}
+	rCounter += (rFwd) ? 1 : -1;
 }
 
-void head_pan_servo_move_to(int pos, int tilt)
+void head_pan_servo_move_to(int pos)
 {
 	if(!head_pan_servo.attached()) {
 		head_pan_servo.attach(headPanServoPin);
-		head_tilt_servo.attach(headTiltServoPin);
 	}
 	if(pos < SONAR_PAN_ANGLE_MIN) pos = SONAR_PAN_ANGLE_MIN;
 	if(pos > SONAR_PAN_ANGLE_MAX) pos = SONAR_PAN_ANGLE_MAX;
-	head_pan_servo.write(pos + SONAR_CENTER_OFFSET);
-	if(tilt>=0) {
-		if(tilt < SONAR_TILT_ANGLE_MIN) tilt = SONAR_TILT_ANGLE_MIN;
-		if(tilt > SONAR_TILT_ANGLE_MAX) tilt = SONAR_TILT_ANGLE_MAX;
-		head_tilt_servo.write(tilt);
+	head_pan_servo.write(pos);
+	last_head_servos_move_ts = millis();
+}
+
+void head_tilt_servo_move_to(int pos)
+{
+	if(!head_tilt_servo.attached()) {
+		head_tilt_servo.attach(headTiltServoPin);
 	}
-	last_head_pan_servo_move_ts = millis();
+	if(pos < SONAR_TILT_ANGLE_MIN) pos = SONAR_TILT_ANGLE_MIN;
+	if(pos > SONAR_TILT_ANGLE_MAX) pos = SONAR_TILT_ANGLE_MAX;
+	head_tilt_servo.write(pos);
+	last_head_servos_move_ts = millis();
 }
 
 void setup()
@@ -323,18 +315,21 @@ void setup()
 	digitalWrite(Eleft, INPUT_PULLUP);
 	digitalWrite(Eright, INPUT_PULLUP);
 
-	head_pan_servo_move_to(90 + SONAR_CENTER_OFFSET);
+	head_pan_servo_move_to(SONAR_PAN_CENTER);
+	head_tilt_servo_move_to(SONAR_PAN_CENTER);
 
 	setup_compass();
 	setup_accel();
 	setup_gyro();
 	setup_bmp085();
+	setup_vl53l0x();
 
-	attachInterrupt(digitalPinToInterrupt(Eleft), lIntCB, RISING);
-	attachInterrupt(digitalPinToInterrupt(Eright), rIntCB, RISING);
+	attachInterrupt(digitalPinToInterrupt(Eleft), lIntCB, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(Eright), rIntCB, CHANGE);
 
 	nh.initNode();
 	nh.advertise(pub_range);
+	nh.advertise(pub_tof);
 	nh.advertise(pub_back_range);
 	nh.advertise(pub_imu);
 	nh.advertise(pub_laser_scan);
@@ -349,11 +344,19 @@ void setup()
 	nh.subscribe(sub_stuck);
 	nh.subscribe(sub_cmd_vel);
 
+	getParam("~ir4scan", &ir4scan, 1);
+
 	range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
 	range_msg.header.frame_id = range_frameid;
 	range_msg.field_of_view = 0.1; // fake
 	range_msg.min_range = MIN_RANGE;
 	range_msg.max_range = MAX_RANGE;
+
+	tof_msg.radiation_type = sensor_msgs::Range::INFRARED;
+	tof_msg.header.frame_id = tof_frameid;
+	tof_msg.field_of_view = 0.01; // fake
+	tof_msg.min_range = MIN_RANGE;
+	tof_msg.max_range = MAX_RANGE;
 
 	back_range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
 	back_range_msg.header.frame_id = back_range_frameid;
@@ -387,7 +390,7 @@ void setup()
 	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
 //	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
 	EventFuse::newFuse(2000, INF_REPEAT, evHeadServoDetach);
-	EventFuse::newFuse(200, INF_REPEAT, evIRcmd);
+	EventFuse::newFuse(5, INF_REPEAT, evIRcmd);
 
 }
 
@@ -397,15 +400,28 @@ unsigned long msg_time = 0;
 //publish values every 10 milliseconds
 #define PUBLISH_PERIOD 10
 
+unsigned long last_millis = 0;
+
 void loop()
 {
-	EventFuse::burn();
 	unsigned long m = millis();
+	if(last_millis > 0) {
+		EventFuse::burn((m - last_millis) / 10);
+	}
+	last_millis = m;
 	if ( m >= msg_time ){
 		ros::Time now = nh.now();
+		process_vl53l0x();
+		tof_msg.range = vl53l0x_mm / 1000.;
+		tof_msg.header.stamp = now;
+		if(vl53l0x_mm > 0) {
+			pub_tof.publish(&tof_msg);
+		}
 		range_msg.range = getRange_HeadUltrasound();
-		range_msg.header.stamp = now;
-		pub_range.publish(&range_msg);
+		if(range_msg.range > 0) {
+			range_msg.header.stamp = now;
+			pub_range.publish(&range_msg);
+		}
 		back_range_msg.range = getRange_BackUltrasound();
 		back_range_msg.header.stamp = now;
 		pub_range.publish(&back_range_msg);
@@ -429,11 +445,13 @@ void loop()
 		process_bmp085();
 		state_msg.header.stamp = now;
 		state_msg.v = readVccMv() / 1000.;
+		state_msg.irdist = tof_msg.range;
+		state_msg.sonar = range_msg.range;
 		state_msg.lcount = lCounter;
 		state_msg.rcount = rCounter;
 		state_msg.lpwr = lPower * ((lFwd) ? 1 : -1);
 		state_msg.rpwr = rPower * ((rFwd) ? 1 : -1);
-		state_msg.pwroffset = powerOffset;
+		state_msg.pwroffset = pid_powerOffset;
 		state_msg.ldist = count2dist(lCounter);
 		state_msg.rdist = count2dist(rCounter);
 		state_msg.heading = headingDegrees;

@@ -382,7 +382,7 @@ void setup()
 	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
 //	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
 	EventFuse::newFuse(2000, INF_REPEAT, evHeadServoDetach);
-	EventFuse::newFuse(200, INF_REPEAT, evIRcmd);
+	EventFuse::newFuse(10, INF_REPEAT, evIRcmd);
 
 }
 
@@ -392,10 +392,14 @@ unsigned long msg_time = 0;
 //publish values every 10 milliseconds
 #define PUBLISH_PERIOD 10
 
+unsigned long last_millis = 0;
+
 void loop()
 {
-	EventFuse::burn();
-	unsigned long m = millis();
+	if(last_millis > 0) {
+		EventFuse::burn((m - last_millis) / 10);
+	}
+	last_millis = m;
 	if ( m >= msg_time ){
 		ros::Time now = nh.now();
 		range_msg.range = getRange_HeadUltrasound();
