@@ -22,6 +22,7 @@
 		<node name="fchassis" pkg="rosserial_python" type="serial_node.py" respawn="true">
 			<param name="port" value="/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"/>
 			<param name="baud" value="57600"/>
+			<param name="ir4scan" value="1"/>
 		</node>
 
 		<node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen" respawn="true" />

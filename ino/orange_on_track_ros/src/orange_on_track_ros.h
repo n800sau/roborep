@@ -3,20 +3,21 @@
 
 #define MAX_STOP_DIST 0.3
 
-const int MIN_RANGE = 0.0;
+const int MIN_RANGE = 0.05;
 const int MAX_RANGE = 2.0;
 
 const int headEchoPin = 12; // Echo Pin
 const int headTrigPin = 11; // Trigger Pin
 
 const int SONAR_INCR = 5;
-const int SONAR_CENTER_OFFSET = 0;
 
-const int SONAR_PAN_ANGLE_MIN = 40;
-const int SONAR_PAN_ANGLE_MAX = 150;
+const int SONAR_PAN_ANGLE_MIN = 35;
+const int SONAR_PAN_ANGLE_MAX = 135;
+const int SONAR_PAN_CENTER = SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
 
-const int SONAR_TILT_ANGLE_MIN = 40;
-const int SONAR_TILT_ANGLE_MAX = 150;
+const int SONAR_TILT_ANGLE_MIN = 80;
+const int SONAR_TILT_ANGLE_MAX = 145;
+const int SONAR_TILT_CENTER = SONAR_TILT_ANGLE_MIN + (SONAR_TILT_ANGLE_MAX - SONAR_TILT_ANGLE_MIN) / 2;
 
 const int backEchoPin = 22; // Echo Pin
 const int backTrigPin = 23; // Trigger Pin
@@ -37,34 +38,18 @@ const int LEFT_MOTOR_POWER = 5;
 const int RIGHT_MOTOR_FWD = 9;
 const int RIGHT_MOTOR_POWER = 10;
 
-const float COUNT_PER_REV = 70.0; // truck wheel
+const float COUNT_PER_REV = 70.0; // truck wheel 18 stripes (625 edges per rev)
 const float WHEEL_DIAMETER = 0.05; // truck wheels
 // distance between wheels
 const float WHEEL_TRACK = 0.082; // truck width
 const float ENC_STEP = WHEEL_DIAMETER * PI / COUNT_PER_REV;
 const float TICKS_PER_METER = 1 / ENC_STEP;
-const float GEAR_REDUCTION = 1.48; // from doc for chassis ???
+const float GEAR_REDUCTION = 50 / 12. * 50 / 12.; // from doc for chassis ???
 
 const float PID_RATE = 10; // hz
 
-const int MIN_PWM = 160;
+const int MIN_PWM = 15;
 const int MAX_PWM = 255;
-
-#define DEFAULT_PWR 50
-
-// 'threshold' is the De-bounce Adjustment factor for the Rotary Encoder. 
-//
-// The threshold value I'm using limits it to 100 half pulses a second
-//
-// My encoder has 12 pulses per 360deg rotation and the specs say
-// it is rated at a maximum of 100rpm.
-//
-// This threshold will permit my encoder to reach 250rpm so if it was connected
-// to a motor instead of a manually operated knob I
-// might possibly need to adjust it to 25000. However, this threshold
-// value is working perfectly for my situation
-//
-const unsigned long threshold = 10000;
 
 extern volatile bool cmd_vel_mode;
 extern volatile bool full_stopped;
@@ -110,7 +95,19 @@ void straight(int pwr, bool fwd);
 void resetCounters();
 float getRange_HeadUltrasound(int attempts=2);
 float getRange_BackUltrasound(int attempts=2);
-void head_pan_servo_move_to(int pos, int tilt=-1);
+void head_pan_servo_move_to(int pos);
+void head_tilt_servo_move_to(int pos);
 
 void updatePID();
+
+extern ros::NodeHandle  nh;
+
+template <class type> void getParam(const char *name, type *ptr, int count)
+{
+	bool param_success = false;
+	do {
+		param_success = nh.getParam(name, ptr, count);
+		nh.spinOnce();
+	} while(!param_success);
+}
 

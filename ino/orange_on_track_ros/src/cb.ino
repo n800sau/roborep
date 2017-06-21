@@ -6,9 +6,19 @@ const unsigned long IR_STOP = 0x13;
 const unsigned long IR_L = 0x0C;
 const unsigned long IR_ENTER = 0x0D;
 const unsigned long IR_R = 0x0E;
+const unsigned long IR_0 = 0x03;
 const unsigned long IR_2 = 0x04;
+const unsigned long IR_3 = 0x05;
+const unsigned long IR_4 = 0x06;
+const unsigned long IR_5 = 0x07;
+const unsigned long IR_6 = 0x08;
+const unsigned long IR_7 = 0x09;
 const unsigned long IR_8 = 0x0A;
-
+const unsigned long IR_9 = 0x0B;
+const unsigned long IR_RED = 0x1C;
+const unsigned long IR_YELLOW = 0x1D;
+const unsigned long IR_GREEN = 0x1F;
+const unsigned long IR_BLUE = 0x20;
 
 int ir_power = 40;
 
@@ -16,6 +26,7 @@ void evIRcmd(FuseID fuse, int& data)
 {
 	if (Serial3.available()) {
 		int inByte = Serial3.read();
+		nh.loginfo(("Byte:" + String(inByte, HEX)).c_str());
 		switch(inByte) {
 			case IR_UP:
 				full_stopped = false;
@@ -40,19 +51,29 @@ void evIRcmd(FuseID fuse, int& data)
 			case IR_STOP:
 				stop(true);
 				break;
-			case IR_L:
-				sonarAngle = 70 + SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+			case IR_4: // pan left
+				sonarAngle = SONAR_PAN_ANGLE_MAX;
 				head_pan_servo_move_to(sonarAngle);
 				break;
-			case IR_R:
-				sonarAngle = -70 + SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
+			case IR_6: // pan right
+				sonarAngle = SONAR_PAN_ANGLE_MIN;
 				head_pan_servo_move_to(sonarAngle);
 				break;
-			case IR_ENTER:
-				sonarAngle = SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
-				head_pan_servo_move_to(sonarAngle);
+			case IR_2: // tilt up
+				sonarAngle = SONAR_TILT_ANGLE_MIN;
+				head_tilt_servo_move_to(sonarAngle);
 				break;
-			case IR_2:
+			case IR_5: // tilt and pan center
+				sonarAngle = SONAR_PAN_CENTER;
+				head_pan_servo_move_to(sonarAngle);
+				sonarAngle = SONAR_TILT_CENTER;
+				head_tilt_servo_move_to(sonarAngle);
+				break;
+			case IR_8: // tilt down
+				sonarAngle = SONAR_TILT_ANGLE_MAX;
+				head_tilt_servo_move_to(sonarAngle);
+				break;
+			case IR_YELLOW:
 				ir_power += 5;
 				if(ir_power > 90) {
 					ir_power = 90;
@@ -62,7 +83,7 @@ void evIRcmd(FuseID fuse, int& data)
 					setRightMotor(rPower+5, rFwd);
 				}
 				break;
-			case IR_8:
+			case IR_RED:
 				ir_power -= 5;
 				if(ir_power < 5) {
 					ir_power = 5;
@@ -83,10 +104,10 @@ void evFixDir(FuseID fuse, int& data)
 	if(moving_straight && !full_stopped) {
 		int aoff = angle_offset(fwd_heading, headingDegrees);
 		if((aoff < 0 && lFwd && rFwd) || (aoff > 0 && (!lFwd) && (!rFwd))) {
-			powerOffset = Kp * abs(aoff);
+			pid_powerOffset = Kp * abs(aoff);
 			// left more right less
 		} else {
-			powerOffset = -Kp * abs(aoff);
+			pid_powerOffset = -Kp * abs(aoff);
 			// left less right more
 		}
 		setLeftMotor(lPower, lFwd);
@@ -111,19 +132,21 @@ void evStop(FuseID fuse, int& userData)
 
 void evBackLeftRight(FuseID fuse, int& pwr)
 {
-//	Serial.print(millis());
 	if(random(1)) {
+		nh.loginfo("Back Left");
 		setLeftMotor(pwr, false);
 		setRightMotor(pwr, true);
 	} else {
+		nh.loginfo("Back Right");
 		setLeftMotor(pwr, true);
 		setRightMotor(pwr, false);
 	}
-	EventFuse::newFuse(pwr, 300, 1, evForward);
+	EventFuse::newFuse(pwr, 200, 1, evForward);
 }
 
 void evForward(FuseID fuse, int& pwr)
 {
+	nh.loginfo("Forward");
 	straight(pwr, true);
 }
 
@@ -141,19 +164,21 @@ void evChangePower(FuseID fuse, int& userData)
 	setLeftMotor(max(0, min(lPwr, 100)), lFwd);
 	setRightMotor(max(0, min(rPwr, 100)), rFwd);
 	if(!full_stopped) {
-		EventFuse::newFuse(500, 1, evChangePower);
+		EventFuse::newFuse(50, 1, evChangePower);
 	}
 }
 
 // to stop movement in case of obstacle
 void evHeadSonar(FuseID fuse, int& userData)
 {
-	float distance = getRange_HeadUltrasound();
+	float distance = (ir4scan) ? getRange_tof() : getRange_HeadUltrasound();
+//	nh.loginfo(("Check dist:" + String(distance)).c_str());
 	if(distance > 0 && distance < MAX_STOP_DIST && lFwd && rFwd && (lPower > 0 || rPower > 0) && sonarAngle == 90) {
-//		Serial.print(millis());
-//		Serial.println("Too close");
-		EventFuse::newFuse((lPower+rPower)/2, 500, 1, evBackLeftRight);
-//		stop();
+		nh.loginfo("Back");
+		int pwr = (lPower+rPower)/2;
+		setLeftMotor(pwr, false);
+		setRightMotor(pwr, false);
+		EventFuse::newFuse(pwr, 50, 1, evBackLeftRight);
 	}
 }
 
@@ -197,9 +222,12 @@ void evPIDupdate(FuseID fuse, int &userData)
 
 void evHeadServoDetach(FuseID fuse, int& userData)
 {
-	if(millis() - last_head_pan_servo_move_ts > 1000 && head_pan_servo.attached()) {
-		head_pan_servo.detach();
-		head_tilt_servo.detach();
+	if(millis() - last_head_servos_move_ts > 1000) {
+		if(head_pan_servo.attached()) {
+			head_pan_servo.detach();
+		}
+		if(head_tilt_servo.attached()) {
+			head_tilt_servo.detach();
+		}
 	}
 }
-

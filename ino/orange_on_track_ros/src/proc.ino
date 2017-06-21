@@ -14,14 +14,14 @@ void stop_after(int timeout)
 	if(timeout < 0) {
 		timeout = 60;
 	} else {
-		EventFuse::newFuse(timeout * 500, 1, evFullStop);
+		EventFuse::newFuse(timeout * 100, 1, evFullStop);
 	}
 }
 
 void straight(int pwr, bool fwd)
 {
 	moving_straight = true;
-	powerOffset = 0;
+	pid_powerOffset = 0;
 	fwd_heading = headingDegrees;
 	setLeftMotor(pwr, fwd);
 	setRightMotor(pwr, fwd);

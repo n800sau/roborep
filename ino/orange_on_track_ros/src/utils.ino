@@ -27,7 +27,7 @@ void stop(bool full)
 		strncpy(current_command, "", sizeof(current_command));
 	}
 	moving_straight = false;
-	powerOffset = 0;
+	pid_powerOffset = 0;
 	setLeftMotor(0, false);
 	setRightMotor(0, false);
 }
@@ -39,7 +39,7 @@ void setLeftMotor(int power, bool fwd)
 	}
 	lPower = power;
 	if(moving_straight && !full_stopped) {
-		power += powerOffset;
+		power += pid_powerOffset;
 	}
 	lFwd = fwd;
 	if(power == 0) {
@@ -69,7 +69,7 @@ void setRightMotor(int power, bool fwd)
 	}
 	rPower = power;
 	if(moving_straight && !full_stopped) {
-		power -= powerOffset;
+		power -= pid_powerOffset;
 	}
 	rFwd = fwd;
 	if(power == 0) {
