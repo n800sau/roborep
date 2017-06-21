@@ -1,4 +1,4 @@
-package n800s.bleservice;
+package au.n800s.bleservice;
 
 import android.app.Activity;
 import android.app.ActivityManager;
