@@ -148,7 +148,7 @@ int read_byte()
 		rs = cline.vals[cline.idx];
 	}
 	cline.idx++;
-	Serial.println(rs, HEX);
+//	Serial.println(rs, HEX);
 	return rs;
 }
 
@@ -240,7 +240,7 @@ void loop()
 										if(!end_of_data) {
 											Serial.println("Writing next line");
 											unsigned address = cline.addr;
-											unsigned laddress = address & 0xFF;
+											unsigned laddress = address & 0xff;
 											unsigned haddress = address >> 8 & 0xff;
 											Serial3.write(0x55);
 											Serial3.write(laddress);
