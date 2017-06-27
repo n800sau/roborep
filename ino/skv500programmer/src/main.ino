@@ -240,8 +240,8 @@ void loop()
 										if(!end_of_data) {
 											Serial.println("Writing next line");
 											unsigned address = cline.addr;
-											unsigned laddress = address & 0xff;
-											unsigned haddress = address >> 8 & 0xff;
+											unsigned haddress = address & 0xff;
+											unsigned laddress = address >> 8 & 0xff;
 											Serial3.write(0x55);
 											Serial3.write(laddress);
 											Serial3.write(haddress);
