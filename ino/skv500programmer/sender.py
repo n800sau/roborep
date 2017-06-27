@@ -22,7 +22,8 @@ finished = False
 t_start = time.time()
 i = 0
 while not finished:
-	l = read_line(ser).strip();
+	l = read_line(ser)
+	l = l.strip();
 	print 'stage 1:', l
 	if l == 'Ready':
 		ser.write('c')
@@ -37,17 +38,22 @@ while not finished:
 					print 'stage 3:', l
 					if l =='Give line':
 						hl = sf.readline()
+						print 'line ', hl
 						if hl:
 							ser.write(hl)
 						else:
 							finished = True
 							print 'Finished'
 							break
+					elif l == 'Stopped':
+						finished = True
+						print 'Finished'
+						break
 				break
 			if time.time() - t_start > 10:
-				print 'timeout'
+				print 'timeout 2'
 				break
 		break
 	if time.time() - t_start > 10:
-		print 'timeout'
+		print 'timeout 1'
 		break
