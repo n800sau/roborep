@@ -1,4 +1,4 @@
-#define BAUD_RATE 9600
+#define BAUD_RATE 115200
 
 #define RESET_PIN 10
 #define OutSerial Serial3
