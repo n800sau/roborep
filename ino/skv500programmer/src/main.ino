@@ -144,11 +144,15 @@ void read_next_line()
 int read_byte()
 {
 	int rs = -1;
-	if(cline.idx < cline.n) {
-		rs = cline.vals[cline.idx];
+	if(cline.idx >= cline.n) {
+		if(!end_of_data) {
+			read_next_line();
+		}
 	}
-	cline.idx++;
-//	Serial.println(rs, HEX);
+	if(cline.idx < cline.n && !end_of_data) {
+		rs = cline.vals[cline.idx++];
+	}
+	Serial.println(rs, HEX);
 	return rs;
 }
 
@@ -235,26 +239,27 @@ void loop()
 									cline.n=0;
 									cline.idx=0;
 									int b;
+									read_next_line();
+									unsigned address = cline.addr;
 									while(!end_of_data) {
-										read_next_line();
-										if(!end_of_data) {
-											Serial.println("Writing next line");
-											unsigned address = cline.addr;
-											unsigned haddress = address & 0xff;
-											unsigned laddress = address >> 8 & 0xff;
+											Serial.print("Address: 0x");
+											Serial.println(address, HEX);
+											unsigned laddress = address & 0xff;
+											unsigned haddress = address >> 8 & 0xff;
 											Serial3.write(0x55);
 											Serial3.write(laddress);
 											Serial3.write(haddress);
 											Serial3.write(0x20);
+											address += PAGE_SIZE >> 1;
 											waitForBytes(2);
 											insync = Serial3.read();
 											ok = Serial3.read();
 											if(in_sync(insync, ok)) {
 												Serial3.write(0x64); // STK_PROGRAM_PAGE
 												Serial3.write(0); // page size
-												Serial3.write(cline.n); // page size
+												Serial3.write(PAGE_SIZE); // page size
 												Serial3.write(0x46); // flash memory, 'F'
-												for(int i=0; i<cline.n; i++) {
+												for(int i=0; i<PAGE_SIZE; i++) {
 													b = read_byte();
 													Serial3.write(b);
 												}
@@ -266,7 +271,6 @@ void loop()
 													break;
 												}
 											}
-										}
 									}
 									if(end_of_data) {
 										// end of file
