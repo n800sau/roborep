@@ -1,5 +1,7 @@
 #define PIN_RESET 10
 
+#define OutSerial Serial3
+
 long slave_baud = 115200;
 
 void setup()
@@ -18,15 +20,15 @@ void resetSlave()
 	delay(500);
 }
 
-void flushSerial3()
+void flushOutSerial()
 {
-	while(Serial3.available() > 0) Serial3.read();
+	while(OutSerial.available() > 0) OutSerial.read();
 }
 
 int waitForBytes(int count)
 {
 	int rs;
-	while((rs = Serial3.available()) < count)
+	while((rs = OutSerial.available()) < count)
 	{
 		delay(10);
 	};
@@ -156,143 +158,171 @@ int read_byte()
 	return rs;
 }
 
-void loop()
+void stk500program()
 {
-	end_of_data = false;
-	if(Serial.available()) {
-		int cmd = Serial.read();
-		switch(cmd)
-		{
-			case '1':
-				slave_baud = 19200;
-				break;
-			case '2':
-				slave_baud = 38400;
-				break;
-			case '3':
-				slave_baud = 57600;
-				break;
-			case '4':
-				slave_baud = 115200;
-				break;
-			case 'c':
-				Serial.println("Starting...");
-				Serial.println(slave_baud);
-				Serial3.begin(slave_baud);
-				resetSlave();
-				flushSerial3();
-				Serial.println("syncing...");
-				Serial3.write(0x30);
-				Serial3.write(0x20);
-				delay(500);
+	Serial.println("Starting...");
+	Serial.println(slave_baud);
+	OutSerial.begin(slave_baud);
+	resetSlave();
+	flushOutSerial();
+	Serial.println("syncing...");
+	OutSerial.write(0x30);
+	OutSerial.write(0x20);
+	delay(500);
+	waitForBytes(2);
+	int insync = OutSerial.read();
+	int ok = OutSerial.read();
+	if(in_sync(insync, ok)) {
+		//receive major version
+		OutSerial.write(0x41);
+		OutSerial.write(0x81);
+		OutSerial.write(0x20);
+		waitForBytes(3);
+		insync = OutSerial.read();
+		int stk_major = OutSerial.read(); // STK_SW_MAJOR
+		ok = OutSerial.read();
+		if(in_sync(insync, ok)) {
+			//receive minor version
+			OutSerial.write(0x41);
+			OutSerial.write(0x82);
+			OutSerial.write(0x20);
+			waitForBytes(3);
+			insync = OutSerial.read();
+			int stk_minor = OutSerial.read(); // STK_SW_MINOR
+			ok = OutSerial.read();
+			if(in_sync(insync, ok)) {
+				Serial.print("bootloader version ");
+				Serial.print(stk_major);
+				Serial.print(".");
+				Serial.println(stk_minor);
+				Serial.println("Entering prog mode");
+				OutSerial.write(0x50);
+				OutSerial.write(0x20);
 				waitForBytes(2);
-				int insync = Serial3.read();
-				int ok = Serial3.read();
+				insync = OutSerial.read();
+				ok = OutSerial.read();
 				if(in_sync(insync, ok)) {
-					//receive major version
-					Serial3.write(0x41);
-					Serial3.write(0x81);
-					Serial3.write(0x20);
-					waitForBytes(3);
-					insync = Serial3.read();
-					int stk_major = Serial3.read(); // STK_SW_MAJOR
-					ok = Serial3.read();
+					Serial.println("Receiving signature");
+					OutSerial.write(0x75);
+					OutSerial.write(0x20);
+					waitForBytes(5);
+					insync = OutSerial.read();
+					int stk_signature[3];
+					stk_signature[0] = OutSerial.read();
+					stk_signature[1] = OutSerial.read();
+					stk_signature[2] = OutSerial.read();
+					ok = OutSerial.read();
 					if(in_sync(insync, ok)) {
-						//receive minor version
-						Serial3.write(0x41);
-						Serial3.write(0x82);
-						Serial3.write(0x20);
-						waitForBytes(3);
-						insync = Serial3.read();
-						int stk_minor = Serial3.read(); // STK_SW_MINOR
-						ok = Serial3.read();
-						if(in_sync(insync, ok)) {
-							Serial.print("bootloader version ");
-							Serial.print(stk_major);
-							Serial.print(".");
-							Serial.println(stk_minor);
-							Serial.println("Entering prog mode");
-							Serial3.write(0x50);
-							Serial3.write(0x20);
-							waitForBytes(2);
-							insync = Serial3.read();
-							ok = Serial3.read();
-							if(in_sync(insync, ok)) {
-								Serial.println("Receiving signature");
-								Serial3.write(0x75);
-								Serial3.write(0x20);
-								waitForBytes(5);
-								insync = Serial3.read();
-								int stk_signature[3];
-								stk_signature[0] = Serial3.read();
-								stk_signature[1] = Serial3.read();
-								stk_signature[2] = Serial3.read();
-								ok = Serial3.read();
+						Serial.print("Signature ");
+						Serial.print(stk_signature[0]);
+						Serial.print("-");
+						Serial.print(stk_signature[1]);
+						Serial.print("-");
+						Serial.println(stk_signature[2]);
+						Serial.println("Proceed");
+						cline.n=0;
+						cline.idx=0;
+						int b;
+						read_next_line();
+						unsigned address = cline.addr;
+						while(!end_of_data) {
+								Serial.print("Address: 0x");
+								Serial.println(address, HEX);
+								unsigned laddress = address & 0xff;
+								unsigned haddress = address >> 8 & 0xff;
+								OutSerial.write(0x55);
+								OutSerial.write(laddress);
+								OutSerial.write(haddress);
+								OutSerial.write(0x20);
+								address += PAGE_SIZE >> 1;
+								waitForBytes(2);
+								insync = OutSerial.read();
+								ok = OutSerial.read();
 								if(in_sync(insync, ok)) {
-									Serial.print("Signature ");
-									Serial.print(stk_signature[0]);
-									Serial.print("-");
-									Serial.print(stk_signature[1]);
-									Serial.print("-");
-									Serial.println(stk_signature[2]);
-									Serial.println("Proceed");
-									cline.n=0;
-									cline.idx=0;
-									int b;
-									read_next_line();
-									unsigned address = cline.addr;
-									while(!end_of_data) {
-											Serial.print("Address: 0x");
-											Serial.println(address, HEX);
-											unsigned laddress = address & 0xff;
-											unsigned haddress = address >> 8 & 0xff;
-											Serial3.write(0x55);
-											Serial3.write(laddress);
-											Serial3.write(haddress);
-											Serial3.write(0x20);
-											address += PAGE_SIZE >> 1;
-											waitForBytes(2);
-											insync = Serial3.read();
-											ok = Serial3.read();
-											if(in_sync(insync, ok)) {
-												Serial3.write(0x64); // STK_PROGRAM_PAGE
-												Serial3.write(0); // page size
-												Serial3.write(PAGE_SIZE); // page size
-												Serial3.write(0x46); // flash memory, 'F'
-												for(int i=0; i<PAGE_SIZE; i++) {
-													b = read_byte();
-													Serial3.write(b);
-												}
-												Serial3.write(0x20); // SYNC_CRC_EOP
-												waitForBytes(2);
-												insync = Serial3.read();
-												ok = Serial3.read();
-												if(!in_sync(insync, ok)) {
-													break;
-												}
-											}
+									OutSerial.write(0x64); // STK_PROGRAM_PAGE
+									OutSerial.write(0); // page size
+									OutSerial.write(PAGE_SIZE); // page size
+									OutSerial.write(0x46); // flash memory, 'F'
+									for(int i=0; i<PAGE_SIZE; i++) {
+										b = read_byte();
+										OutSerial.write(b);
 									}
-									if(end_of_data) {
-										// end of file
-										Serial.println("Leaving prog mode");
-										Serial3.write(0x51);
-										Serial3.write(0x20);
-										waitForBytes(2);
-										insync = Serial3.read();
-										ok = Serial3.read();
-										if(in_sync(insync, ok)) {
-											delay(1000);
-											resetSlave();
-											Serial.println("Finished");
-										}
+									OutSerial.write(0x20); // SYNC_CRC_EOP
+									waitForBytes(2);
+									insync = OutSerial.read();
+									ok = OutSerial.read();
+									if(!in_sync(insync, ok)) {
+										break;
 									}
 								}
+						}
+						if(end_of_data) {
+							// end of file
+							Serial.println("Leaving prog mode");
+							OutSerial.write(0x51);
+							OutSerial.write(0x20);
+							waitForBytes(2);
+							insync = OutSerial.read();
+							ok = OutSerial.read();
+							if(in_sync(insync, ok)) {
+								delay(1000);
+								resetSlave();
+								Serial.println("Finished");
 							}
 						}
 					}
 				}
-				Serial.println("Stopped");
-				break;
+			}
+		}
+	}
+	Serial.println("Stopped");
+}
+
+bool pass_through_mode = false;
+
+void loop()
+{
+	if(pass_through_mode) {
+		int n = OutSerial.available();
+		for(int i=0; i< n; i++) {
+			Serial.write(OutSerial.read());
+		}
+		n = Serial.available();
+		for(int i=0; i< n; i++) {
+			OutSerial.write(Serial.read());
+		}
+	} else {
+		end_of_data = false;
+		if(Serial.available()) {
+			int cmd = Serial.read();
+			switch(cmd)
+			{
+				case '1':
+					slave_baud = 19200;
+					break;
+				case '2':
+					slave_baud = 38400;
+					break;
+				case '3':
+					slave_baud = 57600;
+					break;
+				case '4':
+					slave_baud = 115200;
+					break;
+				case 'c':
+					stk500program();
+					break;
+				case 'p':
+					OutSerial.begin(slave_baud);
+					resetSlave();
+					flushOutSerial();
+					while(OutSerial.available() > 0 && OutSerial.peek() == 0) {
+						OutSerial.read();
+					}
+					pass_through_mode = true;
+					Serial.println("Pass through mode is set");
+					break;
+			}
 		}
 	}
 }
