@@ -25,5 +25,8 @@ void loop()
 	for(int i=0; i< n; i++) {
 		Serial.write(OutSerial.read());
 	}
-//	while(Serial.available()) OutSerial.write(Serial.read());
+	n = Serial.available();
+	for(int i=0; i< n; i++) {
+		OutSerial.write(Serial.read());
+	}
 }
