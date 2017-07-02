@@ -31,6 +31,9 @@ const int headPanServoPin = 46;
 const int Eleft = 2;
 const int Eright = 3;
 
+// mpu6050 int pin
+const int MPUint = 18;
+
 // motor pins
 const int LEFT_MOTOR_FWD = 6;
 const int LEFT_MOTOR_POWER = 5;

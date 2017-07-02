@@ -3,8 +3,11 @@
 
 #include "SPI.h"
 
-#define PIN_CE  8 // chip enable
-#define PIN_CSN 53   // chip select (for SPI)
+//#define PIN_CE  8 // chip enable
+//#define PIN_CSN 53   // chip select (for SPI)
+
+#define PIN_CE  7 // chip enable
+#define PIN_CSN 8   // chip select (for SPI)
 
 // The MAC address of BLE advertizer -- just make one up
 const byte mac1[6] = {
