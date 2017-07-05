@@ -186,7 +186,7 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	const int end_angle = SONAR_PAN_ANGLE_MAX;
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
-	const int step_wait_pause = 30;
+	const int step_wait_pause = 5;
 	static AngleRange ranges[n_ranges];
 	res.ranges_length = n_ranges;
 	res.ranges = ranges;
@@ -202,9 +202,7 @@ void twist_scan_callback(const FTwistScan::Request & req, FTwistScan::Response &
 	}
 	head_pan_servo_move_to(sonarAngle);
 	unsigned long end_ms = millis();
-	if(start_ms < end_ms) {
-		res.timeit = (start_ms < end_ms) ? end_ms - start_ms : ULONG_MAX - start_ms + end_ms;
-	}
+	res.timeit = (start_ms < end_ms) ? end_ms - start_ms : ULONG_MAX - start_ms + end_ms;
 }
 
 void scanner_switch_callback(const FScannerSwitch::Request & req, FScannerSwitch::Response & res)
@@ -226,7 +224,7 @@ void fill_laser_scan()
 	const int end_angle =SONAR_PAN_ANGLE_MAX;
 	const int step = 5;
 	const int n_ranges = (end_angle - start_angle) / step;
-	const int step_wait_pause = 30;
+	const int step_wait_pause = 5;
 	static float ranges[n_ranges];
 	unsigned long start_ms = millis();
 	laser_scan_msg.angle_min = -(end_angle - start_angle) / 2 * PI / 180;
@@ -381,15 +379,15 @@ void setup()
 
 	state_msg.header.frame_id = base_frameid;
 
-	EventFuse::newFuse(100, INF_REPEAT, evHeadSonar);
-	EventFuse::newFuse(100, INF_REPEAT, evBackSonar);
-	EventFuse::newFuse(100, INF_REPEAT, evFixDir);
+	EventFuse::newFuse(10, INF_REPEAT, evHeadSonar);
+//	EventFuse::newFuse(100, INF_REPEAT, evBackSonar);
+	EventFuse::newFuse(10, INF_REPEAT, evFixDir);
 
-//	EventFuse::newFuse(100, INF_REPEAT, evMoveSonar);
+//	EventFuse::newFuse(10, INF_REPEAT, evMoveSonar);
 
-	EventFuse::newFuse(3000, INF_REPEAT, evLaserScan);
-//	EventFuse::newFuse(1000/PID_RATE, INF_REPEAT, evPIDupdate);
-	EventFuse::newFuse(2000, INF_REPEAT, evHeadServoDetach);
+	EventFuse::newFuse(300, INF_REPEAT, evLaserScan);
+//	EventFuse::newFuse(100/PID_RATE, INF_REPEAT, evPIDupdate);
+	EventFuse::newFuse(1000, INF_REPEAT, evHeadServoDetach);
 	EventFuse::newFuse(5, INF_REPEAT, evIRcmd);
 
 }
@@ -409,40 +407,41 @@ void loop()
 		EventFuse::burn((m - last_millis) / 10);
 	}
 	last_millis = m;
+	ros::Time now = nh.now();
+	// the fastest published
+	process_accel();
+	process_gyro();
+	imu_msg.header.stamp = now;
+	imu_msg.angular_velocity.x = gyro.g.x * PI / 180;
+	imu_msg.angular_velocity.y = gyro.g.y * PI / 180;
+	imu_msg.angular_velocity.z = gyro.g.z * PI / 180;
+	imu_msg.linear_acceleration.x = adxl345_state.event.acceleration.x;
+	imu_msg.linear_acceleration.y = adxl345_state.event.acceleration.y;
+	imu_msg.linear_acceleration.z = adxl345_state.event.acceleration.z;
+	pub_imu.publish(&imu_msg);
+	process_compass();
+	mf_msg.header.stamp = now;
+	mf_msg.magnetic_field.x = compass_x;
+	mf_msg.magnetic_field.y = compass_y;
+	mf_msg.magnetic_field.z = compass_z;
+	pub_mf.publish(&mf_msg);
+	process_vl53l0x();
+	tof_msg.range = vl53l0x_mm / 1000.;
+	tof_msg.header.stamp = now;
+	if(vl53l0x_mm > 0) {
+		pub_tof.publish(&tof_msg);
+	}
 	if ( m >= msg_time ){
-		ros::Time now = nh.now();
-		process_vl53l0x();
-		tof_msg.range = vl53l0x_mm / 1000.;
-		tof_msg.header.stamp = now;
-		if(vl53l0x_mm > 0) {
-			pub_tof.publish(&tof_msg);
-		}
 		range_msg.range = getRange_HeadUltrasound();
 		if(range_msg.range > 0) {
 			range_msg.header.stamp = now;
 			pub_range.publish(&range_msg);
 		}
-		back_range_msg.range = getRange_BackUltrasound();
-		back_range_msg.header.stamp = now;
-		pub_range.publish(&back_range_msg);
-		process_compass();
-		mf_msg.header.stamp = now;
-		mf_msg.magnetic_field.x = compass_x;
-		mf_msg.magnetic_field.y = compass_y;
-		mf_msg.magnetic_field.z = compass_z;
-		pub_mf.publish(&mf_msg);
-		process_accel();
-		process_gyro();
-		imu_msg.header.stamp = now;
-		imu_msg.angular_velocity.x = gyro.g.x * PI / 180;
-		imu_msg.angular_velocity.y = gyro.g.y * PI / 180;
-		imu_msg.angular_velocity.z = gyro.g.z * PI / 180;
-		imu_msg.linear_acceleration.x = adxl345_state.event.acceleration.x;
-		imu_msg.linear_acceleration.y = adxl345_state.event.acceleration.y;
-		imu_msg.linear_acceleration.z = adxl345_state.event.acceleration.z;
-		pub_imu.publish(&imu_msg);
+//		back_range_msg.range = getRange_BackUltrasound();
+//		back_range_msg.header.stamp = now;
+//		pub_range.publish(&back_range_msg);
 
-		process_bmp085();
+//		process_bmp085();
 		state_msg.header.stamp = now;
 		state_msg.v = readVccMv() / 1000.;
 		state_msg.irdist = tof_msg.range;
@@ -457,9 +456,9 @@ void loop()
 		state_msg.heading = headingDegrees;
 		state_msg.single_tap = adxl345_state.single_tap;
 		float temp;
-		bmp.getTemperature(&temp);
-		state_msg.t = temp;
-		state_msg.pressure = bmp085_event.pressure;
+//		bmp.getTemperature(&temp);
+//		state_msg.t = temp;
+//		state_msg.pressure = bmp085_event.pressure;
 		state_msg.command = current_command;
 		pub_state.publish(&state_msg);
 		lwheel_msg.data = lCounter;
