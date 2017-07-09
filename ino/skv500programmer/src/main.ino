@@ -1,6 +1,8 @@
-#define PIN_RESET 8
+#define RESET_PIN_COUNT 4
+const int pin_reset_list[RESET_PIN_COUNT] = {0, 40, 38, 36};
 
 HardwareSerial *pSerial = &Serial2;
+int pin_reset = pin_reset_list[2];
 
 long slave_baud = 115200;
 
@@ -8,15 +10,19 @@ void setup()
 {
 	Serial.begin(115200);
 	Serial.println("Ready");
-	pinMode(PIN_RESET, OUTPUT);
-	digitalWrite(PIN_RESET, HIGH);
+	for(int i=0; i<RESET_PIN_COUNT; i++) {
+		if(pin_reset_list[i]) {
+			pinMode(pin_reset_list[i], OUTPUT);
+			digitalWrite(pin_reset_list[i], HIGH);
+		}
+	}
 }
 
 void resetSlave()
 {
-	digitalWrite(PIN_RESET, LOW);
+	digitalWrite(pin_reset, LOW);
 	delay(500);
-	digitalWrite(PIN_RESET, HIGH);
+	digitalWrite(pin_reset, HIGH);
 	delay(100);
 }
 
@@ -284,14 +290,19 @@ void resetOutSerial()
 {
 	Serial.print("Slave is Serial");
 	if(pSerial == &Serial1) {
+		pin_reset = pin_reset_list[1];
 		Serial.print("1");
 	} else if(pSerial == &Serial2) {
+		pin_reset = pin_reset_list[2];
 		Serial.print("2");
 	} else if(pSerial == &Serial3) {
+		pin_reset = pin_reset_list[3];
 		Serial.print("3");
 	}
 	Serial.print(" with baud ");
 	Serial.println(slave_baud);
+	Serial.print("Pin reset:");
+	Serial.println(pin_reset);
 	pSerial->begin(slave_baud);
 }
 

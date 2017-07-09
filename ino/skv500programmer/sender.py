@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from serial import Serial
-import sys, time
+import sys, time, datetime
 
 def read_line(ser):
   count = 0
@@ -11,49 +11,58 @@ def read_line(ser):
     if char == '\r': 
       break
     if len(char) == 0: 
-      return None
+      return ''
     reply += char
 
   return reply 
 
+def dbprint(text):
+	print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
+
 ser = Serial('/dev/ttyUSB0', 115200, timeout=5, writeTimeout=5)
 
 finished = False
-t_start = time.time()
+t_last = time.time()
 i = 0
 while not finished:
 	l = read_line(ser)
 	l = l.strip();
-	print 'stage 1:', l
+	dbprint('stage 1: %s' % l)
 	if l == 'Ready':
+		t_last = time.time()
+		if len(sys.argv) > 1:
+			if sys.argv[1] == '1':
+				ser.write('!')
+			elif sys.argv[1] == '2':
+				ser.write('@')
+		time.sleep(0.1)
 		ser.write('c')
 		ser.flush()
 		while not finished:
 			l = read_line(ser).strip();
-			print 'stage 2:', l
+			dbprint('stage 2: %s' % l)
 			if l == 'Proceed':
 				sf = file('firmware.hex')
 				while not finished:
 					l = read_line(ser).strip();
-					print 'stage 3:', l
+					dbprint('stage 3: %s' % l)
 					if l =='Give line':
+						t_last = time.time()
 						hl = sf.readline()
-						print 'line ', hl
+						dbprint('line %s' % hl)
 						if hl:
 							ser.write(hl)
 						else:
 							finished = True
-							print 'Finished'
+							dbprint('Finished')
 							break
 					elif l == 'Stopped':
+						t_last = time.time()
 						finished = True
-						print 'Finished'
+						dbprint('Finished')
 						break
-				break
-			if time.time() - t_start > 10:
-				print 'timeout 2'
-				break
+			if time.time() - t_last > 10:
+				raise Exception('timeout 2')
 		break
-	if time.time() - t_start > 10:
-		print 'timeout 1'
-		break
+	if time.time() - t_last > 10:
+		raise Exception('timeout 1')
