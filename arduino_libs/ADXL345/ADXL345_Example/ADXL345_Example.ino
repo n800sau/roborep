@@ -30,7 +30,7 @@ int statusPin = 2; // I'm using digital pin 2.
 void setup()
 {
   // Begin by setting up the Serial Port so we can output our results.
-  Serial.begin(9600);
+  Serial.begin(115200);
   // Start the I2C Wire library so we can use I2C to talk to the accelerometer.
   Wire.begin();
   
@@ -62,6 +62,7 @@ void loop()
 {
   if(accel.IsConnected) // If we are connected to the accelerometer.
   {
+	unsigned long ms = millis();
     // Read the raw data from the accelerometer.
     AccelerometerRaw raw = accel.ReadRawAxis();
     //This data can be accessed like so:
@@ -76,6 +77,9 @@ void loop()
     
     // We output our received data.
     Output(raw, scaled);
+	Serial.print("Done in ");
+	Serial.print(millis() - ms);
+	Serial.println(" ms");
   }
 }
 
