@@ -2773,6 +2773,7 @@ int mpu_read_mem(unsigned short mem_addr, unsigned short length,
  *  @param[in]  sample_rate Fixed sampling rate used when DMP is enabled.
  *  @return     0 if successful.
  */
+
 int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
     unsigned short start_addr, unsigned short sample_rate)
 {
@@ -2790,11 +2791,15 @@ int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
         return -1;
     for (ii = 0; ii < length; ii += this_write) {
         this_write = min(LOAD_CHUNK, length - ii);
-        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]))
+
+		unsigned char buffer[LOAD_CHUNK];
+		memcpy_P(buffer, &firmware[ii], this_write); // Necessary casts and dereferencing, just copy.
+
+        if (mpu_write_mem(ii, this_write, buffer))
             return -1;
         if (mpu_read_mem(ii, this_write, cur))
             return -1;
-        if (memcmp(firmware+ii, cur, this_write))
+        if (memcmp(buffer, cur, this_write))
             return -2;
     }
 
