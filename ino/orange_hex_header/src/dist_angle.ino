@@ -13,12 +13,12 @@ VL53L0X sensor;
 
 const int SONAR_INCR = 30;
 
-const int SONAR_PAN_ANGLE_MIN = 35;
-const int SONAR_PAN_ANGLE_MAX = 135;
+const int SONAR_PAN_ANGLE_MIN = 35; // right side
+const int SONAR_PAN_ANGLE_MAX = 135; // left side
 const int SONAR_PAN_CENTER = SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
 
-const int SONAR_TILT_ANGLE_MIN = 80;
-const int SONAR_TILT_ANGLE_MAX = 145;
+const int SONAR_TILT_ANGLE_MIN = 80; // top
+const int SONAR_TILT_ANGLE_MAX = 145; // bottom
 const int SONAR_TILT_CENTER = SONAR_TILT_ANGLE_MIN + (SONAR_TILT_ANGLE_MAX - SONAR_TILT_ANGLE_MIN) / 2;
 
 // up-down
@@ -55,11 +55,12 @@ void dmpDataReady() {
 
 // watch how much data block is in hex
 // it can grow more than 100% !!!
-#define MAX_COUNT 200
+#define MAX_COUNT 100
 
 struct {
 	int mm;
-	int pinch;
+	int pitch;
+	int yaw;
 } data[MAX_COUNT];
 
 int data_size;
@@ -81,9 +82,9 @@ void setup()
 
 	Serial.println("\ndist_angle start");
 
-
-	head_pan_servo.attach(headPanServoPin);
-	head_tilt_servo.attach(headTiltServoPin);
+	center_servos();
+	delay(1000);
+	detach_servos();
 
 	mpu.initialize();
 	pinMode(INTERRUPT_PIN2, INPUT);
@@ -124,8 +125,8 @@ void setup()
 		// lower the return signal rate limit (default is 0.25 MCPS)
 		sensor.setSignalRateLimit(0.1);
 		// increase laser pulse periods (defaults are 14 and 10 PCLKs)
-		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
-		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
+//		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
+//		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
 	} else {
 		// ERROR!
 		// 1 = initial memory load failed
@@ -137,6 +138,20 @@ void setup()
 	}
 	delay(500);
 	digitalWrite(LED_PIN, LOW);
+}
+
+void center_servos()
+{
+	head_pan_servo.attach(headPanServoPin);
+	head_tilt_servo.attach(headTiltServoPin);
+	head_pan_servo.write(SONAR_PAN_CENTER);
+	head_tilt_servo.write(SONAR_TILT_CENTER);
+}
+
+void detach_servos()
+{
+	head_pan_servo.detach();
+	head_tilt_servo.detach();
 }
 
 void collect_data()
@@ -155,8 +170,8 @@ void collect_data()
 		// check for overflow (this should never happen unless our code is too inefficient)
 		if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
 			// reset so we can continue cleanly
-			mpu.resetFIFO();
 			Serial.println(F("FIFO overflow!"));
+			mpu.resetFIFO();
 
 		// otherwise, check for DMP data ready interrupt (this should happen frequently)
 		} else if (mpuIntStatus & 0x02) {
@@ -177,20 +192,22 @@ void collect_data()
 
 			int mm = sensor.readRangeSingleMillimeters();
 			if (sensor.timeoutOccurred()) {
-				Serial.print(" TIMEOUT ");
+//				Serial.print(F("TIMEOUT"));
+				mm = -1;
 			} else {
 				if(data_size < MAX_COUNT - 1) {
 					data[data_size].mm = mm;
-					data[data_size].pinch = ypr[1] * 180/M_PI;
+					data[data_size].pitch = ypr[1] * 180/M_PI;
+					data[data_size].yaw = ypr[0] * 180/M_PI;
 					data_size++;
 				} else {
 					lost_data_size++;
 				}
-				Serial.print(mm);
-				Serial.print("\t");
+//				Serial.print(mm);
+//				Serial.print("\t");
 			}
-			// just pinch is needed
-			Serial.println(ypr[1] * 180/M_PI);
+			// just pitch is needed
+//			Serial.println(ypr[1] * 180/M_PI);
 		}
 	} else {
 		digitalWrite(LED_PIN, HIGH);
@@ -200,7 +217,7 @@ void collect_data()
 void collect_data_for(unsigned long ms)
 {
 	unsigned long last_ms = millis();
-	mpu.resetFIFO();
+//	mpu.resetFIFO();
 	do {
 		collect_data();
 	} while(millis() - last_ms < ms);
@@ -210,6 +227,8 @@ unsigned long last_ms;
 
 void swing()
 {
+	center_servos();
+	delay(1000);
 	data_size = 0;
 	lost_data_size = 0;
 	Serial.println("Start collecting");
@@ -220,16 +239,19 @@ void swing()
 		head_pan_servo.write(SONAR_PAN_ANGLE_MIN);
 		delay(200);
 		mpu.resetFIFO();
-		Serial.println("Swing forward");
+		Serial.println("Swing <-");
 		head_pan_servo.write(SONAR_PAN_ANGLE_MAX);
 		collect_data_for(500);
-		Serial.println("Swing back");
+		Serial.println("Swing ->");
 		head_pan_servo.write(SONAR_PAN_ANGLE_MIN);
 		collect_data_for(500);
 	}
 	Serial.println("End collecting");
 	Serial.print("Lost data size:");
 	Serial.println(lost_data_size);
+	center_servos();
+	delay(1000);
+	detach_servos();
 }
 
 void loop()
@@ -249,7 +271,9 @@ void loop()
 					Serial.print("!d#");
 					Serial.print(data[i].mm);
 					Serial.print("@");
-					Serial.print(data[i].pinch);
+					Serial.print(data[i].yaw);
+					Serial.print("@");
+					Serial.print(data[i].pitch);
 					Serial.println("@");
 				}
 				break;
