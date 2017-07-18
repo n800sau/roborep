@@ -8,10 +8,11 @@
 #include "MPU6050_6Axis_MotionApps20.h"
 #include <VL53L0X.h>
 #include <Servo.h>
+#include <EventFuse.h>
 
 VL53L0X sensor;
 
-const int SONAR_INCR = 30;
+const int SONAR_TILT_INCR = 30;
 
 const int SONAR_PAN_ANGLE_MIN = 35; // right side
 const int SONAR_PAN_ANGLE_MAX = 135; // left side
@@ -30,6 +31,10 @@ Servo head_pan_servo;
 Servo head_tilt_servo;
 
 const int LED_PIN = 8;
+
+enum MODE {MODE_IDLE, MODE_SWING, MODE_GIVE};
+MODE mode = MODE_IDLE;
+
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -58,9 +63,10 @@ void dmpDataReady() {
 #define MAX_COUNT 100
 
 struct {
-	int mm;
-	int pitch;
-	int yaw;
+	short tilt;
+	short mm;
+	short pitch;
+	short yaw;
 } data[MAX_COUNT];
 
 int data_size;
@@ -119,11 +125,13 @@ void setup()
 
 		// get expected DMP packet size for later comparison
 		packetSize = mpu.dmpGetFIFOPacketSize();
+		Serial.print(F("Packet size: "));
+		Serial.println(packetSize);
 
 		sensor.init();
-		sensor.setTimeout(500);
-		// lower the return signal rate limit (default is 0.25 MCPS)
-		sensor.setSignalRateLimit(0.1);
+		sensor.setTimeout(50);
+		// lower the return signal rate limit (default is 0.25 MCPS (Millions of Cycles Per Second))
+//		sensor.setSignalRateLimit(0.1);
 		// increase laser pulse periods (defaults are 14 and 10 PCLKs)
 //		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
 //		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
@@ -138,6 +146,7 @@ void setup()
 	}
 	delay(500);
 	digitalWrite(LED_PIN, LOW);
+	mpu.resetFIFO();
 }
 
 void center_servos()
@@ -154,130 +163,215 @@ void detach_servos()
 	head_tilt_servo.detach();
 }
 
+namespace Swing
+{
+	int tilt;
+	int pan;
+	int pan_dir;
+
+	void pan_next(FuseID fuse, int& userData);
+
+	void tilt_incr(FuseID fuse, int& userData)
+	{
+		tilt += SONAR_TILT_INCR;
+		head_tilt_servo.write(tilt);
+//		Serial.print(F(" tilt="));
+//		Serial.println(tilt);
+		if(tilt < SONAR_TILT_ANGLE_MAX) {
+			EventFuse::newFuse(10, 1, pan_next);
+		} else {
+			Serial.println(F("End collecting"));
+			Serial.print(F("Data size:"));
+			Serial.println(data_size);
+			Serial.print(F("Lost data size:"));
+			Serial.println(lost_data_size);
+			center_servos();
+			delay(500);
+			detach_servos();
+			mode = MODE_IDLE;
+		}
+	}
+
+	void pan_next(FuseID fuse, int& userData)
+	{
+		pan += pan_dir;
+		if(pan_dir > 0 && pan > SONAR_PAN_ANGLE_MAX) {
+			pan_dir = -1;
+			EventFuse::newFuse(10, 1, tilt_incr);
+		} else if(pan_dir < 0 && pan < SONAR_PAN_ANGLE_MIN) {
+			pan_dir = 1;
+			EventFuse::newFuse(10, 1, tilt_incr);
+		} else {
+			head_pan_servo.write(pan);
+			EventFuse::newFuse(10, 1, pan_next);
+		}
+	}
+
+	void run()
+	{
+		center_servos();
+		delay(1000);
+		data_size = 0;
+		lost_data_size = 0;
+		Serial.println("Start collecting");
+		tilt = SONAR_TILT_ANGLE_MIN;
+		head_tilt_servo.write(tilt);
+		pan = SONAR_PAN_ANGLE_MIN;
+		pan_dir = 1;
+		head_pan_servo.write(pan);
+		mpu.resetFIFO();
+		EventFuse::newFuse(10, 1, pan_next);
+	}
+
+}
+
 void collect_data()
 {
+	bool IMUready = false;
+	int pitch;
+	int yaw;
 	// wait for MPU interrupt or extra packet(s) available
-	if(mpuInterrupt)
+	// if programming failed, don't try to do anything
+	if (dmpReady) {
+		if(mpuInterrupt)
+		{
+			digitalWrite(LED_PIN, LOW);
+			// reset interrupt flag and get INT_STATUS byte
+			mpuInterrupt = false;
+			mpuIntStatus = mpu.getIntStatus();
+
+			// get current FIFO count
+			fifoCount = mpu.getFIFOCount();
+
+			// check for overflow (this should never happen unless our code is too inefficient)
+			if ((mpuIntStatus & 0x10) || fifoCount >= 1024) {
+
+				if(mode == MODE_SWING) {
+					// reset so we can continue cleanly
+					Serial.print(millis());
+					Serial.print(F(" FIFO overflow: "));
+					Serial.println(fifoCount);
+				}
+				mpu.resetFIFO();
+
+			// otherwise, check for DMP data ready interrupt (this should happen frequently)
+			} else if (mpuIntStatus & 0x02) {
+				// wait for correct available data length, should be a VERY short wait
+				while(fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+
+				while(fifoCount >= packetSize) {
+					// read a packet from FIFO
+					mpu.getFIFOBytes(fifoBuffer, packetSize);
+
+					// track FIFO count here in case there is > 1 packet available
+					// (this lets us immediately read more without waiting for an interrupt)
+					fifoCount -= packetSize;
+				}
+//				Serial.print(F("Fifo reduced to "));
+//				Serial.println(fifoCount);
+
+				// display Euler angles in degrees
+				mpu.dmpGetQuaternion(&q, fifoBuffer);
+				mpu.dmpGetGravity(&gravity, &q);
+				mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+				pitch = ypr[1] * 180/M_PI;
+				yaw = ypr[0] * 180/M_PI;
+				IMUready = true;
+			}
+		}
+	} 
+	if(IMUready)
 	{
-		digitalWrite(LED_PIN, LOW);
-		// reset interrupt flag and get INT_STATUS byte
-		mpuInterrupt = false;
-		mpuIntStatus = mpu.getIntStatus();
-
-		// get current FIFO count
-		fifoCount = mpu.getFIFOCount();
-
-		// check for overflow (this should never happen unless our code is too inefficient)
-		if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-			// reset so we can continue cleanly
-			Serial.println(F("FIFO overflow!"));
-			mpu.resetFIFO();
-
-		// otherwise, check for DMP data ready interrupt (this should happen frequently)
-		} else if (mpuIntStatus & 0x02) {
-			// wait for correct available data length, should be a VERY short wait
-			while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-
-			// read a packet from FIFO
-			mpu.getFIFOBytes(fifoBuffer, packetSize);
-			
-			// track FIFO count here in case there is > 1 packet available
-			// (this lets us immediately read more without waiting for an interrupt)
-			fifoCount -= packetSize;
-
-			// display Euler angles in degrees
-			mpu.dmpGetQuaternion(&q, fifoBuffer);
-			mpu.dmpGetGravity(&gravity, &q);
-			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-
-			int mm = sensor.readRangeSingleMillimeters();
-			if (sensor.timeoutOccurred()) {
-//				Serial.print(F("TIMEOUT"));
-				mm = -1;
-			} else {
+		int mm = sensor.readRangeSingleMillimeters();
+		if (sensor.timeoutOccurred()) {
+//			Serial.print(F("TIMEOUT"));
+			mm = -1;
+		}
+		switch(mode) {
+			case MODE_SWING:
 				if(data_size < MAX_COUNT - 1) {
 					data[data_size].mm = mm;
-					data[data_size].pitch = ypr[1] * 180/M_PI;
-					data[data_size].yaw = ypr[0] * 180/M_PI;
+					data[data_size].pitch = pitch;
+					data[data_size].yaw = yaw;
+					data[data_size].tilt = Swing::tilt;
 					data_size++;
 				} else {
 					lost_data_size++;
 				}
+				break;
+			case MODE_IDLE:
+//				Serial.print(F("mm="));
 //				Serial.print(mm);
-//				Serial.print("\t");
-			}
-			// just pitch is needed
-//			Serial.println(ypr[1] * 180/M_PI);
+//				Serial.print(F(", yaw="));
+//				Serial.print(yaw);
+//				Serial.print(F(", pitch="));
+//				Serial.println(pitch);
+				break;
+			default:
+				break;
 		}
 	} else {
 		digitalWrite(LED_PIN, HIGH);
 	}
 }
 
-void collect_data_for(unsigned long ms)
+namespace Give
 {
-	unsigned long last_ms = millis();
-//	mpu.resetFIFO();
-	do {
-		collect_data();
-	} while(millis() - last_ms < ms);
-}
-
-unsigned long last_ms;
-
-void swing()
-{
-	center_servos();
-	delay(1000);
-	data_size = 0;
-	lost_data_size = 0;
-	Serial.println("Start collecting");
-	for(int tilt=SONAR_TILT_ANGLE_MIN; tilt<SONAR_TILT_ANGLE_MAX; tilt+=SONAR_INCR) {
-		Serial.print("tilt=");
-		Serial.println(tilt);
-		head_tilt_servo.write(tilt);
-		head_pan_servo.write(SONAR_PAN_ANGLE_MIN);
-		delay(200);
-		mpu.resetFIFO();
-		Serial.println("Swing <-");
-		head_pan_servo.write(SONAR_PAN_ANGLE_MAX);
-		collect_data_for(500);
-		Serial.println("Swing ->");
-		head_pan_servo.write(SONAR_PAN_ANGLE_MIN);
-		collect_data_for(500);
+	void run()
+	{
+		Serial.print(F("data size:"));
+		Serial.println(data_size);
+		for(int i=0; i<data_size; i++) {
+			Serial.print("!d#");
+			Serial.print(data[i].mm);
+			Serial.print("D@");
+			Serial.print(data[i].tilt);
+			Serial.print("T@");
+			Serial.print(data[i].yaw);
+			Serial.print("Y@");
+			Serial.print(data[i].pitch);
+			Serial.println("P@");
+		}
+		Serial.println(F("end of data"));
+		mode = MODE_IDLE;
 	}
-	Serial.println("End collecting");
-	Serial.print("Lost data size:");
-	Serial.println(lost_data_size);
-	center_servos();
-	delay(1000);
-	detach_servos();
+
 }
+
+unsigned long last_ms = millis();
 
 void loop()
 {
-	// if programming failed, don't try to do anything
-	if (!dmpReady) return;
-
+	unsigned long ms;
 	if(Serial.available()) {
 		switch(Serial.read()) {
 			case 'r':
-				swing();
+				if(mode == MODE_IDLE) {
+					mode = MODE_SWING;
+					Swing::run();
+				} else {
+					Serial.println(F("Can not start swing. Mode is not idle."));
+				}
 				break;
 			case 'g':
-				Serial.print("data size:");
-				Serial.println(data_size);
-				for(int i=0; i<data_size; i++) {
-					Serial.print("!d#");
-					Serial.print(data[i].mm);
-					Serial.print("@");
-					Serial.print(data[i].yaw);
-					Serial.print("@");
-					Serial.print(data[i].pitch);
-					Serial.println("@");
+				if(mode == MODE_IDLE) {
+					mode = MODE_GIVE;
+					Give::run();
+				} else {
+					Serial.println(F("Can not start give. Mode is not idle."));
 				}
 				break;
 		}
+	}
+	collect_data();
+	ms = last_ms;
+	last_ms = millis();
+	if(last_ms - ms > 1) {
+		if(mode == MODE_SWING) {
+//			Serial.print("Burn ");
+//			Serial.println(last_ms - ms);
+		}
+		EventFuse::burn(last_ms - ms);
 	}
 }
 
