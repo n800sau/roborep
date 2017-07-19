@@ -7,30 +7,11 @@
 
 #include "MPU6050_6Axis_MotionApps20.h"
 #include <VL53L0X.h>
-#include <Servo.h>
 #include <EventFuse.h>
+#include "const.h"
+#include "servos.h"
 
 VL53L0X sensor;
-
-const int SONAR_TILT_INCR = 30;
-
-const int SONAR_PAN_ANGLE_MIN = 35; // right side
-const int SONAR_PAN_ANGLE_MAX = 135; // left side
-const int SONAR_PAN_CENTER = SONAR_PAN_ANGLE_MIN + (SONAR_PAN_ANGLE_MAX - SONAR_PAN_ANGLE_MIN) / 2;
-
-const int SONAR_TILT_ANGLE_MIN = 80; // top
-const int SONAR_TILT_ANGLE_MAX = 145; // bottom
-const int SONAR_TILT_CENTER = SONAR_TILT_ANGLE_MIN + (SONAR_TILT_ANGLE_MAX - SONAR_TILT_ANGLE_MIN) / 2;
-
-// up-down
-const int headTiltServoPin = 6;
-// left-right
-const int headPanServoPin = 5;
-
-Servo head_pan_servo;
-Servo head_tilt_servo;
-
-const int LED_PIN = 8;
 
 enum MODE {MODE_IDLE, MODE_SWING, MODE_GIVE};
 MODE mode = MODE_IDLE;
@@ -50,27 +31,10 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 
 MPU6050 mpu;
 
-#define INTERRUPT_PIN2 2
-#define INTERRUPT_PIN3 3
-
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
 void dmpDataReady() {
 	mpuInterrupt = true;
 }
-
-// watch how much data block is in hex
-// it can grow more than 100% !!!
-#define MAX_COUNT 100
-
-struct {
-	short tilt;
-	short mm;
-	short pitch;
-	short yaw;
-} data[MAX_COUNT];
-
-int data_size;
-int lost_data_size;
 
 void setup()
 {
@@ -86,11 +50,9 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
 
-	Serial.println("\ndist_angle start");
+	Serial.println(F("\ndist_angle start"));
 
-	center_servos();
-	delay(1000);
-	detach_servos();
+	setup_servos();
 
 	mpu.initialize();
 	pinMode(INTERRUPT_PIN2, INPUT);
@@ -102,9 +64,9 @@ void setup()
 	devStatus = mpu.dmpInitialize();
 
 	// supply your own gyro offsets here, scaled for min sensitivity
-//	mpu.setXGyroOffset(220);
-//	mpu.setYGyroOffset(76);
-//	mpu.setZGyroOffset(-85);
+	mpu.setXGyroOffset(220);
+	mpu.setYGyroOffset(76);
+	mpu.setZGyroOffset(-85);
 //	mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
 
 	// make sure it worked (returns 0 if so)
@@ -149,22 +111,9 @@ void setup()
 	mpu.resetFIFO();
 }
 
-void center_servos()
-{
-	head_pan_servo.attach(headPanServoPin);
-	head_tilt_servo.attach(headTiltServoPin);
-	head_pan_servo.write(SONAR_PAN_CENTER);
-	head_tilt_servo.write(SONAR_TILT_CENTER);
-}
-
-void detach_servos()
-{
-	head_pan_servo.detach();
-	head_tilt_servo.detach();
-}
-
 namespace Swing
 {
+	const int pan_step_ticks = 20;
 	int tilt;
 	int pan;
 	int pan_dir;
@@ -178,13 +127,9 @@ namespace Swing
 //		Serial.print(F(" tilt="));
 //		Serial.println(tilt);
 		if(tilt < SONAR_TILT_ANGLE_MAX) {
-			EventFuse::newFuse(10, 1, pan_next);
+			EventFuse::newFuse(pan_step_ticks, 1, pan_next);
 		} else {
 			Serial.println(F("End collecting"));
-			Serial.print(F("Data size:"));
-			Serial.println(data_size);
-			Serial.print(F("Lost data size:"));
-			Serial.println(lost_data_size);
 			center_servos();
 			delay(500);
 			detach_servos();
@@ -197,13 +142,13 @@ namespace Swing
 		pan += pan_dir;
 		if(pan_dir > 0 && pan > SONAR_PAN_ANGLE_MAX) {
 			pan_dir = -1;
-			EventFuse::newFuse(10, 1, tilt_incr);
+			EventFuse::newFuse(pan_step_ticks, 1, tilt_incr);
 		} else if(pan_dir < 0 && pan < SONAR_PAN_ANGLE_MIN) {
 			pan_dir = 1;
-			EventFuse::newFuse(10, 1, tilt_incr);
+			EventFuse::newFuse(pan_step_ticks, 1, tilt_incr);
 		} else {
 			head_pan_servo.write(pan);
-			EventFuse::newFuse(10, 1, pan_next);
+			EventFuse::newFuse(pan_step_ticks, 1, pan_next);
 		}
 	}
 
@@ -211,8 +156,6 @@ namespace Swing
 	{
 		center_servos();
 		delay(1000);
-		data_size = 0;
-		lost_data_size = 0;
 		Serial.println("Start collecting");
 		tilt = SONAR_TILT_ANGLE_MIN;
 		head_tilt_servo.write(tilt);
@@ -220,7 +163,7 @@ namespace Swing
 		pan_dir = 1;
 		head_pan_servo.write(pan);
 		mpu.resetFIFO();
-		EventFuse::newFuse(10, 1, pan_next);
+		EventFuse::newFuse(pan_step_ticks, 1, pan_next);
 	}
 
 }
@@ -282,6 +225,7 @@ void collect_data()
 	} 
 	if(IMUready)
 	{
+		int df;
 		int mm = sensor.readRangeSingleMillimeters();
 		if (sensor.timeoutOccurred()) {
 //			Serial.print(F("TIMEOUT"));
@@ -289,15 +233,23 @@ void collect_data()
 		}
 		switch(mode) {
 			case MODE_SWING:
-				if(data_size < MAX_COUNT - 1) {
-					data[data_size].mm = mm;
-					data[data_size].pitch = pitch;
-					data[data_size].yaw = yaw;
-					data[data_size].tilt = Swing::tilt;
-					data_size++;
-				} else {
-					lost_data_size++;
+				df = Swing::pan - yaw;
+				if(df > 180) {
+					df = 360 - df;
 				}
+				Serial.print("!d#,");
+				Serial.print("t,");
+				Serial.print(Swing::tilt);
+				Serial.print("p,");
+				Serial.print(Swing::pan);
+				Serial.print(",y,");
+				Serial.print(yaw);
+				Serial.print(",-,");
+				Serial.print(df);
+				Serial.print(",p,");
+				Serial.print(pitch);
+				Serial.print(",m,");
+				Serial.println(mm);
 				break;
 			case MODE_IDLE:
 //				Serial.print(F("mm="));
@@ -315,29 +267,6 @@ void collect_data()
 	}
 }
 
-namespace Give
-{
-	void run()
-	{
-		Serial.print(F("data size:"));
-		Serial.println(data_size);
-		for(int i=0; i<data_size; i++) {
-			Serial.print("!d#");
-			Serial.print(data[i].mm);
-			Serial.print("D@");
-			Serial.print(data[i].tilt);
-			Serial.print("T@");
-			Serial.print(data[i].yaw);
-			Serial.print("Y@");
-			Serial.print(data[i].pitch);
-			Serial.println("P@");
-		}
-		Serial.println(F("end of data"));
-		mode = MODE_IDLE;
-	}
-
-}
-
 unsigned long last_ms = millis();
 
 void loop()
@@ -351,14 +280,6 @@ void loop()
 					Swing::run();
 				} else {
 					Serial.println(F("Can not start swing. Mode is not idle."));
-				}
-				break;
-			case 'g':
-				if(mode == MODE_IDLE) {
-					mode = MODE_GIVE;
-					Give::run();
-				} else {
-					Serial.println(F("Can not start give. Mode is not idle."));
 				}
 				break;
 		}
