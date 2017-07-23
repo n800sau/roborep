@@ -66,13 +66,7 @@ void setup()
 //[-2523,-2522] --> [-8,7]	[2179,2180] --> [-7,10]	[1565,1566] --> [16380,16402]	[54,55] --> [-1,3]	[-23,-22] --> [0,2]	[49,50] --> [0,4]
 
 
-	// supply your own gyro offsets here, scaled for min sensitivity
-//	mpu.setXGyroOffset(62);
-//	mpu.setYGyroOffset(-28);
-//	mpu.setZGyroOffset(66);
-//	mpu.setXAccelOffset(-2475);
-//	mpu.setYAccelOffset(2161);
-//	mpu.setZAccelOffset(5047);
+	// supply your own gyro offsets here, scaled for min sensitivity (IMU_Zero example)
 
 	mpu.setXGyroOffset(54);
 	mpu.setYGyroOffset(-23);
@@ -80,8 +74,6 @@ void setup()
 	mpu.setXAccelOffset(-2523);
 	mpu.setYAccelOffset(2179);
 	mpu.setZAccelOffset(1565);
-
-//	mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
 
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
@@ -107,10 +99,10 @@ void setup()
 		sensor.init();
 		sensor.setTimeout(50);
 		// lower the return signal rate limit (default is 0.25 MCPS (Millions of Cycles Per Second))
-//		sensor.setSignalRateLimit(0.1);
+		sensor.setSignalRateLimit(0.1);
 		// increase laser pulse periods (defaults are 14 and 10 PCLKs)
-//		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
-//		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
+		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
+		sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
 	} else {
 		// ERROR!
 		// 1 = initial memory load failed
@@ -185,7 +177,7 @@ namespace Swing
 void collect_data()
 {
 	bool IMUready = false;
-	int pitch;
+	int roll;
 	int yaw;
 	// wait for MPU interrupt or extra packet(s) available
 	// if programming failed, don't try to do anything
@@ -231,7 +223,7 @@ void collect_data()
 				mpu.dmpGetQuaternion(&q, fifoBuffer);
 				mpu.dmpGetGravity(&gravity, &q);
 				mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-				pitch = ypr[1] * 180/M_PI;
+				roll = ypr[2] * 180/M_PI;
 				yaw = ypr[0] * 180/M_PI;
 				IMUready = true;
 			}
@@ -260,8 +252,8 @@ void collect_data()
 				Serial.print(yaw);
 				Serial.print(",-,");
 				Serial.print(df);
-				Serial.print(",p,");
-				Serial.print(pitch);
+				Serial.print(",r,");
+				Serial.print(roll);
 				Serial.print(",m,");
 				Serial.println(mm);
 				break;
@@ -270,8 +262,8 @@ void collect_data()
 //				Serial.print(mm);
 //				Serial.print(F(", yaw="));
 //				Serial.print(yaw);
-//				Serial.print(F(", pitch="));
-//				Serial.println(pitch);
+//				Serial.print(F(", roll="));
+//				Serial.println(roll);
 				break;
 			default:
 				break;
