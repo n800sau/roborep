@@ -25,6 +25,17 @@
 	<xacro:property name="header_height" value="0.06" />
 	<xacro:property name="header_x_offset" value="0.10" />
 	<xacro:property name="header_z_offset" value="0.06" />
+
+	<xacro:macro name="default_inertial" params="mass">
+		<inertial>
+			<mass value="${mass}" />
+			<inertia ixx="1.0" ixy="0.0" ixz="0.0"
+				 iyy="1.0" iyz="0.0"
+				 izz="1.0" />
+		</inertial>
+	</xacro:macro>
+
+
 	<link name="base_link">
 		<visual>
 			<geometry>
@@ -35,6 +46,13 @@
 				<color rgba="0.5 0.5 0.5 0"/>
 			</material>
 		</visual>
+		<collision>
+			<geometry>
+				<box size="${base_length} ${base_width} ${base_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+		<xacro:default_inertial mass="0.1"/>
 	</link>
 
 	<joint name="base_to_green_plate" type="fixed">
@@ -53,6 +71,7 @@
 				<color rgba="0 1 0 0.5"/>
 			</material>
 		</visual>
+		<xacro:default_inertial mass="0.02"/>
 	</link>
 
 	<joint name="green_plate_to_white_plate" type="fixed">
@@ -71,6 +90,7 @@
 				<color rgba="1 1 1 0.5"/>
 			</material>
 		</visual>
+		<xacro:default_inertial mass="0.05"/>
 	</link>
 
 	<link name="left_stand">
@@ -83,6 +103,7 @@
 				<color rgba="1 1 1 0.5"/>
 			</material>
 		</visual>
+		<xacro:default_inertial mass="0.03"/>
 	</link>
 
 	<joint name="white_plate_to_left_stand" type="fixed">
@@ -101,6 +122,7 @@
 				<color rgba="1 1 1 0.5"/>
 			</material>
 		</visual>
+		<xacro:default_inertial mass="0.03"/>
 	</link>
 
 	<joint name="white_plate_to_right_stand" type="fixed">
@@ -119,6 +141,7 @@
 				<color rgba="0 0 0.5 0.1"/>
 			</material>
 		</visual>
+		<xacro:default_inertial mass="0.2"/>
 	</link>
 
 	<joint name="white_plate_to_header" type="fixed">
@@ -140,6 +163,7 @@
 					<color rgba="${wheel_color}"/>
 				</material>
 			</visual>
+			<xacro:default_inertial mass="0.03"/>
 		</link>
 
 		<link name="${prefix}_fwd_wheel">
@@ -152,6 +176,7 @@
 					<color rgba="${wheel_color}"/>
 				</material>
 			</visual>
+			<xacro:default_inertial mass="0.03"/>
 		</link>
 
 		<joint name="base_to_${prefix}_rear_wheel" type="continuous">
@@ -164,6 +189,10 @@
 			<parent link="base_link"/>
 			<child link="${prefix}_fwd_wheel"/>
 			<origin xyz="${wheel_x_offset} ${reflect*wheel_y_offset} 0" rpy="${pi / 2} 0 0"/>
+			<inertia
+				ixx="1.0" ixy="0.0" ixz="0.0"
+				iyy="1.0" iyz="0.0"
+				izz="1.0"/>
 		</joint>
 
 		<transmission name="base_to_${prefix}_rear_trans">
