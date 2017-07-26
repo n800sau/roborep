@@ -154,18 +154,27 @@
 			</visual>
 		</link>
 
-		<joint name="base_to_${prefix}_rear_wheel" type="fixed">
+		<joint name="base_to_${prefix}_rear_wheel" type="continuous">
 			<parent link="base_link"/>
 			<child link="${prefix}_rear_wheel"/>
 			<origin xyz="${-wheel_x_offset} ${reflect*wheel_y_offset} 0" rpy="${pi / 2} 0 0"/>
 		</joint>
 
-
-		<joint name="base_to_${prefix}_fwd_wheel" type="fixed">
+		<joint name="base_to_${prefix}_fwd_wheel" type="continuous">
 			<parent link="base_link"/>
 			<child link="${prefix}_fwd_wheel"/>
 			<origin xyz="${wheel_x_offset} ${reflect*wheel_y_offset} 0" rpy="${pi / 2} 0 0"/>
 		</joint>
+
+		<transmission name="base_to_${prefix}_rear_trans">
+			<type>transmission_interface/SimpleTransmission</type>
+			<actuator name="base_to_${prefix}_rear_motor">
+				<mechanicalReduction>1</mechanicalReduction>
+			</actuator>
+			<joint name="base_to_${prefix}_rear_wheel">
+				<hardwareInterface>PositionJointInterface</hardwareInterface>
+			</joint>
+		</transmission>
 
 	</xacro:macro>
 
