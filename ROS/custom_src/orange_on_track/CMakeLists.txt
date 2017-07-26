@@ -168,7 +168,7 @@ include_directories(
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
-   orange_on_track.xarco
+   orange_on_track.xacro
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
