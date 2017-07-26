@@ -19,8 +19,12 @@
 	<xacro:property name="wheel_radius" value="0.0235" />
 	<xacro:property name="wheel_width" value="0.021" />
 	<xacro:property name="wheel_x_offset" value="${green_plate_length / 2 - wheel_radius}" />
-	<xacro:property name="wheel_y_offset" value="${green_plate_widths / 2 + wheel_width / 2}" />
+	<xacro:property name="wheel_y_offset" value="${green_plate_width / 2 + wheel_width / 2}" />
 	<xacro:property name="wheel_color" value="0 0 0 1" />
+	<xacro:property name="header_width" value="0.08" />
+	<xacro:property name="header_length" value="0.04" />
+	<xacro:property name="header_height" value="0.006" />
+	<xacro:property name="header_x_offset" value="0.10" />
 	<link name="base_link">
 		<visual>
 			<geometry>
@@ -103,6 +107,24 @@
 		<parent link="white_plate"/>
 		<child link="right_stand"/>
 		<origin xyz="0 ${-white_plate_width / 2} ${-stand_length / 2}" rpy="0 0 0"/>
+	</joint>
+
+	<link name="header">
+		<visual>
+			<geometry>
+				<box size="${header_length} ${header_width} ${header_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="white">
+				<color rgba="0 0 0.5 0.1"/>
+			</material>
+		</visual>
+	</link>
+
+	<joint name="white_plate_to_header" type="fixed">
+		<parent link="white_plate"/>
+		<child link="header"/>
+		<origin xyz="${header_x_offset} 0 ${white_plate_height}" rpy="0 0 0"/>
 	</joint>
 
 	<link name="left_rear_wheel">

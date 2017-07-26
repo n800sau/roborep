@@ -148,10 +148,9 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-install(PROGRAMS
-   scripts/diff_tf2.py
-   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(PROGRAMS
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS fchassis fchassis_node
@@ -169,8 +168,7 @@ install(PROGRAMS
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
-   orange_on_track.urdf
-   orange_on_track.rviz
+   orange_on_track.xarco
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

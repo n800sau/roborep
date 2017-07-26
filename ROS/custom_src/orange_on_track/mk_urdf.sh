@@ -1,1 +1,2 @@
-rosrun xacro xacro orange_on_track.xarco > orange_on_track.urdf
+rosrun xacro xacro orange_on_track.xacro > orange_on_track.urdf
+echo $?
