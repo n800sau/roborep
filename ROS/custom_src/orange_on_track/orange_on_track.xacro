@@ -1,21 +1,20 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="orange_on_track">
-	<xacro:property name="pi" value="3.1416" />
 	<xacro:property name="base_width" value="0.105" />
 	<xacro:property name="base_length" value="0.17" />
-	<xacro:property name="base_height" value="0.046" />
+	<xacro:property name="base_height" value="0.043" />
 	<xacro:property name="green_plate_width" value="0.105" />
 	<xacro:property name="green_plate_length" value="0.17" />
 	<xacro:property name="green_plate_height" value="0.001" />
 	<xacro:property name="green_plate_z_offset" value="${base_height / 2 + 0.001}" />
 	<xacro:property name="white_plate_width" value="0.20" />
 	<xacro:property name="white_plate_length" value="0.245" />
-	<xacro:property name="white_plate_height" value="0.019" />
-	<xacro:property name="white_plate_x_offset" value="-0.025" />
+	<xacro:property name="white_plate_height" value="0.009" />
+	<xacro:property name="white_plate_x_offset" value="-0.015" />
 	<xacro:property name="white_plate_z_offset" value="0.029" />
-	<xacro:property name="stand_width" value="0.05" />
-	<xacro:property name="stand_length" value="0.195" />
-	<xacro:property name="stand_height" value="0.002" />
+	<xacro:property name="stand_width" value="0.002" />
+	<xacro:property name="stand_length" value="0.05" />
+	<xacro:property name="stand_height" value="0.195" />
 	<xacro:property name="wheel_radius" value="0.0235" />
 	<xacro:property name="wheel_width" value="0.021" />
 	<xacro:property name="wheel_x_offset" value="${green_plate_length / 2 - wheel_radius}" />
@@ -23,16 +22,17 @@
 	<xacro:property name="wheel_color" value="0 0 0 1" />
 	<xacro:property name="header_width" value="0.08" />
 	<xacro:property name="header_length" value="0.04" />
-	<xacro:property name="header_height" value="0.006" />
+	<xacro:property name="header_height" value="0.06" />
 	<xacro:property name="header_x_offset" value="0.10" />
+	<xacro:property name="header_z_offset" value="0.06" />
 	<link name="base_link">
 		<visual>
 			<geometry>
-				<box size="${white_plate_width} ${white_plate_length} 0.009"/>
+				<box size="${base_length} ${base_width} ${base_height}"/>
 			</geometry>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
-			<material name="white">
-				<color rgba="1 1 1 0.5"/>
+			<material name="gray">
+				<color rgba="0.5 0.5 0.5 0"/>
 			</material>
 		</visual>
 	</link>
@@ -46,10 +46,10 @@
 	<link name="green_plate">
 		<visual>
 			<geometry>
-				<box size="${green_plate_width} ${green_plate_length} ${green_plate_height}"/>
+				<box size="${green_plate_length} ${green_plate_width} ${green_plate_height}"/>
 			</geometry>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
-			<material name="white">
+			<material name="green">
 				<color rgba="0 1 0 0.5"/>
 			</material>
 		</visual>
@@ -66,7 +66,7 @@
 			<geometry>
 				<box size="${white_plate_width} ${white_plate_length} ${white_plate_height}"/>
 			</geometry>
-			<origin xyz="${white_plate_x_offset} 0 0" rpy="0 0 0"/>
+			<origin xyz="${-white_plate_x_offset} 0 0" rpy="0 0 0"/>
 			<material name="white">
 				<color rgba="1 1 1 0.5"/>
 			</material>
@@ -78,7 +78,7 @@
 			<geometry>
 				<box size="${stand_length} ${stand_width} ${stand_height}"/>
 			</geometry>
-			<origin xyz="0 0 0" rpy="${pi / 2} 0 ${pi / 2}"/>
+			<origin xyz="0 0 ${stand_height/2}" rpy="0 0 0"/>
 			<material name="white">
 				<color rgba="1 1 1 0.5"/>
 			</material>
@@ -88,7 +88,7 @@
 	<joint name="white_plate_to_left_stand" type="fixed">
 		<parent link="white_plate"/>
 		<child link="left_stand"/>
-		<origin xyz="0 ${white_plate_width / 2} ${-stand_length / 2}" rpy="0 0 0"/>
+		<origin xyz="0 ${white_plate_width / 2} 0" rpy="0 0 0"/>
 	</joint>
 
 	<link name="right_stand">
@@ -96,17 +96,17 @@
 			<geometry>
 				<box size="${stand_length} ${stand_width} ${stand_height}"/>
 			</geometry>
-			<origin xyz="0 0 0" rpy="${pi / 2} 0 ${pi / 2}"/>
+			<origin xyz="0 0 ${stand_height/2}" rpy="0 0 0"/>
 			<material name="white">
 				<color rgba="1 1 1 0.5"/>
 			</material>
 		</visual>
 	</link>
 
-	<joint name="white_plate_to_left_stand" type="fixed">
+	<joint name="white_plate_to_right_stand" type="fixed">
 		<parent link="white_plate"/>
 		<child link="right_stand"/>
-		<origin xyz="0 ${-white_plate_width / 2} ${-stand_length / 2}" rpy="0 0 0"/>
+		<origin xyz="0 ${-white_plate_width / 2} 0" rpy="0 0 0"/>
 	</joint>
 
 	<link name="header">
@@ -124,7 +124,7 @@
 	<joint name="white_plate_to_header" type="fixed">
 		<parent link="white_plate"/>
 		<child link="header"/>
-		<origin xyz="${header_x_offset} 0 ${white_plate_height}" rpy="0 0 0"/>
+		<origin xyz="${header_x_offset} 0 ${header_z_offset}" rpy="0 0 0"/>
 	</joint>
 
 
