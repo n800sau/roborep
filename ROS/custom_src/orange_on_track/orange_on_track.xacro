@@ -172,4 +172,10 @@
 	<xacro:track prefix="right" reflect="1" />
 	<xacro:track prefix="left" reflect="-1" />
 
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/</robotNamespace>
+		</plugin>
+	</gazebo>
+
 </robot>
