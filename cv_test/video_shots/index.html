@@ -1,17 +1,9 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
 	<title>Player Test</title>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 	<link rel="stylesheet" href="style.css">
-	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/videogular/1.4.3/videogular.min.js"></script>
-
-<!--	<script src="node_modules/angular/angular.min.js"></script>-->
-	<script src="node_modules/angular-sanitize/angular-sanitize.min.js"></script>
-<!--	<script src="node_modules/videogular/videogular.js"></script> -->
-	<script src="node_modules/videogular-controls/vg-controls.js"></script>
-	<script src="node_modules/videogular-buffering/vg-buffering.js"></script>
-	<script src="node_modules/videogular-overlay-play/vg-overlay-play.js"></script>
-	<script type="text/javascript" src="main.js"></script>
 </head>
 <body bgcolor="#FFFFFF" >
 
@@ -46,11 +38,16 @@
 						<div button_step_back class="iconButton embutton">&NestedLessLess;</div>
 						<div button_step_fwd class="iconButton embutton">&NestedGreaterGreater;</div>
 					</vg-controls>
-					<vg-overlay-play></vg-overlay-play>
 				</videogular>
 			</div>
 		</div>
 	</div>
 
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-sanitize.min.js"></script>
+	<script src="https://unpkg.com/videogular@2.1.2/dist/videogular/videogular.js"></script>
+	<script src="https://unpkg.com/videogular@2.1.2/dist/controls/vg-controls.js"></script>
+	<script src="https://unpkg.com/videogular@2.1.2/dist/overlay-play/vg-overlay-play.js"></script>
+	<script type="text/javascript" src="main.js"></script>
 </body>
 </html>

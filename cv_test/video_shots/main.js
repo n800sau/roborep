@@ -15,7 +15,7 @@ angular.module('myApp',
 				sources: [
 					{src: $sce.trustAsResourceUrl("data/input/v.webm?load_id=" + $scope.load_id), type: "video/webm"}
 				],
-				theme: "node_modules/videogular-themes-default/videogular.css"
+				theme: "https://unpkg.com/videogular@2.1.2/dist/themes/default/videogular.css"
 			};
 		}]
 	).directive("buttonShoot", ["$http", "$timeout",

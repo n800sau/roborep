@@ -19,20 +19,20 @@ div.video {
 	position:absolute;
 	left: 0;
 	bottom: 0;
-	width: 300px;
-	height: 350px;
+	width: 120px;
+	height: 200px;
 }
 
 div.video videogular vg-media {
-	height: 250px;
+	height: 190px;
 }
 
 .top-level {
-	bottom: 70px;
+	top: 20px;
 }
 
 .middle-level {
-	bottom: 40px;
+	bottom: 30px;
 }
 .bottom-level {
 	bottom: 0;
@@ -74,4 +74,24 @@ videogular div.embutton a:visited {
 
 div.preview {
 	margin-bottom: 10px;
+}
+
+.video videogular vg-overlay-play .overlayPlayContainer {
+	display: none;
+}
+
+.video videogular {
+	background-color: transparent;
+}
+
+.video videogular vg-controls, .video [videogular] vg-controls {
+	height: 30px;
+}
+
+.video videogular vg-controls .controls-container, .video [videogular] vg-controls .controls-container {
+	height: 30px;
+}
+
+.video videogular vg-scrub-bar [role="slider"], .video [videogular] vg-scrub-bar [role="slider"] {
+	margin-top: 0;
 }
