@@ -20,11 +20,11 @@ div.video {
 	left: 0;
 	bottom: 0;
 	width: 120px;
-	height: 200px;
+	height: 360px;
 }
 
 div.video videogular vg-media {
-	height: 190px;
+	height: 360px;
 }
 
 .top-level {
@@ -94,4 +94,12 @@ div.preview {
 
 .video videogular vg-scrub-bar [role="slider"], .video [videogular] vg-scrub-bar [role="slider"] {
 	margin-top: 0;
+}
+
+.bold {
+	font-weight: bold;
+}
+
+.selectable {
+	cursor: pointer;
 }

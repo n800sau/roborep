@@ -16,6 +16,9 @@
 			<div class="preview" ng-repeat="src in controller.preview_images track by $index">
 				<img ng-src="{{src.url}}"></img>{{src.label}}
 			</div>
+			<div ng-repeat="fl in flist track by $index">
+				<small ng-class="{'bold': flist[fpointer] == fl, 'selectable': flist[fpointer] != fl}" ng-click="select_file(fl)">{{fl.substr(0, 19)}}<small>
+			</div>
 			<div class="video">
 				<videogular vg-theme="controller.config.theme">
 					<vg-media vg-src="controller.config.sources"
@@ -37,6 +40,7 @@
 						<div button_shoot class="iconButton embutton" ng-model="controller.preview_images">&radic;</div>
 						<div button_step_back class="iconButton embutton">&NestedLessLess;</div>
 						<div button_step_fwd class="iconButton embutton">&NestedGreaterGreater;</div>
+						<div ng-click="change_url(fpointer + 1)" class="iconButton embutton">&looparrowright;</div>
 					</vg-controls>
 				</videogular>
 			</div>
