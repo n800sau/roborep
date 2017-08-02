@@ -1,30 +1,59 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="orange_on_track">
-	<xacro:property name="base_width" value="0.105" />
 	<xacro:property name="base_length" value="0.17" />
+	<xacro:property name="base_width" value="0.105" />
 	<xacro:property name="base_height" value="0.043" />
-	<xacro:property name="green_plate_width" value="0.105" />
 	<xacro:property name="green_plate_length" value="0.17" />
+	<xacro:property name="green_plate_width" value="0.105" />
 	<xacro:property name="green_plate_height" value="0.001" />
 	<xacro:property name="green_plate_z_offset" value="${base_height / 2 + 0.001}" />
-	<xacro:property name="white_plate_width" value="0.20" />
 	<xacro:property name="white_plate_length" value="0.245" />
+	<xacro:property name="white_plate_width" value="0.20" />
 	<xacro:property name="white_plate_height" value="0.009" />
 	<xacro:property name="white_plate_x_offset" value="-0.015" />
 	<xacro:property name="white_plate_z_offset" value="0.029" />
 	<xacro:property name="stand_width" value="0.002" />
 	<xacro:property name="stand_length" value="0.05" />
 	<xacro:property name="stand_height" value="0.195" />
+	<xacro:property name="cpu_block_width" value="${white_plate_width+2*stand_width}" />
+	<xacro:property name="cpu_block_length" value="0.06" />
+	<xacro:property name="cpu_block_height" value="0.105" />
+	<xacro:property name="servo_width" value="0.02" />
+	<xacro:property name="servo_length" value="0.06" />
+	<xacro:property name="servo_height" value="0.03" />
 	<xacro:property name="wheel_radius" value="0.0235" />
 	<xacro:property name="wheel_width" value="0.021" />
 	<xacro:property name="wheel_x_offset" value="${green_plate_length / 2 - wheel_radius}" />
 	<xacro:property name="wheel_y_offset" value="${green_plate_width / 2 + wheel_width / 2}" />
 	<xacro:property name="wheel_color" value="0 0 0 1" />
+	<xacro:property name="header_height" value="0.025" />
 	<xacro:property name="header_width" value="0.08" />
-	<xacro:property name="header_length" value="0.04" />
-	<xacro:property name="header_height" value="0.06" />
-	<xacro:property name="header_x_offset" value="0.10" />
-	<xacro:property name="header_z_offset" value="0.06" />
+	<xacro:property name="header_length" value="0.002" />
+	<xacro:property name="pan_plate_length" value="0.05" />
+	<xacro:property name="pan_plate_width" value="0.093" />
+	<xacro:property name="pan_plate_height" value="0.003" />
+	<xacro:property name="ultrasonic_sensor_length" value="0.014" />
+	<xacro:property name="ultrasonic_sensor_width" value="0.043" />
+	<xacro:property name="ultrasonic_sensor_height" value="0.02" />
+	<xacro:property name="uv_sensor_length" value="0.009" />
+	<xacro:property name="uv_sensor_width" value="0.01" />
+	<xacro:property name="uv_sensor_height" value="0.015" />
+
+	<material name="gray">
+		<color rgba="0.5 0.5 0.5 0.8"/>
+	</material>
+
+	<material name="white">
+		<color rgba="1 1 1 0.8"/>
+	</material>
+
+	<material name="black">
+		<color rgba="0 0 0 0.8"/>
+	</material>
+
+	<material name="blue">
+		<color rgba="0 0 0.8 0.8"/>
+	</material>
 
 	<xacro:macro name="default_inertial" params="mass">
 		<inertial>
@@ -42,9 +71,7 @@
 				<box size="${base_length} ${base_width} ${base_height}"/>
 			</geometry>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
-			<material name="gray">
-				<color rgba="0.5 0.5 0.5 0"/>
-			</material>
+			<material name="gray"/>
 		</visual>
 		<collision>
 			<geometry>
@@ -74,24 +101,22 @@
 		<xacro:default_inertial mass="0.02"/>
 	</link>
 
-	<joint name="green_plate_to_white_plate" type="fixed">
-		<parent link="green_plate"/>
-		<child link="white_plate"/>
-		<origin xyz="0 0 ${white_plate_z_offset}" rpy="0 0 0"/>
-	</joint>
-
 	<link name="white_plate">
 		<visual>
 			<geometry>
-				<box size="${white_plate_width} ${white_plate_length} ${white_plate_height}"/>
+				<box size="${white_plate_length} ${white_plate_width} ${white_plate_height}"/>
 			</geometry>
-			<origin xyz="${-white_plate_x_offset} 0 0" rpy="0 0 0"/>
-			<material name="white">
-				<color rgba="1 1 1 0.5"/>
-			</material>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="white"/>
 		</visual>
 		<xacro:default_inertial mass="0.05"/>
 	</link>
+
+	<joint name="green_plate_to_white_plate" type="fixed">
+		<parent link="green_plate"/>
+		<child link="white_plate"/>
+		<origin xyz="${white_plate_x_offset} 0 ${white_plate_z_offset}" rpy="0 0 0"/>
+	</joint>
 
 	<link name="left_stand">
 		<visual>
@@ -109,7 +134,7 @@
 	<joint name="white_plate_to_left_stand" type="fixed">
 		<parent link="white_plate"/>
 		<child link="left_stand"/>
-		<origin xyz="0 ${white_plate_width / 2} 0" rpy="0 0 0"/>
+		<origin xyz="${-white_plate_length/2+0.06+stand_length/2} ${white_plate_width/2+stand_width} 0" rpy="0 0 0"/>
 	</joint>
 
 	<link name="right_stand">
@@ -118,9 +143,7 @@
 				<box size="${stand_length} ${stand_width} ${stand_height}"/>
 			</geometry>
 			<origin xyz="0 0 ${stand_height/2}" rpy="0 0 0"/>
-			<material name="white">
-				<color rgba="1 1 1 0.5"/>
-			</material>
+			<material name="white"/>
 		</visual>
 		<xacro:default_inertial mass="0.03"/>
 	</link>
@@ -128,7 +151,119 @@
 	<joint name="white_plate_to_right_stand" type="fixed">
 		<parent link="white_plate"/>
 		<child link="right_stand"/>
-		<origin xyz="0 ${-white_plate_width / 2} 0" rpy="0 0 0"/>
+		<origin xyz="${-white_plate_length/2+0.06+stand_length/2} ${-white_plate_width/2-stand_width} 0" rpy="0 0 0"/>
+	</joint>
+
+	<link name="cpu_block">
+		<visual>
+			<geometry>
+				<box size="${cpu_block_length} ${cpu_block_width} ${cpu_block_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="white"/>
+		</visual>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<joint name="right_stand_to_cpu_block" type="fixed">
+		<parent link="right_stand"/>
+		<child link="cpu_block"/>
+		<origin xyz="${stand_length} ${cpu_block_width/2} 0.12" rpy="0 0 0"/>
+	</joint>
+
+	<joint name="left_stand_to_cpu_block" type="fixed">
+		<parent link="left_stand"/>
+		<child link="cpu_block"/>
+		<origin xyz="${stand_length} ${-cpu_block_width/2} 0.12" rpy="0 0 0"/>
+	</joint>
+
+	<link name="mpu_sensor">
+		<visual>
+			<geometry>
+				<box size="0.014 0.024 0.002"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="blue"/>
+		</visual>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<joint name="cpu_block_to_mpu_sensor" type="fixed">
+		<parent link="cpu_block"/>
+		<child link="mpu_sensor"/>
+		<origin xyz="0 0 ${cpu_block_height/2+0.03}" rpy="${pi} 0 0"/>
+	</joint>
+
+	<link name="header_pan_servo">
+		<visual>
+			<geometry>
+				<box size="${servo_length} ${servo_width} ${servo_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+		<xacro:default_inertial mass="0.2"/>
+	</link>
+
+	<joint name="white_plate_to_header_pan_servo" type="fixed">
+		<parent link="white_plate"/>
+		<child link="header_pan_servo"/>
+		<origin xyz="${white_plate_length/2-pan_plate_length/2} 0 ${pan_plate_height-servo_height/2}" rpy="0 0 ${pi/2}"/>
+	</joint>
+
+	<link name="pan_plate">
+		<visual>
+			<geometry>
+				<box size="${pan_plate_length} ${pan_plate_width} ${pan_plate_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="white"/>
+		</visual>
+		<xacro:default_inertial mass="0.2"/>
+	</link>
+
+	<joint name="header_pan_servo_to_pan_plate" type="revolute">
+		<parent link="header_pan_servo"/>
+		<child link="pan_plate"/>
+		<origin xyz="0 0 ${servo_height/2+pan_plate_height}" rpy="0 0 ${-pi/2}"/>
+		<axis xyz="0 0 1"/>
+		<limit lower="${-pi/6}" upper="${pi/6}" effort="1" velocity="1"/>
+	</joint>
+
+	<link name="header_tilt_servo">
+		<visual>
+			<geometry>
+				<box size="${servo_length} ${servo_width} ${servo_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+		<xacro:default_inertial mass="0.2"/>
+	</link>
+
+	<joint name="pan_plate_to_header_tilt_servo" type="fixed">
+		<parent link="pan_plate"/>
+		<child link="header_tilt_servo"/>
+		<origin xyz="0 -0.035 0.05" rpy="0 ${pi/2} ${pi/2}"/>
+	</joint>
+
+	<link name="header_lever">
+		<visual>
+			<geometry>
+				<box size="0.052 0.003 0.012"/>
+			</geometry>
+			<origin xyz="0.026 0 0" rpy="0 0 0"/>
+			<material name="white"/>
+		</visual>
+		<xacro:default_inertial mass="0.2"/>
+	</link>
+
+	<joint name="header_tilt_servo_to_header_lever" type="revolute">
+		<parent link="header_tilt_servo"/>
+		<child link="header_lever"/>
+		<origin xyz="0 0 0.03" rpy="${-pi/2} ${pi} ${pi/2}"/>
+		<axis xyz="0 0 1"/>
+		<limit lower="${-pi/6}" upper="${pi/6}" effort="0.1" velocity="0.1"/>
 	</joint>
 
 	<link name="header">
@@ -137,19 +272,67 @@
 				<box size="${header_length} ${header_width} ${header_height}"/>
 			</geometry>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
-			<material name="white">
-				<color rgba="0 0 0.5 0.1"/>
-			</material>
+			<material name="white"/>
 		</visual>
 		<xacro:default_inertial mass="0.2"/>
 	</link>
 
-	<joint name="white_plate_to_header" type="fixed">
-		<parent link="white_plate"/>
+	<joint name="header_lever_to_header" type="fixed">
+		<parent link="header_lever"/>
 		<child link="header"/>
-		<origin xyz="${header_x_offset} 0 ${header_z_offset}" rpy="0 0 0"/>
+		<origin xyz="0.053 0 0" rpy="0 0 0"/>
 	</joint>
 
+	<link name="ultrasonic_sensor">
+		<visual>
+			<geometry>
+				<box size="${ultrasonic_sensor_length} ${ultrasonic_sensor_width} ${ultrasonic_sensor_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray"/>
+		</visual>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<joint name="header_to_ultrasonic_sensor" type="fixed">
+		<parent link="header"/>
+		<child link="ultrasonic_sensor"/>
+		<origin xyz="${ultrasonic_sensor_length/2} 0 0" rpy="0 0 0"/>
+	</joint>
+
+	<link name="uv_sensor">
+		<visual>
+			<geometry>
+				<box size="${uv_sensor_length} ${uv_sensor_width} ${uv_sensor_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<joint name="header_to_uv_sensor" type="fixed">
+		<parent link="header"/>
+		<child link="uv_sensor"/>
+		<origin xyz="${uv_sensor_length/2} 0.03 0" rpy="${pi/4} 0 0"/>
+	</joint>
+
+	<link name="header_mpu_sensor">
+		<visual>
+			<geometry>
+				<box size="0.025 0.017 0.002"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="blue"/>
+		</visual>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<joint name="header_to_header_mpu_sensor" type="fixed">
+		<parent link="header"/>
+		<child link="header_mpu_sensor"/>
+		<origin xyz="-0.012 0 ${-header_height/2-0.002}" rpy="${pi} 0 ${pi/2}"/>
+	</joint>
 
 	<xacro:macro name="track" params="prefix reflect">
 
@@ -159,9 +342,7 @@
 					<cylinder length="${wheel_width}" radius="${wheel_radius}"/>
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0"/>
-				<material name="black">
-					<color rgba="${wheel_color}"/>
-				</material>
+				<material name="black"/>
 			</visual>
 			<xacro:default_inertial mass="0.03"/>
 		</link>
@@ -172,9 +353,7 @@
 					<cylinder length="${wheel_width}" radius="${wheel_radius}"/>
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0"/>
-				<material name="black">
-					<color rgba="${wheel_color}"/>
-				</material>
+				<material name="black"/>
 			</visual>
 			<xacro:default_inertial mass="0.03"/>
 		</link>
@@ -183,27 +362,15 @@
 			<parent link="base_link"/>
 			<child link="${prefix}_rear_wheel"/>
 			<origin xyz="${-wheel_x_offset} ${reflect*wheel_y_offset} 0" rpy="${pi / 2} 0 0"/>
+			<axis xyz="1 0 0"/>
 		</joint>
 
 		<joint name="base_to_${prefix}_fwd_wheel" type="continuous">
 			<parent link="base_link"/>
 			<child link="${prefix}_fwd_wheel"/>
 			<origin xyz="${wheel_x_offset} ${reflect*wheel_y_offset} 0" rpy="${pi / 2} 0 0"/>
-			<inertia
-				ixx="1.0" ixy="0.0" ixz="0.0"
-				iyy="1.0" iyz="0.0"
-				izz="1.0"/>
+			<axis xyz="1 0 0"/>
 		</joint>
-
-		<transmission name="base_to_${prefix}_rear_trans">
-			<type>transmission_interface/SimpleTransmission</type>
-			<actuator name="base_to_${prefix}_rear_motor">
-				<mechanicalReduction>1</mechanicalReduction>
-			</actuator>
-			<joint name="base_to_${prefix}_rear_wheel">
-				<hardwareInterface>PositionJointInterface</hardwareInterface>
-			</joint>
-		</transmission>
 
 	</xacro:macro>
 
