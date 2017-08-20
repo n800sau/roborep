@@ -2,6 +2,7 @@
 #include <SPFD5408_Adafruit_TFTLCD.h> // Hardware-specific library
 #include <SPFD5408_TouchScreen.h>
 #include <EEPROM.h>
+#include "grideye.h"
 
 #define YP A1  // must be an analog pin, use "An" notation!
 #define XM A2  // must be an analog pin, use "An" notation!
@@ -59,8 +60,12 @@ bool led_state = false;
 const int RIGHT_PANE_OFF = BOXSIZE * 8;
 
 void setup(void) {
-	Serial.begin(115200);
+	// serial rate of GridEye Kit
+	Serial.begin(57600);
+
 	Serial.println(F("GridEye show"));
+
+	memset(terms, 0, sizeof(terms));
 
 	int t;
 	EEPROM.get(marker_addr, t);
@@ -165,19 +170,30 @@ void loop()
 {
 
 	byte r, g, b;
-	int hue = temp2hue(temp);
-	HSV2RGB(hue, 255, 255, r, g, b);
-	int color = 0xffff ^ tft.color565(r, g, b);
+	int color, hue;
 
-	for(int col=0; col<8; col++) {
-		for(int row=0; row<8; row++) {
-			tft.fillRect(col*BOXSIZE+1, row*BOXSIZE+1, BOXSIZE-2, BOXSIZE-2, color);
-			tft.setCursor(col*BOXSIZE+10, row*BOXSIZE+10);
-			tft.setTextSize(1);
-			tft.setTextColor(BLACK);
-			tft.print(String(temp));
-			test_touch();
+	if(refresh_terms()) {
+		for(int col=0; col<8; col++) {
+			for(int row=0; row<8; row++) {
+				hue = temp2hue(terms[row][col]);
+				HSV2RGB(hue, 255, 255, r, g, b);
+				color = 0xffff ^ tft.color565(r, g, b);
+				tft.fillRect(col*BOXSIZE+1, row*BOXSIZE+1, BOXSIZE-2, BOXSIZE-2, color);
+				tft.setCursor(col*BOXSIZE+10, row*BOXSIZE+10);
+				tft.setTextSize(1);
+				tft.setTextColor(BLACK);
+				tft.print(String(int(terms[row][col])));
+//				tft.print(String(int(terms[row][col])) + "." + String(int(terms[row][col]*10) % 10));
+				Serial.print(int(terms[row][col]), DEC);
+				Serial.print(" ");
+				test_touch();
+			}
+			Serial.println();
 		}
+		Serial.println();
+	} else {
+		test_touch();
+		Serial.println("skip");
 	}
 
 //	Serial.print("Temp:");
