@@ -1,4 +1,4 @@
-#include <mega_programmer.h>
+#include <n8s_mega_programmer.h>
 
 #define RESET_PIN_COUNT 3
 const int pin_reset_list[RESET_PIN_COUNT] = {40, 38, 36};
