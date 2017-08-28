@@ -3,9 +3,11 @@
 import glob, os, sys, json
 from misc import fname2dt, fname2dt_exc
 
-IMG_PATH = os.path.expanduser('output/images/predict')
+#IMG_PATH = os.path.expanduser('output/images/predict')
+#IMG_PATH = os.path.expanduser('cnn/output/images/predict')
+IMG_PATH = os.path.expanduser('cnn/caffe.40x40/output')
 
-for dname in glob.glob(os.path.join(IMG_PATH, '2016-*-*')):
+for dname in glob.glob(os.path.join(IMG_PATH, '201*-*-*')):
 	if os.path.isdir(dname):
 		data = []
 		for lname in glob.glob(os.path.join(dname, '*')):

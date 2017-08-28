@@ -1,1 +1,1 @@
-sudo nanaybot-start
+sudo oculus2wd-start

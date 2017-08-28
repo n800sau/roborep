@@ -1,0 +1,9 @@
+{
+	"jsonrpc" : "2.0",
+	"method": "blink",
+	"id" : 1,
+	"params" : {
+		"led": "ir_led",
+		"times" : 5
+	}
+}

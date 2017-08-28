@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(nanaybot)
+project(oculus2wd)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -104,7 +104,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES nanaybot
+#  LIBRARIES oculus2wd
   LIBRARIES image_signal_nd
   LIBRARIES image_motion_nd
   LIBRARIES image_motion1_nd
@@ -126,8 +126,8 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(nanaybot
-#   src/${PROJECT_NAME}/nanaybot.cpp
+# add_library(oculus2wd
+#   src/${PROJECT_NAME}/oculus2wd.cpp
 # )
 
 add_library(image_signal_nd src/image_signal_nd.cpp)
@@ -161,14 +161,14 @@ if(catkin_EXPORTED_LIBRARIES)
 endif()
 
 ## Declare a cpp executable
-# add_executable(nanaybot_node src/nanaybot_node.cpp)
+# add_executable(oculus2wd_node src/oculus2wd_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(nanaybot_node nanaybot_generate_messages_cpp)
+# add_dependencies(oculus2wd_node oculus2wd_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(nanaybot_node
+# target_link_libraries(oculus2wd_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -199,7 +199,7 @@ target_link_libraries(poisson_surface ${catkin_LIBRARIES})
 
 add_executable(distance_ranger src/distance_ranger.cpp)
 target_link_libraries(distance_ranger ${catkin_LIBRARIES})
-add_dependencies(distance_ranger nanaybot_generate_messages_cpp)
+add_dependencies(distance_ranger oculus2wd_generate_messages_cpp)
 
 #############
 ## Install ##
@@ -216,7 +216,7 @@ add_dependencies(distance_ranger nanaybot_generate_messages_cpp)
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS nanaybot nanaybot_node
+# install(TARGETS oculus2wd oculus2wd_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -241,7 +241,7 @@ add_dependencies(distance_ranger nanaybot_generate_messages_cpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_nanaybot.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_oculus2wd.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

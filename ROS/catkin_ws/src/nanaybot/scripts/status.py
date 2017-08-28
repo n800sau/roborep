@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import subprocess, re
 import rospy
-from nanaybot.msg import battery
+from oculus2wd.msg import battery
 
 TIMEOUT = 5.0
 
 def status():
-	pub = rospy.Publisher('/nanaybot/battery', battery)
+	pub = rospy.Publisher('/oculus2wd/battery', battery)
 	rospy.init_node('status_node')
 	while not rospy.is_shutdown():
 		output = subprocess.check_output(['acpi', '-b'])

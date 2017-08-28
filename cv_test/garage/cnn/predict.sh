@@ -3,5 +3,5 @@
 #export OMP_NUM_THREADS=8
 #export GOTO_NUM_THREADS=8
 #export MKL_NUM_THREADS=8
-python predict.py &> predict.log
+time python predict.py &> predict.log
 echo $?

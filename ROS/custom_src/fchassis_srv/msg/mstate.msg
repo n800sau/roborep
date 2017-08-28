@@ -1,5 +1,6 @@
 Header header
 float32 irdist
+float32 sonar
 float32 v
 float32 motion
 int32 lcount

@@ -181,6 +181,6 @@ int main(int argc, char ** argv)
 	ros::NodeHandle nh;
 	image_transport::ImageTransport it(nh);
 	img_sub = it.subscribe("/camera/rgb/image_raw", 3, process_cb);
-	img_pub = it.advertise("/nanaybot/signal_image", 1);
+	img_pub = it.advertise("/oculus2wd/signal_image", 1);
 	ros::spin();
 }
