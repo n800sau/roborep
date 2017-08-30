@@ -172,7 +172,14 @@ catkin_install_python(PROGRAMS
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
    launch/oculus_remnant.launch
+   launch/display.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
+
+install(FILES
+	oculus_robo.xacro
+	urdf.rviz
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 #install(FILES
