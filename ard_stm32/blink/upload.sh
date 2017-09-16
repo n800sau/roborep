@@ -5,9 +5,12 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/n800s/.platformio/packages/tool-
 #usb-reset $DEV
 #platformio run -t upload --upload-port $DEV &>upload.log
 #./set_rts1 && \
+cd ../arduino_service && \
+echo 1|./setmode.py && \
+cd - && \
 platformio run -v -t upload --upload-port $DEV
 #platformio run -t upload &>upload.log
 #platformio run -t upload
 echo $?
-
-
+cd ../arduino_service && \
+echo 0|./setmode.py
