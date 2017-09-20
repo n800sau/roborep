@@ -1,0 +1,4 @@
+<launch>
+	<node name="sensors" pkg="rpi3_top" type="top_sensors.py" output="screen">
+	</node>
+</launch>
