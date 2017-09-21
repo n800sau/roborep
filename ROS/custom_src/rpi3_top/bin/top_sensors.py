@@ -7,6 +7,9 @@ import serial
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion, Vector3
 
+def str2float(datalist):
+	return [float(v) for v in datalist]
+
 class TopSensors:
 
 	def __init__(self):
@@ -24,25 +27,30 @@ class TopSensors:
 				if line[0] == 'Time:':
 					if data:
 						# publish
-						msg = Imu()
-						msg.orientation = Quaternion(*data['Q'])
-						msg.orientation_covariance[0] = -1
-						msg.angular_velocity = Vector3(*data['AV'])
-						msg.angular_velocity_covariance[0] = -1
-						msg.linear_acceleration = Vector3(*data['AV'])
-						msg.linear_acceleration_covariance[0] = -1
-						self.pub_imu.publish(msg)
-#						rospy.loginfo('%s' % data)
+						try:
+							msg = Imu()
+							msg.header.stamp = rospy.Time.now()
+							msg.header.frame_id = 'imu'
+							msg.orientation = Quaternion(*data['Q'])
+							msg.orientation_covariance[0] = -1
+							msg.angular_velocity = Vector3(*data['AV'])
+							msg.angular_velocity_covariance[0] = -1
+							msg.linear_acceleration = Vector3(*data['AV'])
+							msg.linear_acceleration_covariance[0] = -1
+							self.pub_imu.publish(msg)
+#							rospy.loginfo('%s' % data)
+						except Exception, e:
+							rospy.logwarn('%s' % e)
 						data = {}
 				elif line[0] == 'Q:':
 					if not data:
-						data['Q'] = line[1:]
+						data['Q'] = str2float(line[1:])
 				elif line[0] == 'AV:':
 					if data:
-						data['AV'] = line[1:]
+						data['AV'] = str2float(line[1:])
 				elif line[0] == 'LA:':
 					if data:
-						data['LA'] = line[1:]
+						data['LA'] = str2float(line[1:])
 		rospy.spin()
 
 if __name__ == '__main__':
