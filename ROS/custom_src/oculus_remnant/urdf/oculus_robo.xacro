@@ -12,6 +12,10 @@
 	<xacro:property name="wheel_y_offset" value="${base_width / 2 + wheel_width / 2}" />
 	<xacro:property name="wheel_color" value="0 0 0 1" />
 
+	<xacro:property name="imubox_length" value="0.05" />
+	<xacro:property name="imubox_width" value="0.08" />
+	<xacro:property name="imubox_height" value="0.01" />
+
 	<xacro:property name="xtion_x_position" value="0.01" />
 	<xacro:property name="xtion_y_position" value="0" />
 	<xacro:property name="xtion_z_position" value="0.04" />
@@ -61,6 +65,29 @@
 		</collision>
 		<xacro:default_inertial mass="0.1"/>
 	</link>
+
+	<link name="imubox_link">
+		<visual>
+			<geometry>
+				<box size="${imubox_length} ${imubox_width} ${imubox_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${imubox_length} ${imubox_width} ${imubox_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<joint name="base_to_imubox" type="fixed">
+		<parent link="base_link"/>
+		<child link="imubox_link"/>
+		<origin xyz="-0.5 0 015" rpy="0 0 0"/>
+	</joint>
 
 	<xacro:macro name="wheel" params="prefix reflect">
 
