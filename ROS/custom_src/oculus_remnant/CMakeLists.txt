@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-catkin_python_setup()
+# catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -173,34 +173,26 @@ catkin_install_python(PROGRAMS
 install(FILES
    launch/oculus_remnant.launch
    launch/display.launch
+   launch/description.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
 install(FILES
-	oculus_robo.xacro
+	urdf/oculus_robo.xacro
+	urdf/asus_camera.urdf.xacro
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
+)
+
+install(FILES
+	meshes/asus_camera_simple.dae
+	meshes/asus_camera_simple.stl
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/meshes
+)
+
+install(FILES
 	urdf.rviz
 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
-#install(FILES
-#   lib/oculus_remnant/__init__.py
-#   lib/oculus_remnant/base_controller.py
-#   lib/oculus_remnant/oculus_intf.py
-#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/oculus_remnant
-#)
-
-#install(FILES
-#   lib/oculus_remnant/lib_py/__init__.py
-#   lib/oculus_remnant/lib_py/forklift.py
-#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/oculus_remnant/lib_py
-#)
-
-#install(FILES
-#   lib/oculus_remnant/swig/__init__.py
-#   lib/oculus_remnant/swig/libcommon_py.py
-#   lib/oculus_remnant/swig/_libcommon_py.so
-#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/oculus_remnant/swig
-#)
 
 #############
 ## Testing ##

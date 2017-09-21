@@ -1,5 +1,5 @@
 <launch>
-  <arg name="model" default="$(find oculus_remnant)/oculus_robo.xacro" />
+  <arg name="model" default="$(find oculus_remnant)/urdf/oculus_robo.xacro" />
   <arg name="gui" default="True" />
   <param name="robot_description" command="$(find xacro)/xacro --inorder '$(arg model)'" />
   <param name="use_gui" value="$(arg gui)" />

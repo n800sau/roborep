@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="oculus_remnant">
 
-	<xacro:include filename="$(find hector_sensors_description)/urdf/asus_camera.urdf.xacro"/>
+	<xacro:include filename="$(find oculus_remnant)/urdf/asus_camera.urdf.xacro"/>
 
 	<xacro:property name="base_length" value="0.17" />
 	<xacro:property name="base_width" value="0.105" />
@@ -79,7 +79,7 @@
 			<parent link="base_link"/>
 			<child link="${prefix}_wheel"/>
 			<origin xyz="${-wheel_x_offset} ${reflect*wheel_y_offset} 0" rpy="${pi / 2} 0 0"/>
-			<axis xyz="1 0 0"/>
+			<axis xyz="0 1 0"/>
 		</joint>
 
 	</xacro:macro>
