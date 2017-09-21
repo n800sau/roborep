@@ -9,7 +9,7 @@ MPU9250_DMP imu;
 void setup() 
 {
 	SerialPort.begin(115200);
-	pinMode(13, OUTPUT);
+	pinMode(LED_PIN, OUTPUT);
 
 	// Call imu.begin() to verify communication and initialize
 	while (imu.begin() != INV_SUCCESS)
@@ -25,7 +25,7 @@ void setup()
 	// DMP_FEATURE_LP_QUAT can also be used. It uses the 
 	// accelerometer in low-power mode to estimate quat's.
 	// DMP_FEATURE_LP_QUAT and 6X_LP_QUAT are mutually exclusive
-	if(imu.dmpBegin(DMP_FEATURE_6X_LP_QUAT |  DMP_FEATURE_GYRO_CAL, 100) != INV_SUCCESS) {
+	if(imu.dmpBegin(DMP_FEATURE_6X_LP_QUAT |  DMP_FEATURE_GYRO_CAL | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO, 100) != INV_SUCCESS) {
 		Serial.println("IMU DMP start fail");
 	} else {
 		Serial.println("IMU Ready");
@@ -60,16 +60,15 @@ void printIMUData(void)
 	// are all updated.
 	// Quaternion values are, by default, stored in Q30 long
 	// format. calcQuat turns them into a float between -1 and 1
-	float q0 = imu.calcQuat(imu.qw);
-	float q1 = imu.calcQuat(imu.qx);
-	float q2 = imu.calcQuat(imu.qy);
-	float q3 = imu.calcQuat(imu.qz);
+	float q0 = imu.calcQuat(imu.qx);
+	float q1 = imu.calcQuat(imu.qy);
+	float q2 = imu.calcQuat(imu.qz);
+	float q3 = imu.calcQuat(imu.qw);
 
-	SerialPort.println("Q: " + String(q0, 4) + ", " +
-										String(q1, 4) + ", " + String(q2, 4) + 
-										", " + String(q3, 4));
-	SerialPort.println("R/P/Y: " + String(imu.roll) + ", "
-						+ String(imu.pitch) + ", " + String(imu.yaw));
+	SerialPort.println("Q: " + String(q0, 4) + " " + String(q1, 4) + " " + String(q2, 4) + " " + String(q3, 4));
+	SerialPort.println("RPY: " + String(imu.roll) + " " + String(imu.pitch) + " " + String(imu.yaw));
+	SerialPort.println("AV: " + String(imu.calcGyro(imu.gx)) + " " + String(imu.calcGyro(imu.gx)) + " " + String(imu.calcGyro(imu.gz)));
+	SerialPort.println("LA: " + String(imu.calcAccel(imu.ax)) + " " + String(imu.calcAccel(imu.ax)) + " " + String(imu.calcAccel(imu.az)));
 	SerialPort.println("Time: " + String(imu.time) + " ms");
 	SerialPort.println();
 }
