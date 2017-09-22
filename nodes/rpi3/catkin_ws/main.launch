@@ -28,7 +28,7 @@
 
 
 		<node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan">
-			<remap from="image" to="/camera/depth/image_raw"/>
+			<remap from="image" to="camera/depth/image_raw"/>
 		</node>
 
 		<include file="$(find openni2_launch)/launch/openni2.launch">
@@ -80,16 +80,48 @@
 			<remap from="odom" to="rtabmap/odom"/>
 		</node>
 
-
 <!--
-			<node pkg="nodelet" type="nodelet" name="obstacles_detection" args="standalone rtabmap_ros/obstacles_detection">
-				<remap from="cloud" to="/$(arg namespace)/camera/depth_registered/points"/>
-				<param name="frame_id" type="string" value="base_link"/>
-				<param name="map_frame_id" type="string" value="map"/>
-				<param name="Grid/MinClusterSize" type="int" value="20"/>
-				<param name="Grid/MaxObstacleHeight" type="double" value="0.0"/>
-			</node>
+		<node pkg="nodelet" type="nodelet" name="obstacles_detection" args="standalone rtabmap_ros/obstacles_detection">
+			<remap from="cloud" to="/$(arg namespace)/camera/depth_registered/points"/>
+			<param name="frame_id" type="string" value="base_link"/>
+			<param name="map_frame_id" type="string" value="map"/>
+			<param name="Grid/MinClusterSize" type="int" value="20"/>
+			<param name="Grid/MaxObstacleHeight" type="double" value="0.01"/>
+			<param name="wait_for_transform" type="bool" value="true"/>
+		</node>
 -->
+
+	<node pkg="gmapping" type="slam_gmapping" name="slam_gmapping">
+		<param name="map_update_interval" value="5.0"/>
+		<param name="maxUrange" value="16.0"/>
+		<param name="sigma" value="0.05"/>
+		<param name="kernelSize" value="1"/>
+		<param name="lstep" value="0.05"/>
+		<param name="astep" value="0.05"/>
+		<param name="iterations" value="5"/>
+		<param name="lsigma" value="0.075"/>
+		<param name="ogain" value="3.0"/>
+		<param name="lskip" value="0"/>
+		<param name="srr" value="0.1"/>
+		<param name="srt" value="0.2"/>
+		<param name="str" value="0.1"/>
+		<param name="stt" value="0.2"/>
+		<param name="linearUpdate" value="1.0"/>
+		<param name="angularUpdate" value="0.5"/>
+		<param name="temporalUpdate" value="3.0"/>
+		<param name="resampleThreshold" value="0.5"/>
+		<param name="particles" value="30"/>
+		<param name="xmin" value="-50.0"/>
+		<param name="ymin" value="-50.0"/>
+		<param name="xmax" value="50.0"/>
+		<param name="ymax" value="50.0"/>
+		<param name="delta" value="0.05"/>
+		<param name="llsamplerange" value="0.01"/>
+		<param name="llsamplestep" value="0.01"/>
+		<param name="lasamplerange" value="0.005"/>
+		<param name="lasamplestep" value="0.005"/>
+	</node>
+
 
 	</group>
 
