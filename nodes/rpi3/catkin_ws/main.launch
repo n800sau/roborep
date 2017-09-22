@@ -39,12 +39,14 @@
 			<arg name="depth_registered_processing"     value="true"/>
 			<arg name="disparity_processing"            value="false"/>
 			<arg name="disparity_registered_processing" value="false"/>
+			<arg name="camera" default="camera" />
 		</include>
 
 		<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
 			<arg name="rgb_topic"               value="/$(arg namespace)/camera/rgb/image_rect_color" />
 			<arg name="depth_topic"             value="/$(arg namespace)/camera/depth_registered/image_raw" />
 			<arg name="camera_info_topic"       value="/$(arg namespace)/camera/rgb/camera_info" />
+			<arg name="frame_id" value="camera_link"/>\
 			<arg name="rviz" value="false"/>\
 			<arg name="rtabmapviz" value="false"/>\
 			<arg name="localization" value="false"/>\
@@ -58,12 +60,17 @@
 			<remap from="output" to="/$(arg namespace)/camera/depth_registered/points/image_raw"/>
 		</node>
 
+		<node name="republish" type="republish" pkg="image_transport" output="screen"
+			args="raw in:=/$(arg namespace)/camera/depth_registered/points/image_raw compressed out:=/$(arg namespace)/camera/depth_registered/points/image_raw"
+		/>
+
+		<![CDATA[ imu include   ]]>
 		<include file="$(find rpi3_top)/launch/rpi3_top.launch">
 		</include>
 
 		<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf">
 			<param name="output_frame" value="odom_combined"/>
-			<param name="base_footprint_frame" value="base_footprint"/>
+			<param name="base_footprint_frame" value="base_link"/>
 			<param name="freq" value="30.0"/>
 			<param name="sensor_timeout" value="1.0"/>	
 			<param name="odom_used" value="true"/>
