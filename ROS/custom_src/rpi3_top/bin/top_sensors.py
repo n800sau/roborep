@@ -7,13 +7,16 @@ import serial
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion, Vector3
 
+IMU_LINK = 'imubox_link'
+DEFPORT = '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0'
+
 def str2float(datalist):
 	return [float(v) for v in datalist]
 
 class TopSensors:
 
 	def __init__(self):
-		serport = rospy.get_param('sensors_serial_port', '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1014RKM-if00-port0')
+		serport = rospy.get_param('sensors_serial_port', DEFPORT)
 		self.ser = serial.Serial(serport, 115200)
 
 	def run(self):
@@ -30,13 +33,16 @@ class TopSensors:
 						try:
 							msg = Imu()
 							msg.header.stamp = rospy.Time.now()
-							msg.header.frame_id = 'imu'
+							msg.header.frame_id = IMU_LINK
 							msg.orientation = Quaternion(*data['Q'])
-							msg.orientation_covariance[0] = -1
+							for i in range(len(msg.orientation_covariance)):
+								msg.orientation_covariance[i] = -1
 							msg.angular_velocity = Vector3(*data['AV'])
-							msg.angular_velocity_covariance[0] = -1
+							for i in range(len(msg.angular_velocity_covariance)):
+								msg.angular_velocity_covariance[i] = -1
 							msg.linear_acceleration = Vector3(*data['AV'])
-							msg.linear_acceleration_covariance[0] = -1
+							for i in range(len(msg.linear_acceleration_covariance)):
+								msg.linear_acceleration_covariance[i] = -1
 							self.pub_imu.publish(msg)
 #							rospy.loginfo('%s' % data)
 						except Exception, e:
