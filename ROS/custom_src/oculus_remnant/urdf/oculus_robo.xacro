@@ -114,7 +114,7 @@
 	<xacro:wheel prefix="right" reflect="1" />
 	<xacro:wheel prefix="left" reflect="-1" />
 
-    <xacro:asus_camera_model name="xtion" parent="base_link">
+    <xacro:asus_camera_model name="camera" parent="base_link">
       <origin xyz="${xtion_x_position} ${xtion_y_position}  ${xtion_z_position}" rpy="${xtion_roll_position} ${xtion_pitch_position} ${xtion_yaw_position}"/>
     </xacro:asus_camera_model>
 
