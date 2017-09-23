@@ -3,22 +3,33 @@
 
 	<xacro:include filename="$(find oculus_remnant)/urdf/asus_camera.urdf.xacro"/>
 
-	<xacro:property name="base_length" value="0.17" />
-	<xacro:property name="base_width" value="0.105" />
-	<xacro:property name="base_height" value="0.043" />
-	<xacro:property name="wheel_radius" value="0.0235" />
-	<xacro:property name="wheel_width" value="0.021" />
-	<xacro:property name="wheel_x_offset" value="${base_length / 2 - wheel_radius}" />
-	<xacro:property name="wheel_y_offset" value="${base_width / 2 + wheel_width / 2}" />
-	<xacro:property name="wheel_color" value="0 0 0 1" />
+	<xacro:property name="base_length" value="0.28" />
+	<xacro:property name="base_width" value="0.217" />
+	<xacro:property name="base_height" value="0.003" />
+
+	<xacro:property name="second_base_length" value="${base_length}" />
+	<xacro:property name="second_base_width" value="${base_width + 0.02 * 2}" />
+	<xacro:property name="second_base_height" value="${base_height}" />
+
+	<xacro:property name="fwd_wheel_radius" value="0.034" />
+	<xacro:property name="fwd_wheel_width" value="0.008" />
+	<xacro:property name="fwd_wheel_x_offset" value="${base_length / 2 - 0.095}" />
+	<xacro:property name="fwd_wheel_y_offset" value="${base_width / 2 + fwd_wheel_width / 2}" />
+	<xacro:property name="fwd_wheel_z_offset" value="-0.0225" />
+
+	<xacro:property name="rear_wheel_radius" value="0.024" />
+	<xacro:property name="rear_wheel_width" value="0.034" />
+	<xacro:property name="rear_wheel_x_offset" value="${-base_length / 2 + 0.028}" />
+	<xacro:property name="rear_wheel_y_offset" value="${base_width / 2 - rear_wheel_width - 0.016}" />
+	<xacro:property name="rear_wheel_z_offset" value="-0.024" />
 
 	<xacro:property name="imubox_length" value="0.05" />
 	<xacro:property name="imubox_width" value="0.08" />
 	<xacro:property name="imubox_height" value="0.01" />
 
-	<xacro:property name="xtion_x_position" value="0.01" />
+	<xacro:property name="xtion_x_position" value="0.09" />
 	<xacro:property name="xtion_y_position" value="0" />
-	<xacro:property name="xtion_z_position" value="0.04" />
+	<xacro:property name="xtion_z_position" value="0.12" />
 	<xacro:property name="xtion_roll_position" value="0" />
 	<xacro:property name="xtion_pitch_position" value="0" />
 	<xacro:property name="xtion_yaw_position" value="0" />
@@ -66,13 +77,36 @@
 		<xacro:default_inertial mass="0.1"/>
 	</link>
 
+	<link name="second_base_link">
+		<visual>
+			<geometry>
+				<box size="${second_base_length} ${second_base_width} ${second_base_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${second_base_length} ${second_base_width} ${second_base_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+		<xacro:default_inertial mass="0.15"/>
+	</link>
+
+	<joint name="base_to_second_base" type="fixed">
+		<parent link="base_link"/>
+		<child link="second_base_link"/>
+		<origin xyz="0 0 0.027" rpy="0 0 0"/>
+	</joint>
+
 	<link name="imubox_link">
 		<visual>
 			<geometry>
 				<box size="${imubox_length} ${imubox_width} ${imubox_height}"/>
 			</geometry>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
-			<material name="black"/>
+			<material name="white"/>
 		</visual>
 		<collision>
 			<geometry>
@@ -86,27 +120,45 @@
 	<joint name="base_to_imubox" type="fixed">
 		<parent link="base_link"/>
 		<child link="imubox_link"/>
-		<origin xyz="-0.5 0 015" rpy="0 0 0"/>
+		<origin xyz="${-base_length / 2} 0 0.32" rpy="0 0 0"/>
 	</joint>
 
 	<xacro:macro name="wheel" params="prefix reflect">
 
-		<link name="${prefix}_wheel">
+		<link name="${prefix}_fwd_wheel">
 			<visual>
 				<geometry>
-					<cylinder length="${wheel_width}" radius="${wheel_radius}"/>
+					<cylinder length="${fwd_wheel_width}" radius="${fwd_wheel_radius}"/>
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0"/>
-				<material name="black"/>
+				<material name="blue"/>
 			</visual>
 			<xacro:default_inertial mass="0.03"/>
 		</link>
 
-		<joint name="base_to_${prefix}_wheel" type="continuous">
+		<joint name="base_to_${prefix}_fwd_wheel" type="continuous">
 			<parent link="base_link"/>
-			<child link="${prefix}_wheel"/>
-			<origin xyz="${-wheel_x_offset} ${reflect*wheel_y_offset} 0" rpy="${pi / 2} 0 0"/>
-			<axis xyz="0 1 0"/>
+			<child link="${prefix}_fwd_wheel"/>
+			<origin xyz="${fwd_wheel_x_offset} ${reflect*fwd_wheel_y_offset} ${fwd_wheel_z_offset}" rpy="${pi / 2} 0 0"/>
+			<axis xyz="0 0 1"/>
+		</joint>
+
+		<link name="${prefix}_rear_wheel">
+			<visual>
+				<geometry>
+					<cylinder length="${rear_wheel_width}" radius="${rear_wheel_radius}"/>
+				</geometry>
+				<origin rpy="0 0 0" xyz="0 0 0"/>
+				<material name="gray"/>
+			</visual>
+			<xacro:default_inertial mass="0.03"/>
+		</link>
+
+		<joint name="base_to_${prefix}_rear_wheel" type="continuous">
+			<parent link="base_link"/>
+			<child link="${prefix}_rear_wheel"/>
+			<origin xyz="${rear_wheel_x_offset} ${reflect*rear_wheel_y_offset} ${rear_wheel_z_offset}" rpy="${pi / 2} 0 0"/>
+			<axis xyz="0 0 1"/>
 		</joint>
 
 	</xacro:macro>
