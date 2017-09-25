@@ -9,11 +9,12 @@
 
 <!--
 	<node name="master_discovery_rpi3" pkg="master_discovery_fkie" type="zeroconf" respawn="true">
+		<rosparam param="robot_hosts">[hubee.local, acer.local, radxa.local]</rosparam>
 	</node>
 -->
 
 	<node name="master_discovery_rpi3" pkg="master_discovery_fkie" type="master_discovery" respawn="true">
-		<rosparam param="robot_hosts">[hubee, acer, radxa]</rosparam>
+		<rosparam param="robot_hosts">[hubee.local, acer.local, radxa.local]</rosparam>
 	</node>
 
 	<arg name="namespace" value="rpi3" />
@@ -42,18 +43,18 @@
 			<arg name="camera" default="camera" />
 		</include>
 
+<!--
 		<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
 			<arg name="rgb_topic"               value="/$(arg namespace)/camera/rgb/image_rect_color" />
 			<arg name="depth_topic"             value="/$(arg namespace)/camera/depth_registered/image_raw" />
 			<arg name="camera_info_topic"       value="/$(arg namespace)/camera/rgb/camera_info" />
-			<arg name="frame_id" value="camera_link"/>\
+			<arg name="frame_id" value="base_link"/>\
+			<arg name="visual_odometry" value="true"/>\
 			<arg name="rviz" value="false"/>\
 			<arg name="rtabmapviz" value="false"/>\
-			<arg name="localization" value="false"/>\
-<!--
-			<remap from="/camera/rgb/camera_info" to="camera/rgb/camera_info"/>
--->
+			<arg name="localization" value="true"/>\
 		</include>
+-->
 
 		<node name="points2image" pkg="pcl_ros" type="convert_pointcloud_to_image">
 			<remap from="input" to="/$(arg namespace)/camera/depth_registered/points"/>
@@ -64,14 +65,14 @@
 			args="raw in:=/$(arg namespace)/camera/depth_registered/points/image_raw compressed out:=/$(arg namespace)/camera/depth_registered/points/image_raw"
 		/>
 
-		<![CDATA[ imu include   ]]>
+		<![CDATA[ imu include	]]>
 		<include file="$(find rpi3_top)/launch/rpi3_top.launch">
 		</include>
 
 		<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf">
 			<param name="output_frame" value="odom_combined"/>
 			<param name="base_footprint_frame" value="base_link"/>
-			<param name="freq" value="30.0"/>
+			<param name="freq" value="20.0"/>
 			<param name="sensor_timeout" value="1.0"/>	
 			<param name="odom_used" value="true"/>
 			<param name="imu_used" value="true"/>
@@ -91,37 +92,52 @@
 		</node>
 -->
 
-	<node pkg="gmapping" type="slam_gmapping" name="slam_gmapping">
-		<param name="map_update_interval" value="5.0"/>
-		<param name="maxUrange" value="16.0"/>
-		<param name="sigma" value="0.05"/>
-		<param name="kernelSize" value="1"/>
-		<param name="lstep" value="0.05"/>
-		<param name="astep" value="0.05"/>
-		<param name="iterations" value="5"/>
-		<param name="lsigma" value="0.075"/>
-		<param name="ogain" value="3.0"/>
-		<param name="lskip" value="0"/>
-		<param name="srr" value="0.1"/>
-		<param name="srt" value="0.2"/>
-		<param name="str" value="0.1"/>
-		<param name="stt" value="0.2"/>
-		<param name="linearUpdate" value="1.0"/>
-		<param name="angularUpdate" value="0.5"/>
-		<param name="temporalUpdate" value="3.0"/>
-		<param name="resampleThreshold" value="0.5"/>
-		<param name="particles" value="30"/>
-		<param name="xmin" value="-50.0"/>
-		<param name="ymin" value="-50.0"/>
-		<param name="xmax" value="50.0"/>
-		<param name="ymax" value="50.0"/>
-		<param name="delta" value="0.05"/>
-		<param name="llsamplerange" value="0.01"/>
-		<param name="llsamplestep" value="0.01"/>
-		<param name="lasamplerange" value="0.005"/>
-		<param name="lasamplestep" value="0.005"/>
-	</node>
+	<arg name="rgb_topic"               default="/$(arg namespace)/camera/rgb/image_rect_color" />
+	<arg name="depth_topic"             default="/$(arg namespace)/camera/depth_registered/image_raw" />
+	<arg name="camera_info_topic"       default="/$(arg namespace)/camera/rgb/camera_info" />
 
+		<node pkg="rtabmap_ros" type="rgbd_odometry" name="rgbd_odometry" output="screen">
+			<remap from="rgb/image"       to="$(arg rgb_topic)"/>
+			<remap from="depth/image"     to="$(arg depth_topic)"/>
+			<remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+			<remap from="odom" to="rtabmap/odom"/>
+
+			<param name="frame_id" type="string" value="base_link"/>
+			<param name="publish_tf" type="bool" value="false"/>
+		</node>
+
+		<node pkg="gmapping" type="slam_gmapping" name="slam_gmapping">
+			<param name="map_update_interval" value="5.0"/>
+			<param name="maxUrange" value="16.0"/>
+			<param name="sigma" value="0.05"/>
+			<param name="kernelSize" value="1"/>
+			<param name="lstep" value="0.05"/>
+			<param name="astep" value="0.05"/>
+			<param name="iterations" value="5"/>
+			<param name="lsigma" value="0.075"/>
+			<param name="ogain" value="3.0"/>
+			<param name="lskip" value="0"/>
+			<param name="srr" value="0.1"/>
+			<param name="srt" value="0.2"/>
+			<param name="str" value="0.1"/>
+			<param name="stt" value="0.2"/>
+			<param name="linearUpdate" value="1.0"/>
+			<param name="angularUpdate" value="0.5"/>
+			<param name="temporalUpdate" value="3.0"/>
+			<param name="resampleThreshold" value="0.5"/>
+			<param name="particles" value="30"/>
+			<param name="xmin" value="-50.0"/>
+			<param name="ymin" value="-50.0"/>
+			<param name="xmax" value="50.0"/>
+			<param name="ymax" value="50.0"/>
+			<param name="delta" value="0.05"/>
+			<param name="llsamplerange" value="0.01"/>
+			<param name="llsamplestep" value="0.01"/>
+			<param name="lasamplerange" value="0.005"/>
+			<param name="lasamplestep" value="0.005"/>
+			<param name="odom_frame" value="odom_combine"/>
+			<param name="base_frame" value="base_link"/>
+		</node>
 
 	</group>
 
