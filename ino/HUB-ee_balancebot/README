@@ -1,0 +1,42 @@
+    1 3 5 7
+     2 4 6 8
+
+  wheel centre
+
+1 - brown   - GND
+2 - red     - power 3.6 - 13.5V
+3 - orange  - IN1
+4 - yellow  - IN2
+5 - green   - PWM
+6 - blue    - StandBy
+7 - purple  - Quadrature sensor channel A
+8 - gray    - Quadrature sensor channel B
+
+
+header:
+
+Right wheel:
+
+9  - brown  - GND - h24
+10 - red    - +5v - h23
+11 - orange - IN1 - 
+12 - yellow - IN2 - 
+13 - green  - PWN - 
+14 - blue   - StandBy - 
+15 - purple - seensor A
+16 - gray   - sensor B
+
+Left wheel:
+
+17 - gray   - sensor B
+18 - purple - sensor A
+19 - blue   - StandBy
+20 - green  - PWM
+21 - yellow - IN2
+22 - orange - IN1
+23 - red    - +5v - h10
+24 - brown  - GND - h9
+
+
+
+
