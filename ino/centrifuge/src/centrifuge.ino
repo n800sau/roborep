@@ -5,6 +5,10 @@
 // 1.118 * (D / 2) * (RPM/1000)^2 = G
 // 1.118 * (D / 2) * (COUNTER*60/1000)^2 = G
 
+#define DEBUG
+
+#define LED_PIN 13
+
 #define DIAM 83.5
 #define COEF (1.118 * DIAM / 2  * 60 * 60 / 1000 / 1000)
 
@@ -16,7 +20,11 @@ LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
 void setup() 
 {
+#ifdef DEBUG
 	Serial.begin(115200);
+#endif
+	pinMode(LED_PIN, OUTPUT);
+	digitalWrite(LED_PIN, LOW);
 	pinMode(QRE1113_PIN, INPUT);
 	lcd.begin();
 	lcd.clear();
@@ -29,6 +37,7 @@ void setup()
 unsigned long ms = millis();
 int counter = 0;
 bool on = false;
+bool led_pin_on = false;
 
 void loop() 
 {
@@ -53,11 +62,14 @@ void loop()
 		lcd.setCursor(5, 1);
 		lcd.print(counter * counter * COEF);
 		lcd.print("   ");
+#ifdef DEBUG
 		Serial.println(counter);
+#endif
+		led_pin_on = !led_pin_on;
+		digitalWrite(LED_PIN, led_pin_on ? HIGH : LOW);
 		ms = millis();
 		counter = 0;
 	}
-//	float proximityV = (float)proximityADC * 5.0 / 1023.0;
-//	delayMicroseconds(1);
+	delayMicroseconds(1);
 }
 
