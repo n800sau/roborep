@@ -4,7 +4,7 @@
 import sys, os, random
 import rospy
 import serial
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, MagneticField
 from geometry_msgs.msg import Quaternion, Vector3
 
 IMU_LINK = 'imubox_link'
@@ -21,42 +21,57 @@ class TopSensors:
 
 	def run(self):
 		rospy.init_node('top_sensors', anonymous = True)
-		self.pub_imu = rospy.Publisher('imu', Imu, queue_size=1)
+		self.pub_imu = rospy.Publisher('imu', Imu, queue_size=10)
+		self.pub_mag = rospy.Publisher('mag', MagneticField, queue_size=10)
 		data = {}
 		while not rospy.is_shutdown():
 			line = self.ser.readline().strip()
 			if line:
 				line = line.split()
-				if line[0] == 'Time:':
-					if data:
-						# publish
-						try:
-							msg = Imu()
-							msg.header.stamp = rospy.Time.now()
-							msg.header.frame_id = IMU_LINK
-							msg.orientation = Quaternion(*data['Q'])
-							for i in range(len(msg.orientation_covariance)):
-								msg.orientation_covariance[i] = -1
-							msg.angular_velocity = Vector3(*data['AV'])
-							for i in range(len(msg.angular_velocity_covariance)):
-								msg.angular_velocity_covariance[i] = -1
-							msg.linear_acceleration = Vector3(*data['AV'])
-							for i in range(len(msg.linear_acceleration_covariance)):
-								msg.linear_acceleration_covariance[i] = -1
-							self.pub_imu.publish(msg)
-#							rospy.loginfo('%s' % data)
-						except Exception, e:
-							rospy.logwarn('%s' % e)
-						data = {}
-				elif line[0] == 'Q:':
-					if not data:
-						data['Q'] = str2float(line[1:])
-				elif line[0] == 'AV:':
-					if data:
-						data['AV'] = str2float(line[1:])
-				elif line[0] == 'LA:':
-					if data:
-						data['LA'] = str2float(line[1:])
+				try:
+					if line[0] == 'Time:':
+						if data:
+							# publish
+							try:
+								msg = Imu()
+								msg.header.stamp = rospy.Time.now()
+								msg.header.frame_id = IMU_LINK
+								msg.orientation = Quaternion(*data['Q'])
+								for i in range(len(msg.orientation_covariance)):
+									msg.orientation_covariance[i] = -1
+								msg.angular_velocity = Vector3(*data['AV'])
+								for i in range(len(msg.angular_velocity_covariance)):
+									msg.angular_velocity_covariance[i] = -1
+								msg.linear_acceleration = Vector3(*data['AV'])
+								for i in range(len(msg.linear_acceleration_covariance)):
+									msg.linear_acceleration_covariance[i] = -1
+								self.pub_imu.publish(msg)
+								msg = MagneticField()
+								msg.header.stamp = rospy.Time.now()
+								msg.header.frame_id = IMU_LINK
+								msg.magnetic_field = Vector3(*[v / 1000. for v in data['M']])
+								self.pub_mag.publish(msg)
+								rospy.loginfo('top_sensors data published: %s' % data)
+							except Exception, e:
+								rospy.logwarn('Exception while publishing:%s' % e)
+							data = {}
+					elif line[0] == 'Q:':
+						if not data:
+							data['Q'] = str2float(line[1:])
+					elif line[0] == 'AV:':
+						if data:
+							data['AV'] = str2float(line[1:])
+					elif line[0] == 'LA:':
+						if data:
+							data['LA'] = str2float(line[1:])
+					elif line[0] == 'M:':
+						if data:
+							data['M'] = str2float(line[1:])
+				except Exception, e:
+					rospy.logwarn('Exception while parsing serial data:%s' % e)
+					data = {}
+#			else:
+#				rospy.loginfo('top_sensors NO data')
 		rospy.spin()
 
 if __name__ == '__main__':
