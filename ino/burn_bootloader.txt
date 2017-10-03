@@ -1,0 +1,1 @@
+avrdude -p m328p -P /dev/ttyUSB0 -c usbasp -U flash:w:bootloader.hex -U lock:w:0x0f:m  -v 
