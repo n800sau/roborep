@@ -3,10 +3,11 @@
 import rospy
 from oculus_remnant.base_controller import BaseController
 from geometry_msgs.msg import Twist
-import os, time
+import os, time, atexit
 import thread
 from serial.serialutil import SerialException
 from oculus_remnant.oculus_intf import OculusIntf
+from oculus_remnant.forklift import terminate_all
 
 class OculusBaseNode():
 	def __init__(self):
@@ -63,7 +64,9 @@ class OculusBaseNode():
 
 if __name__ == '__main__':
 	try:
-		OculusBaseNode().run()
+		atexit.register(terminate_all)
+		node = OculusBaseNode()
+		node.run()
 	except SerialException:
 		rospy.logerr("Serial exception trying to open port.")
 		os._exit(0)
