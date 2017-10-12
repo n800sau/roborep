@@ -21,8 +21,8 @@ class OculusBaseNode():
 		self.base_frame = rospy.get_param("~base_frame", 'base_link')
 
 		# Overall loop rate: should be faster than fastest sensor rate
-		self.rate = int(rospy.get_param("~rate", 10))
-		r = rospy.Rate(self.rate)
+#		self.rate = int(rospy.get_param("~rate", 10))
+#		r = rospy.Rate(self.rate)
 
 		# Initialize a Twist message
 		self.cmd_vel = Twist()
@@ -36,10 +36,10 @@ class OculusBaseNode():
 		# Initialize the base controller if used
 		self.myBaseController = BaseController(self.controller, self.name + "_base_controller")
 
-		# Start polling the sensors and base controller
-		while not rospy.is_shutdown():
 
-			r.sleep()
+	def run():
+		# Start base controller
+		rospy.spin()
 
 	def shutdown(self):
 		rospy.loginfo("Shutting down Arduino Node...")
@@ -63,7 +63,7 @@ class OculusBaseNode():
 
 if __name__ == '__main__':
 	try:
-		OculusBaseNode()
+		OculusBaseNode().run()
 	except SerialException:
 		rospy.logerr("Serial exception trying to open port.")
 		os._exit(0)
