@@ -1,4 +1,7 @@
 <launch>
-	<node name="sensors" pkg="rpi3_top" type="top_sensors.py">
-	</node>
+	<arg name="namespace" value="rpi3" />
+	<group ns="$(arg namespace)">
+		<node name="sensors" pkg="rpi3_top" type="top_sensors.py" output="screen">
+		</node>
+	</group>
 </launch>

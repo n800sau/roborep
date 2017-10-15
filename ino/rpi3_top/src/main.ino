@@ -51,11 +51,12 @@ void loop()
 	} else {
 		digitalWrite(LED_PIN, LOW);
 	}
-	delay(50);
+	delay(10);
 }
 
 void printIMUData(void)
 {
+
 	// After calling dmpUpdateFifo() the ax, gx, mx, etc. values
 	// are all updated.
 	// Quaternion values are, by default, stored in Q30 long
@@ -65,10 +66,15 @@ void printIMUData(void)
 	float q2 = imu.calcQuat(imu.qz);
 	float q3 = imu.calcQuat(imu.qw);
 
+
 	SerialPort.println("Q: " + String(q0, 4) + " " + String(q1, 4) + " " + String(q2, 4) + " " + String(q3, 4));
 	SerialPort.println("RPY: " + String(imu.roll) + " " + String(imu.pitch) + " " + String(imu.yaw));
-	SerialPort.println("AV: " + String(imu.calcGyro(imu.gx)) + " " + String(imu.calcGyro(imu.gx)) + " " + String(imu.calcGyro(imu.gz)));
-	SerialPort.println("LA: " + String(imu.calcAccel(imu.ax)) + " " + String(imu.calcAccel(imu.ax)) + " " + String(imu.calcAccel(imu.az)));
+	SerialPort.println("AV: " + String(imu.calcGyro(imu.gx)) + " " + String(imu.calcGyro(imu.gy)) + " " + String(imu.calcGyro(imu.gz)));
+	SerialPort.println("LA: " + String(imu.calcAccel(imu.ax)) + " " + String(imu.calcAccel(imu.ay)) + " " + String(imu.calcAccel(imu.az)));
+
+	imu.update(UPDATE_COMPASS);
+	SerialPort.println("M: " + String(imu.calcMag(imu.mx)) + " " + String(imu.calcMag(imu.my)) + " " + String(imu.calcMag(imu.mz)));
+
 	SerialPort.println("Time: " + String(imu.time) + " ms");
 	SerialPort.println();
 }
