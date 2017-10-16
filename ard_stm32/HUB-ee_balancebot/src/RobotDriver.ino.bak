@@ -224,7 +224,8 @@ void Motor2quickQEI()
   motor2Counter = motor2QeiCounts * motor2CounterSign ;
 }
 
-void do_serialEvent() {
+void do_serialEvent()
+{
   while (Serial.available()) {
     // get the new byte:
     char inChar = (char)Serial.read();

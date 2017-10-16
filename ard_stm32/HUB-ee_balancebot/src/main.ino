@@ -107,13 +107,13 @@ PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 HUBeeBMDWheel motor1Wheel;
 HUBeeBMDWheel motor2Wheel;
 
-int motor1DirectionForward = 1 ;
-int motor2DirectionForward = 0 ;
-int motor1DirectionReverse = 0 ;
-int motor2DirectionReverse = 1 ;
+int motor1DirectionForward = 1;
+int motor2DirectionForward = 0;
+int motor1DirectionReverse = 0;
+int motor2DirectionReverse = 1;
 
-int motor1CounterSign = -1 ;
-int motor2CounterSign = +1 ;
+int motor1CounterSign = -1;
+int motor2CounterSign = +1;
 
 
 int motor1Speed = 0, motor2Speed = 0;
@@ -137,8 +137,28 @@ const int motor2_StandBy_Pin = PB7; // blue
 volatile int motor1QeiCounts = 0, motor2QeiCounts = 0;
 volatile int motor1Counter = 0, motor2Counter = 0;
 
-int motor1Direction = motor1DirectionForward ;
-int motor2Direction = motor2DirectionForward ;
+int motor1Direction = motor1DirectionForward;
+int motor2Direction = motor2DirectionForward;
+
+// command setup
+
+int speedSetPoint = 0;
+float distanceToCover = 0 ;
+float coveredDistance = 0 ;
+float distanceToDestination = 0 ;
+int forwardAcceleration = 20 ; // acceleration 
+int forwardDeceleration = 10 ;
+int reverseDeceleration = 10 ;
+int reverseAcceleration = 10 ;
+int approachingSpeed = 50 ;
+
+int robotRotating = 0 ; // -1 counterclockwise, 0 stopped, 1 counterclockwise
+int robotDirection = 1 ; // -1 reverse, 0 stopped, 1 forward
+float robotSpeed = 0 ; // 0 - 255 
+
+// Communications
+String inputString = "";         // a string to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
 
 void Motor1quickQEI()
 {
@@ -161,7 +181,7 @@ void Motor1quickQEI()
       motor1QeiCounts--;
       break;
   }
-  motor1Counter = motor1QeiCounts * motor1CounterSign ;
+  motor1Counter = motor1QeiCounts * motor1CounterSign;
 }
 
 void Motor2quickQEI()
@@ -185,11 +205,12 @@ void Motor2quickQEI()
       motor2QeiCounts--;
       break;
   }
-  motor2Counter = motor2QeiCounts * motor2CounterSign ;
+  motor2Counter = motor2QeiCounts * motor2CounterSign;
 }
 
 
-void setup() {
+void setup()
+{
 	// join I2C bus (I2Cdev library doesn't do this automatically)
 	HWire.begin();
 
@@ -286,9 +307,14 @@ void move(int speed)
 	}
 }
 
-void loop() {
+void loop()
+{
 	// if programming failed, don't try to do anything
-	if (!dmpReady) return;
+	if (!dmpReady) {
+		Serial.println("DMP is not ready");
+		delay(2000);
+		return;
+	}
 
 	// wait for MPU interrupt or extra packet(s) available
 	if(!mpuInterrupt && fifoCount < packetSize) {
@@ -325,13 +351,13 @@ void loop() {
 			mpu.dmpGetQuaternion(&q, fifoBuffer);
 			mpu.dmpGetGravity(&gravity, &q);
 			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-			Serial.print("Pitch:");
-			Serial.println(abs(ypr[1]));
+//			Serial.print("Pitch:");
+//			Serial.println(abs(ypr[1]));
 			if(abs(ypr[1]) > 0.3) {
 				stop_mode = true;
 			} else {
 				stop_mode = false;
-				input = ypr[1] * 180/M_PI + 180 - 10;
+				input = ypr[1] * 180/M_PI + 180 - 2;
 			}
 
 			#ifdef OUTPUT_READABLE_QUATERNION
@@ -421,7 +447,147 @@ void loop() {
 			digitalWrite(LED_PIN, blinkState);
 		}
 	}
+	do_serialEvent();
+	if (stringComplete) {
+		stringComplete = false ;
+		processMessage(inputString);
+		inputString = "" ;
+	}
 //	if(stop_mode) {
 //		Serial.println("STOP MODE");
 //	}
+}
+
+void do_serialEvent()
+{
+	while (Serial.available())
+	{
+		// get the new byte:
+		char inChar = (char)Serial.read();
+		// add it to the inputString:
+		
+		// if the incoming character is a newline, set a flag
+		// so the main loop can do something about it:
+		if (inChar == '\n') {
+			stringComplete = true;
+		} else {
+			inputString += inChar;
+		}
+	}
+}
+
+String getValue(String data, char separator, int index)
+{
+	int found = 0;
+	int strIndex[] = {0, -1};
+	int maxIndex = data.length()-1;
+
+	for(int i=0; i<=maxIndex && found<=index; i++){
+		if(data.charAt(i)==separator || i==maxIndex){
+				found++;
+				strIndex[0] = strIndex[1]+1;
+				strIndex[1] = (i == maxIndex) ? i+1 : i;
+		}
+	}
+	return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
+
+void processMessage(String data)
+{
+	int index = 0 ;
+	String command = getValue(data, ',', index);
+	while (!command.equals("")){
+		processCommand(command);
+		index++;
+		command = getValue(data, ',', index);
+	}
+}
+
+void processCommand(String command)
+{
+	String instruction = getValue(command, ':', 0);
+	double value = getValue(command,':',1).toFloat();
+	int error = 1 ;
+	Serial.print("#Processing command: ");
+	Serial.print(instruction);
+	Serial.print(":");
+	Serial.println(value);
+	if (instruction == "stop") error = emergency(value);
+	else if (instruction == "kp") { Kp = value; error = 0; }
+	else if (instruction == "kd") { Kd = value; error = 0; }
+	else if (instruction == "ki") { Ki = value; error = 0; }
+//	else if (instruction == "vel") error = setSpeedSetPoint(value);
+//	else if (instruction == "dir") error = setMotorDirection(value);
+//	else if (instruction == "dis") error = setDistanceToCover(value);
+//	else if (instruction == "rot") error = setRotationToValue(value);
+	else if (instruction == "sta") error = getStatus(value);
+	else if (instruction == "ypr") error = getYPR(value);
+	else if (instruction == "q") error = getQ(value);
+	else if (instruction == "pid") error = getPID(value);
+	if (error) {
+		Serial.print("error: Error processing command ");
+		Serial.println(command);
+	}
+}
+
+int getStatus(double value)
+{
+	char _buffer[300];
+	char float_str3[16] = "";
+	sprintf(_buffer, "M1:1,speed:%d,counter:%d,direction:%d,M1:0", motor1Speed, motor1Counter, motor1Direction == motor1DirectionForward);
+	Serial.println(_buffer);
+	sprintf(_buffer, "M2:1,speed:%d,counter:%d,direction:%d,M2:0", motor2Speed, motor2Counter, motor2Direction == motor2DirectionForward);
+	Serial.println(_buffer);
+	dtostrf(distanceToDestination, 4, 2, float_str3);
+	sprintf(_buffer, "distanceleft:%s", float_str3);
+	Serial.println(_buffer);
+	return 0;
+}
+
+int getPID(double value)
+{
+	Serial.print("Kp:");
+	Serial.print(Kp);
+	Serial.print(",Kd:");
+	Serial.print(Kd);
+	Serial.print(",Ki:");
+	Serial.println(Ki);
+	return 0;
+}
+
+int getYPR(double value)
+{
+	Serial.print("Y:");
+	Serial.print(ypr[0] * ((value) ? 180/M_PI : 1));
+	Serial.print(",P:");
+	Serial.print(ypr[1] * ((value) ? 180/M_PI : 1));
+	Serial.print(",R:");
+	Serial.println(ypr[2] * ((value) ? 180/M_PI : 1));
+	return 0;
+}
+
+int getQ(double value)
+{
+	Serial.print("QW:");
+	Serial.print(q.w);
+	Serial.print(",QX:");
+	Serial.print(q.x);
+	Serial.print(",QY:");
+	Serial.print(q.y);
+	Serial.print(",QZ:");
+	Serial.println(q.z);
+	return 0;
+}
+
+int emergency(double value)
+{
+	robotDirection = 0;
+	robotRotating = 0 ;
+	motor1Speed = 0 ;
+	motor2Speed = 0 ;
+	stop_mode = true;
+	motor1Wheel.stopMotor();
+	motor2Wheel.stopMotor();
+	distanceToCover = 0 ;
+	return 0 ;
 }
