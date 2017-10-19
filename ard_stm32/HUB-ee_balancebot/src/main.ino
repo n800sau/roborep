@@ -1,8 +1,12 @@
 #include <PID_v1.h>
+#include <Cmd.h>
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "HardWire.h"
+//#include "Wire.h"
 #include <HUBeeBMDWheel.h>
+//#include <libmaple/iwdg.h>
+
 
 HardWire HWire(2, I2C_FAST_MODE); // I2c1
 //HardWire HWire(2, I2C_DUTY_16_9); // I2c1
@@ -15,10 +19,10 @@ MPU6050 mpu;
 //MPU6050 mpu(0x69); // <-- use for AD0 high
 
 /* =========================================================================
-   NOTE: In addition to connection 3.3v, GND, SDA, and SCL, this sketch
-   depends on the MPU-6050's INT pin being connected to the Arduino's
-   external interrupt #0 pin. On the Arduino Uno and Mega 2560, this is
-   digital I/O pin 2.
+	 NOTE: In addition to connection 3.3v, GND, SDA, and SCL, this sketch
+	 depends on the MPU-6050's INT pin being connected to the Arduino's
+	 external interrupt #0 pin. On the Arduino Uno and Mega 2560, this is
+	 digital I/O pin 2.
  * ========================================================================= */
 
 // uncomment "OUTPUT_READABLE_QUATERNION" if you want to see the actual
@@ -155,83 +159,104 @@ int approachingSpeed = 50 ;
 int robotRotating = 0 ; // -1 counterclockwise, 0 stopped, 1 counterclockwise
 int robotDirection = 1 ; // -1 reverse, 0 stopped, 1 forward
 float robotSpeed = 0 ; // 0 - 255 
+float rof = 0; // roll offset
 
 // Communications
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
+void dprint(String str)
+{
+	Serial.print(str);
+}
+
+void dprintln(String str)
+{
+	Serial.println(str);
+}
+
+
 void Motor1quickQEI()
 {
-  //a fast(ish) QEI function
-  int state = 0;
-  state = digitalRead(motor1QeiAPin) << 1;
-  state = state|digitalRead(motor1QeiBPin);
-  switch (state)
-  {
-    case 0:
-      motor1QeiCounts--;
-      break;
-    case 1:
-      motor1QeiCounts++;
-      break;
-    case 2:
-      motor1QeiCounts++;
-      break;
-    case 3:
-      motor1QeiCounts--;
-      break;
-  }
-  motor1Counter = motor1QeiCounts * motor1CounterSign;
+	//a fast(ish) QEI function
+	int state = 0;
+	state = digitalRead(motor1QeiAPin) << 1;
+	state = state|digitalRead(motor1QeiBPin);
+	switch (state)
+	{
+	  case 0:
+	    motor1QeiCounts--;
+	    break;
+	  case 1:
+	    motor1QeiCounts++;
+	    break;
+	  case 2:
+	    motor1QeiCounts++;
+	    break;
+	  case 3:
+	    motor1QeiCounts--;
+	    break;
+	}
+	motor1Counter = motor1QeiCounts * motor1CounterSign;
 }
 
 void Motor2quickQEI()
 {
-  //a fast(ish) QEI function
-  int state = 0;
-  state = digitalRead(motor2QeiAPin) << 1;
-  state = state|digitalRead(motor2QeiBPin);
-  switch (state)
-  {
-    case 0:
-      motor2QeiCounts--;
-      break;
-    case 1:
-      motor2QeiCounts++;
-      break;
-    case 2:
-      motor2QeiCounts++;
-      break;
-    case 3:
-      motor2QeiCounts--;
-      break;
-  }
-  motor2Counter = motor2QeiCounts * motor2CounterSign;
+	//a fast(ish) QEI function
+	int state = 0;
+	state = digitalRead(motor2QeiAPin) << 1;
+	state = state|digitalRead(motor2QeiBPin);
+	switch (state)
+	{
+	  case 0:
+	    motor2QeiCounts--;
+	    break;
+	  case 1:
+	    motor2QeiCounts++;
+	    break;
+	  case 2:
+	    motor2QeiCounts++;
+	    break;
+	  case 3:
+	    motor2QeiCounts--;
+	    break;
+	}
+	motor2Counter = motor2QeiCounts * motor2CounterSign;
 }
 
 
 void setup()
 {
+//	iwdg_init(IWDG_PRE_256, 10);
 	// join I2C bus (I2Cdev library doesn't do this automatically)
 	HWire.begin();
+
+	pinMode(INTERRUPT_PIN, INPUT);
 
 	// initialize serial communication
 	// (115200 chosen because it is required for Teapot Demo output, but it's
 	// really up to you depending on your project)
 	Serial.begin(115200);
+	cmdInit(&Serial);
+	cmdAdd("set", set_param);
+	cmdAdd("pid", get_PID);
+	cmdAdd("ypr", get_YPR);
+	cmdAdd("q", get_Q);
+	cmdAdd("status", get_Status);
+	cmdAdd("stop", emergency);
 
 	// initialize device
-	Serial.println(F("Initializing I2C devices..."));
+	dprintln(F("Initializing I2C devices..."));
 	mpu.initialize();
-	pinMode(INTERRUPT_PIN, INPUT);
 
 	// verify connection
-	Serial.println(F("Testing device connections..."));
-	Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+	dprintln(F("Testing device connections..."));
+	dprintln(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
 	delay(3000);
 
 	// load and configure the DMP
-	Serial.println(F("Initializing DMP..."));
+	dprintln(F("Initializing DMP..."));
 	devStatus = mpu.dmpInitialize();
 
 	// supply your own gyro offsets here, scaled for min sensitivity
@@ -243,16 +268,16 @@ void setup()
 	// make sure it worked (returns 0 if so)
 	if (devStatus == 0) {
 		// turn on the DMP, now that it's ready
-		Serial.println(F("Enabling DMP..."));
+		dprintln(F("Enabling DMP..."));
 		mpu.setDMPEnabled(true);
 
 		// enable Arduino interrupt detection
-		Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
+		dprintln(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
 		attachInterrupt(INTERRUPT_PIN, dmpDataReady, RISING);
 		mpuIntStatus = mpu.getIntStatus();
 
 		// set our DMP Ready flag so the main loop() function knows it's okay to use it
-		Serial.println(F("DMP ready! Waiting for first interrupt..."));
+		dprintln(F("DMP ready! Waiting for first interrupt..."));
 		dmpReady = true;
 
 		// get expected DMP packet size for later comparison
@@ -262,9 +287,9 @@ void setup()
 		// 1 = initial memory load failed
 		// 2 = DMP configuration updates failed
 		// (if it's going to break, usually the code will be 1)
-		Serial.print(F("DMP Initialization failed (code "));
-		Serial.print(devStatus);
-		Serial.println(F(")"));
+		dprint(F("DMP Initialization failed (code "));
+		dprint(String(devStatus));
+		dprintln(F(")"));
 	}
 
 	// configure LED for output
@@ -309,9 +334,10 @@ void move(int speed)
 
 void loop()
 {
+//	iwdg_feed();
 	// if programming failed, don't try to do anything
 	if (!dmpReady) {
-		Serial.println("DMP is not ready");
+		dprintln("DMP is not ready");
 		delay(2000);
 		return;
 	}
@@ -334,7 +360,7 @@ void loop()
 		if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
 			// reset so we can continue cleanly
 			mpu.resetFIFO();
-			Serial.println(F("FIFO overflow!"));
+			dprintln(F("FIFO overflow!"));
 
 		// otherwise, check for DMP data ready interrupt (this should happen frequently)
 		} else if (mpuIntStatus & 0x02) {
@@ -351,38 +377,38 @@ void loop()
 			mpu.dmpGetQuaternion(&q, fifoBuffer);
 			mpu.dmpGetGravity(&gravity, &q);
 			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-//			Serial.print("Pitch:");
-//			Serial.println(abs(ypr[1]));
+//			dprint("Pitch:");
+//			dprintln(abs(ypr[1]));
 			if(abs(ypr[1]) > 0.3) {
 				stop_mode = true;
 			} else {
 				stop_mode = false;
-				input = ypr[1] * 180/M_PI + 180 - 2;
+				input = ypr[1] * 180/M_PI + 180 - rof;
 			}
 
 			#ifdef OUTPUT_READABLE_QUATERNION
 				// display quaternion values in easy matrix form: w x y z
 				mpu.dmpGetQuaternion(&q, fifoBuffer);
-				Serial.print("quat\t");
-				Serial.print(q.w);
-				Serial.print("\t");
-				Serial.print(q.x);
-				Serial.print("\t");
-				Serial.print(q.y);
-				Serial.print("\t");
-				Serial.println(q.z);
+				dprint("quat\t");
+				dprint(q.w);
+				dprint("\t");
+				dprint(q.x);
+				dprint("\t");
+				dprint(q.y);
+				dprint("\t");
+				dprintln(q.z);
 			#endif
 
 			#ifdef OUTPUT_READABLE_EULER
 				// display Euler angles in degrees
 				mpu.dmpGetQuaternion(&q, fifoBuffer);
 				mpu.dmpGetEuler(euler, &q);
-				Serial.print("euler\t");
-				Serial.print(euler[0] * 180/M_PI);
-				Serial.print("\t");
-				Serial.print(euler[1] * 180/M_PI);
-				Serial.print("\t");
-				Serial.println(euler[2] * 180/M_PI);
+				dprint("euler\t");
+				dprint(euler[0] * 180/M_PI);
+				dprint("\t");
+				dprint(euler[1] * 180/M_PI);
+				dprint("\t");
+				dprintln(euler[2] * 180/M_PI);
 			#endif
 
 			#ifdef OUTPUT_READABLE_YAWPITCHROLL
@@ -390,12 +416,12 @@ void loop()
 				mpu.dmpGetQuaternion(&q, fifoBuffer);
 				mpu.dmpGetGravity(&gravity, &q);
 				mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-				Serial.print("ypr\t");
-				Serial.print(ypr[0] * 180/M_PI);
-				Serial.print("\t");
-				Serial.print(ypr[1] * 180/M_PI);
-				Serial.print("\t");
-				Serial.println(ypr[2] * 180/M_PI);
+				dprint("ypr\t");
+				dprint(ypr[0] * 180/M_PI);
+				dprint("\t");
+				dprint(ypr[1] * 180/M_PI);
+				dprint("\t");
+				dprintln(ypr[2] * 180/M_PI);
 			#endif
 
 			#ifdef OUTPUT_READABLE_REALACCEL
@@ -404,12 +430,12 @@ void loop()
 				mpu.dmpGetAccel(&aa, fifoBuffer);
 				mpu.dmpGetGravity(&gravity, &q);
 				mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-				Serial.print("areal\t");
-				Serial.print(aaReal.x);
-				Serial.print("\t");
-				Serial.print(aaReal.y);
-				Serial.print("\t");
-				Serial.println(aaReal.z);
+				dprint("areal\t");
+				dprint(aaReal.x);
+				dprint("\t");
+				dprint(aaReal.y);
+				dprint("\t");
+				dprintln(aaReal.z);
 			#endif
 
 			#ifdef OUTPUT_READABLE_WORLDACCEL
@@ -420,12 +446,12 @@ void loop()
 				mpu.dmpGetGravity(&gravity, &q);
 				mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
 				mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-				Serial.print("aworld\t");
-				Serial.print(aaWorld.x);
-				Serial.print("\t");
-				Serial.print(aaWorld.y);
-				Serial.print("\t");
-				Serial.println(aaWorld.z);
+				dprint("aworld\t");
+				dprint(aaWorld.x);
+				dprint("\t");
+				dprint(aaWorld.y);
+				dprint("\t");
+				dprintln(aaWorld.z);
 			#endif
 		
 			#ifdef OUTPUT_TEAPOT
@@ -447,139 +473,112 @@ void loop()
 			digitalWrite(LED_PIN, blinkState);
 		}
 	}
-	do_serialEvent();
-	if (stringComplete) {
-		stringComplete = false ;
-		processMessage(inputString);
-		inputString = "" ;
-	}
+	cmdPoll();
 //	if(stop_mode) {
-//		Serial.println("STOP MODE");
+//		dprintln("STOP MODE");
 //	}
 }
 
-void do_serialEvent()
+void display_error(String msg)
 {
-	while (Serial.available())
-	{
-		// get the new byte:
-		char inChar = (char)Serial.read();
-		// add it to the inputString:
-		
-		// if the incoming character is a newline, set a flag
-		// so the main loop can do something about it:
-		if (inChar == '\n') {
-			stringComplete = true;
-		} else {
-			inputString += inChar;
-		}
+	Stream *s = cmdGetStream();
+	s->println("{\"error\": \"" + msg + "\"}");
+}
+
+void display_ok(String msg="ok")
+{
+	Stream *s = cmdGetStream();
+	s->println("{\"result\": \"" + msg + "\"}");
+}
+
+void set_param(int argc, char **argv)
+{
+	if(argc >= 3) {
+		String param = String(argv[1]);
+		float value = String(argv[2]).toFloat();
+		if(param == "Kp") { Kp = value; display_ok(); }
+		else if(param == "Kd") { Kd = value; display_ok(); }
+		else if(param == "Ki") { Ki = value; display_ok(); }
+		else if(param == "rof") { rof = value; display_ok(); }
+		else display_error("bad parameter name:" + param);
+	} else {
+		display_error("format");
 	}
 }
 
-String getValue(String data, char separator, int index)
-{
-	int found = 0;
-	int strIndex[] = {0, -1};
-	int maxIndex = data.length()-1;
 
-	for(int i=0; i<=maxIndex && found<=index; i++){
-		if(data.charAt(i)==separator || i==maxIndex){
-				found++;
-				strIndex[0] = strIndex[1]+1;
-				strIndex[1] = (i == maxIndex) ? i+1 : i;
-		}
-	}
-	return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
 
-void processMessage(String data)
-{
-	int index = 0 ;
-	String command = getValue(data, ',', index);
-	while (!command.equals("")){
-		processCommand(command);
-		index++;
-		command = getValue(data, ',', index);
-	}
-}
-
-void processCommand(String command)
-{
-	String instruction = getValue(command, ':', 0);
-	double value = getValue(command,':',1).toFloat();
-	int error = 1 ;
-	Serial.print("#Processing command: ");
-	Serial.print(instruction);
-	Serial.print(":");
-	Serial.println(value);
-	if (instruction == "stop") error = emergency(value);
-	else if (instruction == "kp") { Kp = value; error = 0; }
-	else if (instruction == "kd") { Kd = value; error = 0; }
-	else if (instruction == "ki") { Ki = value; error = 0; }
 //	else if (instruction == "vel") error = setSpeedSetPoint(value);
 //	else if (instruction == "dir") error = setMotorDirection(value);
 //	else if (instruction == "dis") error = setDistanceToCover(value);
 //	else if (instruction == "rot") error = setRotationToValue(value);
-	else if (instruction == "sta") error = getStatus(value);
-	else if (instruction == "ypr") error = getYPR(value);
-	else if (instruction == "q") error = getQ(value);
-	else if (instruction == "pid") error = getPID(value);
-	if (error) {
-		Serial.print("error: Error processing command ");
-		Serial.println(command);
+
+void get_Status(int argc, char **argv)
+{
+	if(argc >= 2) {
+		String type = String(argv[1]);
+		char _buffer[300];
+		if(type == "m1") {
+			sprintf(_buffer, "{\"speed\":%d,\"cnt\":%d,\"dir\":%d}", motor1Speed, motor1Counter, motor1Direction == motor1DirectionForward);
+			Serial.println(_buffer);
+		} else if(type == "m2") {
+			sprintf(_buffer, "{\"speed\":%d,\"cnt\":%d,\"dir\":%d}", motor2Speed, motor2Counter, motor2Direction == motor2DirectionForward);
+			Serial.println(_buffer);
+		} else if(type == "dist") {
+			char float_str3[16] = "";
+			dtostrf(distanceToDestination, 4, 2, float_str3);
+			sprintf(_buffer, "{\"distleft\":%.2f}", distanceToDestination);
+			Serial.println(_buffer);
+		} else display_error("bad status type:" + type);
+	} else {
+		display_error("format");
 	}
 }
 
-int getStatus(double value)
+void get_PID(int argc, char **argv)
 {
-	char _buffer[300];
-	char float_str3[16] = "";
-	sprintf(_buffer, "M1:1,speed:%d,counter:%d,direction:%d,M1:0", motor1Speed, motor1Counter, motor1Direction == motor1DirectionForward);
-	Serial.println(_buffer);
-	sprintf(_buffer, "M2:1,speed:%d,counter:%d,direction:%d,M2:0", motor2Speed, motor2Counter, motor2Direction == motor2DirectionForward);
-	Serial.println(_buffer);
-	dtostrf(distanceToDestination, 4, 2, float_str3);
-	sprintf(_buffer, "distanceleft:%s", float_str3);
-	Serial.println(_buffer);
-	return 0;
-}
-
-int getPID(double value)
-{
-	Serial.print("Kp:");
+	Serial.print("{\"Kp\":");
 	Serial.print(Kp);
-	Serial.print(",Kd:");
+	Serial.print(",\"Kd\":");
 	Serial.print(Kd);
-	Serial.print(",Ki:");
-	Serial.println(Ki);
-	return 0;
+	Serial.print(",\"Ki\":");
+	Serial.print(Ki);
+	Serial.print(",\"rof\":");
+	Serial.print(rof);
+	Serial.println("}");
 }
 
-int getYPR(double value)
+void get_YPR(int argc, char **argv)
 {
-	Serial.print("Y:");
-	Serial.print(ypr[0] * ((value) ? 180/M_PI : 1));
-	Serial.print(",P:");
-	Serial.print(ypr[1] * ((value) ? 180/M_PI : 1));
-	Serial.print(",R:");
-	Serial.println(ypr[2] * ((value) ? 180/M_PI : 1));
-	return 0;
+	bool deg = true;
+	if(argc > 1) {
+		if(String(argv[1]) == "rad") {
+			deg = false;
+		}
+	}
+	Serial.print("{\"Y\":");
+	Serial.print(ypr[0] * ((deg) ? 180/M_PI : 1));
+	Serial.print(",\"P\":");
+	Serial.print(ypr[1] * ((deg) ? 180/M_PI : 1));
+	Serial.print(",\"R\":");
+	Serial.print(ypr[2] * ((deg) ? 180/M_PI : 1));
+	Serial.println("}");
 }
 
-int getQ(double value)
+void get_Q(int argc, char **argv)
 {
-	Serial.print("QW:");
+	Serial.print("{\"QW\":");
 	Serial.print(q.w);
-	Serial.print(",QX:");
+	Serial.print(",\"QX\":");
 	Serial.print(q.x);
-	Serial.print(",QY:");
+	Serial.print(",\"QY\":");
 	Serial.print(q.y);
-	Serial.print(",QZ:");
-	Serial.println(q.z);
-	return 0;
+	Serial.print(",\"QZ\":");
+	Serial.print(q.z);
+	Serial.println("}");
 }
 
-int emergency(double value)
+void emergency(int argc, char **argv)
 {
 	robotDirection = 0;
 	robotRotating = 0 ;
@@ -589,5 +588,4 @@ int emergency(double value)
 	motor1Wheel.stopMotor();
 	motor2Wheel.stopMotor();
 	distanceToCover = 0 ;
-	return 0 ;
 }
