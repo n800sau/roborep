@@ -25,43 +25,6 @@ MPU6050 mpu;
 	 digital I/O pin 2.
  * ========================================================================= */
 
-// uncomment "OUTPUT_READABLE_QUATERNION" if you want to see the actual
-// quaternion components in a [w, x, y, z] format (not best for parsing
-// on a remote host such as Processing or something though)
-//#define OUTPUT_READABLE_QUATERNION
-
-// uncomment "OUTPUT_READABLE_EULER" if you want to see Euler angles
-// (in degrees) calculated from the quaternions coming from the FIFO.
-// Note that Euler angles suffer from gimbal lock (for more info, see
-// http://en.wikipedia.org/wiki/Gimbal_lock)
-//#define OUTPUT_READABLE_EULER
-
-// uncomment "OUTPUT_READABLE_YAWPITCHROLL" if you want to see the yaw/
-// pitch/roll angles (in degrees) calculated from the quaternions coming
-// from the FIFO. Note this also requires gravity vector calculations.
-// Also note that yaw/pitch/roll angles suffer from gimbal lock (for
-// more info, see: http://en.wikipedia.org/wiki/Gimbal_lock)
-//#define OUTPUT_READABLE_YAWPITCHROLL
-
-// uncomment "OUTPUT_READABLE_REALACCEL" if you want to see acceleration
-// components with gravity removed. This acceleration reference frame is
-// not compensated for orientation, so +X is always +X according to the
-// sensor, just without the effects of gravity. If you want acceleration
-// compensated for orientation, us OUTPUT_READABLE_WORLDACCEL instead.
-//#define OUTPUT_READABLE_REALACCEL
-
-// uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
-// components with gravity removed and adjusted for the world frame of
-// reference (yaw is relative to initial orientation, since no magnetometer
-// is present in this case). Could be quite handy in some cases.
-//#define OUTPUT_READABLE_WORLDACCEL
-
-// uncomment "OUTPUT_TEAPOT" if you want output that matches the
-// format used for the InvenSense teapot demo
-//#define OUTPUT_TEAPOT
-
-
-
 #define INTERRUPT_PIN PA15  // use pin 2 on Arduino Uno & most boards
 #define LED_PIN PC13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
@@ -237,14 +200,6 @@ void setup()
 	// (115200 chosen because it is required for Teapot Demo output, but it's
 	// really up to you depending on your project)
 	Serial.begin(115200);
-	cmdInit(&Serial);
-	cmdAdd("set", set_param);
-	cmdAdd("pid", get_PID);
-	cmdAdd("ypr", get_YPR);
-	cmdAdd("q", get_Q);
-	cmdAdd("status", get_Status);
-	cmdAdd("stop", emergency);
-
 	// initialize device
 	dprintln(F("Initializing I2C devices..."));
 	mpu.initialize();
@@ -311,6 +266,18 @@ void setup()
 	attachInterrupt(motor1QeiAPin, Motor1quickQEI, CHANGE);
 	attachInterrupt(motor2QeiAPin, Motor2quickQEI, CHANGE);
 
+	cmdInit(&Serial);
+	cmdAdd("vel", setSpeedSetPoint);
+	cmdAdd("dir", setMotorDirection);
+	cmdAdd("dis", setDistanceToCover);
+	cmdAdd("rot", setRotationToValue);
+	cmdAdd("set", set_param);
+	cmdAdd("pid", get_PID);
+	cmdAdd("ypr", get_YPR);
+	cmdAdd("q", get_Q);
+	cmdAdd("status", get_Status);
+	cmdAdd("stop", emergency);
+
 }
 
 bool stop_mode = true;
@@ -345,7 +312,10 @@ void loop()
 	// wait for MPU interrupt or extra packet(s) available
 	if(!mpuInterrupt && fifoCount < packetSize) {
 		//no mpu data - performing PID calculations and output to motors
+		coveredDistance = (abs((float)motor1Counter) + abs((float)motor2Counter)) / 2 ;
+		distanceToDestination = distanceToCover - coveredDistance ;
 		pid.Compute();
+//Serial.println("Move" + String(output));
 		move(output);
 	} else {
 
@@ -386,88 +356,6 @@ void loop()
 				input = ypr[1] * 180/M_PI + 180 - rof;
 			}
 
-			#ifdef OUTPUT_READABLE_QUATERNION
-				// display quaternion values in easy matrix form: w x y z
-				mpu.dmpGetQuaternion(&q, fifoBuffer);
-				dprint("quat\t");
-				dprint(q.w);
-				dprint("\t");
-				dprint(q.x);
-				dprint("\t");
-				dprint(q.y);
-				dprint("\t");
-				dprintln(q.z);
-			#endif
-
-			#ifdef OUTPUT_READABLE_EULER
-				// display Euler angles in degrees
-				mpu.dmpGetQuaternion(&q, fifoBuffer);
-				mpu.dmpGetEuler(euler, &q);
-				dprint("euler\t");
-				dprint(euler[0] * 180/M_PI);
-				dprint("\t");
-				dprint(euler[1] * 180/M_PI);
-				dprint("\t");
-				dprintln(euler[2] * 180/M_PI);
-			#endif
-
-			#ifdef OUTPUT_READABLE_YAWPITCHROLL
-				// display Euler angles in degrees
-				mpu.dmpGetQuaternion(&q, fifoBuffer);
-				mpu.dmpGetGravity(&gravity, &q);
-				mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-				dprint("ypr\t");
-				dprint(ypr[0] * 180/M_PI);
-				dprint("\t");
-				dprint(ypr[1] * 180/M_PI);
-				dprint("\t");
-				dprintln(ypr[2] * 180/M_PI);
-			#endif
-
-			#ifdef OUTPUT_READABLE_REALACCEL
-				// display real acceleration, adjusted to remove gravity
-				mpu.dmpGetQuaternion(&q, fifoBuffer);
-				mpu.dmpGetAccel(&aa, fifoBuffer);
-				mpu.dmpGetGravity(&gravity, &q);
-				mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-				dprint("areal\t");
-				dprint(aaReal.x);
-				dprint("\t");
-				dprint(aaReal.y);
-				dprint("\t");
-				dprintln(aaReal.z);
-			#endif
-
-			#ifdef OUTPUT_READABLE_WORLDACCEL
-				// display initial world-frame acceleration, adjusted to remove gravity
-				// and rotated based on known orientation from quaternion
-				mpu.dmpGetQuaternion(&q, fifoBuffer);
-				mpu.dmpGetAccel(&aa, fifoBuffer);
-				mpu.dmpGetGravity(&gravity, &q);
-				mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-				mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-				dprint("aworld\t");
-				dprint(aaWorld.x);
-				dprint("\t");
-				dprint(aaWorld.y);
-				dprint("\t");
-				dprintln(aaWorld.z);
-			#endif
-		
-			#ifdef OUTPUT_TEAPOT
-				// display quaternion values in InvenSense Teapot demo format:
-				teapotPacket[2] = fifoBuffer[0];
-				teapotPacket[3] = fifoBuffer[1];
-				teapotPacket[4] = fifoBuffer[4];
-				teapotPacket[5] = fifoBuffer[5];
-				teapotPacket[6] = fifoBuffer[8];
-				teapotPacket[7] = fifoBuffer[9];
-				teapotPacket[8] = fifoBuffer[12];
-				teapotPacket[9] = fifoBuffer[13];
-				Serial.write(teapotPacket, 14);
-				teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
-			#endif
-
 			// blink LED to indicate activity
 			blinkState = !blinkState;
 			digitalWrite(LED_PIN, blinkState);
@@ -482,13 +370,19 @@ void loop()
 void display_error(String msg)
 {
 	Stream *s = cmdGetStream();
-	s->println("{\"error\": \"" + msg + "\"}");
+	s->println("{\"error\":\"" + msg + "\"}");
 }
 
 void display_ok(String msg="ok")
 {
 	Stream *s = cmdGetStream();
-	s->println("{\"result\": \"" + msg + "\"}");
+	s->println("{\"result\":\"" + msg + "\"}");
+}
+
+void display_param(String name, float value)
+{
+	Stream *s = cmdGetStream();
+	s->println("{\"name\":\"" + name + "\",\"value\":" + value + "}");
 }
 
 void set_param(int argc, char **argv)
@@ -496,22 +390,15 @@ void set_param(int argc, char **argv)
 	if(argc >= 3) {
 		String param = String(argv[1]);
 		float value = String(argv[2]).toFloat();
-		if(param == "Kp") { Kp = value; display_ok(); }
-		else if(param == "Kd") { Kd = value; display_ok(); }
-		else if(param == "Ki") { Ki = value; display_ok(); }
-		else if(param == "rof") { rof = value; display_ok(); }
+		if(param == "Kp") { Kp = value; display_param("Kp", Kp); }
+		else if(param == "Kd") { Kd = value; display_param("Kd", Kd); }
+		else if(param == "Ki") { Ki = value; display_param("Ki", Ki); }
+		else if(param == "rof") { rof = value; display_param("rof", rof); }
 		else display_error("bad parameter name:" + param);
 	} else {
 		display_error("format");
 	}
 }
-
-
-
-//	else if (instruction == "vel") error = setSpeedSetPoint(value);
-//	else if (instruction == "dir") error = setMotorDirection(value);
-//	else if (instruction == "dis") error = setDistanceToCover(value);
-//	else if (instruction == "rot") error = setRotationToValue(value);
 
 void get_Status(int argc, char **argv)
 {
@@ -531,7 +418,7 @@ void get_Status(int argc, char **argv)
 			Serial.println(_buffer);
 		} else display_error("bad status type:" + type);
 	} else {
-		display_error("format");
+		display_error("not enough parameters");
 	}
 }
 
@@ -578,14 +465,88 @@ void get_Q(int argc, char **argv)
 	Serial.println("}");
 }
 
+void _setDistanceToCover(float value)
+{
+	robotRotating = 0 ;
+	motor1QeiCounts = 0 ;
+	motor2QeiCounts = 0 ;
+	motor1Counter = motor1QeiCounts * motor1CounterSign ;
+	motor2Counter = motor2QeiCounts * motor2CounterSign ;
+	distanceToCover = abs(value) ;
+}
+
+void setDistanceToCover(int argc, char **argv)
+{
+	if(argc >= 2) {
+		float value = String(argv[1]).toFloat();
+		_setDistanceToCover(value);
+		display_ok();
+	} else {
+		display_error("not enough parameters");
+	}
+}
+
+void setRotationToValue(int argc, char **argv)
+{
+	if(argc >= 2) {
+		float value = String(argv[1]).toFloat();
+		robotDirection = 0;
+		if (value > 0){
+			robotRotating = 1;
+			motor1Direction = motor1DirectionForward;
+			motor2Direction = motor2DirectionReverse;
+			_setDistanceToCover(abs(value));
+		} else if (value < 0) {
+			robotRotating = -1;
+			motor1Direction = motor1DirectionReverse;
+			motor2Direction = motor2DirectionForward;
+			_setDistanceToCover(abs(value));
+		} else if (value == 0){
+			robotRotating = 0;
+		}
+	} else {
+		display_error("not enough parameters");
+	}
+}
+
+void setSpeedSetPoint(int argc, char **argv)
+{
+	if(argc >= 2) {
+		float value = String(argv[1]).toFloat();
+		speedSetPoint = value;
+	} else {
+		display_error("not enough parameters");
+	}
+}
+
+void setMotorDirection(int argc, char **argv)
+{
+	if(argc >= 2) {
+		float value = String(argv[1]).toFloat();
+		if(value) {
+			robotDirection = 1 ;
+			motor1Direction = motor1DirectionForward ;
+			motor2Direction = motor2DirectionForward ;
+		} else {
+			robotDirection = -1 ;
+			motor1Direction = motor1DirectionReverse ;
+			motor2Direction = motor2DirectionReverse ;
+		}
+	} else {
+		display_error("not enough parameters");
+	}
+}
+
+
 void emergency(int argc, char **argv)
 {
 	robotDirection = 0;
-	robotRotating = 0 ;
-	motor1Speed = 0 ;
-	motor2Speed = 0 ;
+	robotRotating = 0;
+	motor1Speed = 0;
+	motor2Speed = 0;
 	stop_mode = true;
 	motor1Wheel.stopMotor();
 	motor2Wheel.stopMotor();
-	distanceToCover = 0 ;
+	distanceToCover = 0;
+	display_ok();
 }
