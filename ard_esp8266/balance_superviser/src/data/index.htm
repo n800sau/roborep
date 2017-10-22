@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>Balance Bot</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+		<script src="app.js"></script>
+	</head>
+	<body ng-cloak ng-app="app">
+		<div ng-controller="valform">
+			<div>
+				Kp({{current_values.Kp}}):<input ng-model="Kp"></input><button ng-click="set_param('Kp', Kp)">Set</button>
+			</div>
+			<div>
+				Kd({{current_values.Kd}}):<input ng-model="Kd"></input><button ng-click="set_param('Kd', Kd)">Set</button>
+			</div>
+			<div>
+				Ki({{current_values.Ki}}):<input ng-model="Ki"></input><button ng-click="set_param('Ki', Ki)">Set</button>
+			</div>
+			<div>
+				Roll Offset({{current_values.rof}}):<input ng-model="rof"></input><button ng-click="set_param('rof', rof)">Set</button>
+			</div>
+		</div>
+	</body>
+</html>
