@@ -20,6 +20,18 @@
 			<div>
 				Roll Offset({{current_values.rof}}):<input ng-model="rof"></input><button ng-click="set_param('rof', rof)">Set</button>
 			</div>
+			<div>
+				<button ng-click="initpwr()">Charge</button>
+			</div>
+			<div>
+				{{status}}
+			</div>
+			<div>
+				{{ypr.P}}
+			</div>
+			<div>
+				{{error_msg}}
+			</div>
 		</div>
 	</body>
 </html>

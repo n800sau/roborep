@@ -1,7 +1,7 @@
 var app = angular.module("app", []);
 
-app.controller("valform", ['$scope', '$http', '$interval', '$timeout', '$element',
-		function($scope, $http, $interval, $timeout, $element) {
+app.controller("valform", ['$scope', '$http', '$interval', '$timeout', '$element', '$interval',
+		function($scope, $http, $interval, $timeout, $element, $interval) {
 
 	$http.get('current_values').then(function(response) {
 		$scope.current_values = response.data;
@@ -17,7 +17,31 @@ app.controller("valform", ['$scope', '$http', '$interval', '$timeout', '$element
 		}).then(function(response) {
 			$scope.current_values[name] = response.data.value;
 		}).catch(function(response) {
+			$scope.error_msg = response.error;
 		});
 	}
+
+	$scope.initpwr = function() {
+		$http.get('initpwr',{
+		}).then(function(response) {
+		}).catch(function(response) {
+			$scope.error_msg = response.error;
+		});
+	}
+
+	$interval(function() {
+		$http.get('status',{
+		}).then(function(response) {
+			$scope.status = response.data;
+		}).catch(function(response) {
+			$scope.error_msg = response.error;
+		});
+		$http.get('ypr',{
+		}).then(function(response) {
+			$scope.ypr = response.ypr;
+		}).catch(function(response) {
+			$scope.error_msg = response.error;
+		});
+	}, 5000);
 
 }]);

@@ -171,13 +171,14 @@ String request_stm32(String cmdline)
 	print2nc("sent:" + cmdline + "\n");
 //	STM32_PORT.flush();
 	STM32_PORT.readStringUntil('{');
-	return "{" + STM32_PORT.readStringUntil('\n');
+	String rs = STM32_PORT.readStringUntil('\n');
+	return (rs == "") ? "{\"error\": \"no reply\"}" : ("{" + rs);
 }
 
 void handleCurrentValues()
 {
 	String output = request_stm32("pid");
-	print2nc("stm32 current values:[" + output + "]\n");
+	print2nc("stm32 current PID values:[" + output + "]\n");
 	server.send(200, "text/json", output);
 }
 
@@ -187,6 +188,28 @@ void handleSetParam()
 	String name = server.arg("name");
 	String value = server.arg("value");
 	String output = request_stm32("set " + name + " " + value);
+	server.send(200, "text/json", output);
+}
+
+void handleStatus()
+{
+	String output = request_stm32("status");
+	print2nc("stm32 status:[" + output + "]\n");
+	server.send(200, "text/json", output);
+}
+
+void handleYPR()
+{
+	String type = server.arg("type");
+	String output = request_stm32("ypr "+ type);
+	print2nc("stm32 ypr:[" + output + "]\n");
+	server.send(200, "text/json", output);
+}
+
+void handleInitPwr()
+{
+	String output = request_stm32("initpwr");
+	print2nc("stm32 initpwr:[" + output + "]\n");
 	server.send(200, "text/json", output);
 }
 
@@ -268,6 +291,9 @@ void setup(void)
 
 	server.on("/current_values", HTTP_GET, handleCurrentValues);
 	server.on("/set_param", HTTP_GET, handleSetParam);
+	server.on("/status", HTTP_GET, handleStatus);
+	server.on("/ypr", HTTP_GET, handleYPR);
+	server.on("/initpwr", HTTP_GET, handleInitPwr);
 
 	//called when the url is not defined here
 	//use it to load content from SPIFFS
