@@ -7,6 +7,13 @@
 #include <HUBeeBMDWheel.h>
 //#include <libmaple/iwdg.h>
 
+// wheel dimension
+const int WL_CountPerRev = 128;
+const int WL_Diameter = 0.06;
+const int WL_Width = 0.02;
+
+
+#define STOP_MODE_PITCH 0.1
 
 HardWire HWire(2, I2C_FAST_MODE); // I2c1
 //HardWire HWire(2, I2C_DUTY_16_9); // I2c1
@@ -74,17 +81,11 @@ PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 HUBeeBMDWheel motor1Wheel;
 HUBeeBMDWheel motor2Wheel;
 
-int motor1DirectionForward = 1;
-int motor2DirectionForward = 0;
-int motor1DirectionReverse = 0;
-int motor2DirectionReverse = 1;
+const int motor1CounterSign = -1;
+const int motor2CounterSign = +1;
 
-int motor1CounterSign = -1;
-int motor2CounterSign = +1;
-
-
-int motor1Speed = 0, motor2Speed = 0;
-const int minAbsSpeed = 50;
+int motor1Power = 0, motor2Power = 0;
+const int minAbsPower = 50;
 
 int motor1QeiAPin = PB13; // purple
 int motor1QeiBPin = PB12; // gray
@@ -101,15 +102,14 @@ const int motor2_IN2_Pin = PB4; // yellow
 const int motor2_PWM_Pin = PB6;  // green
 const int motor2_StandBy_Pin = PB7; // blue
 
+// raw counter
 volatile int motor1QeiCounts = 0, motor2QeiCounts = 0;
+// counter with sign
 volatile int motor1Counter = 0, motor2Counter = 0;
-
-int motor1Direction = motor1DirectionForward;
-int motor2Direction = motor2DirectionForward;
 
 // command setup
 
-int speedSetPoint = 0;
+int powerSetPoint = 0;
 float distanceToCover = 0 ;
 float coveredDistance = 0 ;
 float distanceToDestination = 0 ;
@@ -117,11 +117,11 @@ int forwardAcceleration = 20 ; // acceleration
 int forwardDeceleration = 10 ;
 int reverseDeceleration = 10 ;
 int reverseAcceleration = 10 ;
-int approachingSpeed = 50 ;
+int approachingPower = 50 ;
 
-int robotRotating = 0 ; // -1 counterclockwise, 0 stopped, 1 counterclockwise
+int robotTurning = 0 ; // -1 counterclockwise, 0 stopped, 1 counterclockwise
 int robotDirection = 1 ; // -1 reverse, 0 stopped, 1 forward
-float robotSpeed = 0 ; // 0 - 255 
+float robotPower = 0 ; // 0 - 255 
 float rof = 0; // roll offset
 
 // Communications
@@ -267,7 +267,7 @@ void setup()
 	attachInterrupt(motor2QeiAPin, Motor2quickQEI, CHANGE);
 
 	cmdInit(&Serial);
-	cmdAdd("vel", setSpeedSetPoint);
+	cmdAdd("vel", setPowerSetPoint);
 	cmdAdd("dir", setMotorDirection);
 	cmdAdd("dis", setDistanceToCover);
 	cmdAdd("rot", setRotationToValue);
@@ -277,25 +277,20 @@ void setup()
 	cmdAdd("q", get_Q);
 	cmdAdd("status", get_Status);
 	cmdAdd("stop", emergency);
+	cmdAdd("initpwr", initpwr);
 
 }
 
 bool stop_mode = true;
 
-void move(int speed)
+void move()
 {
 	if(stop_mode) {
 		motor1Wheel.stopMotor();
 		motor2Wheel.stopMotor();
 	} else {
-		int direction = (speed < 0) ? -1 : 1;
-		speed = abs(speed);
-		speed = max(speed, minAbsSpeed);
-		speed = min(speed, 255);
-		motor1Wheel.setDirectionMode(direction);
-		motor2Wheel.setDirectionMode(-direction);
-		motor1Wheel.setMotorPower(direction * speed);
-		motor2Wheel.setMotorPower(-direction * speed);
+		motor1Wheel.setMotorPower(motor1Power);
+		motor2Wheel.setMotorPower(-motor2Power);
 	}
 }
 
@@ -316,7 +311,8 @@ void loop()
 		distanceToDestination = distanceToCover - coveredDistance ;
 		pid.Compute();
 //Serial.println("Move" + String(output));
-		move(output);
+		motor1Power = motor2Power = output;
+		move();
 	} else {
 
 		// reset interrupt flag and get INT_STATUS byte
@@ -349,7 +345,7 @@ void loop()
 			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 //			dprint("Pitch:");
 //			dprintln(abs(ypr[1]));
-			if(abs(ypr[1]) > 0.3) {
+			if(abs(ypr[1]) > STOP_MODE_PITCH) {
 				stop_mode = true;
 			} else {
 				stop_mode = false;
@@ -402,24 +398,13 @@ void set_param(int argc, char **argv)
 
 void get_Status(int argc, char **argv)
 {
-	if(argc >= 2) {
-		String type = String(argv[1]);
-		char _buffer[300];
-		if(type == "m1") {
-			sprintf(_buffer, "{\"speed\":%d,\"cnt\":%d,\"dir\":%d}", motor1Speed, motor1Counter, motor1Direction == motor1DirectionForward);
-			Serial.println(_buffer);
-		} else if(type == "m2") {
-			sprintf(_buffer, "{\"speed\":%d,\"cnt\":%d,\"dir\":%d}", motor2Speed, motor2Counter, motor2Direction == motor2DirectionForward);
-			Serial.println(_buffer);
-		} else if(type == "dist") {
-			char float_str3[16] = "";
-			dtostrf(distanceToDestination, 4, 2, float_str3);
-			sprintf(_buffer, "{\"distleft\":%.2f}", distanceToDestination);
-			Serial.println(_buffer);
-		} else display_error("bad status type:" + type);
-	} else {
-		display_error("not enough parameters");
-	}
+	char float_str3[16];
+	dtostrf(distanceToDestination, 4, 2, float_str3);
+	String reply = String("{\"m1\":") +
+		"{\"power\":" + String(motor1Power) + ",\"cnt\":" + String(motor1Counter) + "},\"m2\":" +
+		"{\"power\":" + String(motor2Power) + ",\"cnt\":" + String(motor2Counter) + "},\"distleft\":" + 
+		"{\"distleft\":" + String(distanceToDestination) + "}}";
+	Serial.println(reply);
 }
 
 void get_PID(int argc, char **argv)
@@ -467,11 +452,11 @@ void get_Q(int argc, char **argv)
 
 void _setDistanceToCover(float value)
 {
-	robotRotating = 0 ;
-	motor1QeiCounts = 0 ;
-	motor2QeiCounts = 0 ;
-	motor1Counter = motor1QeiCounts * motor1CounterSign ;
-	motor2Counter = motor2QeiCounts * motor2CounterSign ;
+	robotTurning = 0 ;
+	motor1QeiCounts = 0;
+	motor2QeiCounts = 0;
+	motor1Counter = 0;
+	motor2Counter = 0;
 	distanceToCover = abs(value) ;
 }
 
@@ -492,28 +477,24 @@ void setRotationToValue(int argc, char **argv)
 		float value = String(argv[1]).toFloat();
 		robotDirection = 0;
 		if (value > 0){
-			robotRotating = 1;
-			motor1Direction = motor1DirectionForward;
-			motor2Direction = motor2DirectionReverse;
+			robotTurning = 1;
 			_setDistanceToCover(abs(value));
 		} else if (value < 0) {
-			robotRotating = -1;
-			motor1Direction = motor1DirectionReverse;
-			motor2Direction = motor2DirectionForward;
+			robotTurning = -1;
 			_setDistanceToCover(abs(value));
 		} else if (value == 0){
-			robotRotating = 0;
+			robotTurning = 0;
 		}
 	} else {
 		display_error("not enough parameters");
 	}
 }
 
-void setSpeedSetPoint(int argc, char **argv)
+void setPowerSetPoint(int argc, char **argv)
 {
 	if(argc >= 2) {
 		float value = String(argv[1]).toFloat();
-		speedSetPoint = value;
+		powerSetPoint = value;
 	} else {
 		display_error("not enough parameters");
 	}
@@ -525,12 +506,8 @@ void setMotorDirection(int argc, char **argv)
 		float value = String(argv[1]).toFloat();
 		if(value) {
 			robotDirection = 1 ;
-			motor1Direction = motor1DirectionForward ;
-			motor2Direction = motor2DirectionForward ;
 		} else {
 			robotDirection = -1 ;
-			motor1Direction = motor1DirectionReverse ;
-			motor2Direction = motor2DirectionReverse ;
 		}
 	} else {
 		display_error("not enough parameters");
@@ -541,12 +518,21 @@ void setMotorDirection(int argc, char **argv)
 void emergency(int argc, char **argv)
 {
 	robotDirection = 0;
-	robotRotating = 0;
-	motor1Speed = 0;
-	motor2Speed = 0;
+	robotTurning = 0;
+	motor1Power = 0;
+	motor2Power = 0;
 	stop_mode = true;
 	motor1Wheel.stopMotor();
 	motor2Wheel.stopMotor();
 	distanceToCover = 0;
+	display_ok();
+}
+
+void initpwr(int argc, char **argv)
+{
+	stop_mode = false;
+	motor1Power = motor2Power = (ypr[1] < 0) ? -255 : 255;
+	move();
+	delay(200);
 	display_ok();
 }
