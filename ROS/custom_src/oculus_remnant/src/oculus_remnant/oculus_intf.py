@@ -47,6 +47,8 @@ class SerReader:
 					self.reply_mode = True
 				elif line.startswith(common.SERVO_STATE_MARKER):
 					self.final_replylist.append(line[len(common.SERVO_STATE_MARKER):])
+		else:
+			time.sleep(0.01)
 
 class OculusIntf:
 

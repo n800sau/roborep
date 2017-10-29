@@ -15,10 +15,10 @@ from make_hogs import _process_image, find_orig_file, process_image, car_mask
 if __name__ == '__main__':
 
 
-	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-03-25')
+	IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-11-25')
 	DST_PATH = os.path.expanduser('output/images/predict')
 
-	mfname = 'models/knc.pkl'
+	mfname = 'models/inside_empty.svc'
 	model = joblib.load(mfname)
 
 # sort real data

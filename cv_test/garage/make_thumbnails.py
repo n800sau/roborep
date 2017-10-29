@@ -2,8 +2,9 @@
 
 import os, sys, imutils, glob, cv2, shutil
 
-SUBDIR = '2016-03-23'
-SRC_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
+SUBDIR = '2016-09-24'
+#SRC_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
+SRC_PATH = os.path.expanduser('~/work/garage')
 DST_PATH = os.path.expanduser('output/images/thumbs')
 
 def process(subdir):

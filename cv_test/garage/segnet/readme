@@ -1,0 +1,8 @@
+make_json.py to make initial json for sloth
+run_sloth.sh to annotate
+mk_mask.py to make masks images from json of sloth
+make_txts.py to make text image lists for caffe
+train.sh to train
+test_py.sh to process untrained images
+process_found.sh - to find area and separate images to directories
+process_in-betwean.sh - to move some images on borders of change from car to nocar to in-between directory

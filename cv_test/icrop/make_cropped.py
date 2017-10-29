@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os, cv2, json
 
 BASEPATH = 'data'
@@ -5,6 +7,7 @@ DRAWERS = os.path.join(BASEPATH, 'drawers')
 IMAGES = os.path.join(BASEPATH, 'images')
 OUTPUT = os.path.join(BASEPATH, 'cropped')
 
+# unknown coef
 coef = 1920 / 200.
 for root, dirs, fnames in os.walk(DRAWERS, followlinks=True):
 	for fname in fnames:

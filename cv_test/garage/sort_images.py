@@ -13,7 +13,7 @@ import mahotas
 from make_hogs import process_image, car_mask
 from misc import fname2dt, fname2dt_exc
 
-IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-03-23')
+IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage/2016-11-23')
 #IMG_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony/2014-10_01')
 
 time_mark = int(time.time())

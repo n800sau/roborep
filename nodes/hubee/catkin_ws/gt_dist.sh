@@ -1,2 +1,2 @@
-rostopic echo -n1 /fchassis/state | grep -E 'heading'
-rostopic echo -n1 /fchassis/sonar | grep -E '^range'
+rostopic echo -n1 /ow/state | grep -E 'heading'
+rostopic echo -n1 /ow/sonar | grep -E '^range'

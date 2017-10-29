@@ -150,6 +150,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
    bin/oculus_base_node.py
+   bin/oculus_key_teleop.py
    script/oculus_cmdint.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
@@ -171,28 +172,27 @@ catkin_install_python(PROGRAMS
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
    launch/oculus_remnant.launch
+   launch/display.launch
+   launch/description.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
-#install(FILES
-#   lib/oculus_remnant/__init__.py
-#   lib/oculus_remnant/base_controller.py
-#   lib/oculus_remnant/oculus_intf.py
-#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/oculus_remnant
-#)
+install(FILES
+	urdf/oculus_robo.xacro
+	urdf/asus_camera.urdf.xacro
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
+)
 
-#install(FILES
-#   lib/oculus_remnant/lib_py/__init__.py
-#   lib/oculus_remnant/lib_py/forklift.py
-#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/oculus_remnant/lib_py
-#)
+install(FILES
+	meshes/asus_camera_simple.dae
+	meshes/asus_camera_simple.stl
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/meshes
+)
 
-#install(FILES
-#   lib/oculus_remnant/swig/__init__.py
-#   lib/oculus_remnant/swig/libcommon_py.py
-#   lib/oculus_remnant/swig/_libcommon_py.so
-#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/oculus_remnant/swig
-#)
+install(FILES
+	urdf.rviz
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 #############
 ## Testing ##

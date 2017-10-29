@@ -25,7 +25,7 @@ predictor = dlib.shape_predictor(args["shape_predictor"])
 fname = args["image"]
 # load the input image, resize it, and convert it to grayscale
 image = cv2.imread(fname)
-image = imutils.resize(image, width=500)
+#image = imutils.resize(image, width=500)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # detect faces in the grayscale image
@@ -45,6 +45,13 @@ for (i, rect) in enumerate(rects):
 	# [i.e., (x, y, w, h)], then draw the face bounding box
 	(x, y, w, h) = face_utils.rect_to_bb(rect)
 	cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+	im = image[y-10:y+h+20, x-10:x+w+20]
+
+	found_fname = os.path.join(OUTPUT, os.path.basename(fname) + '_faces', '{:04d}.jpg'.format(i))
+	if not os.path.exists(os.path.dirname(found_fname)):
+		os.makedirs(os.path.dirname(found_fname))
+	cv2.imwrite(found_fname, im)
 
 	# show the face number
 	cv2.putText(image, "Face #{}".format(i + 1), (x - 10, y - 10),

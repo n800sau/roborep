@@ -1,0 +1,13 @@
+Arduino    USBASP
+
+5V ———– 2
+GND ——– 10
+13 ———— 7
+12  ———-  9 (MISO)
+11 ———-   1 (MOSI)
+10 ———    5 (RESET)
+
+connect J2 on USBASP
+
+avrdude -C /etc/avrdude.conf -c avrisp -P /dev/ttyUSB0 -b 19200 -p m8 -v -U flash:w:usbasp.atmega8.2011-05-28.hex
+

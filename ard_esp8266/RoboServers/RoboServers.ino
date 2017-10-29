@@ -5,8 +5,10 @@
 #include <ESP8266WiFi.h>
 #include <Ticker.h>
 
-const char* ssid = "Slow Internet Connection";
-const char* password = "1,tpGfhjkz2";
+#include "config.h"
+
+const char* ssid	 = SSID;
+const char* password = PASSWORD;
 
 static Ticker camticker;
 

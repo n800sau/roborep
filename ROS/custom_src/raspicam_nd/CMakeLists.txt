@@ -36,3 +36,10 @@ target_link_libraries(
 if(catkin_EXPORTED_LIBRARIES)
 	add_dependencies(raspicam_nd ${catkin_EXPORTED_LIBRARIES})
 endif()
+
+install(TARGETS ${PROJECT_NAME}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+install(FILES raspicam_nd.xml
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+ )
