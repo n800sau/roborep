@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>Balance Bot</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+		<script src="app.js"></script>
+	</head>
+	<body ng-cloak ng-app="app">
+		<div ng-controller="valform">
+			<div>
+				Kp({{current_values.Kp}}):<input ng-model="Kp"></input><button ng-click="set_param('Kp', Kp)">Set</button>
+			</div>
+			<div>
+				Kd({{current_values.Kd}}):<input ng-model="Kd"></input><button ng-click="set_param('Kd', Kd)">Set</button>
+			</div>
+			<div>
+				Ki({{current_values.Ki}}):<input ng-model="Ki"></input><button ng-click="set_param('Ki', Ki)">Set</button>
+			</div>
+			<div>
+				Vel:<input ng-model="vel"></input><button ng-click="set_param('vel', vel)">Set</button>
+			</div>
+			<div>
+				<input ng-model="m1vel"></input>:<input ng-model="m2vel"></input><button ng-click="set_param('m1vel', m1vel);set_param('m2vel', m2vel)">Set</button>
+			</div>
+			<div>
+				<button ng-click="stop()">Stop</button>
+			</div>
+			<div>
+				{{status}}
+			</div>
+			<div>
+				{{ypr.P}}
+			</div>
+			<div>
+				{{error_msg}}
+			</div>
+		</div>
+	</body>
+</html>
