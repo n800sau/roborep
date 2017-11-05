@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>rpi3_top</name>
+  <name>ros2bwh</name>
   <version>0.0.0</version>
-  <description>The rpi3_top package</description>
+  <description>The ros2bwh package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/rpi3_top</url> -->
+  <!-- <url type="website">http://wiki.ros.org/ros2bwh</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->

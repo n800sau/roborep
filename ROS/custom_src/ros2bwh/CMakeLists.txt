@@ -64,11 +64,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   std_msgs
-   geometry_msgs
-)
+#generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   geometry_msgs
+#)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -147,7 +147,7 @@ include_directories(
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 catkin_install_python(PROGRAMS
-   bin/top_sensors.py
+   bin/ros2bwh.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -175,8 +175,28 @@ catkin_install_python(PROGRAMS
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
    launch/ros2bwh.launch
+   launch/display.launch
+   launch/description.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
+
+install(FILES
+	urdf/bwh_robo.xacro
+	urdf/asus_camera.urdf.xacro
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
+)
+
+install(FILES
+	meshes/asus_camera_simple.dae
+	meshes/asus_camera_simple.stl
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/meshes
+)
+
+install(FILES
+	urdf.rviz
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
 
 #############
 ## Testing ##
