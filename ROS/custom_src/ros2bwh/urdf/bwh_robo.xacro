@@ -69,7 +69,7 @@
 		<xacro:default_inertial mass="0.1"/>
 	</link>
 
-	<xacro:macro name="wheel" params="prefix reflect">
+	<xacro:macro name="wheel" params="prefix default">
 
 		<link name="${prefix}_fwd_wheel">
 			<visual>
@@ -93,6 +93,24 @@
 
 	<xacro:wheel prefix="right" reflect="1" />
 	<xacro:wheel prefix="left" reflect="-1" />
+
+	<link name="back_wheel_attach">
+		<visual>
+			<geometry>
+				<box size="0.02 0.025 0.02"/>
+			</geometry>
+			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<material name="gray">
+			</material>
+		</visual>
+	</link>
+
+	<joint name="base_to_back_attach" type="fixed">
+		<parent link="base_link"/>
+		<child link="back_wheel_attach"/>
+		<origin xyz="${rear_wheel_x_offset} 0 -0.02" rpy="0 0 0"/>
+	</joint>
+
 
     <xacro:asus_camera_model name="camera" parent="base_link">
       <origin xyz="${xtion_x_position} ${xtion_y_position}  ${xtion_z_position}" rpy="${xtion_roll_position} ${xtion_pitch_position} ${xtion_yaw_position}"/>
