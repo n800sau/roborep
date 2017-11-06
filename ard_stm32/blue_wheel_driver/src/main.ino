@@ -2,35 +2,34 @@
 #include <Cmd.h>
 #include <EventFuse.h>
 
-// wheel dimension
-const float WL_CountPerRev = 341.2;
-const float WL_Diameter = 0.065;
-const float WL_Width = 0.028;
-const float WL_Step = WL_Diameter * PI / WL_CountPerRev;
+const int m1pwm = PB9;
+const int m1_in3 = PB12;
+const int m1_in4 = PB13;
 
-const int m1pwm = PB8;
-const int in1 = PB15;
-const int in2 = PB14;
+const int m2pwm = PB8;
+const int m2_in1 = PB15;
+const int m2_in2 = PB14;
 
-const int m2pwm = PB9;
-const int in3 = PB12;
-const int in4 = PB13;
 
 #define LED_BUILDING PC13
 
-const int motor1QeiAPin	 = PB3; //external interrupt 1 (UNO) or 0 (Leonardo)
-const int motor1QeiBPin	 = PB4;
-const int motor2QeiAPin = PA15; //external interrupt 0 (UNO) or 1 (Leonardo)
-const int motor2QeiBPin = PA12;
+const int motor1QeiAPin = PA15;
+const int motor1QeiBPin = PA12;
+
+const int motor2QeiAPin	 = PB3;
+const int motor2QeiBPin	 = PB4;
 
 
 const int minPwr = 128;
 const int maxPwr = 255;
 volatile int motor1Counts = 0, motor2Counts = 0;
-volatile int oldmotor1Counts = 0, oldMmotor2Counts = 0;
+volatile int oldMotor1Counts = 0, oldMotor2Counts = 0;
 // micros per encoder step
 volatile unsigned long int motor1ElapsedTime = 0, motor2ElapsedTime = 0;
 volatile unsigned long int motor1OldElapsedTime = 0, motor2OldElapsedTime = 0;
+
+bool cur_m1_fwd = true;
+bool cur_m2_fwd = true;
 
 int motor1Power = 0;
 int motor2Power = 0;
@@ -66,7 +65,6 @@ void Motor1quickQEI()
 	//a fast(ish) QEI function
 	int state = 0;
 	unsigned long int microTime;
-	oldmotor1Counts = motor1Counts;
 	state = digitalRead(motor1QeiAPin) << 1;
 	state = state|digitalRead(motor1QeiBPin);
 	switch (state)
@@ -84,6 +82,8 @@ void Motor1quickQEI()
 	microTime = micros();
 	motor1ElapsedTime = microTime-motor1OldElapsedTime;
 	motor1OldElapsedTime = microTime;
+	cur_m1_fwd = oldMotor1Counts - motor1Counts;
+	oldMotor1Counts = motor1Counts;
 }
 
 void Motor2quickQEI()
@@ -107,20 +107,20 @@ void Motor2quickQEI()
 	microTime = micros();
 	motor2ElapsedTime = microTime-motor2OldElapsedTime;
 	motor2OldElapsedTime = microTime;
+	cur_m2_fwd = oldMotor1Counts - motor1Counts;
+	oldMotor2Counts = motor2Counts;
 }
-
-
 
 void setup() {
 	Serial.begin(115200);
 	// Set up the built-in LED pin as an output:
 	pinMode(LED_BUILDING, OUTPUT);
 	pinMode(m1pwm, OUTPUT);
-	pinMode(in1, OUTPUT);
-	pinMode(in2, OUTPUT);
+	pinMode(m2_in1, OUTPUT);
+	pinMode(m2_in2, OUTPUT);
 	pinMode(m2pwm, OUTPUT);
-	pinMode(in3, OUTPUT);
-	pinMode(in4, OUTPUT);
+	pinMode(m1_in3, OUTPUT);
+	pinMode(m1_in4, OUTPUT);
 	pinMode(motor1QeiAPin, INPUT_PULLUP);
 	pinMode(motor2QeiAPin, INPUT_PULLUP);
 	pinMode(motor1QeiBPin, INPUT_PULLUP);
@@ -151,6 +151,8 @@ void setup() {
 
 	EventFuse::newFuse(20000, INF_REPEAT, OutputEvent );
 	EventFuse::newFuse(5000, INF_REPEAT, LedEvent );
+
+	Serial.println("READY");
 }
 
 // pwr: -255 .. 255
@@ -169,11 +171,11 @@ void move_motor(int pin1, int pin2, int pin_pwm, int pwr, bool fwd)
 void move()
 {
 	if(stop_mode) {
-		move_motor(in1, in2, m1pwm, 0, true);
-		move_motor(in3, in4, m2pwm, 0, true);
+		move_motor(m2_in1, m2_in2, m1pwm, 0, true);
+		move_motor(m1_in3, m1_in4, m2pwm, 0, true);
 	} else {
-		move_motor(in1, in2, m1pwm, motor1Power, m1_fwd);
-		move_motor(in3, in4, m2pwm, motor2Power, m2_fwd);
+		move_motor(m2_in1, m2_in2, m1pwm, motor1Power, m1_fwd);
+		move_motor(m1_in3, m1_in4, m2pwm, motor2Power, m2_fwd);
 	}
 }
 
@@ -228,8 +230,8 @@ void loop()
 		m1_vel = fabs(m1req_vel);
 		m2_vel = fabs(m2req_vel);
 
-		m1_curvel = motor1ElapsedTime > 0 ? 1000000. / motor1ElapsedTime * WL_Step : 0;
-		m2_curvel = motor2ElapsedTime > 0 ? 1000000. / motor2ElapsedTime * WL_Step : 0;
+		m1_curvel = motor1ElapsedTime > 0 ? ((cur_m1_fwd ? 1000000. : -1000000.) / motor1ElapsedTime) : 0;
+		m2_curvel = motor2ElapsedTime > 0 ? ((cur_m2_fwd ? 1000000. : -1000000.) / motor2ElapsedTime) : 0;
 
 		if(m1_vel == 0) {
 			st_changed = motor1Power != 0;
@@ -295,9 +297,9 @@ void set_param(int argc, char **argv)
 void get_Status(int argc, char **argv)
 {
 	String reply = String("{\"m1\":") +
-		"{\"pwr\":" + String(motor1Power) + ",\"cnt\":" + String(motor1Counts) +
+		"{\"pwr\":" + String(motor1Power) + ",\"cnt\":" + String(motor1Counts, 3) +
 			",\"v\":" + String(m1_curvel, 8) + ",\"vp\":" + m1req_vel + "},\"m2\":" +
-		"{\"pwr\":" + String(motor2Power) + ",\"cnt\":" + String(motor2Counts) +
+		"{\"pwr\":" + String(motor2Power) + ",\"cnt\":" + String(motor2Counts, 3) +
 			",\"v\":" + String(m2_curvel, 8) + ",\"vp\":" + m2req_vel +  "}}";
 	Serial.println(reply);
 }
