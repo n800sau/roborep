@@ -1,9 +1,9 @@
 <launch>
 
-	<param name="robot_description" textfile="$(find orange_on_wheels)/orange_on_wheels.urdf" />
-	<param name="use_gui" value="false"/>
-	<arg name="map_file" default="$(find orange_on_wheels)/maps/mymap.yaml"/>
 
+	<arg name="model" default="$(find ros2bwh)/urdf/bwh_robo.xacro" />
+	<param name="robot_description" command="$(find xacro)/xacro --inorder '$(arg model)'" />
+	<param name="use_gui" value="false"/>
 
 	<node name="master_sync_acer" pkg="master_sync_fkie" type="master_sync" respawn="true">
 	</node>
@@ -17,9 +17,65 @@
 	</node>
 -->
 
+	<arg name="namespace" value="opcplus" />
 
-	<include file="topcam_server.launch">
-	</include>
+	<group ns="$(arg namespace)">
+
+		<arg name="rgb_topic"               default="/$(arg namespace)/camera/rgb/image_rect_color" />
+		<arg name="depth_topic"             default="/$(arg namespace)/camera/depth_registered/image_raw" />
+		<arg name="camera_info_topic"       default="/$(arg namespace)/camera/rgb/camera_info" />
+
+		<param name="~wheel_separation" value="0.21"/>
+		<param name="~ticks_per_meter" value="1672"/>
+		<param name="~max_motor_speed" value="1672"/>
+
+		<include file="$(find ros2bwh)/launch/description.launch">
+		</include>
+
+		<node name="chassis" pkg="rosserial_python" type="serial_node.py" respawn="true">
+			<param name="port" value="/dev/ttyS1"/>
+			<param name="baud" value="57600"/>
+		</node>
+
+		<node name="chassis_odometry" pkg="diff_drive" type="diff_drive_odometry">
+		</node>
+
+		<node name="chassis_controller" pkg="diff_drive" type="diff_drive_controller">
+		</node>
+
+<!--
+		<node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan">
+			<remap from="image" to="camera/depth/image_raw"/>
+		</node>
+
+		<include file="$(find openni2_launch)/launch/openni2.launch">
+			<arg name="depth_registration"              value="true"/>
+			<arg name="rgb_processing"                  value="true"/>
+			<arg name="ir_processing"                   value="false"/>
+			<arg name="depth_processing"                value="true"/>
+			<arg name="depth_registered_processing"     value="true"/>
+			<arg name="disparity_processing"            value="false"/>
+			<arg name="disparity_registered_processing" value="false"/>
+			<arg name="camera" default="camera" />
+		</include>
+
+		<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
+			<arg name="rgb_topic"               value="/$(arg namespace)/camera/rgb/image_rect_color" />
+			<arg name="depth_topic"             value="/$(arg namespace)/camera/depth_registered/image_raw" />
+			<arg name="camera_info_topic"       value="/$(arg namespace)/camera/rgb/camera_info" />
+			<arg name="frame_id" value="base_link"/>\
+			<arg name="visual_odometry" value="true"/>\
+			<arg name="rviz" value="false"/>\
+			<arg name="rtabmapviz" value="false"/>\
+			<arg name="localization" value="true"/>\
+		</include>
+-->
+<!--
+		<include file="topcam_server.launch">
+		</include>
+-->
+
+	</group>
 
 
 </launch>
