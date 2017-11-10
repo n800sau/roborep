@@ -1,7 +1,6 @@
 #include <PID_v1.h>
 #include <ros.h>
-#include <std_msgs/Int32.h>
-#include <std_msgs/Int64.h>
+#include <std_msgs/Int16.h>
 #include <std_srvs/Empty.h>
 
 const int left_pwm = PB8;
@@ -24,8 +23,8 @@ const int rightQeiBPin = PA12;
 
 const int minPwr = 128;
 const int maxPwr = 255;
-volatile int64_t leftCounts = 0, rightCounts = 0;
-volatile int64_t oldLeftCounts = 0, oldRightCounts = 0;
+volatile int16_t leftCounts = 0, rightCounts = 0;
+volatile int16_t oldLeftCounts = 0, oldRightCounts = 0;
 // micros per encoder step
 volatile unsigned long int leftElapsedTime = 0, rightElapsedTime = 0;
 volatile unsigned long int leftOldElapsedTime = 0, rightOldElapsedTime = 0;
@@ -83,7 +82,7 @@ void move()
 	}
 }
 
-void on_lwheel_rate(const std_msgs::Int32 &msg)
+void on_lwheel_rate(const std_msgs::Int16 &msg)
 {
 	if(msg.data != 0) {
 		left_fwd = msg.data >= 0;
@@ -98,7 +97,7 @@ void on_lwheel_rate(const std_msgs::Int32 &msg)
 	nh.loginfo((String("left_rate:") + String(left_rate) + "," + String((left_fwd) ? "forward" : "back")).c_str());
 }
 
-void on_rwheel_rate(const std_msgs::Int32 &msg)
+void on_rwheel_rate(const std_msgs::Int16 &msg)
 {
 	if(msg.data != 0) {
 		right_fwd = msg.data >= 0;
@@ -119,13 +118,13 @@ void stop_cb(const std_srvs::Empty::Request& request, std_srvs::Empty::Response&
 	nh.loginfo("stop mode set");
 }
 
-ros::Subscriber<std_msgs::Int32> sub_lw_rate("lwheel_desired_rate", &on_lwheel_rate);
-ros::Subscriber<std_msgs::Int32> sub_rw_rate("rwheel_desired_rate", &on_rwheel_rate);
+ros::Subscriber<std_msgs::Int16> sub_lw_rate("lwheel_desired_rate", &on_lwheel_rate);
+ros::Subscriber<std_msgs::Int16> sub_rw_rate("rwheel_desired_rate", &on_rwheel_rate);
 ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> service_stop("stop", &stop_cb);
 
-std_msgs::Int64 l_ticks;
+std_msgs::Int16 l_ticks;
 ros::Publisher l_ticks_pub("lwheel_ticks", &l_ticks); 
-std_msgs::Int64 r_ticks;
+std_msgs::Int16 r_ticks;
 ros::Publisher r_ticks_pub("rwheel_ticks", &r_ticks); 
 
 void leftQuickQEI()
