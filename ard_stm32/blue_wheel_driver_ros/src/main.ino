@@ -21,7 +21,8 @@ const int rightQeiAPin = PA15;
 const int rightQeiBPin = PA12;
 
 
-const int minPwr = 128;
+//const int minPwr = 128;
+const int minPwr = 0;
 const int maxPwr = 255;
 volatile int16_t leftCounts = 0, rightCounts = 0;
 volatile int16_t oldLeftCounts = 0, oldRightCounts = 0;
@@ -84,9 +85,9 @@ void move()
 
 void on_lwheel_rate(const std_msgs::Int16 &msg)
 {
+	left_fwd = msg.data >= 0;
+	left_rate = msg.data;
 	if(msg.data != 0) {
-		left_fwd = msg.data >= 0;
-		left_rate = msg.data;
 		stop_mode = false;
 		if(leftPower == 0) {
 			// set initial power
@@ -99,9 +100,9 @@ void on_lwheel_rate(const std_msgs::Int16 &msg)
 
 void on_rwheel_rate(const std_msgs::Int16 &msg)
 {
+	right_fwd = msg.data >= 0;
+	right_rate = msg.data;
 	if(msg.data != 0) {
-		right_fwd = msg.data >= 0;
-		right_rate = msg.data;
 		stop_mode = false;
 		if(rightPower == 0) {
 			// set initial power
