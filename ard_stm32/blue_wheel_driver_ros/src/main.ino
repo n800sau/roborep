@@ -33,8 +33,8 @@ volatile unsigned long int leftOldElapsedTime = 0, rightOldElapsedTime = 0;
 bool cur_left_fwd = true;
 bool cur_right_fwd = true;
 
-int leftPower = 0;
-int rightPower = 0;
+int leftPower = 0, oldLeftPower = 0;
+int rightPower = 0, oldRightPower = 0;
 
 bool stop_mode = true;
 
@@ -72,28 +72,63 @@ void move_motor(int pin1, int pin2, int pin_pwm, int pwr, bool fwd)
 	analogWrite(pin_pwm, pwr);
 }
 
+std_msgs::Int16 l_ticks;
+ros::Publisher l_ticks_pub("lwheel_ticks", &l_ticks); 
+std_msgs::Int16 r_ticks;
+ros::Publisher r_ticks_pub("rwheel_ticks", &r_ticks); 
+
+std_msgs::Int16 l_pwr;
+ros::Publisher l_pwr_pub("lwheel_pwr", &l_pwr); 
+std_msgs::Int16 r_pwr;
+ros::Publisher r_pwr_pub("rwheel_pwr", &r_pwr); 
+
+
 void move()
 {
+	int l_p, r_p;
+	bool l_f, r_f;
 	if(stop_mode) {
-		move_motor(left_in1, left_in2, left_pwm, 0, true);
-		move_motor(right_in3, right_in4, right_pwm, 0, true);
+		l_p = r_p = 0;
+		l_f = r_f = true;
 	} else {
-		move_motor(left_in1, left_in2, left_pwm, leftPower, left_fwd);
-		move_motor(right_in3, right_in4, right_pwm, rightPower, right_fwd);
+		if(leftPower == 0) {
+			nh.loginfo(String("leftPower zeroed").c_str());
+		}
+		if(rightPower == 0) {
+			nh.loginfo(String("rightPower zeroed").c_str());
+		}
+		l_p = leftPower;
+		r_p = rightPower;
+		l_f = left_fwd;
+		r_f = right_fwd;
+	}
+	move_motor(left_in1, left_in2, left_pwm, l_p, l_f);
+	move_motor(right_in3, right_in4, right_pwm, r_p, r_f);
+	l_p = l_f ? l_p : -l_p;
+	r_p = r_f ? r_p : -r_p;
+	if(oldLeftPower != l_p) {
+		l_pwr.data = l_p;
+		l_pwr_pub.publish(&l_pwr);
+		oldLeftPower = l_p;
+	}
+	if(oldRightPower != r_p) {
+		r_pwr.data = r_p;
+		r_pwr_pub.publish(&r_pwr);
+		oldRightPower = r_p;
 	}
 }
 
 void on_lwheel_rate(const std_msgs::Int16 &msg)
 {
 	left_fwd = msg.data >= 0;
-	left_rate = msg.data;
+	left_rate = abs(msg.data);
 	if(msg.data != 0) {
 		stop_mode = false;
-		if(leftPower == 0) {
-			// set initial power
-			leftPower = left_fwd ? maxPwr : -maxPwr;
-			move();
-		}
+//		if(leftPower == 0) {
+//			// set initial power
+//			leftPower = maxPwr;
+//			move();
+//		}
 	}
 	nh.loginfo((String("left_rate:") + String(left_rate) + "," + String((left_fwd) ? "forward" : "back")).c_str());
 }
@@ -101,14 +136,14 @@ void on_lwheel_rate(const std_msgs::Int16 &msg)
 void on_rwheel_rate(const std_msgs::Int16 &msg)
 {
 	right_fwd = msg.data >= 0;
-	right_rate = msg.data;
+	right_rate = abs(msg.data);
 	if(msg.data != 0) {
 		stop_mode = false;
-		if(rightPower == 0) {
-			// set initial power
-			rightPower = right_fwd ? maxPwr : -maxPwr;
-			move();
-		}
+//		if(rightPower == 0) {
+//			// set initial power
+//			rightPower = maxPwr;
+//			move();
+//		}
 	}
 	nh.loginfo((String("right_rate:") + String(right_rate) + "," + String((right_fwd) ? "forward" : "back")).c_str());
 }
@@ -122,11 +157,6 @@ void stop_cb(const std_srvs::Empty::Request& request, std_srvs::Empty::Response&
 ros::Subscriber<std_msgs::Int16> sub_lw_rate("lwheel_desired_rate", &on_lwheel_rate);
 ros::Subscriber<std_msgs::Int16> sub_rw_rate("rwheel_desired_rate", &on_rwheel_rate);
 ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> service_stop("stop", &stop_cb);
-
-std_msgs::Int16 l_ticks;
-ros::Publisher l_ticks_pub("lwheel_ticks", &l_ticks); 
-std_msgs::Int16 r_ticks;
-ros::Publisher r_ticks_pub("rwheel_ticks", &r_ticks); 
 
 void leftQuickQEI()
 {
@@ -213,6 +243,8 @@ void setup()
 	nh.initNode();
 	nh.advertise(l_ticks_pub);
 	nh.advertise(r_ticks_pub);
+	nh.advertise(l_pwr_pub);
+	nh.advertise(r_pwr_pub);
 	nh.subscribe(sub_lw_rate);
 	nh.subscribe(sub_rw_rate);
 	nh.advertiseService(service_stop);
