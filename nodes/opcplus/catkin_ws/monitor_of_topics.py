@@ -20,7 +20,7 @@ class Monitor:
 
 	def data_cb(self, req, args):
 		pos = args[0]
-		self.csvdata[pos] = req.data
+		self.csvdata[pos] = (self.csvdata[pos] or 0) + req.data
 		self.csvcount[pos] += 1
 
 	def run(self):
