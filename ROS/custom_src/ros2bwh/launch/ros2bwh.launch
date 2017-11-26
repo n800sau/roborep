@@ -1,0 +1,7 @@
+<launch>
+	<arg name="namespace" value="bwh" />
+	<group ns="$(arg namespace)">
+		<node name="ros2bwh" pkg="ros2bwh" type="ros2bwh.py" output="screen">
+		</node>
+	</group>
+</launch>
