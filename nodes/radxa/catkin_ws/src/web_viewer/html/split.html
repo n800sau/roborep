@@ -6,8 +6,8 @@
 <script type="text/javascript" src="js/three.min.js"></script>
 <script type="text/javascript" src="js/easeljs.min.js"></script>
 <script type="text/javascript" src="js/eventemitter2.js"></script>
-<script type="text/javascript" src="js/roslib.min.js"></script>
-<script type="text/javascript" src="js/ros2d.min.js"></script>
+<script type="text/javascript" src="js/roslib.js"></script>
+<script type="text/javascript" src="js/ros2d.js"></script>
 <!-- 
 <script type="text/javascript" src="http://cdn.robotwebtools.org/ros3djs/current/ros3d.js"></script>
 -->
@@ -46,16 +46,28 @@ a[disabled], a[disabled]:hover {
 		var cmdVel = new ROSLIB.Topic({
 			ros : ros,
 			latch: true,
-			name : '/opcplus/cmd_vel',
-//			name : '/rpi3/cmd_vel',
+//			name : '/opcplus/cmd_vel',
+			name : '/rpi3/cmd_vel',
 			messageType : 'geometry_msgs/Twist'
 		});
 
 		var cmdVel_listener = new ROSLIB.Topic({
 			ros : ros,
-			name : '/opcplus/cmd_vel',
-//			name : '/rpi3/cmd_vel',
+//			name : '/opcplus/cmd_vel',
+			name : '/rpi3/cmd_vel',
 			messageType : 'geometry_msgs/Twist'
+		});
+
+		var LWheelPwr_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/opcplus/lwheel_pwr',
+			messageType : 'std_msgs/Int16'
+		});
+
+		var RWheelPwr_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/opcplus/rwheel_pwr',
+			messageType : 'std_msgs/Int16'
 		});
 
 // 1
@@ -77,8 +89,8 @@ a[disabled], a[disabled]:hover {
 		var ow_listener = new ROSLIB.Topic({
 			ros : ros,
 			throttle_rate: 1000,
-//			name : '/rpi3/camera/rgb/image_raw/compressed',
-			name : '/opcplus/camera/rgb/image_raw/compressed',
+			name : '/rpi3/camera/rgb/image_raw/compressed',
+//			name : '/opcplus/camera/rgb/image_raw/compressed',
 //			name : '/ot/camera/image_raw/compressed',
 //			messageType : 'sensor_msgs/Image'
 			messageType : 'sensor_msgs/CompressedImage'
@@ -91,7 +103,7 @@ a[disabled], a[disabled]:hover {
 //			name: '/rpi3/rtabmap/cloud_map',
 //			name: '/camera/depth_registered/hw_registered/image_rect_raw/compressed',
 //			name: '/rpi3/camera/depth/image_raw/compressed',
-			name: '/opcplus/camera/depth/image_raw/compressed',
+//			name: '/opcplus/camera/depth/image_raw/compressed',
 //			name : '/dn_object_detect/debug_view/compressed',
 			messageType : 'sensor_msgs/CompressedImage'
 //			messageType : 'sensor_msgs/PointCloud2'
@@ -118,15 +130,15 @@ a[disabled], a[disabled]:hover {
 		var pos_listener = new ROSLIB.Topic({
 			ros : ros,
 			throttle_rate: 100,
-			name : '/robot_pose',
+			name : '/rpi3/robot_pose',
 			messageType : 'geometry_msgs/Pose'
 		});
 
 		// Create the main viewer.
 		var viewer2d = new ROS2D.Viewer({
 			divID : 'map',
-			width : 100,
-			height : 100
+			width : 160,
+			height : 160
 		});
 
 		// Setup Kinect DepthCloud stream
@@ -164,14 +176,16 @@ a[disabled], a[disabled]:hover {
 		// Setup the map client.
 		var gridClient = new ROS2D.OccupancyGridClient({
 			ros : ros,
-//			topic : '/rpi3/map',
-			topic : '/opcplus/map',
+			topic : '/rpi3/map',
+//			topic : '/rpi3/projected_map',
+//			topic : '/opcplus/map',
 			rootObject : viewer2d.scene
 		});
 
 		// Scale the canvas to fit to the map
 		gridClient.on('change', function(){
 			viewer2d.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
+			viewer2d.shift(gridClient.currentGrid.pose.position.x, gridClient.currentGrid.pose.position.y);
 		});
 
 		var go_on = false;
@@ -211,6 +225,16 @@ a[disabled], a[disabled]:hover {
 			cnt.innerHTML = (Math.round(speed * 10) / 10.) + ':' + (Math.round(turn * 10) / 10.);
 		}
 
+		var on_LWheelPwr_msg = function(listener, message) {
+			var cnt = document.getElementById('l-wheel');
+			cnt.innerHTML = message.data;
+		}
+
+		var on_RWheelPwr_msg = function(listener, message) {
+			var cnt = document.getElementById('r-wheel');
+			cnt.innerHTML = message.data;
+		}
+
 		start = function() {
 			go_on = true;
 			document.getElementById('stop_btn').removeAttribute("disabled");
@@ -221,6 +245,8 @@ a[disabled], a[disabled]:hover {
 			subscribe(dn_listener, 'dn_');
 			pos_listener.subscribe(on_pos_msg.bind(this, pos_listener))
 			cmdVel_listener.subscribe(on_cmdVel_msg.bind(this, cmdVel))
+//			LWheelPwr_listener.subscribe(on_RWheelPwr_msg.bind(this))
+//			RWheelPwr_listener.subscribe(on_RWheelPwr_msg.bind(this))
 		}
 
 		stop = function() {
@@ -228,6 +254,8 @@ a[disabled], a[disabled]:hover {
 			document.getElementById('stop_btn').setAttribute("disabled", "disabled");
 			document.getElementById('start_btn').removeAttribute("disabled");
 			cmdVel_listener.unsubscribe()
+//			LWheelPwr_listener.unsubscribe()
+//			RWheelPwr_listener.unsubscribe()
 			pos_listener.unsubscribe();
 			op_listener.unsubscribe();
 			ow_listener.unsubscribe();
@@ -255,19 +283,23 @@ a[disabled], a[disabled]:hover {
 		}
 
 		move_back = function() {
-			cmdVel.publish(twist(speed-0.5));
+//			cmdVel.publish(twist(speed-0.5));
+			cmdVel.publish(twist(speed-0.1));
 		}
 
 		move_fwd = function() {
-			cmdVel.publish(twist(speed+0.5));
+//			cmdVel.publish(twist(speed+0.5));
+			cmdVel.publish(twist(speed+0.1));
 		}
 
 		turn_left = function() {
-			cmdVel.publish(twist(0, turn+1.5));
+//			cmdVel.publish(twist(0, turn+1.5));
+			cmdVel.publish(twist(0, turn+0.2));
 		}
 
 		turn_right = function() {
-			cmdVel.publish(twist(0, turn-1.5));
+//			cmdVel.publish(twist(0, turn-1.5));
+			cmdVel.publish(twist(0, turn-0.2));
 		}
 
 		var subscribe = function(listener, prefix) {
@@ -281,7 +313,11 @@ a[disabled], a[disabled]:hover {
 
 <body onload="on_load()">
 	<div id="position"></div>
-	<div id="cmdVel"></div>
+	<div>
+		<span id="cmdVel"></span>
+		<span id="l-wheel"></span>
+		<span id="r-wheel"></span>
+	</div>
 	<a href="javascript:location.reload()">&orarr;</a>
 	<a id="start_btn" href="javascript:start()" disabled="disabled">&vrtri;</a>
 	<a id="stop_btn" href="javascript:stop()">&squf;</a>
@@ -296,6 +332,12 @@ a[disabled], a[disabled]:hover {
 	<td><a href="javascript:turn_right();">&rarr;</a></td>
 	</tr>
 	</table>
+
+	<br>
+	<a href="frames.pdf" target="_blank">Frames</a>
+	</br>
+
+	<div id="map"></div>
 
 	<canvas id="op_Canvas" width="160" height="120" style="border:1px solid #000000;">
 	</canvas>
@@ -317,8 +359,9 @@ a[disabled], a[disabled]:hover {
 	<div id="sm_timestamp"></div>
 	<br/>
 
-	<div id="map"></div>
 	<div id="3Dviewer"></div>
+
+	<a href="frames.pdf" target="_blank"></a>
 
 </body>
 </html>
