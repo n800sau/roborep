@@ -8,12 +8,12 @@
 	<group ns="$(arg namespace)">
 
 		<arg name="marker_size" default="4.4" />
-		<arg name="max_new_marker_error" default="0.08" />
+		<arg name="max_new_marker_error" default="0.05" />
 		<arg name="max_track_error" default="0.2" />
 
 		<arg name="cam_image_topic" default="/$(arg namespace)/camera/depth_registered/points" />
-		<arg name="cam_info_topic" default="/$(arg namespace)/camera/rgb/camera_info" />
-		<arg name="output_frame" default="base_link" />
+		<arg name="cam_info_topic" default="/$(arg namespace)/camera/depth_registered/camera_info" />
+		<arg name="output_frame" default="/base_link" />
 
 		<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkers" respawn="false" output="screen">
 			<param name="marker_size"           type="double" value="$(arg marker_size)" />

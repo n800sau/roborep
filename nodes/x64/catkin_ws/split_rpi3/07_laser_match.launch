@@ -5,7 +5,7 @@
 	<group ns="$(arg namespace)">
 
 		<node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan">
-			<remap from="image" to="/$(arg namespace)/camera/depth/image_raw"/>
+			<remap from="image" to="/$(arg namespace)/camera/data_throttled_image_depth"/>
 		</node>
 
 		<node pkg="laser_scan_matcher" type="laser_scan_matcher_node" name="laser_scan_matcher_node" output="screen">

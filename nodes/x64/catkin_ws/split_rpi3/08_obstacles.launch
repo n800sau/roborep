@@ -7,6 +7,20 @@
 
 	<group ns="$(arg namespace)">
 
+<!--
+		<arg name="depth_topic"          default="/$(arg namespace)/camera/data_throttled_image_depth" />
+		<arg name="camera_info_topic"    default="/$(arg namespace)/camera/data_throttled_camera_info" />
+
+		<node pkg="nodelet" type="nodelet" name="points_xyz_planner" args="load rtabmap_ros/point_cloud_xyz camera_nodelet_manager">
+			<remap from="depth/image"            to="/$(arg depth_topic)"/>
+			<remap from="depth/camera_info"      to="$(arg camera_info_topic)"/>
+			<remap from="cloud"                  to="cloudXYZ" />
+			<param name="decimation" type="int" value="1"/>
+			<param name="max_depth" type="double" value="3.0"/>
+			<param name="voxel_size" type="double" value="0.02"/>
+		</node>
+-->
+
 		<node pkg="nodelet" type="nodelet" name="obstacles_detection" args="standalone rtabmap_ros/obstacles_detection">
 			<remap from="cloud" to="/$(arg namespace)/camera/depth_registered/points"/>
 			<param name="frame_id" type="string" value="base_link"/>

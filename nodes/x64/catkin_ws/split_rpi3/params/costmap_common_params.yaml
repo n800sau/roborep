@@ -1,9 +1,13 @@
+transform_tolerance: 8.0
 obstacle_range: 1.5
 raytrace_range: 2.0
 #footprint: [[x0, y0], [x1, y1], ... [xn, yn]]
-robot_radius: 0.3
+footprint: [ [0.2, 0.2], [-0.2, 0.2], [-0.2, -0.2], [0.2, -0.2] ]
+#robot_radius: 0.3
 inflation_radius: 0.45
+origin_x: -5.0
+origin_y: -5.0
 
 observation_sources: point_cloud_sensor
 
-point_cloud_sensor: {sensor_frame: camera_rgb_optical_frame, data_type: PointCloud, topic: /rpi3/camera/depth/points, marking: true, clearing: true}
+point_cloud_sensor: {sensor_frame: camera_rgb_optical_frame, data_type: PointCloud2, topic: /rpi3/camera/depth/points, marking: true, clearing: true}
