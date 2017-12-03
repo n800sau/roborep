@@ -1,0 +1,16 @@
+<launch>
+
+	<node name="master_sync_x64" pkg="master_sync_fkie" type="master_sync" respawn="true">
+	</node>
+
+<!--
+	<node name="master_discovery_x64" pkg="master_discovery_fkie" type="zeroconf" respawn="true">
+		<rosparam param="robot_hosts">[hubee.local, acer.local, radxa.local, rpi3.local]</rosparam>
+	</node>
+-->
+
+	<node name="master_discovery_x64" pkg="master_discovery_fkie" type="master_discovery" respawn="true">
+		<rosparam param="robot_hosts">[hubee.local, acer.local, radxa.local, rpi3.local]</rosparam>
+	</node>
+
+</launch>
