@@ -38,7 +38,7 @@ class OculusBaseNode():
 		self.myBaseController = BaseController(self.controller, self.name + "_base_controller")
 
 
-	def run():
+	def run(self):
 		# Start base controller
 		rospy.spin()
 

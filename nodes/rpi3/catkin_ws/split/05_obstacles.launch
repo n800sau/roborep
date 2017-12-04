@@ -1,0 +1,25 @@
+<launch>
+
+	<!-- Worker threads for the nodelet manager -->
+	<arg name="num_worker_threads" default="4" />
+
+	<arg name="namespace" value="rpi3" />
+
+	<group ns="$(arg namespace)">
+
+		<node pkg="nodelet" type="nodelet" name="obstacles_detection" args="standalone rtabmap_ros/obstacles_detection">
+			<remap from="cloud" to="/$(arg namespace)/camera/depth_registered/points"/>
+			<param name="frame_id" type="string" value="base_link"/>
+			<param name="map_frame_id" type="string" value="map"/>
+			<param name="wait_for_transform" type="bool" value="true"/>
+			<param name="Grid/MinClusterSize" type="int" value="20"/>
+			<param name="Grid/MaxObstacleHeight" type="double" value="0.0"/>
+		</node>
+
+
+	</group>
+
+</launch>
+
+
+
