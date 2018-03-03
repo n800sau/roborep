@@ -1,6 +1,7 @@
-DEV=/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+source vars.sh
 
-platformio run -t upload --upload-port $DEV &>upload.log
-#platformio run -t upload --upload-port $DEV
+#platformio run -t upload --upload-port $DEV &>upload.log
+platformio run -t upload --upload-port $DEV
+#platformio run &>upload.log
 echo $?
 
