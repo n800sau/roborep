@@ -77,8 +77,8 @@ bool IRMitsubishiAC::getPower() {
 
 // Set the temp. in deg C
 void IRMitsubishiAC::setTemp(uint8_t temp) {
-    temp = max(MITSUBISHI_AC_MIN_TEMP, temp);
-    temp = min(MITSUBISHI_AC_MAX_TEMP, temp);
+    temp = max<unsigned int>(MITSUBISHI_AC_MIN_TEMP, temp);
+    temp = min<unsigned int>(MITSUBISHI_AC_MAX_TEMP, temp);
     remote_state[7] = temp - MITSUBISHI_AC_MIN_TEMP;
 }
 
@@ -136,7 +136,7 @@ void IRMitsubishiAC::setMode(uint8_t mode) {
 
 // Set the requested vane operation mode of the a/c unit.
 void IRMitsubishiAC::setVane(uint8_t mode) {
-  mode = max(mode, B111);  // bounds check
+  mode = max<unsigned int>(mode, B111);  // bounds check
   mode |= B1000;
   mode <<= 3;
   remote_state[9] |= mode;

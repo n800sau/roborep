@@ -285,7 +285,7 @@ void IRsend::sendSony(unsigned long data, int nbits, unsigned int repeat) {
     // Footer
     // The Sony protocol requires us to wait 45ms from start of a code to the
     // start of the next one. A 10ms minimum gap is also required.
-    space(max(10000, 45000 - usecs.elapsed()));
+    space(max<unsigned int>(10000, 45000 - usecs.elapsed()));
   }
   // A space() is always performed last, so no need to turn off the LED.
 }
@@ -656,7 +656,7 @@ void IRsend::sendKelvinator(unsigned char data[]) {
 void IRsend::sendSherwood(unsigned long data, int nbits, unsigned int repeat) {
   // Sherwood remote codes appear to be NEC codes with a manditory repeat code.
   // i.e. repeat should be >= 1.
-  sendNEC(data, nbits, max(1, repeat));
+  sendNEC(data, nbits, max<unsigned int>(1, repeat));
 }
 
 void IRsend::sendMitsubishiAC(unsigned char data[]) {
