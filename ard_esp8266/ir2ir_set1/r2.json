@@ -4,6 +4,7 @@
 	"id" : 1,
 	"params" : {
 		"type": "sony",
-		"code" : "0x19A"
+		"code" : "0xA90",
+		"bits": 12
 	}
 }
