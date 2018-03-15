@@ -19,16 +19,16 @@ void loop() {
 		// read the oldest byte in the serial buffer:
 		int incomingByte = Serial.read();
 		if (incomingByte == 'W') {
-			pinMode(boot_pin, LOW);
-			pinMode(reset_pin, LOW);
-			delay(100);
-			pinMode(reset_pin, HIGH);
+			digitalWrite(boot_pin, LOW);
+			digitalWrite(reset_pin, LOW);
+			delay(300);
+			digitalWrite(reset_pin, HIGH);
 			Serial.println("W mode");
 		} else if (incomingByte == 'P') {
-			pinMode(boot_pin, HIGH);
-			pinMode(reset_pin, LOW);
-			delay(100);
-			pinMode(reset_pin, HIGH);
+			digitalWrite(boot_pin, HIGH);
+			digitalWrite(reset_pin, LOW);
+			delay(300);
+			digitalWrite(reset_pin, HIGH);
 			Serial.println("P mode");
 		} 
 	}

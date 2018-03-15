@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
 
 from serial import Serial
 
-execfile("vars.sh")
+execfile(os.path.join(os.path.dirname(__file__), "vars.sh"))
 
 s_port = DEV
 s_baud = 115200
@@ -19,6 +19,7 @@ for i in range(5):
 		ser.flush()
 
 		print ser.readline()
+#		print ser.readline()
 		break
 
 
