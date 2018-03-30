@@ -23,3 +23,15 @@ out in
 
 # if connected BB stops booting
 # 45 - 46    GPIO2_6 (70) - GPIO2_7 (71)
+
+BBB
+BB-SPIDEV1-00A0.dts
+
+1 - GRD  - P9.1
+2 - VCC  - P9.3
+3 - CE   - P9.27
+4 - CSN  - P9.28
+5 - SCK  - P9.31
+6 - MOSI - P9.30
+7 - MISO - P9.29
+8 - IRQ  - P8.4
