@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <Arduino.h> 
 #include "ADXL345.h"
 
-//#define SerialDebug
+#define SerialDebug
 
 ADXL345::ADXL345()
 {
@@ -115,6 +115,11 @@ int ADXL345::SetRange(int range, bool fullResolution)
 uint8_t ADXL345::EnsureConnected()
 {
 	uint8_t data = Read(0x00, 1)[0];
+
+#ifdef SerialDebug
+	Serial.print("Data: ");
+	Serial.println(data, HEX);
+#endif
 	
 	if(data == 0xE5)
 		IsConnected = true;

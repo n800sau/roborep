@@ -44,9 +44,9 @@ main:
 '	let b4 = 0x8A
 '	hi2cout CCS811_SW_RESET, (b1, b2, b3, b4)
 '	pause 200
-	hi2cin CCS811_HW_ID, (b0)
-	sertxd (cr,lf,"HW_ID:")
-	gosub printhex
+'	hi2cin CCS811_HW_ID, (b0)
+'	sertxd (cr,lf,"HW_ID:")
+'	gosub printhex
 
 	gosub is_ok
 
@@ -54,8 +54,9 @@ main:
 '		let b0 = 0
 '		hi2cout CCS811_BOOTLOADER_APP_START, (b0)
 '		pause 100
-'		let b0 = CCS811_DRIVE_MODE_1SEC
-'		hi2cout CCS811_MEAS_MODE, (b0)
+		let b0 = CCS811_DRIVE_MODE_1SEC
+		hi2cout CCS811_MEAS_MODE, (b0)
+		pause 100
 		gosub is_ok
 		if b2 <> 0 then
 			do while b2 <> 3
