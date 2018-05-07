@@ -3,6 +3,7 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <Ticker.h>
+#include <FS.h>
 
 #include "config.h"
 const char* ssid = SSID;
@@ -30,8 +31,32 @@ void flash_info()
 	}
 }
 
+void file_test()
+{
+	File helloFile = SPIFFS.open("/hello.txt", "r");
+	if (!helloFile)
+	{
+		Serial.println("Failed to open hello.txt.");
+	} else {
+		String content = helloFile.readString();
+		helloFile.close();
+		content.trim();
+		Serial.print("File content:");
+		Serial.println(content);
+	}
+}
+
 void setup() {
 	Serial.begin(115200);
+	flash_info();
+	Serial.print("\nFree heap:");
+	Serial.println(ESP.getFreeHeap());
+	// Initialize file system.
+//	SPIFFS.format();
+	if (!SPIFFS.begin())
+	{
+		Serial.println("Failed to mount file system");
+	}
 	Serial.println("Booting");
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(ssid, password);
@@ -72,7 +97,7 @@ void setup() {
 	Serial.print("IP address: ");
 	Serial.println(WiFi.localIP());
 	// flip the pin every 0.3s
-	flipper.attach(5, flash_info);
+	flipper.attach(5, file_test);
 }
 
 void loop() {

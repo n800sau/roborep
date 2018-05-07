@@ -9,5 +9,5 @@
 #/opt/arduino-1.6.6/arduino -v --verify --pref build.path=$tmp --pref sketchbook.path="${PWD}/.." --board esp8266com:esp8266:generic ${SKETCH}.ino &> build.log
 #/opt/arduino-1.6.5-r5/arduino -v --verify --pref build.path=$tmp --pref sketchbook.path="${PWD}/.." --board esp8266com:esp8266:generic ${SKETCH}.ino &> build.log
 
-platformio run &> build.log
+platformio run
 echo $?

@@ -1,1 +1,1 @@
-picaxe20m2 -t -s i2cscanner.bas
+picaxe20m2 -t i2cscanner.bas
