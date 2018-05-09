@@ -6,13 +6,13 @@
 
 #include <Arduino.h>
 
-//#define LED_BUILTIN 13
-
 void setup()
 {
   // initialize LED digital pin as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(115200);
+	delay(5000);
+	Serial.println("Start");
 }
 
 void loop()
