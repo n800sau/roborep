@@ -33,14 +33,20 @@ CCS811 ccs(CCS811_ADDR);
 
 AM2320 am2320;
 
-#define CCS_WAKE_PIN  PA11
-#define CCS_RESET_PIN  PA12
+#define CCS_WAKE_PIN  PB5
+#define CCS_INT_PIN  PB4
+#define CCS_RESET_PIN  PB3
 
 #define LED_PIN PC13
 
-#define BUTTON_PIN PB0
+#define INT_BUTTON_PIN PB0
 
-#define TFT_PIN PA15
+#define EXT_BUTTON1_PIN PA11
+#define EXT_BUTTON2_PIN PA12
+#define EXT_BUTTON3_PIN PA15
+#define EXT_BUTTON4_PIN PB9
+
+#define TFT_PIN PB8
 
 bool ccs_ready = true;
 
@@ -131,9 +137,30 @@ void printSensorError()
 	}
 }
 
-bool is_button_pressed()
+// bindex:
+// 0 - internal
+// 1-4 external
+bool is_button_pressed(int bindex)
 {
-	return !digitalRead(BUTTON_PIN);
+	bool rs = false;
+	switch(bindex) {
+		case 0:
+			rs = !digitalRead(INT_BUTTON_PIN);
+			break;
+		case 1:
+			rs = !digitalRead(EXT_BUTTON1_PIN);
+			break;
+		case 2:
+			rs = !digitalRead(EXT_BUTTON2_PIN);
+			break;
+		case 3:
+			rs = !digitalRead(EXT_BUTTON3_PIN);
+			break;
+		case 4:
+			rs = !digitalRead(EXT_BUTTON4_PIN);
+			break;
+	}
+	return rs;
 }
 
 void setup()
@@ -144,7 +171,11 @@ void setup()
 	Serial.begin(115200);
 	Serial.println("Started");
 
-	pinMode(BUTTON_PIN, INPUT_PULLUP);   // set WAKE pin as OUTPUT
+	pinMode(INT_BUTTON_PIN, INPUT_PULLUP);
+	pinMode(EXT_BUTTON1_PIN, INPUT_PULLUP);
+	pinMode(EXT_BUTTON2_PIN, INPUT_PULLUP);
+	pinMode(EXT_BUTTON3_PIN, INPUT_PULLUP);
+	pinMode(EXT_BUTTON4_PIN, INPUT_PULLUP);
 
 	pinMode(LED_PIN, OUTPUT);
 	led_on();
@@ -168,18 +199,20 @@ void setup()
 	tft.setRotation(1);
 
 	radio.begin();
-
+	radio.setChannel(0x4c);
+	radio.setPALevel(RF24_PA_HIGH);
+	radio.setDataRate(RF24_1MBPS);
+	radio.setAutoAck(true);
+	radio.setRetries(10, 20);
 	radio.setCRCLength(RF24_CRC_16);
 	radio.enableDynamicPayloads();
-	radio.setAutoAck(true);
-	radio.setPALevel(RF24_PA_HIGH);
 
 	radio.openWritingPipe(addresses[0]);
 	radio.openReadingPipe(1, addresses[1]);
 
-	radio.startListening();                                  // Now, continue listening
+//	radio.startListening();
+	radio.stopListening();
 	radio.printDetails();
-	radio.stopListening();                                    // First, stop listening so we can talk.
 	radio.powerDown();
 
 	ccs_ready = printCCSError(ccs.begin()) == CCS811Core::SENSOR_SUCCESS;
@@ -189,9 +222,9 @@ void setup()
 	{
 		Serial.println("EEPROM contains saved data.");
 		// load baseline if button is not pressed
-		if(1||is_button_pressed()) {
+		if(is_button_pressed(2)) {
 			//The recovered baseline is packed into a 16 bit word
-			unsigned int currentBaseLine = ((unsigned int)EEPROM.read(EE_OFFSET+2) << 8) | EEPROM.read(EE_OFFSET+3);
+			currentBaseLine = ((unsigned int)EEPROM.read(EE_OFFSET+2) << 8) | EEPROM.read(EE_OFFSET+3);
 			Serial.print("Saved baseline: 0x");
 			if (currentBaseLine < 0x100) Serial.print("0");
 			if (currentBaseLine < 0x10) Serial.print("0");
@@ -214,25 +247,26 @@ void setup()
 bool send_line(const char buf[])
 {
 	bool rs;
-	radio.writeBlocking(buf, strlen(buf), 1000);
-	rs = radio.txStandBy(1000);
+	radio.powerUp();
+//	rs = radio.writeBlocking(buf, strlen(buf)+1, 1000);
+	rs = radio.writeFast(buf, strlen(buf)+1);
+	// to be sure that transfer is successful before powerdown
+	rs = radio.txStandBy(1000, true);
 	if(rs){
 		Serial.print(F("Sent "));
 		Serial.println(buf);
 	} else {
 		Serial.println(F("Send failed"));
 	}
+	radio.powerDown();
 	return rs;
 }
 
 bool send_data()
 {
 	char buf[32];
-	radio.powerUp();
 	snprintf(buf, sizeof(buf), "%d,%d", co2, tvoc);
-	bool rs = send_line(buf);
-	radio.powerDown();
-	return rs;
+	return send_line(buf);
 }
 
 void collect_data()
@@ -279,9 +313,9 @@ void collect_data()
 		ccs_ts = t;
 		has_data = true;
 		// save baseline if button is pressed
-		if(is_button_pressed()) {
+		if(is_button_pressed(0)) {
 			//This gets the latest baseline from the sensor
-			unsigned int currentBaseLine = ccs.getBaseline();
+			currentBaseLine = ccs.getBaseline();
 			Serial.print("baseline for this sensor: 0x");
 			if (currentBaseLine < 0x100) Serial.print("0");
 			if (currentBaseLine < 0x10) Serial.print("0");
@@ -301,44 +335,45 @@ void collect_data()
 	digitalWrite(CCS_WAKE_PIN, HIGH);
 }
 
-bool tft_on = false;
-
 void turn_tft_on()
 {
-	tft_on = true;
+	digitalWrite(TFT_PIN, HIGH);
 }
 
 void turn_tft_off()
 {
-	tft_on = false;
+	digitalWrite(TFT_PIN, LOW);
 }
 
 void tft_show_data()
 {
-	if(tft_on) {
-		tft.setCursor(0, 30);
-		tft.setTextColor(ST7735_YELLOW);
-		tft.setTextSize(1);
-		tft.fillScreen(ST7735_BLACK);
-		tft.print("CO2: ");
-		tft.print(co2);
-		tft.println("ppm");
-		tft.print("TVOC: ");
-		tft.print(tvoc);
-		tft.println("ppb");
-		tft.print("CCS dt:");
-		tft.println(ccs_dt);
-		tft.print("D Temp:");
-		tft.println((int)d_temp);
-		tft.print("D Hum:");
-		tft.println(d_hum);
-		tft.print("D dt:");
-		tft.println(d_dt);
-		if(currentBaseLine) {
-			tft.print("saved baseline:");
-			tft.println(currentBaseLine);
-		}
+	tft.setCursor(0, 30);
+	tft.setTextColor(ST7735_YELLOW);
+	tft.setTextSize(1);
+	tft.fillScreen(ST7735_BLACK);
+	tft.print("CO2: ");
+	tft.print(co2);
+	tft.println("ppm");
+	tft.print("TVOC: ");
+	tft.print(tvoc);
+	tft.println("ppb");
+	tft.print("CCS dt:");
+	tft.println(ccs_dt);
+	tft.print("D Temp:");
+	tft.println((int)d_temp);
+	tft.print("D Hum:");
+	tft.println(d_hum);
+	tft.print("D dt:");
+	tft.println(d_dt);
+	if(currentBaseLine) {
+		tft.print("saved baseline:");
+		tft.println(currentBaseLine, HEX);
 	}
+	tft.print("buttons:");
+	for(int i=0; i<5; i++) {
+		tft.print(is_button_pressed(i) ? "1 " : "0 ");
+	}
+	tft.println();
 }
 
 void loop()
@@ -355,17 +390,17 @@ void loop()
 		}
 	}
 
-//	if(is_button_pressed()) {
-//		turn_tft_on();
-//	} else {
-//		turn_tft_off();
-//	}
+	if(is_button_pressed(1)) {
+		turn_tft_on();
+	} else {
+		turn_tft_off();
+	}
 	tft_show_data();
 
 	Serial.flush();
 	radio.powerDown();
 	led_off();
-	sleepAndWakeUp(STOP, &rt, 5);
+	sleepAndWakeUp(STOP, &rt, 2);
 	// recover frequency
 	switchToPLLwithHSE(RCC_PLLMUL_9);
 	led_on();
