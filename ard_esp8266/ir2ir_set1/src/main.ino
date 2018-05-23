@@ -53,8 +53,8 @@ const char *ir_type_names[IR_TYPE_COUNT] = {
 };
 
 const decode_type_t ir_types[IR_TYPE_COUNT] = {
-	SONY,
-	NEC
+	(decode_type_t) SONY,
+	(decode_type_t) NEC
 };
 
 const char* ssid     = SSID;
@@ -136,20 +136,26 @@ bool processCmd(JsonObject& root, bool check_only)
 				}
 			}
 		}
+		int bits = root["params"]["bits"];
 		if(rs) {
 			if(check_only) {
 				Serial.print("Type:");
 				Serial.println(ir_type_name);
 				Serial.print("Code: 0x");
 				Serial.println(ir_code, HEX);
+				if(bits > 0) {
+					Serial.print("Bits: ");
+					Serial.println(bits);
+				}
 			} else {
 				Serial.println("Executing");
 				switch(ir_type) {
 					case SONY:
-						irsend.sendSony(ir_code, 12);
+						irsend.sendSony(ir_code, (bits > 0) ? bits : 12);
+//						irsend.sendSony(ir_code, (bits > 0) ? bits : 12, 3);
 						break;
 					case NEC:
-						irsend.sendNEC(ir_code, 32);
+						irsend.sendNEC(ir_code, (bits > 0) ? bits : 32);
 						break;
 				}
 			}
@@ -376,8 +382,8 @@ void loop()
 			Serial.println("Unknown encoding");
 		}
 		dumpInfo(&results);           // Output the results
-		dumpRaw(&results);            // Output the results in RAW format
-		dumpCode(&results);           // Output the results as source code
+//		dumpRaw(&results);            // Output the results in RAW format
+//		dumpCode(&results);           // Output the results as source code
 		Serial.println("");           // Blank line between entries
 
 		irrecv.resume();              // Prepare for the next value

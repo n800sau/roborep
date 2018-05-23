@@ -30,6 +30,11 @@ void loop() {
 			delay(300);
 			digitalWrite(reset_pin, HIGH);
 			Serial.println("P mode");
+		} else if (incomingByte == 'R') {
+			digitalWrite(reset_pin, LOW);
+			delay(300);
+			digitalWrite(reset_pin, HIGH);
+			Serial.println("Reset");
 		} 
 	}
 }

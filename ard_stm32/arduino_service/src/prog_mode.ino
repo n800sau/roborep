@@ -1,5 +1,5 @@
 const int RESET_PIN = 8;
-const int PROGRAM_PIN = A5;
+const int PROGRAM_PIN = A1;
 
 // the setup routine runs once when you press reset:
 void setup() {
