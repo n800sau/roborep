@@ -14,6 +14,7 @@
 
 #include <AM2320.h>
 
+#define ADC_PIN    PA6
 
 #define TFT_CS     PA4
 #define TFT_RST    PA2
@@ -57,7 +58,7 @@ bool ccs_ready = true;
 RF24 radio(PA8, PB12);
 /**********************************************************/
 
-byte addresses[][5] = {{0xc2, 0xc2, 0xc2, 0xc2, 0xc2},{0xe7, 0xe7, 0xe7, 0xe7, 0xe7}};
+byte addresses[][5] = {{0xe7, 0xe7, 0xe7, 0xe7, 0xe7}, {0xc2, 0xc2, 0xc2, 0xc2, 0xc2}};
 
 void led_on()
 {
@@ -77,6 +78,8 @@ time_t ccs_ts, d_ts;
 // time difference
 int ccs_dt, d_dt;
 unsigned int currentBaseLine = 0;
+
+int volts = 0;
 
 void blink(int times=1)
 {
@@ -165,7 +168,7 @@ bool is_button_pressed(int bindex)
 
 void setup()
 {
-	adc_disable_all();
+//	adc_disable_all();
 	setGPIOModeToAllPins(GPIO_INPUT_ANALOG);
 
 	Serial.begin(115200);
@@ -192,6 +195,8 @@ void setup()
 	delay(500);
 	digitalWrite(CCS_RESET_PIN, HIGH);
 
+	pinMode(ADC_PIN, INPUT_ANALOG);   // set WAKE pin as OUTPUT
+
 	// Use this initializer if you're using a 1.8" TFT
 	tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
 	tft.setTextWrap(false); // Allow text to run off right edge
@@ -204,6 +209,7 @@ void setup()
 	radio.setDataRate(RF24_1MBPS);
 	radio.setAutoAck(true);
 	radio.setRetries(10, 20);
+//	radio.setPayloadSize(32);
 	radio.setCRCLength(RF24_CRC_16);
 	radio.enableDynamicPayloads();
 
@@ -249,7 +255,7 @@ bool send_line(const char buf[])
 	bool rs;
 	radio.powerUp();
 //	rs = radio.writeBlocking(buf, strlen(buf)+1, 1000);
-	rs = radio.writeFast(buf, strlen(buf)+1);
+	rs = radio.write(buf, strlen(buf)+1);
 	// to be sure that transfer is successful before powerdown
 	rs = radio.txStandBy(1000, true);
 	if(rs){
@@ -374,10 +380,18 @@ void tft_show_data()
 		tft.print(is_button_pressed(i) ? "1 " : "0 ");
 	}
 	tft.println();
+	tft.print("volts:");
+	tft.println(volts);
 }
+
+unsigned long button_pressed_ts = millis();
 
 void loop()
 {
+	volts = analogRead(ADC_PIN);
+	volts = map(volts, 0, 4096, 0, 3300);
+	Serial.print("Volts:");
+	Serial.println(volts);
 	if(ccs_ready) {
 		collect_data();
 	} else {
@@ -392,15 +406,18 @@ void loop()
 
 	if(is_button_pressed(1)) {
 		turn_tft_on();
+		button_pressed_ts = millis();
 	} else {
-		turn_tft_off();
+		if(millis() - button_pressed_ts > 5000) {
+			turn_tft_off();
+		}
 	}
 	tft_show_data();
 
 	Serial.flush();
 	radio.powerDown();
 	led_off();
-	sleepAndWakeUp(STOP, &rt, 2);
+	sleepAndWakeUp(STOP, &rt, 1);
 	// recover frequency
 	switchToPLLwithHSE(RCC_PLLMUL_9);
 	led_on();
