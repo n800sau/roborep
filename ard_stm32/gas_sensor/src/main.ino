@@ -3,6 +3,7 @@
 
 #include <STM32Sleep.h>
 #include <RTClock.h>
+#include <EventFuse.h>
 
 #include <Wire.h>
 #include <SparkFunCCS811.h>
@@ -13,6 +14,9 @@
 #include <EEPROM.h>
 
 #include <AM2320.h>
+
+#define SENSOR_ADDRESS {0x7d, 0x5a, 0x2e, 0x8b, 0x6f}
+#define DATABASE_ADDRESS {0x39, 0x02, 0x3e, 0x93, 0x99}
 
 #define ADC_PIN    PA6
 
@@ -58,7 +62,7 @@ bool ccs_ready = true;
 RF24 radio(PA8, PB12);
 /**********************************************************/
 
-byte addresses[][5] = {{0xe7, 0xe7, 0xe7, 0xe7, 0xe7}, {0xc2, 0xc2, 0xc2, 0xc2, 0xc2}};
+byte addresses[][5] = {SENSOR_ADDRESS, DATABASE_ADDRESS};
 
 void led_on()
 {
@@ -79,7 +83,7 @@ time_t ccs_ts, d_ts;
 int ccs_dt, d_dt;
 unsigned int currentBaseLine = 0;
 
-int volts = 0;
+//int volts = 0;
 
 void blink(int times=1)
 {
@@ -166,9 +170,23 @@ bool is_button_pressed(int bindex)
 	return rs;
 }
 
+void FuseEvent(FuseID fuse, int& userData)
+{
+	if(ccs_ready) {
+		collect_data();
+	} else {
+		Serial.println("Not ready");
+	}
+	if(has_data) {
+		if(send_data()) {
+			has_data = false;
+		}
+	}
+}
+
 void setup()
 {
-//	adc_disable_all();
+	adc_disable_all();
 	setGPIOModeToAllPins(GPIO_INPUT_ANALOG);
 
 	Serial.begin(115200);
@@ -248,6 +266,9 @@ void setup()
 	digitalWrite(CCS_WAKE_PIN, HIGH);
 
 	ccs_ts = d_ts = rt.getTime();
+
+	EventFuse::newFuse(10, INF_REPEAT, FuseEvent);
+
 }
 
 bool send_line(const char buf[])
@@ -271,8 +292,13 @@ bool send_line(const char buf[])
 bool send_data()
 {
 	char buf[32];
-	snprintf(buf, sizeof(buf), "%d,%d", co2, tvoc);
+	snprintf(buf, sizeof(buf), "c%d,v%d,t%d,h%d", co2, tvoc, (int)d_temp, (int)d_hum);
 	return send_line(buf);
+//	snprintf(buf, sizeof(buf), "c%d,v%d", co2, tvoc);
+//	rs = send_line(buf);
+//	snprintf(buf, sizeof(buf), "t%d,h%d", (int)d_temp, (int)d_hum);
+//	rs = rs && send_line(buf);
+//	return rs;
 }
 
 void collect_data()
@@ -295,9 +321,17 @@ void collect_data()
 			break;
 		}  else {  // error has occured
 			int errorCode = am2320.getErrorCode();
-			switch (errorCode) {
-//				case 1: Serial.println("ERR: Sensor is offline"); break;
-				case 2: Serial.println("ERR: CRC validation failed."); break;
+			switch(errorCode) {
+				case 1:
+//					Serial.println("ERR: Sensor is offline");
+					break;
+				case 2:
+					Serial.println("ERR: CRC validation failed.");
+					break;
+				default:
+					Serial.print("ERROR ");
+					Serial.println(errorCode);
+					break;
 			}
 			delay(500);
 		}
@@ -380,29 +414,20 @@ void tft_show_data()
 		tft.print(is_button_pressed(i) ? "1 " : "0 ");
 	}
 	tft.println();
-	tft.print("volts:");
-	tft.println(volts);
+//	tft.print("volts:");
+//	tft.println(volts);
 }
 
 unsigned long button_pressed_ts = millis();
 
 void loop()
 {
-	volts = analogRead(ADC_PIN);
-	volts = map(volts, 0, 4096, 0, 3300);
-	Serial.print("Volts:");
-	Serial.println(volts);
-	if(ccs_ready) {
-		collect_data();
-	} else {
-		Serial.println("Not ready");
-	}
+//	volts = analogRead(ADC_PIN);
+//	volts = map(volts, 0, 4096, 0, 3300);
+//	Serial.print("Volts:");
+//	Serial.println(volts);
 
-	if(has_data) {
-		if(send_data()) {
-			has_data = false;
-		}
-	}
+	EventFuse::burn();
 
 	if(is_button_pressed(1)) {
 		turn_tft_on();
