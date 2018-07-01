@@ -70,7 +70,7 @@ while True:
 				'ts': int(t),
 				'ts_str': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t)),
 			})
-			r.lpush(REDIS_LIST, json.dumps(data))
+			r.lpush(REDIS_LIST, json.dumps(data, ensure_ascii=True))
 			print data
 	else:
 		if not notified:
