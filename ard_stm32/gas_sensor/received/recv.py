@@ -1,4 +1,4 @@
-#`!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from nrf24 import NRF24
 import time
@@ -16,9 +16,10 @@ pipes = [DATABASE_ADDRESS, SENSOR_ADDRESS]
 r = redis.Redis()
 
 radio = NRF24()
-radio.begin(2, 0, "P9_27", "P8_4") #Set CE and IRQ pins
+radio.begin(2, 0, "P9_27", "P8_7") #Set CE and IRQ pins
+#radio.begin(2, 0, "P9_27") #Set CE and IRQ pins
 radio.reset()
-time.sleep(1)
+time.sleep(2)
 
 def setup_radio():
 
@@ -51,10 +52,11 @@ pipe = [1]
 notified = 0
 while True:
 #	print radio.testCarrier()
-	if radio.available(pipe, True):
+	if radio.available(pipe, False):
 		notified = 0
-		time_print()
-		print 'Payload size:' , radio.getDynamicPayloadSize()
+#		time_print()
+
+#		print 'Payload size:' , radio.getDynamicPayloadSize()
 		recv_buffer = []
 		radio.read(recv_buffer)
 #		print pipe, recv_buffer
