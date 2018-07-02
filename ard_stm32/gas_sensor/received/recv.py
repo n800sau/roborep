@@ -5,6 +5,7 @@ import time
 import struct
 import redis
 import json
+import traceback
 
 REDIS_LIST = 'l_gaz'
 
@@ -51,41 +52,47 @@ def time_print():
 pipe = [1]
 notified = 0
 while True:
+	try:
 #	print radio.testCarrier()
-	if radio.available(pipe, False):
-		notified = 0
+		if radio.available(pipe, False):
+			notified = 0
 #		time_print()
 
 #		print 'Payload size:' , radio.getDynamicPayloadSize()
-		recv_buffer = []
-		radio.read(recv_buffer)
+			recv_buffer = []
+			radio.read(recv_buffer)
 #		print pipe, recv_buffer
 
-		load = struct.pack('B' * len(recv_buffer), *recv_buffer).strip()
-		if load:
+			load = struct.pack('B' * len(recv_buffer), *recv_buffer).strip()
+			if load:
 #			print load[:-1]
-			t = time.time()
-			data = dict([(v[0], v[1:]) for v in load[:-1].split(',')])
-			data.update({
-				'ts': int(t),
-				'ts_str': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t)),
-			})
-			r.lpush(REDIS_LIST, json.dumps(data, ensure_ascii=True))
-			print data
-	else:
-		if not notified:
-			time_print()
-			print 'Not available'
-			notified = time.time()
-		if notified + 30 < time.time():
-			time_print()
-			print 'Still not available. Radio reset.'
-			radio.reset()
-			time.sleep(1)
-			setup_radio()
-			radio.stopListening()
-			radio.startListening()
-			notified = time.time()
+				t = time.time()
+				data = dict([(v[0], v[1:]) for v in load[:-1].split(',')])
+				data.update({
+					'ts': int(t),
+					'ts_str': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t)),
+				})
+				r.lpush(REDIS_LIST, json.dumps(data, ensure_ascii=True))
+				print data
+		else:
+			if not notified:
+				time_print()
+				print 'Not available'
+				notified = time.time()
+			if notified + 30 < time.time():
+				time_print()
+				print 'Still not available. Radio reset.'
+				radio.reset()
+				time.sleep(1)
+				setup_radio()
+				radio.stopListening()
+				radio.startListening()
+				notified = time.time()
+	except KeyboardInterrupt:
+		raise
+	except Exception:
+		traceback.print_exc()
+		time.sleep(1)
 #			radio.flush_rx()
 #			radio.flush_tx()
 #	else:
