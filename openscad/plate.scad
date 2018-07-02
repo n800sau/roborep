@@ -9,30 +9,6 @@ LOCK_R = 2;
 LOCK_Z = PIN_H - LOCK_R;
 
 
-difference() {
-  translate([0, 0, 1]) {
-    cube([BASE_W, BASE_D, BASE_H], center=true);
-  }
-  translate([BASE_W/4, BASE_D/4, 0]) {
-    cylinder(r=1.8, h=10, center=true);
-  }
-  translate([BASE_W/4, -BASE_D/4, 0]) {
-    cylinder(r=1.8, h=10, center=true);
-  }
-  translate([-BASE_W/4, BASE_D/4, 0]) {
-    cylinder(r=1.8, h=10, center=true);
-  }
-  translate([-BASE_W/4, -BASE_D/4, 0]) {
-    cylinder(r=1.8, h=10, center=true);
-  }
-  translate([BASE_W/4, 0, 0]) {
-    cylinder(r=1.8, h=10, center=true);
-  }
-  translate([-BASE_W/4, 0, 0]) {
-    cylinder(r=1.8, h=10, center=true);
-  }
-}
-
 module pin_lock() {
   difference() {
     union() {
@@ -48,6 +24,34 @@ module pin_lock() {
     translate([0, PIN_D, PIN_H/2]) {
       cube([PIN_W, PIN_D, PIN_H], center=true);
     }
+  }
+}
+
+module hole3m() {
+  cylinder(r=1.8, h=10, center=true);
+}
+
+difference() {
+  translate([0, 0, 1]) {
+    cube([BASE_W, BASE_D, BASE_H], center=true);
+  }
+  translate([BASE_W/4, BASE_D/4, 0]) {
+    hole3m();
+  }
+  translate([BASE_W/4, -BASE_D/4, 0]) {
+    hole3m();
+  }
+  translate([-BASE_W/4, BASE_D/4, 0]) {
+    hole3m();
+  }
+  translate([-BASE_W/4, -BASE_D/4, 0]) {
+    hole3m();
+  }
+  translate([BASE_W/4, 0, 0]) {
+    hole3m();
+  }
+  translate([-BASE_W/4, 0, 0]) {
+    hole3m();
   }
 }
 

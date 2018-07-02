@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-source ~/.virtualenvs/gurus/bin/activate
+#source ~/.virtualenvs/gurus/bin/activate
 
 cd ~/work/roborep/cv_test/garage
 

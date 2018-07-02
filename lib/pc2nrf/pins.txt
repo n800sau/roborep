@@ -10,9 +10,11 @@ NRF24      P9
 
            P8
 8 - IRQ  - 4  GPIO1_7 39
+         - 7  ?GPIO1_10 42
 
 # not working
 #8 - IRQ  - 12  GPIO1_28  60
+
 
 
 

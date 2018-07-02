@@ -1,5 +1,4 @@
 P9   NRF24
-
 27 - CE
 28 - CSN
 29 - MISO
@@ -7,7 +6,7 @@ P9   NRF24
 31 - SCL
 
 P8
-4 - IRQ
+7 - IRQ
 
 
 "P9_27": { "name": "GPIO3_19", "gpio": gpio3+19, "mux": "mcasp0_fsr", "eeprom": 64 },
