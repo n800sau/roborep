@@ -1,38 +1,16 @@
+include <bb_box_params.scad>;
 use <step_down_1.scad>;
 
-$fn = 32;
-
-//wall_thickness=4.5;
-wall_thickness=4;
-base_thickness=3.0;
-bb_depth=20+22;
-//bb_depth=20;
-bb_width=55.5;
-bb_height=88.5;
-bb_curve_corner=10;
-
-power_side_width = 15.5;
-other_side_width = 1;
-
-peg_pow_front=16.0;
-peg_pow_side=3.0;
-
-peg_sd_front=6.5;
-peg_sd_side=6.5;
-
-peg_outer_radius=2.8;
-peg_inner_radius=2.0;
-
-peg_extra_depth = 6;
-peg_depth = base_thickness + peg_extra_depth;
 
 module RoundedBB(extra_width,extra_height,depth,curve=bb_curve_corner, power_side_width=power_side_width) {
 	difference() {
     union() {
       minkowski() {
-        translate([power_side_width/2-other_side_width/2, 0, 0])
-          cube([bb_width-curve+extra_width+power_side_width+other_side_width,
-            bb_height-curve+extra_height,depth],center=true);
+        translate([power_side_width/2-other_side_width/2, 0, 0]) {
+          full_width = bb_width-curve+extra_width+power_side_width+other_side_width;
+          echo("Full Width:", full_width);
+          cube([full_width, bb_height-curve+extra_height,depth],center=true);
+        }
         cylinder(r=curve/2, height=depth, $fn=32);
       }
     }
@@ -44,7 +22,7 @@ module BeagleBox(curve=bb_curve_corner) {
 		RoundedBB(wall_thickness, wall_thickness, bb_depth, curve, power_side_width);
 		translate([0,0,base_thickness])
 			RoundedBB(0, 0, bb_depth, curve-2);
-	}	
+	}
 }
 
 difference() {
@@ -53,19 +31,19 @@ difference() {
 			BeagleBox();
 
       // holes for lid
-			translate([bb_width/2,-bb_height/4,bb_depth-26])
+			translate([bb_width/2,-bb_height/4,bb_depth-hole4lid_depth])
 				rotate([0, 90, 0])
 					cylinder(r=2, h=50, center=true);
 
-			translate([-bb_width/2,-bb_height/4,bb_depth-26])
+			translate([-bb_width/2,-bb_height/4,bb_depth-hole4lid_depth])
 				rotate([0, 90, 0])
 					cylinder(r=2, h=30, center=true);
 
-			translate([bb_width/2,bb_height/4,bb_depth-26])
+			translate([bb_width/2,bb_height/4,bb_depth-hole4lid_depth])
 				rotate([0, 90, 0])
 					cylinder(r=2, h=50, center=true);
 
-			translate([-bb_width/2,bb_height/4,bb_depth-26])
+			translate([-bb_width/2,bb_height/4,bb_depth-hole4lid_depth])
 				rotate([0, 90, 0])
 					cylinder(r=2, h=30, center=true);
 
