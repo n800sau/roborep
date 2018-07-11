@@ -1,8 +1,7 @@
 #!/bin/bash
 
-#SCADFILE=lid.scad
-SCADFILE=case.scad
-#SCADFILE=animation_example.scad
+SCADFILE=bb_anycube_lid.scad
+#SCADFILE=bb_anycube_case.scad
 #SCADFILE=wbbone_box.scad
 
 STEPS=180
@@ -10,7 +9,7 @@ PERFRAME=5
 FPS=10
 PATTERN=%04d.png
 DISTANCE=100
-Z=250
+Z=150
 
 VNAME=animation.mp4
 
