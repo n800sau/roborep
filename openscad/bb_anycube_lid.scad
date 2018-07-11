@@ -4,7 +4,7 @@ use <nuts_and_bolts.scad>;
 bblid_thickness = 3;
 cyl_height = 3;
 
-ll_length = 6+bblid_thickness;
+ll_length = 7+bblid_thickness;
 ll_width = 20;
 ll_thickness = 6;
 
@@ -43,7 +43,7 @@ module RoundedBBLid() {
 	full_width = bb_width + power_side_width +
     other_side_width - bb_curve_corner + wall_thickness+1;
   echo("Full Width:", full_width);
-	full_height = bb_height-bb_curve_corner;
+	full_height = bb_height-bb_curve_corner+wall_thickness*2;
 	minkowski() {
 		cube([full_width+ll_thickness*2, full_height, bblid_thickness],center=true);
 		cylinder(r=bb_curve_corner/2, height=bblid_thickness);
