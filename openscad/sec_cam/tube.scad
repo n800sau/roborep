@@ -37,30 +37,32 @@ translate([0, 0, 0]) {
   rotate(45) {
     difference() {
       union() {
-        cylinder(h=interdisk_h, r=pcb_disk_r+tube_thickness);
-        stick_with_holes();
-        rotate(90) {
-          stick_with_holes();
+        difference() {
+          union() {
+            cylinder(h=interdisk_h, r=pcb_disk_r+tube_thickness);
+            stick_with_holes();
+            rotate(90) {
+              stick_with_holes();
+            }
+          }
+          // hole to insert pcb
+          cylinder(h=interdisk_h, r=pcb_disk_r);
+        }
+        translate([-pcb_disk_r, -peg_thickness/2, 0]) {
+          cube([peg_thickness, peg_thickness, interdisk_h]);
+        }
+        translate([-peg_thickness/2, -pcb_disk_r, 0]) {
+          cube([peg_thickness, peg_thickness, interdisk_h]);
+        }
+        translate([pcb_disk_r-peg_thickness, -peg_thickness/2, 0]) {
+          cube([peg_thickness, peg_thickness, interdisk_h]);
+        }
+        translate([-peg_thickness/2, pcb_disk_r-peg_thickness, 0]) {
+          cube([peg_thickness, peg_thickness, interdisk_h]);
         }
       }
-      // hole to insert pcb
-      cylinder(h=interdisk_h, r=pcb_disk_r);
       // hole to insert cover disk
-      translate([0, 0, interdisk_h-cover_disk_thickness]) {
-        cylinder(h=cover_disk_thickness, r=cover_disk_r);
-      }
-    }
-    translate([-pcb_disk_r, -peg_thickness/2, 0]) {
-      cube([peg_thickness, peg_thickness, interdisk_h]);
-    }
-    translate([-peg_thickness/2, -pcb_disk_r, 0]) {
-      cube([peg_thickness, peg_thickness, interdisk_h]);
-    }
-    translate([pcb_disk_r-peg_thickness, -peg_thickness/2, 0]) {
-      cube([peg_thickness, peg_thickness, interdisk_h]);
-    }
-    translate([-peg_thickness/2, pcb_disk_r-peg_thickness, 0]) {
-      cube([peg_thickness, peg_thickness, interdisk_h]);
+      cylinder(h=cover_disk_thickness, r=cover_disk_r);
     }
   }
 }
