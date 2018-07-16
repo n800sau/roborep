@@ -10,7 +10,8 @@
 
 #define MAX_QUEUE_SIZE 1000
 
-#define PIN_INTERRUPT 39
+//#define PIN_INTERRUPT 39
+#define PIN_INTERRUPT 42
 //#define PIN_INTERRUPT 73
 #define PIN_CE 115
 #define PIN_CS 117

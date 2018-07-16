@@ -1,2 +1,1 @@
-sudo python -u recv.py  &>recv.log 
-echo $?
+python -u recv.py  &>recv.log &
