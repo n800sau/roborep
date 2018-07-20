@@ -1,3 +1,6 @@
+use <PowerSlideHolder.scad>;
+use <a_plus_tube.scad>;
+
 stlfile = "Raspberry_Pi_A+_holder.stl";
 
 $fn = 50;
@@ -43,6 +46,20 @@ module morphed() {
   }
 }
 
+module top_cover_holes() {
+  translate([15, 0, 17]) {
+    stick_with_holes(0);
+  }
+  translate([-15, 0, 17]) {
+    stick_with_holes(0);
+  }
+  rotate(90) {
+    translate([0, 0, 17]) {
+      stick_with_holes(5);
+    }
+  }
+}
+
 module top_cover() {
   translate([0, 0, 0]) {
     rotate(45) {
@@ -58,17 +75,7 @@ module top_cover() {
               union() {
                 morphed();
                 rotate(45) {
-                  translate([15, 0, 17]) {
-                    stick_with_holes(0);
-                  }
-                  translate([-15, 0, 17]) {
-                    stick_with_holes(0);
-                  }
-                }
-                rotate(135) {
-                  translate([0, 0, 17]) {
-                    stick_with_holes(5);
-                  }
+                  top_cover_holes();
                 }
               }
               scale([0.9, 0.9, 1]) {
@@ -84,57 +91,73 @@ module top_cover() {
 }
 
 module rpi_plate() {
+  difference() {
+    union() {
   
-  translate([0, 65, 0]) {
-    rotate([90, 90, 0]) {
-      top_cover();
-    }
-  }
-
-  translate([5, 0, 0]) {
-    difference() {
-      union() {
-        // one board
-  //      translate([16, 30, -1.5]) {
-        translate([17, 25, 0]) {
-          cube([10, 25, 3]);
-        }
-        // another board
-        translate([-37, 25, 0]) {
-          cube([10, 25, 3]);
+      translate([0, 65, 0]) {
+        rotate([90, 90, 0]) {
+          top_cover();
         }
       }
+    
+      translate([5, 0, 0]) {
+        difference() {
+          union() {
+            // one board
+      //      translate([16, 30, -1.5]) {
+            translate([17, 25, 0]) {
+              cube([10, 25, 3]);
+            }
+            // another board
+            translate([-37, 25, 0]) {
+              cube([10, 25, 3]);
+            }
+          }
+        }
+        difference() {
+          translate([50, -65, 0]) {
+            import(stlfile, convexity=10);
+          }
+          translate([-42.1, 0, 0]) {
+            cube([10, 100, 50], center=true);
+          }
+          translate([32, 0, 0]) {
+            cube([10, 100, 50], center=true);
+          }
+          translate([-5, -8, -20]) {
+            cube([50, 45, 50], center=true);
+          }
+        }
+      }
     }
-    difference() {
-      translate([50, -65, 0]) {
-        import(stlfile, convexity=10);
-      }
-      translate([-42.1, 0, 0]) {
-        cube([10, 100, 50], center=true);
-      }
-      translate([32, 0, 0]) {
-        cube([10, 100, 50], center=true);
-      }
-      translate([-5, -8, -20]) {
-        cube([50, 45, 50], center=true);
-      }
+    // to remove excessive walls
+    translate([29, -50, -15]) {
+      cube([5, 85, 30]);
+    }
+    translate([-34, -50, -15]) {
+      cube([5, 85, 30]);
+    }
+    translate([-35, 23, 3]) {
+      cube([70, 5, 30]);
+    }
+    translate([-35, -44.5, 3]) {
+      cube([70, 5, 30]);
     }
   }
 }
 
-difference() {
-  rpi_plate();
-  translate([29, -50, -15]) {
-    cube([5, 85, 30]);
-  }
-  translate([-34, -50, -15]) {
-    cube([5, 85, 30]);
-  }
-  translate([-35, 23, 3]) {
-    cube([70, 5, 30]);
-  }
-  translate([-35, -44.5, 3]) {
-    cube([70, 5, 30]);
+
+module tube_with_ears() {
+  translate([55, -93, -30]) {
+    rpi_a_plus_tube();
   }
 }
+
+rpi_plate();
+translate([0, -10, 2]) {
+  rotate([0, 180, -90]) {
+    pcbHolder();
+  }
+}
+tube_with_ears();
 
