@@ -178,7 +178,7 @@ module tube_with_ears() {
       translate([0, y_offset, 0]) {
         cube([tube_width, tube_length, tube_height], center=true);
       }
-      translate([0, tube_length/2, 0]) {
+      translate([0, tube_length/2-0.5, 0]) {
         rotate([90, 90, 0]) {
           top_cover_holes();
         }
