@@ -1,9 +1,10 @@
-stlfile = "Raspberry_Pi_A+_holder.stl";
+boxfile = "Raspberry_Pi_A+_holder.stl";
+connector = "Axis_change_connector.stl";
 
 module rpi_a_plus() {
   difference() {
     translate([50, -65, 0]) {
-      import(stlfile, convexity=10);
+      import(boxfile, convexity=10);
     }
     translate([-42.1, 0, 0]) {
       cube([10, 100, 50], center=true);
@@ -19,9 +20,9 @@ module rpi_a_plus() {
 
 module rpi_a_plus_tube(ext_fwd=0, ext_back=0) {
   cube_width = 64;
-  cube_len = 69;
-  cube_height = 50;
-  cube_wall = 2;
+  cube_len = 105;
+  cube_height = 64;
+  cube_wall = 3;
 
   difference() {
     union() {
@@ -43,7 +44,18 @@ module rpi_a_plus_tube(ext_fwd=0, ext_back=0) {
         cube_height - cube_wall*2], center=true);
     }
   }
-//  rpi_a_plus();
+  //rpi_a_plus();
+  rotate([-90, 0, 90]) {
+    //forward,vertical,side
+    translate([-40, -74, -50]) {
+      difference() {
+        translate([0, -246, 50]) {
+          import(connector, convexity=10);
+        }
+        cube(103, 100, 100);
+      }
+    }
+  }
 }
 
 rpi_a_plus_tube();
