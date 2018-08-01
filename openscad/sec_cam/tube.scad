@@ -70,10 +70,16 @@ translate([0, 0, 0]) {
 module pcb_support() {
   translate([-5.5, -3, 0]) {
     difference() {
-      cube([11, 6, low_tube_pegs_h]);
+      union() {
+        cube([11, 6, low_tube_pegs_h]);
+      }
+      translate([4, 3, 0]) {
+        cylinder(r=1.4, h=50);
+      }
     }
   }
 }
+
 
 // low support tube
 translate([0, 0, interdisk_h]) {
@@ -103,14 +109,18 @@ translate([0, 0, interdisk_h]) {
       cube([peg_thickness, peg_thickness, low_tube_pegs_h]);
     }
     translate([-pcb_disk_r+5.5, 0, 0]) {
-      pcb_support();
+      rotate(180) {
+        pcb_support();
+      }
     }
     translate([pcb_disk_r-5.5, 0, 0]) {
       pcb_support();
     }
     rotate(90) {
       translate([-pcb_disk_r+5.5, 0, 0]) {
-        pcb_support();
+        rotate(180) {
+          pcb_support();
+        }
       }
       translate([pcb_disk_r-5.5, 0, 0]) {
         pcb_support();

@@ -171,7 +171,7 @@ module tube_with_ears() {
   tube_height = 64;
   tube_width = 64;
   tube_length = 105;
-  tube_wall = 2.5;
+  tube_wall = 2;
   y_offset = -17.5;
   difference() {
     union() {
@@ -199,12 +199,15 @@ module tube_with_ears() {
 module connector() {
   rotate([-90, 0, 90]) {
     //forward,vertical,side
-    translate([-40, -71.5, -50]) {
+    translate([-40, -68, -55]) {
       difference() {
-        translate([0, -246, 50]) {
+        translate([0, -248, 50]) {
           import(connector, convexity=10);
+          translate([2, 339, -20]) {
+            cube([50, 10, 50]);
+          }
         }
-        cube(103, 100, 100);
+//        cube(103, 100, 100);
       }
     }
   }
