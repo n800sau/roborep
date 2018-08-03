@@ -58,6 +58,14 @@ module top_cover_holes() {
   }
 }
 
+module power_hole() {
+  rotate([0, 270, 0]) {
+    translate([12, -10, 20]) {
+      cylinder(r=4, h=15);
+    }
+  }
+}
+
 module top_cover() {
   translate([0, 0, 0]) {
     rotate(0) {
@@ -71,7 +79,10 @@ module top_cover() {
           translate([0, 0, 10]) {
             difference() {
               union() {
-                morphed();
+                difference() {
+                  morphed();
+                  power_hole();
+                }
                 top_cover_holes();
               }
               scale([0.9, 0.9, 1]) {
@@ -185,13 +196,25 @@ module tube_with_ears() {
       }
       translate([0, -tube_length/2+2.5, 0]) {
         rotate([90, 90, 0]) {
-          top_cover_holes();
+//          top_cover_holes();
         }
       }
       connector();
     }
     translate([0, y_offset, 0]) {
       cube([tube_width-2*tube_wall, tube_length*2, tube_height-2*tube_wall], center=true);
+    }
+    translate([0, -tube_length/2-17+8, 0]) {
+      translate([-tube_width/4, 0, 0])
+        cylinder(r=1.8, h=100, center=true);
+      translate([tube_width/4, 0, 0])
+        cylinder(r=1.8, h=100, center=true);
+      rotate([0, 90, 0]) {
+        translate([-tube_height/4, 0, 0])
+          cylinder(r=1.8, h=100, center=true);
+        translate([tube_height/4, 0, 0])
+          cylinder(r=1.8, h=100, center=true);
+      }
     }
   }
 }
