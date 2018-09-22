@@ -8,6 +8,12 @@ pcb_disk_r = 53.5/2;
 cover_disk_r = 54.5/2;
 cover_r = pcb_disk_r+tube_thickness;
 
+tube_height = 64;
+tube_width = 64;
+tube_length = 105;
+tube_wall = 2;
+
+
 module stick_with_holes(extra_len=0) {
   clen = 5;
   cwidth = 8;
@@ -179,10 +185,6 @@ module rpi_plate() {
 
 
 module tube_with_ears() {
-  tube_height = 64;
-  tube_width = 64;
-  tube_length = 105;
-  tube_wall = 2;
   y_offset = -17.5;
   difference() {
     union() {
@@ -247,6 +249,84 @@ module pcb_power() {
   }
 }
 
-//rpi_plate();
+module back_lid() {
+  difference() {
+    union() {
+      union() {
+        translate([0, -tube_length/3*2-1, 0]) {
+          cube([tube_width, 2, tube_height], center=true);
+          translate([0, 7, tube_height/2-1-tube_wall-0.5]) {
+            cube([tube_width-tube_wall*2-1, 12, 2], center=true);
+          }
+          translate([0, 7, -tube_height/2+1+tube_wall+0.5]) {
+            cube([tube_width-tube_wall*2-1, 12, 2], center=true);
+          }
+          translate([tube_width/2-1-tube_wall-0.5, 7, 0]) {
+            cube([2, 12, tube_height-tube_wall*2-1], center=true);
+          }
+          translate([-tube_width/2+1+tube_wall+0.5, 7, 0]) {
+            cube([2, 12, tube_height-tube_wall*2-1], center=true);
+          }
+        }
+      }
+//      latch_size = 61;
+      translate([0, -tube_length/2-17+8, 0]) {
+        translate([-tube_width/4, 0, 0]) {
+//          cylinder(r=1.8, h=latch_size, center=true);
+          translate([0, 0, tube_width/2-2.5]) {
+            sphere(r=1.8, center=true);
+          }
+          translate([0, 0, -tube_width/2+2.5]) {
+            sphere(r=1.8, center=true);
+          }
+        }
+        translate([tube_width/4, 0, 0]) {
+//          cylinder(r=1.8, h=latch_size, center=true);
+          translate([0, 0, tube_width/2-2.5]) {
+            sphere(r=1.8, center=true);
+          }
+          translate([0, 0, -tube_width/2+2.5]) {
+            sphere(r=1.8, center=true);
+          }
+        }
+        rotate([0, 90, 0]) {
+          translate([-tube_height/4, 0, 0]) {
+//            cylinder(r=1.8, h=latch_size, center=true);
+            translate([0, 0, tube_height/2-2.5]) {
+              sphere(r=1.8, center=true);
+            }
+            translate([0, 0, -tube_height/2+2.5]) {
+              sphere(r=1.8, center=true);
+            }
+          }
+          translate([tube_height/4, 0, 0]) {
+//            cylinder(r=1.8, h=latch_size, center=true);
+            translate([0, 0, tube_height/2-3]) {
+              sphere(r=1.8, center=true);
+            }
+            translate([0, 0, -tube_height/2+3]) {
+              sphere(r=1.8, center=true);
+            }
+          }
+        }
+      }
+    }
+    translate([0, -tube_length/3*2+7, 0]) {
+      cube([tube_width-tube_wall*4-1, 10, tube_height-tube_wall*4-1], center=true);
+      translate([-tube_width/2+28.5, 0, -tube_height/2+24]) {
+        rotate([90, 0, 0]) {
+          cylinder(r=3.5, h=100, center=true);
+          translate([0, 0, 12.5]) {
+            cylinder(r=5.5, h=10, center=true);
+          }
+        }
+      }
+    }
+  }
+  
+}
+
+rpi_plate();
 tube_with_ears();
+back_lid();
 
