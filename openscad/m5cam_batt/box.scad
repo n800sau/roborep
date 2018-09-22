@@ -82,22 +82,20 @@ module m5box() {
           }
         }
         // hole for reset
-        translate([pcb_hole_length-8-1.5,
+        translate([pcb_hole_length-8.5,
             pcb_hole_width+wall-3, stand_height+wall]) {
-          cube([5, 10, 4]);
+          cube([5, 10, 3]);
         }
-        // hole for switch
-        translate([pcb_hole_length-27-wall,
-            pcb_hole_width+wall-3, box_main_height-6]) {
-          cube([10, 10, 6]);
-          translate([14.5, 10, 2.5]) {
-            rotate([90, 0, 0]) {
-              cylinder(d=2, h=10);
+        // hole for on/off button
+        translate([pcb_hole_length-22-wall,
+            pcb_hole_width+wall+5, box_main_height-4.5]) {
+          rotate([90, 0, 0]) {
+            cylinder(d=4, h=10);
+            translate([8, 0, 0]) {
+              cylinder(d=2.6, h=10);
             }
-          }
-          translate([-4.5, 10, 2.5]) {
-            rotate([90, 0, 0]) {
-              cylinder(d=2, h=10);
+            translate([-8, 0, 0]) {
+              cylinder(d=2.6, h=10);
             }
           }
         }
@@ -153,8 +151,39 @@ module connector() {
   }
 }
 
+module button_hold() {
+  difference() {
+    union() {
+      cube([12, 1.5, 2]);
+      translate([-4, 0, -1]) {
+        difference() {
+          cube([4, wall+2, 4]);
+          translate([2, 5, 2]) {
+            rotate([90, 0, 0]) {
+              cylinder(d=2, h=10);
+            }
+          }
+        }
+      }
+      translate([12, 0, -1]) {
+        difference() {
+          cube([4, wall+2, 4]);
+          translate([2, 5, 2]) {
+            rotate([90, 0, 0]) {
+              cylinder(d=2, h=10);
+            }
+          }
+        }
+      }
+    }
+    translate([4, 1, 0]) {
+      cube([4, 1.5, 3]);
+    }
+  }
+}
 
 //m5box();
 //translate([0, 0, 25]) { 
-  m5lid();
+//  m5lid();
 //}
+button_hold();
