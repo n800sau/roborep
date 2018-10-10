@@ -1,6 +1,6 @@
 P9   NRF24
 27 - CE
-28 - CSN
+28 - CS
 29 - MISO
 30 - MOSI
 31 - SCL
