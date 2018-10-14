@@ -24,7 +24,7 @@ while True:
 				ftp_h.cwd(BASE_DNAME)
 				if pathlist is None:
 					pathlist = [os.path.basename(dname) for dname in ftp_h.nlst() if re.match(r'^\d+-\d+-\d+_((pics)|(vids))$', os.path.basename(dname))]
-					print pathlist
+#					print pathlist
 				while True:
 					fname = r.rpop(R_QUEUE)
 					if not fname:
