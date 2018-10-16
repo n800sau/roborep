@@ -10,8 +10,9 @@ rotor_h = 5;
 hole_dist = 21;
 hole_d = 2.5;
 
-insert_width = 3.2;
-insert_len = 35;
+insert_width = 2.2;
+insert_len = 34;
+insert_height = base_h + 10;
 
 $fn = 200;
 
@@ -39,11 +40,27 @@ module centry() {
 					cube([box_width, box_len, base_h]);
         }
 				translate([-insert_len/2, rotor_d/2+10, rotor_h]) {
-					cube([insert_len, insert_width, base_h]);
+					cube([insert_len+1, insert_width+1, base_h]);
         }
 			}
 		}
 	}
 }
 
-centry();
+module insert_plate(d) {
+	difference()  {
+		cube([insert_len, insert_height, insert_width], center=true);
+		translate([0, -5, 0])
+			cylinder(d=d, h=insert_width*2, center=true);
+		translate([0, insert_height/2-6, 0])
+			cube([insert_len/2, 5, insert_width*2], center=true);
+	}
+}
+
+
+//centry();
+
+//insert_plate(5);
+//insert_plate(8);
+insert_plate(12);
+//insert_plate(15);
