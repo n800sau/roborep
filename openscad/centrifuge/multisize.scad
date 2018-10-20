@@ -10,9 +10,9 @@ rotor_h = 5;
 hole_dist = 21;
 hole_d = 2.5;
 
-insert_width = 2.2;
+insert_width = 2.1;
 insert_len = 34;
-insert_height = base_h + 10;
+insert_height = base_h;
 
 $fn = 200;
 
@@ -44,23 +44,36 @@ module centry() {
         }
 			}
 		}
+    tick_marker_hole();
 	}
+}
+
+module tick_marker_hole() {
+  rotate([0, 0, 45]) {
+    translate([base_d/2-11, 0, 2.5])
+//        cylinder(d=6.1, h=5);
+      cube([6, 6, 5], center=true);
+  }
 }
 
 module insert_plate(d) {
 	difference()  {
-		cube([insert_len, insert_height, insert_width], center=true);
-		translate([0, -5, 0])
+		cube([insert_len, insert_height+4, insert_width], center=true);
+		translate([0, -2, 0])
 			cylinder(d=d, h=insert_width*2, center=true);
-		translate([0, insert_height/2-6, 0])
-			cube([insert_len/2, 5, insert_width*2], center=true);
+		translate([0, insert_height/2-1, 0])
+			cube([insert_len/2, 2, insert_width*2], center=true);
 	}
 }
 
 
-//centry();
+centry();
 
 //insert_plate(5);
 //insert_plate(8);
-insert_plate(12);
+//insert_plate(11.5);
+//rotate([90, 90, 90])
+//import("12mm.stl");
 //insert_plate(15);
+
+  
