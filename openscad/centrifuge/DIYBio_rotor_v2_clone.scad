@@ -5,10 +5,10 @@
 numbers = ["1", "2", "3", "4", "5", "6"];
 
 base_d1 = 85;
-base_d2 = 60;
+base_d2 = 50;
 base_bottom_h = 16;
 base_top_h = 3;
-underlay_h = 3;
+underlay_h = 4;
 
 module main_rotor_body() {
 //    base_d1 = 73.2;
@@ -77,8 +77,8 @@ module rotor_body_cutout() {
 // Eppendorf 1.5mL tubes are 10.7mm OD
 module rotor_slot_cutout() {
   //dist = 31;
-  angle = 80;
-  translate([0, 0, -2])
+  angle = 85;
+  translate([0, 0, 3])
     for(i = [0:5]) {
         rotate([0, 0, -60 * i])
           translate([0, 95, 0])
