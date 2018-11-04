@@ -8,7 +8,7 @@ pcb_under_h = 3;
 
 pad = 1;
 left_pad = pad;
-lid_pad = 0.5;
+lid_pad = 0.8;
 
 holes_dist_l = 66.5;
 holes_dist_w = 42.5;
@@ -37,14 +37,14 @@ module lid() {
         cube([8, 10, wall*2]);
       }
       // hole for voltage control
-      translate([pcb_l-10, pcb_w-1, 0]) {
-        cube([5, 5, wall*2]);
+      translate([pcb_l-10, pcb_w-3, 0]) {
+        cube([8, 8, wall*2]);
       }
       // hole for numbers and buttons
       translate([26+pad+lid_pad, -2, -wall*2]) {
-        cube([37, 17+2, wall*4]);
+        cube([37, 19+2, wall*4]);
       }
-      translate([wall, wall*2+pad+lid_pad+pcb_w/2, wall]) {
+      translate([wall, pcb_w/2+15, wall]) {
         linear_extrude(height = 2) {
           text("DC STEP UP", font = font, size = 7, direction = "ltr", spacing = 1 );
         }
@@ -73,7 +73,7 @@ module a_hole(with_ears=false) {
 
 module roof_holes(with_ears=false) {
           // hole 1
-          translate([10, pcb_w+20.5, wall_h-6]) {
+          translate([10, 15+wall/2+wall+pcb_w+lid_pad+wall, wall_h-6]) {
             rotate([90, 0, 0]) {
               a_hole(with_ears);
             }
@@ -97,7 +97,7 @@ module roof_holes(with_ears=false) {
             }
           }
           // hole 5
-          translate([-(pcb_l-34)/2+lid_pad, pcb_w/2-10, wall_h-6]) {
+          translate([15-pcb_l/2+pad+wall-lid_pad, pcb_w/2-10, wall_h-6]) {
             rotate([0, 90, 0]) {
               a_hole(with_ears);
             }
@@ -108,7 +108,7 @@ module roof_holes(with_ears=false) {
               a_hole(with_ears);
             }
           }
-          translate([pcb_l-pad-wall, pcb_w+21-lid_pad, wall_h-6]) {
+          translate([pcb_l-pad-wall, 15+wall/2+wall+pcb_w+lid_pad+wall, wall_h-6]) {
             rotate([90, 0, 0]) {
               a_hole(with_ears);
             }
