@@ -8,7 +8,7 @@ pcb_under_h = 3;
 
 left_pad = 15;
 pad = 1;
-lid_pad = 0.5;
+lid_pad = 1;
 
 holes_dist_l = 61;
 holes_dist_w = 33;
@@ -32,16 +32,16 @@ module lid() {
         cube([left_pad+pcb_l+wall*2+pad+lid_pad*2, pcb_w+wall*2+pad*2+lid_pad*2, wall_h]);
       }
       // hole for out
-      translate([left_pad+pcb_l-lid_pad-wall*2-1, wall+lid_pad+15, 0]) {
-        cube([8, 10, wall*2]);
+      translate([left_pad+pcb_l-lid_pad-wall*2-1, wall+lid_pad+16, 0]) {
+        cube([8, 9, wall*2]);
       }
       // hole for voltage control
-      translate([44, pcb_w+pad, 0]) {
+      translate([44, pcb_w, 0]) {
         cube([5, 5, wall*2]);
       }
       // hole for numbers and buttons
       translate([26, -6, -wall]) {
-        cube([51, 14+6, wall*4]);
+        cube([51, 16+6, wall*4]);
       }
     translate([wall, wall*2+pad+lid_pad+pcb_w/2, wall]) {
       linear_extrude(height = 2) {
@@ -78,13 +78,13 @@ module roof_holes(with_ears=false) {
             }
           }
           // hole 2
-          translate([pcb_l+pad*2+wall/2+wall-lid_pad, pcb_w/2+11, wall_h-6]) {
+          translate([pcb_l+pad+wall+lid_pad+wall/2, pcb_w/2+11, wall_h-6]) {
             rotate([0, 90, 0]) {
               a_hole(with_ears);
             }
           }
           // hole 3
-          translate([pcb_l+pad*2+wall/2+wall-lid_pad, pad+pcb_w/2-11, wall_h-6]) {
+          translate([pcb_l+pad+wall+lid_pad+wall/2, pad+pcb_w/2-11, wall_h-6]) {
             rotate([0, 90, 0]) {
               a_hole(with_ears);
             }
@@ -96,7 +96,7 @@ module roof_holes(with_ears=false) {
             }
           }
           // hole 5
-          translate([-(pcb_l-29)/2+lid_pad, pcb_w/2-10, wall_h-6]) {
+          translate([-left_pad-wall-wall/2-lid_pad, pcb_w/2-10, wall_h-6]) {
             rotate([0, 90, 0]) {
               a_hole(with_ears);
             }
