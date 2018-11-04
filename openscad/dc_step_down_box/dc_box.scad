@@ -20,30 +20,37 @@ hole_stand_d = hole_d+4;
 wall = 2;
 wall_h = wall + pcb_under_h + pcb_h + pcb_elems_h;
 
+font = "Liberation Sans";
+
 module lid() {
   translate([-left_pad-pcb_l/2-wall-lid_pad, -pcb_w/2-wall-pad-lid_pad, wall_h]) {
     difference() {
       translate([-wall, -wall, -wall]) {
-        cube([left_pad+pcb_l+wall*4+pad+lid_pad*2, pcb_w+wall*4+pad*2+lid_pad*2, wall*2]);
+        cube([left_pad+pcb_l+wall*4+pad+lid_pad*2, pcb_w+wall*4+pad*2+lid_pad*2, wall*2+1]);
       }
       translate([0, 0, -wall_h]) {
         cube([left_pad+pcb_l+wall*2+pad+lid_pad*2, pcb_w+wall*2+pad*2+lid_pad*2, wall_h]);
       }
       // hole for out
-      translate([left_pad+pcb_l-wall, wall+lid_pad+14, 0]) {
-        cube([7, 12, wall]);
+      translate([left_pad+pcb_l-lid_pad-wall*2-1, wall+lid_pad+15, 0]) {
+        cube([8, 10, wall*2]);
       }
       // hole for voltage control
       translate([44, pcb_w+pad, 0]) {
-        cube([5, 5, wall]);
+        cube([5, 5, wall*2]);
       }
       // hole for numbers and buttons
-      translate([26, 0, 0]) {
-        cube([51, 14, wall]);
+      translate([26, -6, -wall]) {
+        cube([51, 14+6, wall*4]);
+      }
+    translate([wall, wall*2+pad+lid_pad+pcb_w/2, wall]) {
+      linear_extrude(height = 2) {
+        text("DC STEP DOWN", font = font, size = 7, direction = "ltr", spacing = 1 );
       }
     }
+    }
   }
-  translate([-left_pad-pcb_l/2, -pcb_w/2-pad, wall]) {
+  translate([-left_pad-pcb_l/2, -pcb_w/2-pad, wall-lid_pad]) {
     //for holes for roof
     roof_holes(with_ears=true);
   }
@@ -65,31 +72,31 @@ module a_hole(with_ears=false) {
 
 module roof_holes(with_ears=false) {
           // hole 1
-          translate([25, pcb_w+21, wall_h-6]) {
+          translate([25, pcb_w+20+lid_pad, wall_h-6]) {
             rotate([90, 0, 0]) {
               a_hole(with_ears);
             }
           }
           // hole 2
-          translate([pcb_l+pad*2+wall/2+wall, pcb_w/2+11, wall_h-6]) {
+          translate([pcb_l+pad*2+wall/2+wall-lid_pad, pcb_w/2+11, wall_h-6]) {
             rotate([0, 90, 0]) {
               a_hole(with_ears);
             }
           }
           // hole 3
-          translate([pcb_l+pad*2+wall/2+wall, pad+pcb_w/2-11, wall_h-6]) {
+          translate([pcb_l+pad*2+wall/2+wall-lid_pad, pad+pcb_w/2-11, wall_h-6]) {
             rotate([0, 90, 0]) {
               a_hole(with_ears);
             }
           }
           // hole 4
-          translate([10, (pcb_w-17)/2, wall_h-6]) {
+          translate([10, (pcb_w-15)/2-lid_pad, wall_h-6]) {
             rotate([90, 0, 0]) {
               a_hole(with_ears);
             }
           }
           // hole 5
-          translate([-(pcb_l-29)/2, pcb_w/2-10, wall_h-6]) {
+          translate([-(pcb_l-29)/2+lid_pad, pcb_w/2-10, wall_h-6]) {
             rotate([0, 90, 0]) {
               a_hole(with_ears);
             }
@@ -147,4 +154,4 @@ module box() {
 translate([0, 0, 0]) {
   lid();
 }
-box();
+//box();
