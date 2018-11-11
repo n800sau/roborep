@@ -1,14 +1,14 @@
-//cube([122, 82, 55]);
+$fn = 50;
 
 x_size= 135;
 y_size = 93;
 z_size = 50;
 
-bottom_height = 1;
+bottom_height = 2;
 
-border_height = bottom_height + 10;
+border_height = bottom_height + 5;
 border = 2;
-wall = 2;
+wall = border;
 
 hole_h = 30;
 
@@ -53,7 +53,7 @@ module pcb_hole(stand=false) {
     cylinder(d=6, h=6);
   } else {
     translate([0, 0, -hole_h/2]) {
-      cylinder(d=2, h=hole_h);
+      cylinder(d=2.4, h=hole_h);
     }
   }
 }
@@ -83,7 +83,13 @@ module stepstand() {
         difference() {
   //      union() {
           union() {
-            cube([x_size, y_size, border_height]);
+            difference() {
+              cube([x_size, y_size, border_height]);
+// with hole it prints 4:45 instead of 5:15 and $0.76 instead of 0.86
+//              translate([25, 25, 0]) {
+//                cube([x_size-50, y_size-50, border_height]);
+//              }
+            }
             translate([0, 41, border_height]) {
               difference() {
 //              union() {
@@ -118,7 +124,7 @@ module stepstand() {
 }
 
 module switch_holes() {
-  cube([9, 50, 4], center=true);
+  cube([9, 50, 5], center=true);
   translate([9.5, 0, 0]) {
     rotate([90, 0, 0]) {
       cylinder(d=2.5, h = 50, center=true);
