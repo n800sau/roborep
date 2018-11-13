@@ -1,6 +1,6 @@
 height = 35;
-glass_x = 110;
-glass_y = 100;
+glass_x = 100;
+glass_y = 80;
 glass_h = 2.7;
 wall = 3;
 
