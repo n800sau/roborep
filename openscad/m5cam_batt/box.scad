@@ -10,6 +10,7 @@ stand_width = 5;
 box_main_height = 18;
 stand_height = 4;
 lid_height = 3;
+hole_d = 1.6;
 
 module stand() {
   cube([stand_length, stand_width, stand_height]);
@@ -17,7 +18,7 @@ module stand() {
 
 module hole() {
   translate([2.5, 2.5, -10]) {
-    cylinder(d=1.6, h=20);
+    cylinder(d=hole_d, h=20);
   }
 }
 
@@ -72,12 +73,12 @@ module m5box() {
         translate([pcb_hole_length, wall, box_main_height-4]) {
           translate([0, 1.5, 0]) {
             rotate([0, 90, 0]) {
-              cylinder(d=1.6, h=20);
+              cylinder(d=hole_d, h=20);
             }
           }
           translate([0, pcb_hole_width-1.5, 0]) {
             rotate([0, 90, 0]) {
-              cylinder(d=1.6, h=20);
+              cylinder(d=hole_d, h=20);
             }
           }
         }
@@ -140,6 +141,35 @@ module m5lid() {
   }
 }
 
+module m5flat_holes_lid() {
+  cones_with_holes(upside_down=true, height_extra=0, hole_d=3.2);
+  lid_length = 60;
+  extra = (lid_length - (pcb_hole_length+wall*2))/2;
+  translate([-extra/2, 0, 0]) {
+    difference() {
+      cube([lid_length, pcb_hole_width+wall*2, lid_height]);
+      // hole for wires
+      translate([lid_length-15, pcb_hole_width/2+wall, 0]) {
+        cylinder(d=5, h=10);
+      }
+      translate([4.5, pcb_hole_width/2+wall, 0]) {
+        translate([0, 6.25, 0]) {
+          cylinder(d=hole_d, h=10);
+        }
+        translate([0, -6.25, 0]) {
+          cylinder(d=hole_d, h=10);
+        }
+        translate([51.5, 6.25, 0]) {
+          cylinder(d=hole_d, h=10);
+        }
+        translate([51.5, -6.25, 0]) {
+          cylinder(d=hole_d, h=10);
+        }
+      }
+    }
+  }
+}
+
 module connector() {
   translate([7, 5.5, 7.5]) {
     cube([19, 15, wall]);
@@ -183,7 +213,7 @@ module button_hold() {
 }
 
 //m5box();
-//translate([0, 0, 25]) { 
-//  m5lid();
-//}
-button_hold();
+translate([0, 0, 25]) { 
+  m5flat_holes_lid();
+}
+//button_hold();
