@@ -4,6 +4,7 @@ import glob, os
 from sklearn.cluster import DBSCAN, KMeans
 import numpy as np
 
+DIRPATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
 NPDIR = 'output/npdata'
 DSTDIR = 'output/clustered'
 
@@ -51,3 +52,8 @@ for labelID in labelIDs:
 	for i in idxs:
 		data[i]['label'] = labelID
 #		print(data[i]['name'], '-', data[i]['label'])
+		slname = os.path.splitext(data[i]['name'])
+		slname = os.path.join(DSTDIR, slname[0] + '_' + ('%02d' % labelID) + slname[-1])
+		if not os.path.exists(os.path.dirname(slname)):
+			os.makedirs(os.path.dirname(slname))
+		os.symlink(os.path.join(DIRPATH, data[i]['name']), slname)
