@@ -33,5 +33,5 @@ for dname in glob.glob(os.path.join(DIRPATH, '*')):
 					os.makedirs(os.path.dirname(dfname))
 				np.savez_compressed(dfname, **arl)
 			n += 1
-		if n > 5:
+		if n > 3:
 			break

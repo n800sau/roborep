@@ -35,8 +35,8 @@ if not data:
 
 features = np.array([d['features'] for d in data])
 #print('features.shape:', features.shape)
-clt = KMeans(n_jobs=-1)
-#clt = KMeans(n_clusters=2, random_state=0, n_jobs=-1)
+#clt = KMeans(n_jobs=-1)
+clt = KMeans(n_clusters=2, random_state=0, n_jobs=-1)
 #clt = DBSCAN(algorithm='auto', eps=3, leaf_size=30, metric="euclidean", n_jobs=-1)
 print('Fitting...')
 clt.fit(features)
