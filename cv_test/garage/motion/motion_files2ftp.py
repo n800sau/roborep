@@ -40,6 +40,9 @@ while True:
 								print 'Create directory', dname
 								pathlist.append(dname)
 								ftp_h.mkd(dname)
+								# to test successfully created directory
+								ftp_h.cwd(dname)
+								ftp_h.cwd('..')
 							dfname = os.path.join(dname, bname)
 							print 'Sending', fname, ' to ', dfname, '...'
 							f = open(fname, 'rb')
