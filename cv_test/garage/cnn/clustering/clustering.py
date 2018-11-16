@@ -75,4 +75,6 @@ for labelID in labelIDs:
 			os.makedirs(os.path.dirname(slname))
 		os.symlink(os.path.join(DIRPATH, data[i]['name']), slname)
 
+pickle.dump(clt, open(os.path.join(DSTDIR, 'kmeans.pickle'), 'wb'), pickle.HIGHEST_PROTOCOL)
 pickle.dump(plotdata, open(os.path.join(PLOTDIR, 'plotdata.pickle'), 'wb'), pickle.HIGHEST_PROTOCOL)
+
