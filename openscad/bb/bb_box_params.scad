@@ -27,3 +27,11 @@ peg_extra_depth = 6;
 peg_depth = base_thickness + peg_extra_depth;
 
 hole4lid_depth = 26;
+
+// lid params
+bblid_thickness = 3;
+cyl_height = 3;
+
+ll_length = 7+bblid_thickness;
+ll_width = 20;
+ll_thickness = 6;
