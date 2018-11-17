@@ -83,4 +83,30 @@ module RoundedBBLid() {
 
 }
 
+
+module usb_attachment() {
+  union() {
+    cube([20, 25, 3]);
+    translate([0, 0, 0]) {
+      hull() {
+        cube([3, 25, 15]);
+        translate([-10, 0, 12]) {
+          cube([10, 25, 3]);
+        }
+      }
+    }
+  }
+  translate([15, 5, -20]) {
+    cylinder(d=3.2, h=40);
+    translate([0, 13, 0]) {
+      cylinder(d=3.2, h=40);
+    }
+  }
+  
+}
+
+
+translate([-10, -40, -20]) {
+  usb_attachment();
+}
 RoundedBBLid();
