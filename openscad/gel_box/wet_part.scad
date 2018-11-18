@@ -43,9 +43,19 @@ module chamber() {
         cube([glass_x-10, glass_y+10, height], center=true);
       }
       // comb zone
-      for(i=[-comb_places/2:comb_places/2]) {
+      comb_start = -comb_places/2;
+      comb_end = comb_places/2;
+      for(i=[comb_start:comb_end]) {
         translate([i*istep, 0, height-15]) {
           cube([comb_width, glass_y+10, height], center=true);
+          // get low to the glass level + 0.5 for rubber
+          translate([0, 0, -height+15+glass_h+wall-0.5]) {
+            if(i == comb_start) {
+              cube([5, glass_y+5, height], center=true);
+            } else if(i == comb_end) {
+              cube([5, glass_y+5, height], center=true);
+            }
+          }
         }
       }
       // water zone
@@ -68,13 +78,15 @@ module chamber() {
       }      
     }
   }
-  for(i=[-2:2]) {
-    translate([-glass_x/2-7, i*(glass_y/4.5), -11]) {
-      wire_holder();
-    }
-    translate([glass_x/2+7, i*(glass_y/4.5), -11]) {
-      rotate([180, 0, 0]) {
+  translate([0, 0, 0]) {
+    for(i=[-2:2]) {
+      translate([-glass_x/2-7, i*(glass_y/4.5), -11]) {
         wire_holder();
+      }
+      translate([glass_x/2+7, i*(glass_y/4.5), -11]) {
+        rotate([180, 0, 0]) {
+          wire_holder();
+        }
       }
     }
   }
