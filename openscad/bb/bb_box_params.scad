@@ -1,6 +1,5 @@
 $fn = 32;
 
-//wall_thickness=4.5;
 wall_thickness=4;
 base_thickness=3.0;
 bb_depth=20+22;

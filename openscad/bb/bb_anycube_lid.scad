@@ -76,19 +76,33 @@ module RoundedBBLid() {
 
 }
 
+usb_l = 93;
+usb_h = 26;
+usb_w = 13;
+
 a_l = 10;
-a_w = 20;
-a_h = 15;
+a_w = 32.5;
+a_h = 17;
 a_th = 3;
-a_hole_d = 3.2;
-a_hole_w = 10;
+a_hole_d = 3.1;
+lid_hole_d = 4;
+a_hole_w = 8;
 
 module usb_attachment() {
-  union() {
-    // top
-    cube([a_w, a_l, a_th]);
-    translate([0, 0, 0]) {
+  difference() {
+    union(left_side=false, right_side=false) {
+      // top
+      cube([a_w, a_l, a_th]);
+      translate([a_w-a_th+0.5, 0, a_th]) {
+        // lock
+        rotate([-90, 0, 0]) {
+          cylinder(r=2.5, h=a_l);
+        }
+      }
       hull() {
+        translate([-3, 0, 0]) {
+          cube([3, a_l, a_th]);
+        }
         // wall
         cube([a_th, a_l, a_h]);
         translate([-a_hole_w, 0, a_h-a_th]) {
@@ -97,34 +111,41 @@ module usb_attachment() {
         }
       }
     }
+    translate([-a_hole_w/5, a_l/2, 10]) {
+      cylinder(d=a_hole_d, h=11);
+      translate([0, 0, 6]) {
+        cylinder(d=a_hole_d+0.2, h=17);
+      }
+    }
   }
 }
 
-module BBLid(show_lid=true, show_attach=true, single_attach=false) {
-	step = bb_height/3;
+module BBLid(show_lid=true, attach_n=[true, true, true]) {
+  pos = [5, bb_height/2-a_l/2, bb_height-a_l-5];
 	if(show_lid) {
 		difference() {
 			RoundedBBLid();
 			for(i=[0:2]) {
-				translate([-10, -bb_height/2 + step*(i+0.5), -10]) {
-					translate([-a_w/5, a_l/2, 0]) {
-						cylinder(d=a_hole_d, h=20);
+				translate([-10, -bb_height/2 + pos[i], -10]) {
+					translate([-a_hole_w/5, a_l/2, 0]) {
+						cylinder(d=lid_hole_d, h=20);
 					}
 				}
 			}
 		}
 	}
-	if(show_attach) {
-		attach_count = single_attach ? 0 : 2;
-		for(i=[0:attach_count]) {
-			translate([-10, -bb_height/2 + step*(i+0.5), -20]) {
-				difference() {
-					usb_attachment();
-					translate([-a_w/5, a_l/2, 0]) {
-						cylinder(d=a_hole_d, h=20);
-					}
-				}
-			}
-		}
-	}
+  if(attach_n[0])
+    translate([-10, -bb_height/2 + pos[0], -20]) {
+      usb_attachment(left_side=true);
+    }
+  if(attach_n[1])
+    translate([-10, -bb_height/2 + pos[1], -20]) {
+      usb_attachment();
+    }
+  if(attach_n[2])
+    translate([-10, -bb_height/2 + pos[2], -20]) {
+      usb_attachment(right_side=true);
+    }
 }
+
+BBLid(show_lid=true);
