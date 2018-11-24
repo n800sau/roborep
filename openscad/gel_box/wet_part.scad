@@ -1,16 +1,21 @@
-height = 35;
+height = 25;
+
 glass_x = 100;
 glass_y = 80;
 glass_h = 2.7;
 wall = 3;
 
+comb_top_h = wall+glass_h+15;
+comb_tooth_h = 5;
+wire_holder_z = 5;
+
 istep = 10;
 comb_width = 6;
 comb_places = glass_x/istep-1;
 
-banana_d = 6;
+banana_d = 5+0.5;
 
-hole_d = 2.5;
+hole_d = 3.2;
 
 module banana_hole() {
   translate([0, glass_y/2, height/2-10]) {
@@ -39,21 +44,23 @@ module chamber() {
     cube([glass_x+25+2*wall, glass_y+10+2*wall, height], center=true);
     translate([0, 0, 0]) {
       // attach zone
-      translate([0, 0, height-10]) {
-        cube([glass_x-10, glass_y+10, height], center=true);
-      }
-      // comb zone
-      comb_start = -comb_places/2;
-      comb_end = comb_places/2;
-      for(i=[comb_start:comb_end]) {
-        translate([i*istep, 0, height-15]) {
-          cube([comb_width, glass_y+10, height], center=true);
-          // get low to the glass level + 0.5 for rubber
-          translate([0, 0, -height+15+glass_h+wall-0.5]) {
-            if(i == comb_start) {
-              cube([5, glass_y+5, height], center=true);
-            } else if(i == comb_end) {
-              cube([5, glass_y+5, height], center=true);
+      translate([0, 0, comb_top_h]) {
+        cube([glass_x, glass_y+10, height], center=true);
+        // comb zone
+        comb_start = -comb_places/2;
+        comb_end = comb_places/2;
+        for(i=[comb_start:comb_end]) {
+          translate([i*istep, 0, 0]) {
+            translate([0, 0, -comb_tooth_h]) {
+              cube([comb_width, glass_y+10, height], center=true);
+            }
+            // get low to the glass level for rubber
+            translate([0, 0, -comb_top_h+wall+glass_h]) {
+              if(i == comb_start) {
+                cube([5, glass_y+5, height], center=true);
+              } else if(i == comb_end) {
+                cube([5, glass_y+5, height], center=true);
+              }
             }
           }
         }
@@ -77,13 +84,20 @@ module chamber() {
         banana_hole();
       }      
     }
+    for(x=[-glass_x/2-5, glass_x/2+5]) {
+      for(y=[-glass_y/2-4, glass_y/2+4]) {
+        translate([x, y, -height/2-1]) {
+          cylinder(d=3.2, h=12);
+        }
+      }
+    }
   }
-  translate([0, 0, 0]) {
+  translate([0, 0, 5]) {
     for(i=[-2:2]) {
-      translate([-glass_x/2-7, i*(glass_y/4.5), -11]) {
+      translate([-glass_x/2-7, i*(glass_y/4.5), -17+wire_holder_z]) {
         wire_holder();
       }
-      translate([glass_x/2+7, i*(glass_y/4.5), -11]) {
+      translate([glass_x/2+7, i*(glass_y/4.5), -17+wire_holder_z]) {
         rotate([180, 0, 0]) {
           wire_holder();
         }
