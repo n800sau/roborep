@@ -1,3 +1,5 @@
+$fn=50;
+
 height = 25;
 
 glass_x = 100;
@@ -32,9 +34,14 @@ module banana_hole() {
 }
 
 module wire_holder() {
-    rotate([0, 50, 0]) {
-      cube([10, 2, 3], center=true);
+  hh = 3;
+  hw = 6;
+  translate([0, 0, wall+glass_h-height/2+hh/2]) {
+    cube([3, 2, hh], center=true);
+    translate([1.5-hw/2, 0, hh/2]) {
+      cube([hw, 2, 2], center=true);
     }
+  }
 }
 
 module chamber() {
@@ -92,15 +99,15 @@ module chamber() {
       }
     }
   }
-  translate([0, 0, 5]) {
+  translate([0, 0, 0]) {
     for(i=[-2:2]) {
-      translate([-glass_x/2-7, i*(glass_y/4.5), -17+wire_holder_z]) {
+      translate([-glass_x/2-9, i*(glass_y/4.5), 0]) {
         wire_holder();
       }
-      translate([glass_x/2+7, i*(glass_y/4.5), -17+wire_holder_z]) {
-        rotate([180, 0, 0]) {
-          wire_holder();
-        }
+      translate([glass_x/2+9, i*(glass_y/4.5), 0]) {
+          rotate([0, 0, 180]) {
+            wire_holder();
+          }
       }
     }
   }
