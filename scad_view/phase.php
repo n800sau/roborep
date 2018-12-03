@@ -1,10 +1,17 @@
 <?php
+
+	require __DIR__.'/Predis.php';
 	include 'vars.php';
+
 
 	$angle = isset($_GET['angle']) ? intval($_GET['angle']) : 0;
 	$z = isset($_GET['z']) ? intval($_GET['z']) : 200;
 	$distance = isset($_GET['distance']) ? intval($_GET['distance']) : 200;
 
+	$r = new Predis\Client();
+	$r->set('phase.angle', $angle);
+	$r->set('phase.distance', $distance);
+	$r->set('phase.z', $z);
 
 	$a = $angle / 180 * pi();
 	$x = intval(sin($a) * $distance);

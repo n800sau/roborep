@@ -8,9 +8,17 @@
 		var myApp = angular.module('myApp', []);
 		myApp.controller('MyController', function($scope, $http, $interval) {
 
-			$scope.z = 200;
-			$scope.distance = 250;
-			$scope.angle = 15;
+<?php
+
+	require __DIR__.'/Predis.php';
+	include 'vars.php';
+
+	$r = new Predis\Client();
+	echo '$scope.angle = (' . $r->get('phase.angle') . "+ 0) || 0;\n";
+	echo '$scope.distance = (' . $r->get('phase.distance') . "+ 0) || 300;\n";
+	echo '$scope.z = (' . $r->get('phase.z') . "+ 0) || 200;\n";
+
+?>
 
 			var reloadData = function() {
 				$scope.processing = true;
@@ -34,13 +42,21 @@
 				reloadData();
 			}
 
+			$scope.turn_right = function() {
+				$scope.angle += 15;
+				while($scope.angle >= 360) {
+					$scope.angle -= 360;
+				}
+				reloadData();
+			}
+
 			$scope.move_up = function() {
-				$scope.distance += 10;
+				$scope.distance -= 10;
 				reloadData();
 			}
 
 			$scope.move_down = function() {
-				$scope.distance -= 10;
+				$scope.distance += 10;
 				reloadData();
 			}
 
@@ -60,26 +76,26 @@
 			<td>
 			</td>
 			<td>
-				<button ng-click="move_up()" ng-disabled="processing">&up;</button>
+				<button ng-click="move_up()" ng-disabled="processing">&uarr;</button>
 			</td>
 			<td>
 			</td>
 		</tr>
 		<tr>
 			<td>
-				<button ng-click="turn_left()" ng-disabled="processing">&pr;</button>
+				<button ng-click="turn_left()" ng-disabled="processing">&larr;</button>
 			</td>
 			<td>
 			</td>
 			<td>
-				<button ng-click="turn_right()" ng-disabled="processing">&sc;</button>
+				<button ng-click="turn_right()" ng-disabled="processing">&rarr;</button>
 			</td>
 		</tr>
 		<tr>
 			<td>
 			</td>
 			<td>
-				<button ng-click="move_down()" ng-disabled="processing">&down;</button>
+				<button ng-click="move_down()" ng-disabled="processing">&darr;</button>
 			</td>
 			<td>
 			</td>
