@@ -66,7 +66,6 @@
 <body>
 
 <button onclick="location.reload()">&orarr;</button>
-<br/>
 
 <div ng-app='myApp' ng-controller='MyController' ng-cloak>
 
@@ -102,9 +101,6 @@
 		</tr>
 	</div>
 
-	<div>
-	{{data.load_id}}<br>{{data.angle}}<br>{{data.x}}<br>{{data.y}}
-	</div>
 	<img ng-src="data/images/image.png?load_id={{data.load_id}}" width="160"></img>
 
 </div>
