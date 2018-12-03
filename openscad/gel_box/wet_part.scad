@@ -12,21 +12,28 @@ wall = 3;
 wet_x = glass_x + 25;
 wet_y = glass_y + 10;
 
-comb_top_h = wall+glass_h+15;
-comb_tooth_h = 5;
+comp_site_top_h = wall+glass_h+15;
+comb_site_tooth_h = 5;
 wire_holder_z = 5;
 
 wire_d = 2;
 
 istep = 10;
-comb_width = 6;
-comb_places = 9;
+comp_site_width = 6;
+comp_site_count = 9;
 
 banana_d = 5+0.5;
 
 hole_d = 3.2;
 
 font = "Liberation Sans";
+
+comb_thick = 4;
+
+module comb() {
+	// handle
+	cube([comb_thick, wet_y, 10], center=true);
+}
 
 module banana_hole(socket=false) {
   translate([0, glass_y/2, height/2-10]) {
@@ -96,18 +103,18 @@ module chamber() {
     cube([wet_x+2*wall, wet_y+2*wall, height], center=true);
     translate([0, 0, 0]) {
       // attach zone
-      translate([0, 0, comb_top_h]) {
+      translate([0, 0, comp_site_top_h]) {
         cube([glass_x, wet_y, height], center=true);
         // comb zone
-        comb_start = -comb_places/2;
-        comb_end = comb_places/2;
+        comb_start = -comp_site_count/2;
+        comb_end = comp_site_count/2;
         for(i=[comb_start:comb_end]) {
           translate([i*istep, 0, 0]) {
-            translate([0, 0, -comb_tooth_h]) {
-              cube([comb_width, wet_y, height], center=true);
+            translate([0, 0, -comb_site_tooth_h]) {
+              cube([comp_site_width, wet_y, height], center=true);
             }
             // get low to the glass level for rubber
-            translate([0, 0, -comb_top_h+wall+glass_h]) {
+            translate([0, 0, -comp_site_top_h+wall+glass_h]) {
               if(i == comb_start) {
                 cube([5, glass_y+5, height], center=true);
               } else if(i == comb_end) {
@@ -181,4 +188,8 @@ module chamber() {
 }
 
 chamber();
+translate([0, 0, 25]) {
+	comb();
+}
+
 
