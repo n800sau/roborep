@@ -12,15 +12,18 @@ wall = 3;
 wet_x = glass_x + 25;
 wet_y = glass_y + 10;
 
-comp_site_top_h = wall+glass_h+15;
+comb_tooth_h = 10;
+
+comb_site_tooth_h = 5;
+comb_site_top_h = wall+glass_h+comb_tooth_h+comb_site_tooth_h;
 comb_site_tooth_h = 5;
 wire_holder_z = 5;
 
 wire_d = 2;
 
 istep = 10;
-comp_site_width = 6;
-comp_site_count = 9;
+comb_site_width = 6;
+comb_site_count = 9;
 
 banana_d = 5+0.5;
 
@@ -31,8 +34,30 @@ font = "Liberation Sans";
 comb_thick = 4;
 
 module comb() {
-	// handle
-	cube([comb_thick, wet_y, 10], center=true);
+  h = 15;
+  tooth_size = 5;
+  translate([0, 0, h/2-height/2]) {
+    // handle
+    difference() {
+      union() {
+        translate([0, 0, 6]) {
+          cube([comb_thick, wet_y+25, 4], center=true);
+        }
+        cube([comb_thick, wet_y-3, h], center=true);
+      }
+      translate([0, 0, 4]) {
+        cube([comb_thick, wet_y-10, h-3], center=true);
+      }
+    }
+    // comb
+    translate([0, 0, -comb_tooth_h/2-h/2]) {
+      for(y=[-3:1:3]) {
+        translate([comb_thick/4, y * 10, 0]) {
+          cube([comb_thick/2, tooth_size, comb_tooth_h], center=true);
+        }
+      }
+    }
+  }
 }
 
 module banana_hole(socket=false) {
@@ -103,18 +128,18 @@ module chamber() {
     cube([wet_x+2*wall, wet_y+2*wall, height], center=true);
     translate([0, 0, 0]) {
       // attach zone
-      translate([0, 0, comp_site_top_h]) {
+      translate([0, 0, comb_site_top_h]) {
         cube([glass_x, wet_y, height], center=true);
         // comb zone
-        comb_start = -comp_site_count/2;
-        comb_end = comp_site_count/2;
+        comb_start = -comb_site_count/2;
+        comb_end = comb_site_count/2;
         for(i=[comb_start:comb_end]) {
           translate([i*istep, 0, 0]) {
             translate([0, 0, -comb_site_tooth_h]) {
-              cube([comp_site_width, wet_y, height], center=true);
+              cube([comb_site_width, wet_y, height], center=true);
             }
             // get low to the glass level for rubber
-            translate([0, 0, -comp_site_top_h+wall+glass_h]) {
+            translate([0, 0, -comb_site_top_h+wall+glass_h]) {
               if(i == comb_start) {
                 cube([5, glass_y+5, height], center=true);
               } else if(i == comb_end) {
@@ -187,8 +212,8 @@ module chamber() {
   }
 }
 
-chamber();
-translate([0, 0, 25]) {
+//chamber();
+translate([comb_site_width-1, 0, comb_site_top_h-comb_site_tooth_h]) {
 	comb();
 }
 
