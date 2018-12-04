@@ -31,7 +31,35 @@ hole_d = 3.2;
 
 font = "Liberation Sans";
 
-comb_thick = 4;
+// for 0.3mm
+comb_thick_x = 5.4;
+comb_thin_x = 2;
+comb_well_x = 2;
+
+module border() {
+  h = comb_site_top_h;
+  translate([0, 0, h/2-height/2]) {
+    // handle
+    difference() {
+      union() {
+        // handle
+        translate([(comb_thick_x-comb_thin_x)/2, 0, 6]) {
+          cube([comb_thin, wet_y+25, 4], center=true);
+        }
+        // with side gap along y
+        cube([comb_thick_x, wet_y-3, h], center=true);
+      }
+      // remove top
+      translate([0, 0, 4]) {
+        cube([comb_thick_x, wet_y-10, h-3], center=true);
+      }
+      // make middle thinner
+      translate([(comb_thick_x-comb_thin_x)/2, 0, 0]) {
+        cube([comb_thin_x, wet_y-10, h-3], center=true);
+      }
+    }
+  }
+}
 
 module comb() {
   h = 15;
@@ -40,20 +68,27 @@ module comb() {
     // handle
     difference() {
       union() {
-        translate([0, 0, 6]) {
-          cube([comb_thick, wet_y+25, 4], center=true);
+        // handle
+        translate([(comb_thick_x-comb_thin_x)/2, 0, 6]) {
+          cube([comb_thin, wet_y+25, 4], center=true);
         }
-        cube([comb_thick, wet_y-3, h], center=true);
+        // with side gap along y
+        cube([comb_thick_x, wet_y-3, h], center=true);
       }
+      // remove top
       translate([0, 0, 4]) {
-        cube([comb_thick, wet_y-10, h-3], center=true);
+        cube([comb_thick_x, wet_y-10, h-3], center=true);
+      }
+      // make middle thinner
+      translate([(comb_thick_x-comb_thin_x)/2, 0, 0]) {
+        cube([comb_thin_x, wet_y-10, h-3], center=true);
       }
     }
     // comb
     translate([0, 0, -comb_tooth_h/2-h/2]) {
       for(y=[-3:1:3]) {
-        translate([comb_thick/4, y * 10, 0]) {
-          cube([comb_thick/2, tooth_size, comb_tooth_h], center=true);
+        translate([(comb_thick_x-comb_well_x)/2, y * 10, 0]) {
+          cube([comb_well_x, tooth_size, comb_tooth_h], center=true);
         }
       }
     }
@@ -214,7 +249,8 @@ module chamber() {
 
 //chamber();
 translate([comb_site_width-1, 0, comb_site_top_h-comb_site_tooth_h]) {
-	comb();
+//	comb();
+	border();
 }
 
 

@@ -1,9 +1,13 @@
 mk5_d = 4.5;
 mk5_h = 31;
+
 mk200_d = 6.5;
 mk200_h = 50;
+
 big_tubes_d = 11.5;
 big_tubes_h = 75;
+
+// centrifuge tubes
 
 module holes(d, h=50) {
   for(x=[-3:3]) {
