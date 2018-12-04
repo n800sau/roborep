@@ -32,30 +32,29 @@ hole_d = 3.2;
 font = "Liberation Sans";
 
 // for 0.3mm
-comb_thick_x = 5.4;
-comb_thin_x = 2;
-comb_well_x = 2;
+comb_thick_x = 4.8;
+comb_thin_x = 1.5;
+comb_well_x = 1.5;
 
 module border() {
-  h = comb_site_top_h;
-  translate([0, 0, h/2-height/2]) {
-    // handle
+  h = height;
+  translate([0, 0, -h/2]) {
     difference() {
       union() {
         // handle
-        translate([(comb_thick_x-comb_thin_x)/2, 0, 6]) {
-          cube([comb_thin, wet_y+25, 4], center=true);
+        translate([-(comb_thin_x-comb_thick_x)/2, 0, h/2-4/2]) {
+          cube([comb_thin_x, wet_y+25, 3], center=true);
         }
         // with side gap along y
-        cube([comb_thick_x, wet_y-3, h], center=true);
+        cube([comb_thick_x, wet_y-8, h], center=true);
       }
       // remove top
-      translate([0, 0, 4]) {
-        cube([comb_thick_x, wet_y-10, h-3], center=true);
+      translate([0, 0, 6]) {
+        cube([comb_thick_x, wet_y-18, h-4], center=true);
       }
       // make middle thinner
-      translate([(comb_thick_x-comb_thin_x)/2, 0, 0]) {
-        cube([comb_thin_x, wet_y-10, h-3], center=true);
+      translate([-(comb_thick_x-comb_thin_x)/2, 0, -12]) {
+        cube([comb_thick_x-comb_thin_x, wet_y, h-6], center=true);
       }
     }
   }
@@ -250,7 +249,9 @@ module chamber() {
 //chamber();
 translate([comb_site_width-1, 0, comb_site_top_h-comb_site_tooth_h]) {
 //	comb();
-	border();
+  translate([glass_x/2-11, 0, 2]) {
+    border();
+  }
 }
 
 
