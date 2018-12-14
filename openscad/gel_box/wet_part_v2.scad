@@ -97,4 +97,45 @@ module chamber() {
   }
 }
 
-chamber();
+module wire_set_plus() {
+	holder_outer_d = 4;
+	holder_inner_d = 2;
+	holder_h_offset = (holder_outer_d-height)/2;
+	border_x = wall + 5;
+	border_y = wall + 3;
+	difference() {
+		union() {
+			cube([wall, wet_y, height], center=true);
+			translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
+				rotate([90, 0, 0]) {
+					cylinder(d=holder_outer_d, h=wet_y, center=true);
+				}
+			}
+			translate([0, wet_y/2, 0]) {
+				difference() {
+					cube([border_x, border_y, height], center=true);
+// to test groove
+					translate([0, border_y/2, 0]) {
+						cylinder(d=2, h=height, center=true);
+					}
+				}
+			}
+			translate([0, -wet_y/2, 0]) {
+				cube([border_x, border_y, height], center=true);
+			}
+		}
+		translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
+			rotate([90, 0, 0]) {
+				cylinder(d=holder_inner_d, h=wet_y-10, center=true);
+			}
+		}
+		// groove
+		translate([0, wet_y/2, 0]) {
+//			cylinder(d=2, h=height, center=true);
+		}
+	}
+}
+
+
+//chamber();
+wire_set_plus();
