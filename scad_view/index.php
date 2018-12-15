@@ -6,7 +6,7 @@
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.5/angular.min.js"></script>
 	<script type="text/javascript">
 		var myApp = angular.module('myApp', []);
-		myApp.controller('MyController', function($scope, $http, $interval) {
+		myApp.controller('MyController', function($scope, $http, $interval, $timeout) {
 
 <?php
 
@@ -19,6 +19,17 @@
 	echo '$scope.z = (' . $r->get('phase.z') . "+ 0) || 200;\n";
 
 ?>
+			var reload_deferred;
+
+			var debounceReloadData = function() {
+				if(reload_deferred) {
+					$timeout.cancel(reload_deferred);
+					reload_deferred = undefined;
+				}
+				reload_deferred = $timeout(function() {
+					reloadData();
+				}, 500);
+			}
 
 			var reloadData = function() {
 				$scope.processing = true;
@@ -32,14 +43,14 @@
 				);
 			}
 
-			reloadData();
+			debounceReloadData();
 
 			$scope.turn_left = function() {
 				$scope.angle -= 15;
 				while($scope.angle < 0) {
 					$scope.angle += 360;
 				}
-				reloadData();
+				debounceReloadData();
 			}
 
 			$scope.turn_right = function() {
@@ -47,17 +58,27 @@
 				while($scope.angle >= 360) {
 					$scope.angle -= 360;
 				}
-				reloadData();
+				debounceReloadData();
+			}
+
+			$scope.zoom_in = function() {
+				$scope.distance -= 10;
+				debounceReloadData();
+			}
+
+			$scope.zoom_out = function() {
+				$scope.distance += 10;
+				debounceReloadData();
 			}
 
 			$scope.move_up = function() {
-				$scope.distance -= 10;
-				reloadData();
+				$scope.z += 10;
+				debounceReloadData();
 			}
 
 			$scope.move_down = function() {
-				$scope.distance += 10;
-				reloadData();
+				$scope.z -= 10;
+				debounceReloadData();
 			}
 
 		});
@@ -92,11 +113,13 @@
 		</tr>
 		<tr>
 			<td>
+				<button ng-click="zoom_out()" ng-disabled="processing">-</button>
 			</td>
 			<td>
 				<button ng-click="move_down()" ng-disabled="processing">&darr;</button>
 			</td>
 			<td>
+				<button ng-click="zoom_in()" ng-disabled="processing">+</button>
 			</td>
 		</tr>
 	</div>
