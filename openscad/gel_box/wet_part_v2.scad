@@ -23,6 +23,11 @@ istep = 10;
 comb_width = 6;
 comb_places = 9;
 
+pad = 0.5;
+electrode_plate_x = 5;
+electrode_plate_y = wet_y;
+electrode_plate_bottom = 5;
+
 font = "Liberation Sans";
 
 module chamber() {
@@ -66,9 +71,9 @@ module chamber() {
         cube([glass_x-5, glass_y-7, height], center=true);
       }
       // extraction for electrode
-      for(x=[wet_x/2-5/2, -wet_x/2+5/2]) {
-        translate([x, 0, 3+glass_h]) {
-          cube([5, wet_y, height], center=true);
+      for(x=[(wet_x-electrode_plate_x)/2, (-wet_x+electrode_plate_x)/2]) {
+        translate([x, 0, glass_h]) {
+          cube([electrode_plate_x+pad, electrode_plate_y, height], center=true);
         }
       }
     }
@@ -101,34 +106,42 @@ module wire_set_plus() {
 	holder_outer_d = 4;
 	holder_inner_d = 2;
 	holder_h_offset = (holder_outer_d-height)/2;
-	border_x = wall + 5;
+	border_x = wall + 3;
 	border_y = wall + 3;
 	difference() {
 		union() {
-			cube([wall, wet_y, height], center=true);
+			cube([wall, electrode_plate_y-pad*2, height], center=true);
+      // bottom cylinder to hold wire
 			translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
 				rotate([90, 0, 0]) {
 					cylinder(d=holder_outer_d, h=wet_y, center=true);
 				}
 			}
-			translate([0, wet_y/2, 0]) {
+      // socket side pole
+			translate([0, (electrode_plate_y-border_y)/2-pad*2, 0]) {
 				difference() {
 					cube([border_x, border_y, height], center=true);
-// to test groove
+// to test vertical groove
 					translate([0, border_y/2, 0]) {
 						cylinder(d=2, h=height, center=true);
 					}
 				}
 			}
-			translate([0, -wet_y/2, 0]) {
+      // non-socket side pole
+			translate([0, (border_y-electrode_plate_y)/2+pad*2, 0]) {
 				cube([border_x, border_y, height], center=true);
 			}
 		}
+    // horizontal groove
 		translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
 			rotate([90, 0, 0]) {
-				cylinder(d=holder_inner_d, h=wet_y-10, center=true);
+				cylinder(d=holder_inner_d, h=wet_y+10, center=true);
 			}
 		}
+    // remove bottom part
+    translate([0, 0, holder_h_offset]) {
+      cube([20, wet_y-10, 20], center=true);
+    }
 		// groove
 		translate([0, wet_y/2, 0]) {
 //			cylinder(d=2, h=height, center=true);
@@ -137,5 +150,9 @@ module wire_set_plus() {
 }
 
 
-//chamber();
-wire_set_plus();
+chamber();
+color("blue")
+translate([wet_x/2-3, 0, 10]) {
+  wire_set_plus();
+}
+
