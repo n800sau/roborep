@@ -30,11 +30,29 @@ electrode_plate_bottom = 5;
 
 font = "Liberation Sans";
 
+module top_hole(xpos=0) {
+  hole_d = 3.1;
+  hole_h = 50;
+  for(y=[wet_y-wall, wall-wet_y]) {
+    translate([xpos, y/2, 0]) {
+      rotate([0, 0, 90]) {
+        cylinder(d=hole_d, h=hole_h, center=true);
+      }
+    }
+  }
+}
+
 module chamber() {
   difference() {
-//  union() {
-    // walls
-    cube([wet_x+2*wall, wet_y+2*wall, height], center=true);
+    union() {
+      // walls
+      cube([wet_x+2*wall, wet_y+2*wall, height], center=true);
+    }
+    // holes through
+    for(x=[20, 80, 100]) {
+      top_hole((x-wet_x)/2);
+      top_hole((wet_x-x)/2);
+    }
     translate([0, 0, 0]) {
       // attach zone
       translate([0, 0, comb_top_h]) {
@@ -42,20 +60,22 @@ module chamber() {
         // comb zone
         comb_start = -comb_places/2;
         comb_end = comb_places/2;
-        for(i=[comb_start:comb_end]) {
-          translate([i*istep, 0, 0]) {
-            translate([0, 0, -comb_tooth_h]) {
+        for(i=[comb_start+1,0,comb_end-1]) {
+          translate([i*istep, 0, -comb_tooth_h]) {
+            cube([comb_width, wet_y, height], center=true);
+          }
+        }
+        for(i=[-1,1]) {
+          translate([i*istep*1.75, 0, -comb_tooth_h]) {
+            //cube([comb_width*2.5, wet_y, height], center=true);
+          }
+        }
+        for(i=[comb_start,comb_end]) {
+            // get low to the glass level for rubber
+            translate([i*istep, 0, -comb_top_h+wall+glass_h]) {
+              cube([comb_width, wet_y, height], center=true);
               cube([comb_width, wet_y, height], center=true);
             }
-            // get low to the glass level for rubber
-            translate([0, 0, -comb_top_h+wall+glass_h]) {
-              if(i == comb_start) {
-                cube([5, glass_y+5, height], center=true);
-              } else if(i == comb_end) {
-                cube([5, glass_y+5, height], center=true);
-              }
-            }
-          }
         }
       }
       // water zone
@@ -74,14 +94,6 @@ module chamber() {
       for(x=[(wet_x-electrode_plate_x)/2, (-wet_x+electrode_plate_x)/2]) {
         translate([x, 0, glass_h]) {
           cube([electrode_plate_x+pad, electrode_plate_y, height], center=true);
-        }
-      }
-    }
-    // bottom holes
-    for(x=[-glass_x/2-5, glass_x/2+5]) {
-      for(y=[-glass_y/2-4, glass_y/2+4]) {
-        translate([x, y, -height/2-1]) {
-          cylinder(d=3.2, h=12);
         }
       }
     }
@@ -153,6 +165,6 @@ module wire_set_plus() {
 chamber();
 color("blue")
 translate([wet_x/2-3, 0, 10]) {
-  wire_set_plus();
+  //wire_set_plus();
 }
 
