@@ -120,16 +120,20 @@ module wire_set_plus() {
 	holder_h_offset = (holder_outer_d-height)/2;
 	border_x = wall + 3;
 	border_y = wall + 3;
+	bolt_plate_x = 10;
+	bolt_plate_y = wall;
+	bolt_plate_z = 10;
+	bolt_plate_case_base_y = 20;
 	difference() {
 		union() {
 			cube([wall, electrode_plate_y-pad*2, height], center=true);
-      // bottom cylinder to hold wire
+			// bottom cylinder to hold wire
 			translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
 				rotate([90, 0, 0]) {
 					cylinder(d=holder_outer_d, h=wet_y, center=true);
 				}
 			}
-      // socket side pole
+			// socket side pole
 			translate([0, (electrode_plate_y-border_y)/2-pad*2, 0]) {
 				difference() {
 					cube([border_x, border_y, height], center=true);
@@ -139,21 +143,35 @@ module wire_set_plus() {
 					}
 				}
 			}
-      // non-socket side pole
+			// non-socket side pole
 			translate([0, (border_y-electrode_plate_y)/2+pad*2, 0]) {
 				cube([border_x, border_y, height], center=true);
 			}
+			// top plate for bolt
+			color("green")
+			translate([(bolt_plate_x-border_x)/2, (electrode_plate_y-bolt_plate_case_base_y)/2, height-wall]) {
+//				union() {
+				difference() {
+					cube([bolt_plate_x, bolt_plate_y, bolt_plate_z], center=true);
+					rotate([90, 0, 0]) {
+						cylinder(d=4, h=bolt_plate_case_base_y, center=true);
+					}
+				}
+				translate([0, 0, (-wall-bolt_plate_z)/2]) {
+					cube([bolt_plate_x, bolt_plate_case_base_y, wall], center=true);
+				}
+			}
 		}
-    // horizontal groove
+		// horizontal groove
 		translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
 			rotate([90, 0, 0]) {
 				cylinder(d=holder_inner_d, h=wet_y+10, center=true);
 			}
 		}
-    // remove bottom part
-    translate([0, 0, holder_h_offset]) {
-      cube([20, wet_y-10, 20], center=true);
-    }
+		// remove bottom part
+		translate([0, 0, holder_h_offset]) {
+			cube([20, wet_y-10, 20], center=true);
+		}
 		// groove
 		translate([0, wet_y/2, 0]) {
 //			cylinder(d=2, h=height, center=true);
@@ -162,9 +180,9 @@ module wire_set_plus() {
 }
 
 
-chamber();
-color("blue")
+//chamber();
+//color("blue")
 translate([wet_x/2-3, 0, 10]) {
-  //wire_set_plus();
+	wire_set_plus();
 }
 
