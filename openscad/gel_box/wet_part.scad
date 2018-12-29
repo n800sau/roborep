@@ -69,7 +69,7 @@ module comb() {
       union() {
         // handle
         translate([(comb_thick_x-comb_thin_x)/2, 0, 6]) {
-          cube([comb_thin, wet_y+25, 4], center=true);
+          cube([comb_thin_x, wet_y+25, 4], center=true);
         }
         // with side gap along y
         cube([comb_thick_x, wet_y-3, h], center=true);
