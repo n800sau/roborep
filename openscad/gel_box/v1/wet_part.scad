@@ -1,3 +1,8 @@
+// to show stuff
+show_chamber = true;
+show_comb = true;
+show_barier = true;
+
 use <MCAD/boxes.scad>
 
 $fn=50;
@@ -36,7 +41,7 @@ comb_thick_x = 4.8;
 comb_thin_x = 1.5;
 comb_well_x = 1.5;
 
-module border() {
+module barier() {
   h = height;
   translate([0, 0, -h/2]) {
     difference() {
@@ -145,19 +150,10 @@ module wire_holder() {
       }
     }
   }
-//  hh = 3.5;
-//  hw = 6;
-//  translate([2, 0, wall+glass_h-height/2+hh/2]) {
-//    cube([3, 2, hh], center=true);
-//    translate([1.5-hw/2, 0, hh/2]) {
-//      cube([hw, 2, 2], center=true);
-//    }
-//  }
 }
 
 module chamber() {
   difference() {
-//  union() {
     // walls
     cube([wet_x+2*wall, wet_y+2*wall, height], center=true);
     translate([0, 0, 0]) {
@@ -197,13 +193,7 @@ module chamber() {
       }
       // plus
       translate([glass_x/2+5, 0, 0]) {
-//!difference() {
-//!union() {
-//  translate([-10, 76, -6]) {
-//  cube([17, 2, 20]);
-//  }
         banana_hole();
-//}
       }
       // minus
       translate([-glass_x/2-5, 0, 0]) {
@@ -233,7 +223,7 @@ module chamber() {
     }
   }
   translate([0, 0, 0]) {
-    for(i=[-1.5:1.5]) {
+    for(i=[-1.5,1.5]) {
       translate([-glass_x/2-9, i*(glass_y/4.5), 0]) {
         wire_holder();
       }
@@ -246,12 +236,17 @@ module chamber() {
   }
 }
 
-//chamber();
-translate([comb_site_width-1, 0, comb_site_top_h-comb_site_tooth_h]) {
-//	comb();
-  translate([glass_x/2-11, 0, 2]) {
-    border();
+if(show_chamber) chamber();
+if(show_comb)
+  color("green")
+  translate([comb_site_width-1, 0, comb_site_top_h-comb_site_tooth_h]) {
+    comb();
   }
-}
+if(show_barier)
+  color("blue")
+  translate([glass_x/2-6, 0, 22]) {
+    barier();
+  }
+
 
 
