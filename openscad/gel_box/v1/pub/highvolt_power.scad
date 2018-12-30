@@ -1,3 +1,6 @@
+show_box = true;
+show_lid = true;
+
 use <MCAD/boxes.scad>
 
 pad = 0.5;
@@ -262,8 +265,10 @@ module high_volt_lid() {
   }
 }
 
-//high_volt_enclosure();
-//color("blue")
-translate([-(lid_x-box_x)/2, -(lid_y-box_y)/2, full_height-lid_border_h+pad]) {
-  high_volt_lid();
-}
+if(show_box)
+  high_volt_enclosure();
+if(show_lid)
+  color("blue")
+    translate([-(lid_x-box_x)/2, -(lid_y-box_y)/2, full_height-lid_border_h+pad]) {
+      high_volt_lid();
+    }

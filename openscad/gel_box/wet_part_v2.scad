@@ -4,13 +4,13 @@ $fn=50;
 
 height = 20;
 
-glass_x = 102;
+glass_x = 100.8;
 glass_y = 82;
 glass_h = 2.7;
 wall = 3;
 
 pad_y = 2;
-wet_x = glass_x + 25;
+wet_x = glass_x + 20;
 wet_y = glass_y + 10 + pad_y*2;
 
 comb_top_h = wall+glass_h+15;
@@ -25,7 +25,8 @@ comb_places = 9;
 
 pad = 0.5;
 electrode_plate_x = 5;
-electrode_plate_y = wet_y;
+electrode_top_x = 6;
+electrode_plate_y = wet_y-pad*2;
 electrode_plate_bottom = 5;
 
 font = "Liberation Sans";
@@ -49,7 +50,7 @@ module chamber() {
       cube([wet_x+2*wall, wet_y+2*wall, height], center=true);
     }
     // holes through
-    for(x=[20, 80, 100]) {
+    for(x=[17.5, 80, 100]) {
       top_hole((x-wet_x)/2);
       top_hole((wet_x-x)/2);
     }
@@ -97,92 +98,166 @@ module chamber() {
         }
       }
     }
-    translate([wet_x/2+wall, wet_y/2-20, 0]) {
-      rotate([90, 0, 90]) {
-        linear_extrude(height = 2) {
-          text("PLUS", font = font, size = 5, direction = "ltr", spacing = 1 );
-        }
-      }
-    }
-    translate([-wet_x/2-wall, wet_y/2, 0]) {
-      rotate([90, 0, 270]) {
-        linear_extrude(height = wall-2) {
-          text("MINUS", font = font, size = 5, direction = "ltr", spacing = 1 );
-        }
-      }
-    }
   }
 }
 
-module wire_set_plus() {
-	holder_outer_d = 4;
-	holder_inner_d = 2;
-	holder_h_offset = (holder_outer_d-height)/2;
-	border_x = wall + 3;
-	border_y = wall + 3;
-	bolt_plate_x = 10;
-	bolt_plate_y = wall;
-	bolt_plate_z = 10;
-	bolt_plate_case_base_y = 20;
+holder_outer_d = 4;
+holder_inner_d = 2;
+holder_h_offset = (holder_outer_d-height)/2;
+border_x = wall; // limited by gel box
+border_y = wall + 3;
+bolt_plate_x = 10;
+bolt_plate_y = wall;
+bolt_plate_z = 10;
+bolt_plate_case_base_y = 30+wall*2;
+
+module wire_set() {
 	difference() {
 		union() {
+      translate([(electrode_top_x-wall)/2, 0, (height-wall)/2]) {
+        cube([electrode_top_x, electrode_plate_y+wall, wall], center=true);
+      }
 			cube([wall, electrode_plate_y-pad*2, height], center=true);
 			// bottom cylinder to hold wire
-			translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
+			translate([(holder_outer_d)/2-1, 0, c]) {
 				rotate([90, 0, 0]) {
-					cylinder(d=holder_outer_d, h=wet_y, center=true);
+					cylinder(d=holder_outer_d, h=electrode_plate_y-pad*2, center=true);
 				}
 			}
 			// socket side pole
-			translate([0, (electrode_plate_y-border_y)/2-pad*2, 0]) {
+			translate([border_x/2, (electrode_plate_y-border_y)/2-pad, 0]) {
 				difference() {
 					cube([border_x, border_y, height], center=true);
-// to test vertical groove
-					translate([0, border_y/2, 0]) {
-						cylinder(d=2, h=height, center=true);
-					}
 				}
 			}
 			// non-socket side pole
-			translate([0, (border_y-electrode_plate_y)/2+pad*2, 0]) {
+			translate([border_x/2, (border_y-electrode_plate_y)/2+pad, 0]) {
 				cube([border_x, border_y, height], center=true);
 			}
-			// top plate for bolt
-			color("green")
-			translate([(bolt_plate_x-border_x)/2, (electrode_plate_y-bolt_plate_case_base_y)/2, height-wall]) {
-//				union() {
-				difference() {
-					cube([bolt_plate_x, bolt_plate_y, bolt_plate_z], center=true);
-					rotate([90, 0, 0]) {
-						cylinder(d=4, h=bolt_plate_case_base_y, center=true);
-					}
-				}
-				translate([0, 0, (-wall-bolt_plate_z)/2]) {
-					cube([bolt_plate_x, bolt_plate_case_base_y, wall], center=true);
-				}
-			}
 		}
-		// horizontal groove
-		translate([(holder_outer_d-wall)/2, 0, holder_h_offset]) {
+		// horizontal wire holder
+		translate([(holder_outer_d)/2-1, 0, holder_h_offset]) {
 			rotate([90, 0, 0]) {
 				cylinder(d=holder_inner_d, h=wet_y+10, center=true);
 			}
 		}
 		// remove bottom part
 		translate([0, 0, holder_h_offset]) {
-			cube([20, wet_y-10, 20], center=true);
+			cube([20, glass_y, 20], center=true);
 		}
-		// groove
-		translate([0, wet_y/2, 0]) {
-//			cylinder(d=2, h=height, center=true);
+		// vert groove
+    for(ypos=[-wet_y/2+1, wet_y/2-1]) {
+      translate([1, ypos, 0]) {
+        cylinder(d=2, h=height+10, center=true);
+      }
 		}
+    // attach holes
+    for(ypos=[-electrode_plate_y/2+29, electrode_plate_y/2-29]) {
+      translate([(electrode_top_x-wall)/2, ypos, 0]) {
+        cylinder(d=3, h=50, center=true);
+      }
+    }
 	}
 }
 
+module wire_set_attach() {
+			// top plate for bolt
+			color("green")
+			translate([(bolt_plate_x-border_x+wall*2)/2,
+          (electrode_plate_y-bolt_plate_case_base_y)/2, height-wall]) {
+//        union() {
+        difference() {
+          union() {
+            translate([0, 3+wall, 0]) {
+              difference() {
+                cube([bolt_plate_x+pad, bolt_plate_y, bolt_plate_z], center=true);
+                rotate([90, 0, 0]) {
+                  cylinder(d=4, h=bolt_plate_case_base_y, center=true);
+                }
+              }
+            }
+            // side
+            translate([(-wall-bolt_plate_x)/2, wall, wall/2]) {
+              s_h = bolt_plate_z+wall*3;
+              cube([wall, bolt_plate_case_base_y, s_h+pad], center=true);
+              translate([wall, 0, (s_h-wall+pad)/2]) {
+                cube([wall, bolt_plate_case_base_y, wall], center=true);
+              }
+            }
+            // bottom
+            translate([0, wall, (-wall-bolt_plate_z)/2]) {
+              cube([bolt_plate_x, bolt_plate_case_base_y, wall], center=true);
+            }
+            // out side 
+            translate([(wall-bolt_plate_x)/2+pad, (bolt_plate_case_base_y+wall)/2+0.5+pad, -8]) {
+              cube([bolt_plate_x, 1, 5], center=true);
+            }
+          }
+          // attach hole
+          translate([0, -11, 0]) {
+            cylinder(d=4, h=50, center=true);
+          }
+          // vertical groove hole
+          translate([-pad, (bolt_plate_case_base_y-wall)/2+pad, -8]) {
+            cylinder(d=2.5, h=10, center=true);
+          }
+        }
+			}
+}
 
-//chamber();
-//color("blue")
-translate([wet_x/2-3, 0, 10]) {
-	wire_set_plus();
+module wire_set_cover() {
+//  union() {
+  difference() {
+    translate([wall+pad, 4+wall, 0]) {
+      cube([bolt_plate_x+pad, bolt_plate_case_base_y-8-wall*2, wall], center=true);
+      translate([0, (-bolt_plate_case_base_y+8+bolt_plate_y)/2, (wall-bolt_plate_z)/2]) {
+        cube([bolt_plate_x+pad, bolt_plate_y, bolt_plate_z], center=true);
+        loc_y = (bolt_plate_case_base_y-8-bolt_plate_y+wall)/2;
+        translate([0, (wall-loc_y)/2, (-wall-bolt_plate_z)/2]) {
+          cube([bolt_plate_x+pad, loc_y, wall], center=true);
+        }
+        // side wall
+        translate([(wall+bolt_plate_x)/2, 4+wall, -wall]) {
+          cube([wall, bolt_plate_case_base_y+wall, bolt_plate_z+wall*2], center=true);
+        }
+        // out end wall
+        translate([-wall/2, bolt_plate_case_base_y/2+4+wall, -wall]) {
+          cube([bolt_plate_x+wall+pad, wall, bolt_plate_z+wall*2], center=true);
+        }
+      }
+    }
+    // attachment hole
+    translate([3-pad/2, -11-wall, 0]) {
+      cylinder(d=4, h=50, center=true);
+    }
+    // site wire hole
+    translate([-2, 17, -4]) {
+      cube([7, 10, 2.5], center=true);
+//      rotate([90, 0, 0]) {
+//        cylinder(d=3, h=10, center=true);
+//      }
+    }
+  }
+}
+
+chamber();
+color("blue")
+translate([wet_x/2-3, 0, 3]) {
+  difference() {
+    union() {
+//      wire_set();
+      translate([-5, 0, wall-pad]) {
+//      wire_set_attach();
+        translate([(bolt_plate_x-border_x)/2, (electrode_plate_y-bolt_plate_case_base_y)/2+wall, 24]) {
+//          wire_set_cover();
+          %translate([2.5, 3, -7]) {
+            rotate([90, 0, 0]) {
+//              cylinder(d=3, h=13.5, center=true);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
