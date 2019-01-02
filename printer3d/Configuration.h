@@ -763,7 +763,8 @@
 // my old
 //#define Z_PROBE_OFFSET_FROM_EXTRUDER -15.8  // Z offset: -below +above  [the nozzle]
 // my for glass
-#define Z_PROBE_OFFSET_FROM_EXTRUDER -16.2  // Z offset: -below +above  [the nozzle]
+//#define Z_PROBE_OFFSET_FROM_EXTRUDER -16.2  // Z offset: -below +above  [the nozzle]
+#define Z_PROBE_OFFSET_FROM_EXTRUDER -15.4  // Z offset for toll? extruder
 
 // X and Y axis travel speed (mm/m) between probes
 #define XY_PROBE_SPEED 4000
