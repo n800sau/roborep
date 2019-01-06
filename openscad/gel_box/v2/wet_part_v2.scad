@@ -1,12 +1,17 @@
 // to show stuff
-show_chamber = false;
+show_chamber = 0;
 show_leg = false;
 show_comb = false;
 show_barrier = false;
-show_wireset_holder = false;
-show_wireset_attach = false;
-show_wireset_cover = false;
-show_light_enclosure = true;
+show_wireset_carbon = 0;
+show_wireset_holder = 0;
+show_wireset_attach = 0;
+show_wireset_cover = 1;
+show_light_enclosure = false;
+
+// wire set type: "wire" or "carbon"
+wire_set_holder_type = "carbon";
+//wire_set_holder_type = "wire";
 
 use <ear.scad>
 
@@ -24,7 +29,8 @@ wet_x = glass_x + 20;
 wet_y = glass_y + 10 + pad_y*2;
 
 wire_holder_z = 5;
-wire_d = 2;
+wire_holder_h_offset=-6;
+wire_hole_d = 2;
 
 istep = 10;
 
@@ -44,10 +50,7 @@ electrode_top_x = 6;
 electrode_plate_y = wet_y-pad*2;
 electrode_plate_bottom = 5;
 
-holder_outer_d = 4;
-holder_inner_d = 2;
-holder_h_offset = (holder_outer_d-height)/2;
-border_x = wall; // limited by gel box
+border_x = comb_place_sz_x-pad*2; // limited by gel box
 border_y = wall + 3;
 bolt_plate_x = 10;
 bolt_plate_y = wall;
@@ -83,6 +86,15 @@ lenc_led_hole = 20;
 lenc_led_hole_dist = 32;
 
 hole_x_pos_list = [17.5, 80, 100];
+
+carbon_h = 12;
+// carbon_wire_hole_d = 1.6 // for steel
+carbon_wire_hole_d = 1.1;
+
+carbon_d = carbon_wire_hole_d + 3;
+carbon_sz_x = 2;
+carbox_sz_y = glass_y-pad*2;
+//carbox_sz_y = 10;
 
 module top_hole(xpos=0, d) {
   hole_h = 50;
@@ -156,38 +168,125 @@ module chamber() {
   }
 }
 
+module wire_set_carbon() {
+	difference() {
+		union() {
+      translate([carbon_sz_x/2, 0, (-height+carbon_h)/2+1.5]) {
+        cube([carbon_sz_x, carbox_sz_y, carbon_h], center=true);
+        translate([(border_x-carbon_sz_x)/2, 0, -carbon_h/2]) {
+          cube([border_x-pad*2, electrode_plate_y-pad*3, wall-pad], center=true);
+        }
+        // top plate
+        translate([(-carbon_sz_x+electrode_top_x)/2, 0, (height-wall-wall)/2]) {
+          //cube([electrode_top_x, 22, wall], center=true);
+        }
+      }
+      translate([carbon_d/2, 0, (carbon_h-carbon_d)/2]) {
+        rotate([90, 0, 0]) {
+          difference() {
+            cylinder(d=carbon_d, h=carbox_sz_y, center=true);
+          }
+        }
+      }
+		}
+        translate([(carbon_d)/2, 0, (carbon_h-carbon_d)/2]) {
+          rotate([90, 0, 0]) {
+            difference() {
+              cylinder(d=carbon_wire_hole_d, h=carbox_sz_y, center=true);
+            }
+          }
+        }
+    // attach holes
+    for(ypos=[
+        -electrode_plate_y/2+41,
+        electrode_plate_y/2-41
+      ]) {
+      translate([(electrode_top_x-wall)/2, ypos, 0]) {
+//        cylinder(d=2.8, h=50, center=true);
+      }
+    }
+	}
+}
+
+module wire_set_carbon_holder() {
+	difference() {
+		union() {
+      translate([electrode_top_x/2, 0, (height-wall)/2]) {
+        cube([electrode_top_x, electrode_plate_y+wall, wall], center=true);
+      }
+      // sides
+      for(y_sgn=[-1, 1]) {
+        translate([border_x/2, y_sgn * ((electrode_plate_y-border_y)/2-pad), 0]) {
+          cube([border_x, border_y, height-wall*2], center=true);
+        }
+      }
+		}
+		// horizontal wire holder
+		translate([carbon_d/2, 0, (carbon_h-carbon_d)/2]) {
+			rotate([90, 0, 0]) {
+				cylinder(d=wire_hole_d, h=wet_y+10, center=true);
+			}
+		}
+		// vert groove
+    for(ysgn=[-1, 1]) {
+      translate([border_x/2, ysgn * (wet_y/2-1), 0]) {
+        cylinder(d=wire_hole_d, h=height+10, center=true);
+        translate([0, ysgn * 1.5, 0]) {
+          cube([2, 3, height+10], center=true);
+        }
+        // x dir groove
+        translate([0, 0, height/2-7.5]) {
+          rotate([0, 90, 0]) {
+//            cylinder(d=2, h=height+10, center=true);
+          }
+        }
+        // y dir groove
+        translate([border_x/2, 0, height/2-7.5]) {
+          rotate([90, 0, 0]) {
+            //cylinder(d=2, h=height+10, center=true);
+          }
+        }
+      }
+		}
+    // attach holes
+    for(ypos=[-electrode_plate_y/2+29, electrode_plate_y/2-29]) {
+      translate([electrode_top_x/2, ypos, 0]) {
+        cylinder(d=3, h=50, center=true);
+      }
+    }
+	}
+}
+
 module wire_set() {
 	difference() {
 		union() {
-      translate([(electrode_top_x-wall)/2, 0, (height-wall)/2]) {
+      translate([electrode_top_x/2, 0, (height-wall)/2]) {
         cube([electrode_top_x, electrode_plate_y+wall, wall], center=true);
       }
-			cube([wall, electrode_plate_y-pad*2, height], center=true);
-			// socket side pole
-			translate([border_x/2, (electrode_plate_y-border_y)/2-pad, 0]) {
-				difference() {
-					cube([border_x, border_y, height], center=true);
-				}
-			}
-			// non-socket side pole
-			translate([border_x/2, (border_y-electrode_plate_y)/2+pad, 0]) {
-				cube([border_x, border_y, height], center=true);
-			}
+      translate([wall/2, 0, 0]) {
+        cube([wall, electrode_plate_y-pad*2, height], center=true);
+      }
+      // sides
+      for(y_sgn=[-1, 1]) {
+        translate([border_x/2, y_sgn * ((electrode_plate_y-border_y)/2-pad), 0]) {
+          cube([border_x, border_y, height], center=true);
+        }
+      }
 		}
 		// horizontal wire holder
-		translate([(holder_outer_d)/2-1, 0, holder_h_offset]) {
+		translate([border_x/2, 0, wire_holder_h_offset]) {
 			rotate([90, 0, 0]) {
-				cylinder(d=holder_inner_d, h=wet_y+10, center=true);
+				cylinder(d=wire_hole_d, h=wet_y+10, center=true);
 			}
 		}
 		// remove bottom part
-		translate([0, 0, holder_h_offset]) {
+		translate([0, 0, wire_holder_h_offset]) {
 			cube([20, glass_y, 20], center=true);
 		}
 		// vert groove
     for(ysgn=[-1, 1]) {
-      translate([1, ysgn * (wet_y/2-1), 0]) {
-        cylinder(d=2, h=height+10, center=true);
+      translate([border_x/2, ysgn * (wet_y/2-1), 0]) {
+        cylinder(d=wire_hole_d, h=height+10, center=true);
         translate([0, ysgn * 1.5, 0]) {
           cube([2, 3, height+10], center=true);
         }
@@ -195,7 +294,7 @@ module wire_set() {
 		}
     // attach holes
     for(ypos=[-electrode_plate_y/2+29, electrode_plate_y/2-29]) {
-      translate([(electrode_top_x-wall)/2, ypos, 0]) {
+      translate([electrode_top_x/2, ypos, 0]) {
         cylinder(d=3, h=50, center=true);
       }
     }
@@ -474,12 +573,22 @@ if(show_barrier)
       barrier();
     }
 
-translate([wet_x/2-3, 0, 3]) {
-  if(show_wireset_holder) {
-    color("blue")
-      wire_set();
+translate([wet_x/2-6, 0, 3]) {
+  if(show_wireset_carbon) {
+    color("gray") {
+        wire_set_carbon();
+    }
   }
-  translate([-5, 0, wall-pad]) {
+  if(show_wireset_holder) {
+    color("blue") {
+      if(wire_set_holder_type == "carbon") {
+        wire_set_carbon_holder();
+      } else {
+        wire_set();
+      }
+    }
+  }
+  translate([-2.5, 0, wall-pad]) {
     if(show_wireset_attach) {
       color("green")
         wire_set_attach();
