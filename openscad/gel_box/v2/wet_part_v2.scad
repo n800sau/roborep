@@ -1,13 +1,13 @@
 // to show stuff
-show_chamber = 1;
-show_leg = 1;
+show_chamber = 0;
+show_leg = 0;
 show_comb = false;
 show_barrier = false;
 show_wireset_carbon = 0;
 show_wireset_holder = 0;
 show_wireset_attach = 0;
 show_wireset_cover = 0;
-show_light_enclosure = 1;
+show_light_enclosure = 0;
 show_light_enclosure_lid = 0;
 show_pcb_panel = 1;
 
@@ -17,6 +17,7 @@ wire_set_holder_type = "carbon";
 
 use <ear.scad>
 use <led_pcb_holder.scad>
+use <pcb_led_cvf.scad>
 
 $fn=50;
 
@@ -98,6 +99,12 @@ carbon_d = carbon_wire_hole_d + 3;
 carbon_sz_x = 2;
 carbox_sz_y = glass_y-pad*2;
 //carbox_sz_y = 10;
+
+power_pcb_sz_x = 48.5;
+power_pcb_sz_y = 1.2;
+power_pcb_h = 24.2;
+
+stand_sz = 12;
 
 module top_hole(xpos=0, d) {
   hole_h = 50;
@@ -484,9 +491,10 @@ module light_enclosure() {
     union() {
       cube([lenc_sz_x-pad*2, lenc_sz_y-pad*2, lenc_h], center=true);
       // attachment to chamber
-      for(x_sgn=[-1, 1]) {
-        translate([x_sgn*(hole_x_pos_list[1]-wet_x)/2, 0, (lenc_h-wall)/2]) {
-          cube([10, wet_y+wall*2, wall], center=true);
+      for(x_p=[[-1, 1, 1], [1, 1, 1], [-1, 2, 0], [1, 2, 0]]) {
+        rotate([0, 0, x_p[2]*180])
+        translate([x_p[0]*(hole_x_pos_list[x_p[1]]-wet_x)/2, (wet_y/2+wall)/2, (lenc_h-wall)/2]) {
+          cube([10, wet_y/2+wall, wall], center=true);
         }
       }
       // holes for bottom lid
@@ -554,9 +562,14 @@ module light_enclosure_lid() {
 module pcb_panel() {
   difference() {
     union() {
-      cube([lenc_sz_x, wall, lenc_h], center=true);
-      translate([0, 4.5, (lenc_h-wall)/2]) {
-        cube([lenc_sz_x-14, 9, wall], center=true);
+      cube([lenc_sz_x-12, wall, lenc_h], center=true);
+      %translate([7, -7, 0]) {
+        //cube([power_pcb_sz_x, power_pcb_sz_y, power_pcb_h], center=true);
+      }
+      translate([-18, -0.3, (-lenc_h+wall)/2]) {
+        rotate([90, 0, 0]) {
+          pcb_led_cvf();
+        }
       }
     }
     pcb_panel_holes(d=hole_through_d);
@@ -566,8 +579,23 @@ module pcb_panel() {
         cylinder(d=8.8, h=50 , center=true);
       }
     }
+    // wire hole
+    for(sgn=[-1,1]) {
+      translate([-21, 0, sgn*9]) {
+        rotate([90, 0, 0]) {
+          cylinder(d=5, h=50 , center=true);
+        }
+      }
+    }
+    translate([35, 0, 0]) {
+      rotate([90, 0, 0]) {
+        cylinder(d=5, h=50 , center=true);
+      }
+    }
   }
 }
+
+//------------------------------------------------------
 
 if(show_chamber) {
   chamber();
@@ -594,7 +622,7 @@ if(show_leg) {
 
 if(show_pcb_panel) {
   color("green") {
-    translate([0, -lenc_sz_y/2-20, -(lenc_h+chamber_h)/2]) {
+    translate([0, (-lenc_sz_y-wall)/2-stand_sz, -(lenc_h+chamber_h)/2]) {
       pcb_panel();
     }
   }
