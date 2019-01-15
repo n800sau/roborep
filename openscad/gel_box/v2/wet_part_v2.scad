@@ -19,6 +19,7 @@ wire_set_holder_type = "carbon";
 use <ear.scad>
 use <led_pcb_holder.scad>
 use <pcb_led_cvf.scad>
+use <threads.scad>
 
 $fn=50;
 
@@ -602,12 +603,18 @@ module cam_stand() {
 	holder_x_sz = 90;
 	holder_y_sz = 50;
 	holder_h = 10;
-	translate([x_sz/2, -wet_y/2-wall-pad, h/2]) {
-		cube([x_sz, wall, h], center=true);
-	}
-	translate([x_sz/2, wet_y/2+wall+pad, h/2]) {
-		cube([x_sz, wall, h], center=true);
-	}
+	translate([0, 0, 0]) {
+    for(side=[-1,1]) {
+      translate([0, side * ((wet_y+wall)/2+6+pad), 0]) {
+        translate([0, 0, 0]) {
+          cube([x_sz, 8, height], center=true);
+        }
+        translate([0, 0, height/2+pad+(h-height)/2]) {
+metric_thread (diameter=8, pitch=1, length=h-height-pad);
+        }
+      }
+    }
+  }
 	translate([0, 0, h]) {
 		difference() {
 			union() {
