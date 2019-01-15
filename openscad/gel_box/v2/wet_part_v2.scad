@@ -1,15 +1,16 @@
 // to show stuff
-show_chamber = 0;
+show_chamber = 1;
 show_leg = 0;
-show_comb = false;
-show_barrier = false;
+show_comb = 0;
+show_barrier = 0;
 show_wireset_carbon = 0;
 show_wireset_holder = 0;
 show_wireset_attach = 0;
 show_wireset_cover = 0;
 show_light_enclosure = 0;
 show_light_enclosure_lid = 0;
-show_pcb_panel = 1;
+show_pcb_panel = 0;
+show_cam_stand = 1;
 
 // wire set type: "wire" or "carbon"
 wire_set_holder_type = "carbon";
@@ -595,10 +596,40 @@ module pcb_panel() {
   }
 }
 
+module cam_stand() {
+	h = 100;
+	x_sz = 20;
+	holder_x_sz = 90;
+	holder_y_sz = 50;
+	holder_h = 10;
+	translate([x_sz/2, -wet_y/2-wall-pad, h/2]) {
+		cube([x_sz, wall, h], center=true);
+	}
+	translate([x_sz/2, wet_y/2+wall+pad, h/2]) {
+		cube([x_sz, wall, h], center=true);
+	}
+	translate([0, 0, h]) {
+		difference() {
+			union() {
+				cube([x_sz, wet_y+wall*4, wall], center=true);
+				cube([holder_x_sz+wall*2, holder_y_sz+wall*2, holder_h+wall], center=true);
+			}
+			translate([0, 0, wall]) {
+				cube([holder_x_sz, holder_y_sz, holder_h], center=true);
+			}
+			// hole for camera
+			cylinder(d=10, h=20, center=true);
+		}
+	}
+}
+
 //------------------------------------------------------
 
 if(show_chamber) {
   chamber();
+}
+if(show_cam_stand) {
+  cam_stand();
 }
 if(show_leg) {
   difference() {
@@ -698,3 +729,4 @@ translate([wet_x/2-6, 0, 3]) {
     }
   }
 }
+
