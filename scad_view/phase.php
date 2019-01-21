@@ -6,15 +6,17 @@
 
 	$angle = isset($_GET['angle']) ? intval($_GET['angle']) : 0;
 	$z = isset($_GET['z']) ? intval($_GET['z']) : 200;
+	$x_off = isset($_GET['x']) ? intval($_GET['x']) : 0;
 	$distance = isset($_GET['distance']) ? intval($_GET['distance']) : 200;
 
 	$r = new Predis\Client();
 	$r->set('phase.angle', $angle);
 	$r->set('phase.distance', $distance);
 	$r->set('phase.z', $z);
+	$r->set('phase.x', $x_off);
 
 	$a = $angle / 180 * pi();
-	$x = intval(sin($a) * $distance);
+	$x = intval(sin($a) * $distance) + $x_off;
 	$y = intval(cos($a) * $distance);
 	$cmd = 'openscad ' .
 			'--imgsize=160,120 ' .
