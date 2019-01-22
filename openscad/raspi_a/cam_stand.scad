@@ -21,9 +21,11 @@ clip_pole_sz = 20;
 rpi_plate_sz_x = 80;
 rpi_plate_sz_y = 89;
 rpi_plate_sz_z = wall;
+hole_dist_x = 68;
+hole_dist_y = 79;
 
-rpi_plate_cut_sz_x = 10;
-rpi_plate_cut_sz_y = 10;
+rpi_plate_cut_sz_x = 40;
+rpi_plate_cut_sz_y = 40;
 rpi_plate_cut_sz_z = wall;
 
 rpi_pole_d = 6;
