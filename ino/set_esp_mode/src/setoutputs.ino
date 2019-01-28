@@ -6,7 +6,7 @@ int io12mode = INPUT;
 
 // the setup routine runs once when you press reset:
 void setup() {
-	Serial.begin(9600);
+	Serial.begin(115200);
 
 	digitalWrite(io11, LOW);
 	digitalWrite(io12, LOW);
