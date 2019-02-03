@@ -129,7 +129,7 @@ public:
 		}
 		Serial.print(" reads ");
 		Serial.println(s.read());
-		res.rvalue = s.read();
+		res.rvalue = map(s.read(), vmin_, vmax_, 0, 100);
 	}
 
 private:
