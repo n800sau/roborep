@@ -4,6 +4,7 @@
 #include <std_msgs/Int16.h>
 #include <std_msgs/Float64.h>
 #include <Servo.h>
+#include <esp_arm/ArmServo.h>
 
 const uint8_t PIN_YAW = 4;
 const uint8_t PIN_GRIP = 5;
@@ -68,12 +69,14 @@ class ArmServo
 public:
 	ArmServo(const char *name, byte pin, int vmin, int vmax):
 		pin_(pin), vmin_(vmin), vmax_(vmax), name_(name),
-		subscriber_(name, &ArmServo::set_pos_callback, this)
+		subscriber_(name, &ArmServo::set_pos_callback, this),
+		service_server_(name, &ArmServo::service_callback, this)
 	{}
 
 	void init(ros::NodeHandle_<WiFiHardware>& nh)
 	{
 		nh.subscribe(subscriber_);
+		nh.advertiseService(service_server_);
 	}
 
 	void set_pos_callback(const std_msgs::Int16& msg)
@@ -83,6 +86,8 @@ public:
 		Serial.println(msg.data);
 		if(msg.data < 0) {
 			s.detach();
+			Serial.print(name_);
+			Serial.println(" detached");
 		} else {
 			if(!s.attached()) {
 				s.attach(pin_);
@@ -99,15 +104,42 @@ public:
 		}
 	}
 
+	void service_callback(const esp_arm::ArmServo::Request& req, esp_arm::ArmServo::Response& res)
+	{
+		if(req.wvalue < 0) {
+			s.detach();
+		} else {
+			if(!s.attached()) {
+				s.attach(pin_);
+			}
+			int v = req.wvalue >= 0 ? (req.wvalue <= 100 ? req.wvalue : 100) : 0;
+			v = map(v, 0, 100, vmin_, vmax_);
+			Serial.print(name_);
+			Serial.print(" writes ");
+			Serial.println(v);
+			s.write(v);
+			if(req.msecs > 0) {
+				delay(req.msecs);
+				s.detach();
+			}
+		}
+		Serial.print(name_);
+		if(!s.attached()) {
+			Serial.print(" detached");
+		}
+		Serial.print(" reads ");
+		Serial.println(s.read());
+		res.rvalue = s.read();
+	}
+
 private:
 	const byte pin_;
 	int vmin_, vmax_;
 	String name_;
 	Servo s;
 	ros::Subscriber<std_msgs::Int16, ArmServo> subscriber_;
+	ros::ServiceServer<esp_arm::ArmServo::Request, esp_arm::ArmServo::Response, ArmServo> service_server_;
 };
-
-int i;
 
 ArmServo yaw("yaw", PIN_YAW, 0, 150);
 ArmServo grip("grip", PIN_GRIP, 90, 161);
@@ -122,7 +154,7 @@ void setupWiFi()
 	Serial.print("\nConnecting to "); Serial.println(ssid);
 	uint8_t i = 0;
 	while (WiFi.status() != WL_CONNECTED && i++ < 20) delay(500);
-	if(i == 21){
+	if(i > 20){
 		Serial.print("Could not connect to"); Serial.println(ssid);
 		while(1) delay(500);
 	}
