@@ -27,7 +27,7 @@ while True:
 	dt = t2 - t1
 	if grabbed:
 		cv2.imshow('preview',frame)
-		cv2.waitKey(100)
+		cv2.waitKey(1)
 		if dt > 1/float(fps):
 			t1 = t2
 			print(n, ':', time.strftime('%H:%M:%S', time.localtime(t2)))
