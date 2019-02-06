@@ -4,8 +4,8 @@
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-<script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+<script type="text/javascript" src="js/eventemitter2.js"></script>
+<script type="text/javascript" src="js/roslib.min.js"></script>
 
 <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css"/>
 
@@ -13,7 +13,7 @@
 
 <body ng-app="myApp">
 
-	<div ng-controller="AppCtrl" ng-cloak>
+	<div ng-controller="AppCtrl" ng-cloak ng-init="init_ros()">
 		<md-content style="margin: 16px; padding:16px">
 
 				<div ng-repeat="srv in settings track by srv.s_id" layout="row" layout-wrap>
@@ -23,12 +23,6 @@
 					</div>
 					<div flex="50" flex-gt-sm="10">
 						<span>{{srv.s_id}}</span>
-					</div>
-					<div flex="50" flex-gt-sm="10">
-						<input type="number" ng-model="srv.vmin" required min="0" max="{{srv.vmax}}" style="width: 3em"/>
-					</div>
-					<div flex="50" flex-gt-sm="10">
-						<input type="number" ng-model="srv.vmax" required min="{{srv.vmin}}" max="180" style="width: 3em"/>
 					</div>
 					<div flex="100" flex-gt-sm="65">
 						<md-slider md-discrete ng-model="values[srv.s_id]" step="1" min="{{srv.vmin}}" max="{{srv.vmax}}" style="width: 400px" ng-disabled="!item_enabled[srv.s_id]">
