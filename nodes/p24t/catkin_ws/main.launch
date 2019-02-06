@@ -23,7 +23,7 @@
 		<param name="port" value="tcp"/>
 	</node>
 
-	<node pkg="esp_arm" name="esp_arm" type="esp_arm.py" output="screen" >
+	<node pkg="esp_arm" name="esp_arm_service_client" type="esp_arm_service_client.py" output="screen" >
 	</node>
 
 	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 

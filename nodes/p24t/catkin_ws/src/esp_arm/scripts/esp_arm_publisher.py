@@ -1,20 +1,17 @@
 #!/usr/bin/python
 import rospy
-import serial
-import struct
-import numpy as np
 
 from sensor_msgs.msg import Joy
 from std_msgs.msg import Int16
 
-GRIP_BUTTON = 3
+GRIP_BUTTON = 6
 
-UPPER_BUTTON = 10
+UPPER_BUTTON = 5
 
 YAW_AXES = 0
 SHOULDER_AXES = 1
 
-class EspArm:
+class EspArmPublisher:
 
 
 	def __init__(self):
@@ -53,8 +50,8 @@ class EspArm:
 
 
 def main():
-	rospy.init_node("esp_arm")
-	controller = EspArm()
+	rospy.init_node("esp_arm_publisher")
+	controller = EspArmPublisher()
 	rospy.spin()
 
 main()
