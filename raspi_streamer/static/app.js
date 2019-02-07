@@ -25,10 +25,10 @@ angular.module('myApp', ['ngMaterial'])
 			];
 
 		$scope.values = {
-			one: 90,
-			two: 90,
-			three: 90,
-			four: 90,
+			one: 50,
+			two: 50,
+			three: 50,
+			four: 50,
 		};
 
 		var save_values_promise = undefined;
@@ -43,11 +43,11 @@ angular.module('myApp', ['ngMaterial'])
 
 		var save_values = function() {
 			$http.post('apply_values', {
-				config: $scope.values
+				settings: $scope.values
 			}).then(
 				function(response) {
 					console.log('success', response.data);
-					$scope.cam_values = response.data.current_values;
+					$scope.cam_values = response.data.settings;
 				}, function(response) {
 					console.log('error', response.data);
 				}
@@ -58,7 +58,11 @@ angular.module('myApp', ['ngMaterial'])
 			$http.get('load_values').then(
 				function(response) {
 					console.log('success', response.data);
-					$scope.cam_values = response.data.current_values;
+					for(var k in $scope.values) {
+						if(response.data.settings[k] !== undefined) {
+							$scope.values[k] = response.data.settings[k];
+						}
+					}
 				}, function(response) {
 					console.log('error', response.data);
 				}
@@ -69,6 +73,8 @@ angular.module('myApp', ['ngMaterial'])
 			console.log('vals', oldVal, '->', newVal);
 			save_values_debounce();
 		}, true);
+
+		load_values();
 
 	});
 

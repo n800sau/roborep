@@ -1,19 +1,20 @@
 from __future__ import print_function
 import re, random, time, sys, os, urlparse, json, zipfile, tempfile, urllib2, imp, datetime, traceback
-from optparse import OptionParser
-from cgi import parse_qs
+import redis
+
+REDIS_KEY = 'raspicam_settings'
 
 def load_values(env):
 	rs = {}
-	return json.dumps(rs)
+	return json.dumps({'settings': json.loads(redis.Redis().get(REDIS_KEY))})
 
 def apply_values(env):
 	rs = None
 	data = json.load(env['wsgi.input'])
 	print('INPUT DATA', data)
+	r = redis.Redis()
+	r.set(REDIS_KEY, json.dumps(data['settings']))
 	return load_values(env)
-#	rs = {'current_values': data['config']}
-#	return json.dumps(rs)
 
 def router(env, start_response):
 	try:
