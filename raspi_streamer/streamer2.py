@@ -2,13 +2,23 @@ import io
 import socket
 import struct
 import time
+import json
 import threading
 import picamera
+import redis
+
+REDIS_KEY = 'raspicam_settings'
+
+settings_map = {
+	'one': 'brightness',
+	'two': 'contrast',
+}
+
 
 OSIZE = (640, 480)
 
 server_socket = socket.socket()
-server_socket.bind(('0.0.0.0', 9000))
+server_socket.bind(('0.0.0.0', 9001))
 server_socket.listen(0)
 
 # Accept a single connection and make a file-like object out of it
@@ -49,17 +59,19 @@ try:
 	start = time.time()
 	finish = time.time()
 
-	br_inc = 1
-
 	def streams(camera):
-		global count, finish, br_inc
+		global count, finish, settings_map
 		while finish - start < 30:
-			if camera.brightness >= 100:
-				br_inc = -1
-			if camera.brightness <= 0:
-				br_inc = 1
-			camera.brightness += br_inc
-			print('brightness', camera.brightness)
+			r = redis.Redis()
+			rval = r.get(REDIS_KEY)
+			settings = json.loads(rval) if rval else None
+			r.delete(REDIS_KEY)
+			if settings:
+				for k,v in settings.items():
+					k = settings_map.get(k, None)
+					if k:
+						setattr(camera, k, v)
+						print('set %s to %s' % (k, v))
 			with pool_lock:
 				if pool:
 					streamer = pool.pop()
