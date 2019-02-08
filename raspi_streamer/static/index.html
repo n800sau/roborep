@@ -12,6 +12,8 @@
 	<div ng-controller="AppCtrl" ng-cloak>
 		<md-content style="margin: 16px; padding:16px">
 
+	<img src="stream.mjpg" width="160" height="120"/>
+
 				<div ng-repeat="srv in settings track by srv.s_id" layout="row" layout-wrap>
 					<div flex="50" flex-gt-sm="10">
 						<span>{{srv.s_id}}:{{values[srv.s_id]}} -> {{cam_values[srv.s_id]}}</span>
