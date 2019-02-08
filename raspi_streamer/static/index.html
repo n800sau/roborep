@@ -14,14 +14,19 @@
 
 	<img src="stream.mjpg" width="160" height="120"/>
 
-				<div ng-repeat="srv in settings track by srv.s_id" layout="row" layout-wrap>
-					<div flex="50" flex-gt-sm="10">
+				<div ng-repeat="srv in settings track by srv.s_id" layout="row" layout-wrap ng-switch="srv.stype">
+					<div flex="50" flex-gt-sm="20">
 						<span>{{srv.s_id}}:{{values[srv.s_id]}} -> {{cam_values[srv.s_id]}}</span>
 					</div>
-					<div flex="100" flex-gt-sm="65">
+					<div flex="100" flex-gt-sm="65" ng-switch-when="slider">
 						<md-slider ng-model="values[srv.s_id]" step="1" min="{{srv.vmin}}" max="{{srv.vmax}}" style="width: 200px">
 						</md-slider>
-					<div>
+					</div>
+					<div flex="100" flex-gt-sm="65" ng-switch-when="select">
+						<md-select ng-model="values[srv.s_id]">
+							<md-option ng-value="value" ng-repeat="value in srv.values track by $index">{{ value }}</md-option>
+						</md-select>
+					</div>
 				</div>
 
 		</md-content>

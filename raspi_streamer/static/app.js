@@ -3,32 +3,39 @@ angular.module('myApp', ['ngMaterial'])
 
 		$scope.settings = [
 				{
-					s_id: 'one',
+					s_id: 'brightness',
 					vmin: 0,
 					vmax: 100,
+					stype: 'slider',
 				},
 				{
-					s_id: 'two',
+					s_id: 'contrast',
 					vmin: 0,
 					vmax: 100,
+					stype: 'slider',
 				},
 				{
-					s_id: 'three',
-					vmin: 0,
-					vmax: 100,
-				},
-				{
-					s_id: 'four',
-					vmin: 0,
-					vmax: 100,
+					s_id: 'awb_mode',
+					values: [
+						'off',
+						'auto',
+						'sunlight',
+						'cloudy',
+						'shade',
+						'tungsten',
+						'fluorescent',
+						'incandescent',
+						'flash',
+						'horizon',
+					],
+					stype: 'select',
 				},
 			];
 
 		$scope.values = {
-			one: 50,
-			two: 50,
-			three: 50,
-			four: 50,
+			brightness: 50,
+			contrast: 50,
+			awb_mode: 'auto',
 		};
 
 		var save_values_promise = undefined;
