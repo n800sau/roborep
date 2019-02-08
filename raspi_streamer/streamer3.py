@@ -22,11 +22,6 @@ PAGE="""\
 
 REDIS_KEY = 'raspicam_settings'
 
-settings_map = {
-	'one': 'brightness',
-	'two': 'contrast',
-}
-
 class StreamingOutput(object):
 	def __init__(self, camera):
 		self.frame = None
@@ -41,11 +36,10 @@ class StreamingOutput(object):
 		settings = json.loads(rval.decode('utf-8')) if rval else None
 		if settings:
 			for k,v in settings.items():
-				km = settings_map.get(k, None)
-				if km:
-					if v != self.old_settings.get(k, None):
-						setattr(self.camera, km, v)
-						print('set %s to %s' % (km, v))
+				if v != self.old_settings.get(k, None):
+					if hasattr(self.camera, k):
+						setattr(self.camera, k, v)
+						print('set %s to %s' % (k, v))
 			self.old_settings = settings
 
 	def write(self, buf):
