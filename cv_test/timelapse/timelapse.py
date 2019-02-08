@@ -1,7 +1,8 @@
 import sys, os, time
 import cv2
 
-OFNAME = 'output.avi'
+OFNAME = 'output.avi' if len(sys.argv) < 2 else sys.argv[1]
+PREVIEW_SIZE = (640, 480)
 #OSIZE = (640, 480)
 OSIZE = (1280, 720)
 MAX_SECONDS = 60*60
@@ -17,7 +18,10 @@ lapse_id = open(LAPSE_ID_FNAME).read().strip() if os.path.exists(LAPSE_ID_FNAME)
 #vs = cv2.VideoCapture('http://192.168.1.132:5001/')
 #vs = cv2.VideoCapture('http://192.168.1.132:8080/')
 #vs = cv2.VideoCapture('http://hubee.local:8090/?action=stream')
-vs = cv2.VideoCapture('http://hubee.local:9000/')
+vs = cv2.VideoCapture('http://hubee.local:9000/cam/stream.mjpg')
+#vs = cv2.VideoCapture('http://hubee.local:9001/')
+#vs = cv2.VideoCapture('http://hubee.local:9000/video_feed')
+#vs = cv2.VideoCapture('http://bbspeaker.local:82/cam/video_feed')
 time.sleep(1.0)
 
 fourcc = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
@@ -33,7 +37,7 @@ while True:
 	dt = t2 - t1
 	if grabbed:
 		not_printed = True
-		cv2.imshow('preview',frame)
+		cv2.imshow('preview', cv2.resize(frame, PREVIEW_SIZE))
 		cv2.waitKey(1)
 		if dt > 1/float(fps):
 			t1 = t2
@@ -42,6 +46,8 @@ while True:
 			oframe = cv2.resize(frame, OSIZE)
 			cv2.putText(oframe, lapse_id + time.strftime(' %d/%m%/%Y %H:%M:%S'), (20, 40) , cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255))
 			out.write(oframe)
+			cv2.imshow('lapsed', cv2.resize(oframe, PREVIEW_SIZE))
+			cv2.waitKey(1)
 	else:
 		if not_printed:
 			print('Not grabbed')
