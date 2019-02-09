@@ -1,2 +1,3 @@
-#python3 -u streamer3.py &>streamer3.log
-python3 -u streamer3.py
+cd `dirname $0`
+python3 -u streamer3.py &>streamer3.log
+#python3 -u streamer3.py
