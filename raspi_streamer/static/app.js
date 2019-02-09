@@ -15,6 +15,27 @@ angular.module('myApp', ['ngMaterial'])
 					stype: 'slider',
 				},
 				{
+					s_id: 'iso',
+					vmin: 0,
+					vmax: 1600,
+					step: 100,
+					stype: 'slider',
+				},
+				{
+					s_id: 'awb_gains.red',
+					vmin: 0,
+					vmax: 8,
+					step: 0.1,
+					stype: 'slider',
+				},
+				{
+					s_id: 'awb_gains.blue',
+					vmin: 0,
+					vmax: 8,
+					step: 0.1,
+					stype: 'slider',
+				},
+				{
 					s_id: 'awb_mode',
 					values: [
 						'off',
@@ -30,6 +51,22 @@ angular.module('myApp', ['ngMaterial'])
 					],
 					stype: 'select',
 				},
+				{
+					s_id: 'drc_strength',
+					values: [
+						'off',
+						'low',
+						'medium',
+						'high',
+					],
+					stype: 'select',
+				},
+				{
+					s_id: 'exposure_compensation',
+					vmin: -25,
+					vmax: 25,
+					stype: 'slider',
+				},
 			];
 
 		$scope.values = {
@@ -37,6 +74,8 @@ angular.module('myApp', ['ngMaterial'])
 			contrast: 50,
 			awb_mode: 'auto',
 		};
+
+		$scope.cam_values = {};
 
 		var save_values_promise = undefined;
 
@@ -64,21 +103,26 @@ angular.module('myApp', ['ngMaterial'])
 		var load_values = function() {
 			$http.get('load_values').then(
 				function(response) {
-					console.log('success', response.data);
-					for(var k in $scope.values) {
+					console.log('loaded', response.data.settings);
+					for(var i=0;i<$scope.settings.length; i++) {
+						var k = $scope.settings[i].s_id;
 						if(response.data.settings[k] !== undefined) {
 							$scope.values[k] = response.data.settings[k];
 						}
 					}
+					$scope.values_loaded = true;
 				}, function(response) {
 					console.log('error', response.data);
+					$scope.values_loaded = true;
 				}
 			);
 		}
 
 		$scope.$watch('values', function(newVal, oldVal) {
 			console.log('vals', oldVal, '->', newVal);
-			save_values_debounce();
+			if($scope.values_loaded) {
+				save_values_debounce();
+			}
 		}, true);
 
 		load_values();

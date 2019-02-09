@@ -22,6 +22,40 @@ PAGE="""\
 
 REDIS_KEY = 'raspicam_settings'
 
+def awb_gains_get(val):
+	return {
+		'awb_gains.red': float(val[0]),
+		'awb_gains.blue': float(val[1]),
+	}
+
+def awb_gains_set(data):
+	return (data['awb_gains.red'], data['awb_gains.blue'])
+
+
+CAMERA_ATTRIBUTES = {
+	'brightness': {
+		'type': int
+	},
+	'contrast': {
+		'type': int
+	},
+	'iso': {
+		'type': int
+	},
+	'awb_gains': {
+		'type': 'awb_gains',
+	},
+	'awb_mode': {
+		'type': str
+	},
+	'drc_strength': {
+		'type': str
+	},
+	'exposure_compensation': {
+		'type': float
+	},
+}
+
 class StreamingOutput(object):
 	def __init__(self, camera):
 		self.frame = None
@@ -29,17 +63,29 @@ class StreamingOutput(object):
 		self.buffer = io.BytesIO()
 		self.condition = Condition()
 		self.old_settings = {}
+		for k,inf in CAMERA_ATTRIBUTES.items():
+			if hasattr(self.camera, k):
+				if isinstance(inf['type'], str):
+					self.old_settings[k] = globals()[inf['type'] + '_get'](getattr(self.camera, k))
+				else:
+					self.old_settings[k] = inf['type'](getattr(self.camera, k))
+		print('old setttings', self.old_settings)
+		redis.Redis().set(REDIS_KEY,json.dumps(self.old_settings))
 
 	def update_settings(self):
 		r = redis.Redis()
 		rval = r.get(REDIS_KEY)
 		settings = json.loads(rval.decode('utf-8')) if rval else None
 		if settings:
-			for k,v in settings.items():
-				if v != self.old_settings.get(k, None):
-					if hasattr(self.camera, k):
-						setattr(self.camera, k, v)
-						print('set %s to %s' % (k, v))
+			print('settings', settings);
+			for k,inf in CAMERA_ATTRIBUTES.items():
+				if hasattr(self.camera, k):
+					if isinstance(inf['type'], str):
+						v = globals()[inf['type'] + '_set'](settings)
+					else:
+						v = settings[k]
+					print('set %s to %s' % (k, v))
+					setattr(self.camera, k, v)
 			self.old_settings = settings
 
 	def write(self, buf):
@@ -79,6 +125,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
 			self.wfile.write(content.encode('utf-8'))
 		elif self.path == '/cam/load_values':
 			data = redis.Redis().get(REDIS_KEY)
+			print('settings from redis', data)
 			if data:
 				content = json.dumps({'settings': json.loads(data.decode('utf-8'))})
 			else:
@@ -123,8 +170,9 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
 			self.send_header('Content-Type', 'text/json')
 			self.send_header('Content-Length', len(rs))
 			self.end_headers()
-			r = redis.Redis()
-			r.set(REDIS_KEY, json.dumps(data['settings']).encode('utf-8'))
+			data = json.dumps(data['settings']).encode('utf-8')
+			redis.Redis().set(REDIS_KEY, data)
+			print('settings to redis', data)
 			self.wfile.write(rs)
 		else:
 			self.send_error(404)

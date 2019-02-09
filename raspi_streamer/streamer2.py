@@ -9,12 +9,6 @@ import redis
 
 REDIS_KEY = 'raspicam_settings'
 
-settings_map = {
-	'one': 'brightness',
-	'two': 'contrast',
-}
-
-
 OSIZE = (640, 480)
 
 server_socket = socket.socket()

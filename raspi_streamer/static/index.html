@@ -6,20 +6,27 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<!-- Angular Material style sheet -->
 	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css"/>
+	<style type="text/css" media="screen">
+		.stream-image {
+			position: fixed;
+			right: 20px;
+			top: 10px;
+		}
+	</style>
 </head>
 <body ng-app="myApp">
 
 	<div ng-controller="AppCtrl" ng-cloak>
 		<md-content style="margin: 16px; padding:16px">
 
-	<img src="stream.mjpg" width="160" height="120"/>
+	<img class="stream-image" src="stream.mjpg" width="320" height="240"/>
 
 				<div ng-repeat="srv in settings track by srv.s_id" layout="row" layout-wrap ng-switch="srv.stype">
 					<div flex="50" flex-gt-sm="20">
 						<span>{{srv.s_id}}:{{values[srv.s_id]}} -> {{cam_values[srv.s_id]}}</span>
 					</div>
 					<div flex="100" flex-gt-sm="65" ng-switch-when="slider">
-						<md-slider ng-model="values[srv.s_id]" step="1" min="{{srv.vmin}}" max="{{srv.vmax}}" style="width: 200px">
+						<md-slider ng-model="values[srv.s_id]" step="{{srv.step || 1}}" min="{{srv.vmin}}" max="{{srv.vmax}}" style="width: 200px">
 						</md-slider>
 					</div>
 					<div flex="100" flex-gt-sm="65" ng-switch-when="select">
