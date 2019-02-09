@@ -3,22 +3,11 @@ import random
 import picamera
 import logging
 import socketserver
+import traceback
 from threading import Condition
 from http import server
 import redis
 import json
-
-PAGE="""\
-<html>
-<head>
-<title>Angular image demo</title>
-</head>
-<body>
-<div>Angular Image Demo</div>
-<img src="stream.mjpg" width="160" height="120" />
-</body>
-</html>
-"""
 
 REDIS_KEY = 'raspicam_settings'
 
@@ -29,7 +18,7 @@ def awb_gains_get(val):
 	}
 
 def awb_gains_set(data):
-	return (data['awb_gains.red'], data['awb_gains.blue'])
+	return (data.get('awb_gains.red', 0), data.get('awb_gains.blue', 0))
 
 
 CAMERA_ATTRIBUTES = {
@@ -37,6 +26,12 @@ CAMERA_ATTRIBUTES = {
 		'type': int
 	},
 	'contrast': {
+		'type': int
+	},
+	'saturation': {
+		'type': int
+	},
+	'sharpness': {
 		'type': int
 	},
 	'iso': {
@@ -54,6 +49,27 @@ CAMERA_ATTRIBUTES = {
 	'exposure_compensation': {
 		'type': float
 	},
+	'exposure_mode': {
+		'type': str
+	},
+	'meter_mode': {
+		'type': str
+	},
+	'hflip': {
+		'type': bool
+	},
+	'vflip': {
+		'type': bool
+	},
+	'image_denoise': {
+		'type': bool
+	},
+	'image_effect': {
+		'type': str
+	},
+	'rotation': {
+		'type': int
+	},
 }
 
 class StreamingOutput(object):
@@ -65,10 +81,13 @@ class StreamingOutput(object):
 		self.old_settings = {}
 		for k,inf in CAMERA_ATTRIBUTES.items():
 			if hasattr(self.camera, k):
-				if isinstance(inf['type'], str):
-					self.old_settings[k] = globals()[inf['type'] + '_get'](getattr(self.camera, k))
+				if 'type' in inf:
+					if isinstance(inf['type'], str):
+						self.old_settings[k] = globals()[inf['type'] + '_get'](getattr(self.camera, k))
+					else:
+						self.old_settings[k] = inf['type'](getattr(self.camera, k))
 				else:
-					self.old_settings[k] = inf['type'](getattr(self.camera, k))
+					self.old_settings[k] = getattr(self.camera, k)
 		print('old setttings', self.old_settings)
 		redis.Redis().set(REDIS_KEY,json.dumps(self.old_settings))
 
@@ -77,15 +96,18 @@ class StreamingOutput(object):
 		rval = r.get(REDIS_KEY)
 		settings = json.loads(rval.decode('utf-8')) if rval else None
 		if settings:
-			print('settings', settings);
+#			print('settings', settings);
 			for k,inf in CAMERA_ATTRIBUTES.items():
 				if hasattr(self.camera, k):
 					if isinstance(inf['type'], str):
-						v = globals()[inf['type'] + '_set'](settings)
+						v_new = globals()[inf['type'] + '_set'](settings)
+						v_old = globals()[inf['type'] + '_set'](self.old_settings)
 					else:
-						v = settings[k]
-					print('set %s to %s' % (k, v))
-					setattr(self.camera, k, v)
+						v_new = settings[k]
+						v_old = self.old_settings[k]
+					if v_new != v_old:
+						print('set %s to %s' % (k, v_new))
+						setattr(self.camera, k, v_new)
 			self.old_settings = settings
 
 	def write(self, buf):
@@ -155,11 +177,12 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
 					self.wfile.write(frame)
 					self.wfile.write(b'\r\n')
 			except Exception as e:
+				traceback.print_exc()
 				logging.warning(
 					'Removed streaming client %s: %s',
 					self.client_address, str(e))
 		else:
-			self.send_error(404)
+			self.send_response(404)
 			self.end_headers()
 
 	def do_POST(self):
@@ -175,7 +198,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
 			print('settings to redis', data)
 			self.wfile.write(rs)
 		else:
-			self.send_error(404)
+			self.send_response(404)
 			self.end_headers()
 
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):

@@ -15,6 +15,18 @@ angular.module('myApp', ['ngMaterial'])
 					stype: 'slider',
 				},
 				{
+					s_id: 'saturation',
+					vmin: -100,
+					vmax: 100,
+					stype: 'slider',
+				},
+				{
+					s_id: 'sharpness',
+					vmin: -100,
+					vmax: 100,
+					stype: 'slider',
+				},
+				{
 					s_id: 'iso',
 					vmin: 0,
 					vmax: 1600,
@@ -67,12 +79,88 @@ angular.module('myApp', ['ngMaterial'])
 					vmax: 25,
 					stype: 'slider',
 				},
+				{
+					s_id: 'exposure_mode',
+					values: [
+						'off',
+						'auto',
+						'night',
+						'nightpreview',
+						'backlight',
+						'spotlight',
+						'sports',
+						'snow',
+						'beach',
+						'verylong',
+						'fixedfps',
+						'antishake',
+						'fireworks',
+					],
+					stype: 'select',
+				},
+				{
+					s_id: 'meter_mode',
+					values: [
+						'average',
+						'spot',
+						'backlit',
+						'matrix',
+					],
+					stype: 'select',
+				},
+				{
+					s_id: 'hflip',
+					stype: 'checkbox',
+				},
+				{
+					s_id: 'vflip',
+					stype: 'checkbox',
+				},
+				{
+					s_id: 'image_denoise',
+					stype: 'checkbox',
+				},
+				{
+					s_id: 'image_effect',
+					values: [
+						'none',
+						'negative',
+						'solarize',
+						'sketch',
+						'denoise',
+						'emboss',
+						'oilpaint',
+						'hatch',
+						'gpen',
+						'pastel',
+						'watercolor',
+						'film',
+						'blur',
+						'saturation',
+						'colorswap',
+						'washedout',
+						'posterise',
+						'colorpoint',
+						'colorbalance',
+						'cartoon',
+						'deinterlace1',
+						'deinterlace2',
+					],
+					stype: 'select',
+				},
+				{
+					s_id: 'rotation',
+					values: [
+						0,
+						90,
+						180,
+						270,
+					],
+					stype: 'select',
+				},
 			];
 
 		$scope.values = {
-			brightness: 50,
-			contrast: 50,
-			awb_mode: 'auto',
 		};
 
 		$scope.cam_values = {};
