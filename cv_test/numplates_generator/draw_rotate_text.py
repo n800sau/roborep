@@ -28,7 +28,7 @@ font = cv2.FONT_HERSHEY_COMPLEX
 fontScale = 7
 thickness = 25
 
-def rotate_bound(image, angle):
+def rotate_bound(image, angle, interpolation = cv2.INTER_NEAREST):
 	# grab the dimensions of the image and then determine the
 	# center
 	(h, w) = image.shape[:2]
@@ -51,12 +51,12 @@ def rotate_bound(image, angle):
 
 	# perform the actual rotation and return the image
 	# use cv2.INTER_NEAREST to avoid introducing new colour
-	return cv2.warpAffine(image, M, (nW, nH), flags=cv2.INTER_NEAREST)
+	return cv2.warpAffine(image, M, (nW, nH), flags=interpolation)
 
 
 def make_numplate_rotate(num):
 
-	image = np.full((H, W, 4), transparent).astype(np.uint8)
+	image = np.full((H, W, 4), white).astype(np.uint8)
 	label_image = np.zeros(image.shape[:2]).astype(np.uint8)
 	shape = image.shape
 	print(shape)
@@ -90,15 +90,21 @@ def make_numplate_rotate(num):
 
 
 	for i in range(10):
+		sz_coef = float(random.randint(1, 9)) / 10
+		resized_image = cv2.resize(image, None, fx=sz_coef, fy=sz_coef, interpolation = cv2.INTER_CUBIC)
+		resized_label_image = cv2.resize(label_image, None, fx=sz_coef, fy=sz_coef, interpolation = cv2.INTER_NEAREST)
+#		print('compare', image.shape, resized_image.shape)
+
 		angle = random.randint(1, 360//5) * 5
-		rotated_label_image = rotate_bound(label_image, angle)
-		rotated_image = rotate_bound(image, angle)
+		rotated_image = rotate_bound(resized_image, angle, interpolation = cv2.INTER_CUBIC)
+		rotated_label_image = rotate_bound(resized_label_image, angle, interpolation = cv2.INTER_NEAREST)
+
 		if list(np.unique(label_image)) != list(np.unique(rotated_label_image)):
 			print('uniq before:', np.unique(label_image))
 			print('uniq after:', np.unique(rotated_label_image))
-		# replace transparency with color
-#		image[np.where((rotated_image==transparent).all(axis=2))] = green
-		ofname_rotated = '%d_r%d.png' % (num, angle)
+		# replace transparency with color to see
+		rotated_image[np.where((rotated_image==transparent).all(axis=2))] = green
+		ofname_rotated = '%d_r%d_szf_%.2f.png' % (num, angle,sz_coef)
 
 		cv2.imwrite(os.path.join(OUTDIR, IMGDIR, ofname_rotated), rotated_image)
 		cv2.imwrite(os.path.join(OUTDIR, LABELDIR, ofname_rotated), rotated_label_image)
