@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 
-import os, sys, json, random, imutils
+import os, sys, json, random, imutils, glob, random
 import cv2
 import numpy as np
 
+BGIMGDIR = 'bgimages'
 OUTDIR = 'source'
 IMGDIR = 'images'
 LABELDIR = 'labels'
+LABELPREVIEWDIR = 'label_previews'
 
-for dname in (os.path.join(OUTDIR, IMGDIR),os.path.join(OUTDIR, LABELDIR),):
+for dname in (os.path.join(OUTDIR, IMGDIR),os.path.join(OUTDIR, LABELDIR),os.path.join(OUTDIR, LABELPREVIEWDIR)):
 	if not os.path.exists(dname):
 		os.makedirs(dname)
+
+bgfnames = glob.glob(os.path.join(BGIMGDIR, '*.jpg'))
 
 W = 600
 H = int(W/1.4142)
@@ -23,6 +27,21 @@ yellow = (0, 180, 180, 255)
 white =  (255, 255, 255, 255)
 black =  (0, 0, 0, 255)
 transparent = (0, 0, 0, 0)
+
+label_preview_colors = (
+	(98, 94, 86, 255),
+	(231, 226, 217, 255),
+	(190, 169, 117, 255),
+	(146, 116, 0, 255),
+	(85, 69, 10, 255),
+	(255, 222, 38, 255),
+	(0, 237, 255, 255),
+	(0, 193, 255, 255),
+	(0, 124, 213, 255),
+	(177, 215, 255, 255),
+	(0, 108, 255, 255),
+	(62, 71, 86, 255),
+)
 
 font = cv2.FONT_HERSHEY_COMPLEX
 fontScale = 7
@@ -56,10 +75,10 @@ def rotate_bound(image, angle, interpolation = cv2.INTER_NEAREST):
 
 def make_numplate_rotate(num):
 
-	image = np.full((H, W, 4), white).astype(np.uint8)
+	image = np.full((H, W, 4), transparent).astype(np.uint8)
 	label_image = np.zeros(image.shape[:2]).astype(np.uint8)
 	shape = image.shape
-	print(shape)
+#	print('Source shape', shape)
 
 	hspace = 10
 	tsize = []
@@ -68,7 +87,7 @@ def make_numplate_rotate(num):
 	for c in str(num):
 
 		textSize = cv2.getTextSize(c, font, fontScale, thickness);
-		print(c, 'textSize(w,h)', textSize)
+#		print(c, 'textSize(w,h)', textSize)
 		tsize.append(textSize)
 
 		xsize += textSize[0][0] + hspace
@@ -79,7 +98,7 @@ def make_numplate_rotate(num):
 	ann = []
 	for i,c in enumerate(str(num)):
 
-		cv2.putText(label_image, c, (xpos, ypos), font, fontScale, int(c), thickness)
+		cv2.putText(label_image, c, (xpos, ypos), font, fontScale, int(c)+1, thickness)
 		cv2.putText(image, c, (xpos, ypos), font, fontScale, blue, thickness)
 
 		xpos += textSize[0][0] + hspace
@@ -88,9 +107,8 @@ def make_numplate_rotate(num):
 	cv2.imwrite(os.path.join(OUTDIR, IMGDIR, ofname), image)
 	cv2.imwrite(os.path.join(OUTDIR, LABELDIR, ofname), label_image)
 
-
 	for i in range(10):
-		sz_coef = float(random.randint(1, 9)) / 10
+		sz_coef = float(random.randint(1, 5)) / 10
 		resized_image = cv2.resize(image, None, fx=sz_coef, fy=sz_coef, interpolation = cv2.INTER_CUBIC)
 		resized_label_image = cv2.resize(label_image, None, fx=sz_coef, fy=sz_coef, interpolation = cv2.INTER_NEAREST)
 #		print('compare', image.shape, resized_image.shape)
@@ -103,11 +121,51 @@ def make_numplate_rotate(num):
 			print('uniq before:', np.unique(label_image))
 			print('uniq after:', np.unique(rotated_label_image))
 		# replace transparency with color to see
-		rotated_image[np.where((rotated_image==transparent).all(axis=2))] = green
-		ofname_rotated = '%d_r%d_szf_%.2f.png' % (num, angle,sz_coef)
+		rotated_image[np.where((rotated_image==transparent).all(axis=2))] = white
 
-		cv2.imwrite(os.path.join(OUTDIR, IMGDIR, ofname_rotated), rotated_image)
-		cv2.imwrite(os.path.join(OUTDIR, LABELDIR, ofname_rotated), rotated_label_image)
+#		ret, mask = cv2.threshold(rotated_label_image, 0, 255, cv2.THRESH_BINARY)
+#		print('mask shape', mask.shape)
+#		mask_inv = cv2.bitwise_not(mask)
+
+#		bg_image = np.empty_like(rotated_image)
+#		bg_image[:] = black
+
+		print('rotated_label_image', rotated_label_image.shape, rotated_label_image.dtype)
+
+		dst_image = cv2.imread(random.choice(bgfnames))
+		dst_image = cv2.cvtColor(dst_image, cv2.COLOR_BGR2BGRA)
+		bg_shape = rotated_image.shape
+		bg_xpos = random.randint(0, dst_image.shape[1]-bg_shape[1])
+		bg_ypos = random.randint(0, dst_image.shape[0]-bg_shape[0])
+		bg_image = dst_image[bg_ypos:bg_ypos+bg_shape[0],bg_xpos:bg_xpos+bg_shape[1]]
+
+#		print('bg_image', bg_image.shape, bg_image.dtype)
+
+#		image_fg = cv2.bitwise_and(rotated_image, rotated_image, mask = mask)
+#		image_bg = cv2.bitwise_and(bg_image, bg_image, mask = mask_inv)
+
+#		print('image_fg', image_fg.shape, image_fg.dtype)
+#		print('image_bg', image_bg.shape, image_bg.dtype)
+
+#		image_dst = cv2.add(image_bg, image_fg)
+
+#		dst_image[bg_ypos:bg_ypos+bg_shape[0],bg_xpos:bg_xpos+bg_shape[1]] = image_dst
+		dst_image[bg_ypos:bg_ypos+bg_shape[0],bg_xpos:bg_xpos+bg_shape[1]] = cv2.addWeighted(bg_image, 0.5, rotated_image, 0.5, 0)
+
+		big_label_image = np.zeros(dst_image.shape[:2], np.uint8)
+		big_label_image[bg_ypos:bg_ypos+bg_shape[0],bg_xpos:bg_xpos+bg_shape[1]] = rotated_label_image
+
+		label_preview_image = np.empty_like(dst_image)
+		label_preview_image[:] = white;
+		for i in range(1, 11):
+			label_preview_image[np.where((big_label_image==i))] = label_preview_colors[i-1]
+
+
+		ofname_dst = '%d_r%d_szf_%.2f.png' % (num, angle,sz_coef)
+
+		cv2.imwrite(os.path.join(OUTDIR, IMGDIR, ofname_dst), cv2.cvtColor(dst_image, cv2.COLOR_BGRA2BGR))
+		cv2.imwrite(os.path.join(OUTDIR, LABELDIR, ofname_dst), big_label_image)
+		cv2.imwrite(os.path.join(OUTDIR, LABELPREVIEWDIR, ofname_dst), cv2.cvtColor(label_preview_image, cv2.COLOR_BGRA2BGR))
 
 for i in range(100):
 	make_numplate_rotate(random.randint(100, 999))
