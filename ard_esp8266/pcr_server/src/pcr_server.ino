@@ -12,17 +12,19 @@
 #include <WiFiClient.h>
 #include <FS.h>
 
-FSWifiWebServerApp app("pcr_server");
+FSWifiWebServerApp app("pcr_server", "admin", "parol");
 
 void readSettings()
 {
-	String path = "/settings.json";
-	if(SPIFFS.exists(path)) {
-		File file = SPIFFS.open(path, "r");
-		app.webserver.streamFile(file, "text/json");
-		file.close();
-	} else {
-		app.webserver.send(200, "text/json", "[]");
+	if(app.is_allowed()) {
+		String path = "/settings.json";
+		if(SPIFFS.exists(path)) {
+			File file = SPIFFS.open(path, "r");
+			app.webserver.streamFile(file, "text/json");
+			file.close();
+		} else {
+			app.webserver.send(200, "text/json", "[]");
+		}
 	}
 }
 
