@@ -150,7 +150,7 @@ const double R_25 = 100000; // 100k ohm
 double thermister(double r)
 {
 // R = R_25 * Math.exp(beta * ((1 / (T + T_0)) - (1 / T_25)));
-	return 1 / ((log(r / R_25) / beta) + 1/(T_0 + T_25)) - T_0;
+	return 1 / ((log(r / R_25) / beta) + 1/T_25) - T_0;
 }
 
 void flip()
