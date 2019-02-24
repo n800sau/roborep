@@ -58,8 +58,8 @@ module top_part() {
       translate([0, 0, -wall/2]) {
         cube([sz_x+2*gap, sz_y+2*gap, top_part_h+gap], center=true);
         // 220v hole
-        translate([sz_x/2-30/2-16, -sz_y/2, -3.5]) {
-          cube([30+2*gap, wall+10, 22+gap], center=true);
+        translate([sz_x/2-29/2-15, -sz_y/2, -3.5]) {
+          cube([29+2*gap, wall+10, 22+gap], center=true);
         }
       }
       translate([-60/2, -sz_y/2, 0]) {
@@ -116,9 +116,9 @@ module top_part() {
 }
 
 translate([0, 0, bottom_part_h]) {
-  top_part();
+//  top_part();
 }
-//bottom_part();
+bottom_part();
 
 //vent(center=false);
 
