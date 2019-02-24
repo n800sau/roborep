@@ -1,3 +1,2 @@
-ino build &>build.log && \
-./upload.sh
+platformio run -v &>build.log
 echo $?

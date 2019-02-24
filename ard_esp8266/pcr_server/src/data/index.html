@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<title>Sliders</title>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<!-- Angular Material style sheet -->
+	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css"/>
+	<link rel="stylesheet" href="app.css"/>
+</head>
+<body ng-app="myApp">
+
+	<div ng-controller="AppCtrl" ng-cloak>
+		<md-content style="margin: 16px; padding:16px">
+				<div layout="row">
+					<div flex="50" flex-gt-sm="5">
+						<label>List</label>
+					</div>
+					<div flex="50" flex-gt-sm="10">
+						<span class="clickable" ng-click="edit()">Add</span>
+					</div>
+				</div>
+				<div ng-repeat="s in settings track by $index" layout="row" layout-wrap>
+					<div flex="50" flex-gt-sm="5">
+						{{$index}}
+					</div>
+					<div flex="50" flex-gt-sm="10">
+						{{s.name}}
+					</div>
+					<div class="clickable" flex="50" flex-gt-sm="10" ng-click="edit(s)">
+						Edit
+					</div>
+				</div>
+
+		<div ng-if="editing">
+			<label>T</label><input ng-model="editing.time"></input>
+			<label>V</label><input ng-model="editing.val"></input>
+			<button ng-click="submit()">Submit</button>
+		</div>
+
+
+		</md-content>
+	</div>
+
+	<!-- Angular Material requires Angular.js Libraries -->
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-animate.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-aria.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-messages.min.js"></script>
+
+	<!-- Angular Material Library -->
+	<script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.js"></script>
+
+	<!-- Your application bootstrap	-->
+	<script type="text/javascript" src="app.js"></script>
+
+</body>
+</html>
+
+
+
