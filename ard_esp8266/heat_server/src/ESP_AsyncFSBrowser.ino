@@ -45,19 +45,32 @@ double Vcc = 3.3;
 // SKETCH BEGIN
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
-AsyncEventSource events("/events");
 
 #define TEMP_PIN A0
 
 Ticker flipper;
 
+void readSettings(AsyncWebServerRequest *request)
+{
+	String path = "/settings.json";
+	if(SPIFFS.exists(path)) {
+		File file = SPIFFS.open(path, "r");
+		request->send(file, "text/json");
+//		request->streamFile(file, "text/json");
+		file.close();
+	} else {
+		request->send(200, "text/json", "[]");
+	}
+}
+
+
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 	if(type == WS_EVT_CONNECT){
 		Serial.printf("ws[%s][%d] connect\n", server->url(), client->id());
-		client->printf("Hello Client %d :)", client->id());
+		client->printf("{\"msg\":\"Hello Client %d\"}", client->id());
 		client->ping();
 	} else if(type == WS_EVT_DISCONNECT){
-		Serial.printf("ws[%s][%d] disconnect: %u\n", server->url(), client->id());
+		Serial.printf("ws[%s][%d] disconnect: %d\n", server->url(), client->id());
 	} else if(type == WS_EVT_ERROR){
 		Serial.printf("ws[%s][%d] error(%d): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
 	} else if(type == WS_EVT_PONG){
@@ -185,11 +198,6 @@ void setup(){
 	ws.onEvent(onWsEvent);
 	server.addHandler(&ws);
 
-	events.onConnect([](AsyncEventSourceClient *client){
-		client->send("hello!",NULL,millis(),1000);
-	});
-	server.addHandler(&events);
-
 	server.addHandler(new SPIFFSEditor(http_username,http_password));
 
 	server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -244,6 +252,7 @@ void setup(){
 
 		request->send(404);
 	});
+	server.on("/settings.json", HTTP_GET, readSettings);
 //	server.onFileUpload([](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
 //		if(!index)
 //			Serial.printf("UploadStart: %s\n", filename.c_str());
