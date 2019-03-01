@@ -12,32 +12,80 @@
 
 	<div ng-controller="AppCtrl" ng-cloak>
 		<md-content style="margin: 16px; padding:16px">
-			<div layout="row">
-				<div flex="50">
-					<label>{{templist[templist.length-1]}}</label>
+			<div layout="row" layout-wrap>
+				<div flex="33" flex-gt-sm="100">
+					<table>
+						<tr>
+							<td>
+								<label>{{templist[templist.length-1]|number:0}}</label>
+							</td>
+							<td>
+								<span ng-if="temp2set_confirmed !== undefined">
+									...
+								</span>
+							</td>
+							<td style="white-space: nowrap">
+								<span ng-if="temp2set_confirmed !== undefined">
+									{{temp2set_confirmed}}
+									<span ng-if="heating">&uparrow;</span>
+									<span ng-if="cooling">&downarrow;</span>
+								</span>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<div layout="row" layout-wrap>
+				<div flex="33" flex-gt-sm="100">
+<!-- <br/>{{templist}}<br/>{{min_temp()}}<br/>{{max_temp()}}<br/> -->
 
-<div class="chart" style="width:{{plot_width}}px; height:{{plot_height}}px;">
+					<div class="chart" style="width:{{plot_width}}px; height:{{plot_height}}px;">
 
-	<!-- Labels -->
-  <div class="y" style="width:{{height}}px;">{{yAxis}}</div>
-  <div class="x">{{xAxis}}</div>
+						<!-- Labels -->
+						<div class="y" style="width:{{height}}px;">{{yAxis}}</div>
+						<div class="x">{{xAxis}}</div>
+
+						<div ng-repeat="dot in y_scale() track by $index" class="dot" style="bottom:{{(dot-min_temp()) / (max_temp()-min_temp()) * plot_height}}px; left:0px;">
+							<span class="y-label">{{dot}}</span>
+						</div>
+
+						<div ng-repeat="dot in x_scale().slice(-20) track by $index" class="dot" style="bottom:0; left:{{(dot + 0.5) / templist.length * plot_width}}px;">
+						</div>
 
 
-  <!-- Data -->
-  <svg style="width:{{plot_width}}px; height:{{plot_height}}px;" ng-if="templist.length > 2">
+						<!-- Data -->
+						<svg style="width:{{plot_width}}px; height:{{plot_height}}px;" ng-if="templist.length > 2">
 
-    <line ng-repeat="line in templist.slice(0,-1) track by $index" 
-          x1="{{$index / templist.length * plot_width }}" 
-          y1="{{(line-min_temp) / (max_temp-min_temp) * plot_height}}" 
-          x2="{{($index + 1) / templist.length * plot_width}}" 
-          y2="{{(templist[$index + 1]-min_temp) / (max_temp-min_temp) * plot_height}}">
-    </line>
+							<line ng-repeat="line in get_templist().slice(0, -1) track by $index" 
+										x1="{{$index / get_templist().length * plot_width }}" 
+										y1="{{(line-min_temp()) / (max_temp()-min_temp()) * plot_height}}" 
+										x2="{{($index + 1) / get_templist().length * plot_width}}" 
+										y2="{{(get_templist()[$index + 1]-min_temp()) / (max_temp()-min_temp()) * plot_height}}">
+							</line>
 
- </svg>
+						</svg>
 
-</div>
+					</div>
 
 				</div>
+			</div>
+			<div layout="row" layout-wrap class="temp-2-set">
+				<div flex="33" flex-gt-sm="100">
+					<table>
+						<tr>
+							<td>
+								<input type="number" class="temp2set-input" ng-model="temp2set" min="20" max="100"></input>
+							</td>
+							<td>
+								<md-button ng-click="apply(temp2set)">
+									Apply
+								</md-button>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<div layout="row" layout-wrap>
 				<div flex="50">
 					<div layout="row">
 						<div flex="50" flex-gt-sm="5">

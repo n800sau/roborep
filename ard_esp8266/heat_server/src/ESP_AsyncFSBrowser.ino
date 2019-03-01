@@ -37,8 +37,10 @@ double Vcc = 3.3;
 #include <Hash.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include "AsyncJson.h"
 #include <SPIFFSEditor.h>
 #include <Ticker.h>
+#include <PID_v1.h>
 
 #include "config.h"
 
@@ -47,8 +49,23 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 #define TEMP_PIN A0
+#define COOL_PIN 4
+#define HEAT_PIN 5
 
 Ticker flipper;
+bool heating;
+bool cooling;
+
+double temp2set = 0;
+double v, r, temp;
+double Output;
+
+//Specify the links and initial tuning parameters
+double Kp=2, Ki=5, Kd=1;
+PID heatPID(&temp, &Output, &temp2set, Kp, Ki, Kd, DIRECT);
+
+int WindowSize = 5000;
+unsigned long windowStartTime;
 
 void readSettings(AsyncWebServerRequest *request)
 {
@@ -63,6 +80,18 @@ void readSettings(AsyncWebServerRequest *request)
 	}
 }
 
+AsyncCallbackJsonWebHandler* temp_handler = new AsyncCallbackJsonWebHandler("/temp/set",[](AsyncWebServerRequest *request, JsonVariant &json) {
+	StaticJsonBuffer<200> jsonBuffer;
+	JsonObject& jsonObj = json.as<JsonObject>();
+	temp2set = jsonObj["temp"];
+	Serial.print("tem2setp:");
+	Serial.println(temp2set);
+	JsonObject& root = jsonBuffer.createObject();
+	root["temp2set"] = temp2set;
+	String output;
+	root.printTo(output);
+	request->send(200, "text/json", output);
+});
 
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 	if(type == WS_EVT_CONNECT){
@@ -166,16 +195,36 @@ double thermister(double r)
 	return 1 / ((log(r / R_25) / beta) + 1/T_25) - T_0;
 }
 
-void flip()
+void update_temp()
 {
-	double v = analogRead()/1024.;
-	double r = v/((3.3-v)/270000);
-	double temp = thermister(r);
-	ws.printfAll("{\"v\": %.2f, \"r\": %.2f, \"temp\": %.2f}\n", v, r, temp);
+	v = analogRead()/1024.;
+	r = v/((3.3-v)/270000);
+	temp = thermister(r);
 }
 
+void flip()
+{
+	StaticJsonBuffer<200> jsonBuffer;
+	update_temp();
+	update_heater();
+	JsonObject& root = jsonBuffer.createObject();
+	root["v"] = v;
+	root["r"] = r;
+	root["temp"] = temp;
+	root["heating"] = heating;
+	root["cooling"] = cooling;
+	String output;
+	root.printTo(output);
+	root.printTo(Serial);
+	Serial.println();
+	ws.printfAll(output.c_str());
+}
 
 void setup(){
+	pinMode(HEAT_PIN, OUTPUT);
+	pinMode(COOL_PIN, OUTPUT);
+	digitalWrite(HEAT_PIN, LOW);
+	digitalWrite(COOL_PIN, LOW);
 	Serial.begin(115200);
 	Serial.setDebugOutput(true);
 	WiFi.hostname(hostName);
@@ -205,6 +254,9 @@ void setup(){
 	});
 
 	server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+
+	server.on("/settings.json", HTTP_GET, readSettings);
+	server.addHandler(temp_handler);
 
 	server.onNotFound([](AsyncWebServerRequest *request){
 		Serial.printf("NOT_FOUND: ");
@@ -252,7 +304,6 @@ void setup(){
 
 		request->send(404);
 	});
-	server.on("/settings.json", HTTP_GET, readSettings);
 //	server.onFileUpload([](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
 //		if(!index)
 //			Serial.printf("UploadStart: %s\n", filename.c_str());
@@ -268,8 +319,57 @@ void setup(){
 //			Serial.printf("BodyEnd: %d\n", total);
 //	});
 	server.begin();
+
+	update_temp();
+	windowStartTime = millis();
+	//tell the PID to range between 0 and the full window size
+	heatPID.SetOutputLimits(0, WindowSize);
+	//turn the PID on
+	heatPID.SetMode(AUTOMATIC);
+
 	flipper.attach(2, flip);
 }
 
-void loop(){
+void update_heater()
+{
+	update_temp();
+
+	heatPID.Compute();
+	if(millis() - windowStartTime > WindowSize) {
+		//time to shift the Relay Window
+		windowStartTime += WindowSize;
+	}
+	heating = Output < millis() - windowStartTime;
+	cooling = !heating;
+	digitalWrite(HEAT_PIN, heating ? HIGH : LOW);
+	digitalWrite(COOL_PIN, cooling ? HIGH : LOW);
+
+/*	heating = false;
+	cooling = false;
+	double dt = temp2set-temp;
+	if(dt > 0.5) {
+		// heat
+		digitalWrite(HEAT_PIN, HIGH);
+		digitalWrite(COOL_PIN, LOW);
+		heating = true;
+	} else if(dt < -0.5) {
+		// cool
+		digitalWrite(HEAT_PIN, LOW);
+		digitalWrite(COOL_PIN, HIGH);
+		cooling = true;
+	} else {
+		digitalWrite(HEAT_PIN, LOW);
+		digitalWrite(COOL_PIN, LOW);
+	}*/
+
+	if(heating) {
+		Serial.println("heating...");
+	}
+	if(cooling) {
+		Serial.println("cooling...");
+	}
+}
+
+void loop()
+{
 }
