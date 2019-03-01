@@ -56,7 +56,7 @@ Ticker flipper;
 bool heating;
 bool cooling;
 
-double temp2set = 0;
+double temp2set = -10000;
 double v, r, temp;
 double Output;
 
@@ -84,10 +84,10 @@ AsyncCallbackJsonWebHandler* temp_handler = new AsyncCallbackJsonWebHandler("/te
 	StaticJsonBuffer<200> jsonBuffer;
 	JsonObject& jsonObj = json.as<JsonObject>();
 	temp2set = jsonObj["temp"];
-	Serial.print("tem2setp:");
+	Serial.print("temp2set:");
 	Serial.println(temp2set);
 	JsonObject& root = jsonBuffer.createObject();
-	root["temp2set"] = temp2set;
+	root["temp2set"] = (int)temp2set;
 	String output;
 	root.printTo(output);
 	request->send(200, "text/json", output);
@@ -211,6 +211,9 @@ void flip()
 	root["v"] = v;
 	root["r"] = r;
 	root["temp"] = temp;
+	if(temp2set > -1000) {
+		root["temp2set"] = (int)temp2set;
+	}
 	root["heating"] = heating;
 	root["cooling"] = cooling;
 	String output;
@@ -334,18 +337,21 @@ void update_heater()
 {
 	update_temp();
 
-	heatPID.Compute();
-	if(millis() - windowStartTime > WindowSize) {
-		//time to shift the Relay Window
-		windowStartTime += WindowSize;
+	heating = false;
+	cooling = false;
+	if(temp2set > -1000) {
+		heatPID.Compute();
+		if(millis() - windowStartTime > WindowSize) {
+			//time to shift the Relay Window
+			windowStartTime += WindowSize;
+		}
+		heating = Output < millis() - windowStartTime;
+		cooling = !heating;
 	}
-	heating = Output < millis() - windowStartTime;
-	cooling = !heating;
 	digitalWrite(HEAT_PIN, heating ? HIGH : LOW);
 	digitalWrite(COOL_PIN, cooling ? HIGH : LOW);
 
-/*	heating = false;
-	cooling = false;
+/*
 	double dt = temp2set-temp;
 	if(dt > 0.5) {
 		// heat
