@@ -37,27 +37,69 @@ double Vcc = 3.3;
 #include <Hash.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include "AsyncJson.h"
 #include <SPIFFSEditor.h>
 #include <Ticker.h>
+#include <PID_v1.h>
 
 #include "config.h"
 
 // SKETCH BEGIN
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
-AsyncEventSource events("/events");
 
 #define TEMP_PIN A0
+#define COOL_PIN 4
+#define HEAT_PIN 5
 
 Ticker flipper;
+bool heating;
+bool cooling;
+
+double temp2set = -10000;
+double v, r, temp;
+double Output;
+
+//Specify the links and initial tuning parameters
+double Kp=2, Ki=5, Kd=1;
+PID heatPID(&temp, &Output, &temp2set, Kp, Ki, Kd, DIRECT);
+
+int WindowSize = 5000;
+unsigned long windowStartTime;
+
+void readSettings(AsyncWebServerRequest *request)
+{
+	String path = "/settings.json";
+	if(SPIFFS.exists(path)) {
+		File file = SPIFFS.open(path, "r");
+		request->send(file, "text/json");
+//		request->streamFile(file, "text/json");
+		file.close();
+	} else {
+		request->send(200, "text/json", "[]");
+	}
+}
+
+AsyncCallbackJsonWebHandler* temp_handler = new AsyncCallbackJsonWebHandler("/temp/set",[](AsyncWebServerRequest *request, JsonVariant &json) {
+	StaticJsonBuffer<200> jsonBuffer;
+	JsonObject& jsonObj = json.as<JsonObject>();
+	temp2set = jsonObj["temp"];
+	Serial.print("temp2set:");
+	Serial.println(temp2set);
+	JsonObject& root = jsonBuffer.createObject();
+	root["temp2set"] = (int)temp2set;
+	String output;
+	root.printTo(output);
+	request->send(200, "text/json", output);
+});
 
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 	if(type == WS_EVT_CONNECT){
 		Serial.printf("ws[%s][%d] connect\n", server->url(), client->id());
-		client->printf("Hello Client %d :)", client->id());
+		client->printf("{\"msg\":\"Hello Client %d\"}", client->id());
 		client->ping();
 	} else if(type == WS_EVT_DISCONNECT){
-		Serial.printf("ws[%s][%d] disconnect: %u\n", server->url(), client->id());
+		Serial.printf("ws[%s][%d] disconnect: %d\n", server->url(), client->id());
 	} else if(type == WS_EVT_ERROR){
 		Serial.printf("ws[%s][%d] error(%d): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
 	} else if(type == WS_EVT_PONG){
@@ -153,16 +195,39 @@ double thermister(double r)
 	return 1 / ((log(r / R_25) / beta) + 1/T_25) - T_0;
 }
 
-void flip()
+void update_temp()
 {
-	double v = analogRead()/1024.;
-	double r = v/((3.3-v)/270000);
-	double temp = thermister(r);
-	ws.printfAll("{\"v\": %.2f, \"r\": %.2f, \"temp\": %.2f}\n", v, r, temp);
+	v = analogRead()/1024.;
+	r = v/((3.3-v)/270000);
+	temp = thermister(r);
 }
 
+void flip()
+{
+	StaticJsonBuffer<200> jsonBuffer;
+	update_temp();
+	update_heater();
+	JsonObject& root = jsonBuffer.createObject();
+	root["v"] = v;
+	root["r"] = r;
+	root["temp"] = temp;
+	if(temp2set > -1000) {
+		root["temp2set"] = (int)temp2set;
+	}
+	root["heating"] = heating;
+	root["cooling"] = cooling;
+	String output;
+	root.printTo(output);
+	root.printTo(Serial);
+	Serial.println();
+	ws.printfAll(output.c_str());
+}
 
 void setup(){
+	pinMode(HEAT_PIN, OUTPUT);
+	pinMode(COOL_PIN, OUTPUT);
+	digitalWrite(HEAT_PIN, LOW);
+	digitalWrite(COOL_PIN, LOW);
 	Serial.begin(115200);
 	Serial.setDebugOutput(true);
 	WiFi.hostname(hostName);
@@ -185,11 +250,6 @@ void setup(){
 	ws.onEvent(onWsEvent);
 	server.addHandler(&ws);
 
-	events.onConnect([](AsyncEventSourceClient *client){
-		client->send("hello!",NULL,millis(),1000);
-	});
-	server.addHandler(&events);
-
 	server.addHandler(new SPIFFSEditor(http_username,http_password));
 
 	server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -197,6 +257,9 @@ void setup(){
 	});
 
 	server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+
+	server.on("/settings.json", HTTP_GET, readSettings);
+	server.addHandler(temp_handler);
 
 	server.onNotFound([](AsyncWebServerRequest *request){
 		Serial.printf("NOT_FOUND: ");
@@ -259,8 +322,60 @@ void setup(){
 //			Serial.printf("BodyEnd: %d\n", total);
 //	});
 	server.begin();
+
+	update_temp();
+	windowStartTime = millis();
+	//tell the PID to range between 0 and the full window size
+	heatPID.SetOutputLimits(0, WindowSize);
+	//turn the PID on
+	heatPID.SetMode(AUTOMATIC);
+
 	flipper.attach(2, flip);
 }
 
-void loop(){
+void update_heater()
+{
+	update_temp();
+
+	heating = false;
+	cooling = false;
+	if(temp2set > -1000) {
+		heatPID.Compute();
+		if(millis() - windowStartTime > WindowSize) {
+			//time to shift the Relay Window
+			windowStartTime += WindowSize;
+		}
+		heating = Output < millis() - windowStartTime;
+		cooling = !heating;
+	}
+	digitalWrite(HEAT_PIN, heating ? HIGH : LOW);
+	digitalWrite(COOL_PIN, cooling ? HIGH : LOW);
+
+/*
+	double dt = temp2set-temp;
+	if(dt > 0.5) {
+		// heat
+		digitalWrite(HEAT_PIN, HIGH);
+		digitalWrite(COOL_PIN, LOW);
+		heating = true;
+	} else if(dt < -0.5) {
+		// cool
+		digitalWrite(HEAT_PIN, LOW);
+		digitalWrite(COOL_PIN, HIGH);
+		cooling = true;
+	} else {
+		digitalWrite(HEAT_PIN, LOW);
+		digitalWrite(COOL_PIN, LOW);
+	}*/
+
+	if(heating) {
+		Serial.println("heating...");
+	}
+	if(cooling) {
+		Serial.println("cooling...");
+	}
+}
+
+void loop()
+{
 }
