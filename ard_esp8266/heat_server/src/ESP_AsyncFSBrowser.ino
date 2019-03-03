@@ -337,6 +337,8 @@ void update_heater()
 {
 	update_temp();
 
+	// test if temp does not change for some time then stop heating and cooling?
+
 	heating = false;
 	cooling = false;
 	if(temp2set > -1000) {
