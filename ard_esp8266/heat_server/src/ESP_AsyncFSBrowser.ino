@@ -27,8 +27,9 @@
 //R=64.87
 //v = 3.27/(270+64.87)*64.87 = 0.63345
 
-unsigned int Rs = 270000;
-double Vcc = 3.3;
+// 3435 10k ntc mf5b 
+
+
 
 #include <math.h>
 #include <ESP8266WiFi.h>
@@ -49,8 +50,8 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 #define TEMP_PIN A0
-#define COOL_PIN 4
-#define HEAT_PIN 5
+#define COOL_PIN 5
+#define HEAT_PIN 4
 
 Ticker flipper;
 bool heating;
@@ -184,10 +185,21 @@ int analogRead()
 	return val;
 }
 
+double Vcc = 3.3;
 const double T_0 = 273.15;
 const double T_25 = T_0 + 25;
-const double beta = 3950;
-const double R_25 = 100000; // 100k ohm
+// 100k
+//const double beta = 3950;
+//const double R_25 = 100000; // 100k ohm
+//const unsigned int Rs = 270000;
+
+
+// 10k
+const double beta = 3435;
+const double R_25 = 10000; // 100k ohm
+//const unsigned int Rs = 10000;
+const unsigned int Rs = 9690;
+
 
 double thermister(double r)
 {
@@ -198,7 +210,7 @@ double thermister(double r)
 void update_temp()
 {
 	v = analogRead()/1024.;
-	r = v/((3.3-v)/270000);
+	r = v/((3.3-v)/Rs);
 	temp = thermister(r);
 }
 
