@@ -12,8 +12,8 @@
 
 	<div ng-controller="AppCtrl" ng-cloak>
 		<md-content style="margin: 16px; padding:16px">
-			<div layout="row" layout-wrap>
-				<div flex="33" flex-gt-sm="100">
+			<div layout="row">
+				<div>
 					<table>
 						<tr>
 							<td>
@@ -35,8 +35,8 @@
 					</table>
 				</div>
 			</div>
-			<div layout="row" layout-wrap>
-				<div flex="33" flex-gt-sm="100">
+			<div layout="row">
+				<div>
 <!-- <br/>{{templist}}<br/>{{min_temp()}}<br/>{{max_temp()}}<br/> -->
 
 					<div class="chart" style="width:{{plot_width}}px; height:{{plot_height}}px;">
@@ -49,17 +49,17 @@
 							<span class="y-label">{{dot}}</span>
 						</div>
 
-						<div ng-repeat="dot in x_scale().slice(-20) track by $index" class="dot" style="bottom:0; left:{{(dot + 0.5) / templist.length * plot_width}}px;">
+						<div ng-repeat="dot in x_scale().slice(-20) track by $index" class="dot" style="bottom:0; left:{{(dot + 0.5 - x_scale().slice(-20)[0]) / get_templist().length * plot_width}}px;">
 						</div>
 
 
 						<!-- Data -->
 						<svg style="width:{{plot_width}}px; height:{{plot_height}}px;" ng-if="templist.length > 2">
 
-							<line ng-repeat="line in get_templist().slice(0, -1) track by $index" 
-										x1="{{$index / get_templist().length * plot_width }}" 
-										y1="{{(line-min_temp()) / (max_temp()-min_temp()) * plot_height}}" 
-										x2="{{($index + 1) / get_templist().length * plot_width}}" 
+							<line ng-repeat="line in get_templist().slice(0, -1) track by $index"
+										x1="{{$index / get_templist().length * plot_width }}"
+										y1="{{(line-min_temp()) / (max_temp()-min_temp()) * plot_height}}"
+										x2="{{($index + 1) / get_templist().length * plot_width}}"
 										y2="{{(get_templist()[$index + 1]-min_temp()) / (max_temp()-min_temp()) * plot_height}}">
 							</line>
 
@@ -69,50 +69,87 @@
 
 				</div>
 			</div>
-			<div layout="row" layout-wrap class="temp-2-set">
-				<div flex="33" flex-gt-sm="100">
-					<table>
-						<tr>
-							<td>
-								<input type="number" class="temp2set-input" ng-model="temp2set" min="20" max="100"></input>
-							</td>
-							<td>
-								<md-button ng-click="apply(temp2set)">
-									Apply
-								</md-button>
-							</td>
-						</tr>
-					</table>
-				</div>
+			<div layout="row" class="temp-2-set">
+				<table>
+					<tr>
+						<td>
+							<input type="number" class="temp2set-input" ng-model="temp2set" min="20" max="100" ng-disabled="running"></input>
+						</td>
+						<td>
+							<md-button ng-click="apply(temp2set)" ng-disabled="running">
+								Apply
+							</md-button>
+						</td>
+					</tr>
+				</table>
 			</div>
-			<div layout="row" layout-wrap>
-				<div flex="50">
-					<div layout="row">
-						<div flex="50" flex-gt-sm="5">
-							<label>List</label>
+			<table>
+				<colgroup>
+					<col class="col-stage"/>
+					<col class="col-NN"/>
+					<col class="col-T"/>
+					<col class="col-D"/>
+					<col class="col-E"/>
+					<col class="col-X"/>
+				</colgroup>
+				<tr>
+					<th>
+					</th>
+					<th>
+					</th>
+					<th>
+						T
+					</th>
+					<th>
+						D
+					</th>
+					<th>
+					</th>
+					<th ng-if="running">
+					</th>
+					<th class="clickable" ng-click="editing={}; settings.push(editing)" ng-if="!running">
+						+
+					</th>
+				</tr>
+				<tr ng-repeat="s in settings track by $index">
+					<td>
+						<span ng-if="running ? stage == $index+1 : false">*</span>
+					</td>
+					<td>
+						{{$index+1}}
+					</td>
+					<td>
+						<div ng-if="editing == s">
+							<input type="number" ng-model="s.temp"/>
 						</div>
-						<div flex="50" flex-gt-sm="10">
-							<span class="clickable" ng-click="edit()">Add</span>
+						<div ng-if="editing != s">
+							{{s.temp}}
 						</div>
-					</div>
-					<div ng-repeat="s in settings track by $index" layout="row" layout-wrap>
-						<div flex="50" flex-gt-sm="5">
-							{{$index}}
+					</td>
+					<td>
+						<div ng-if="editing == s">
+							<input type="number" ng-model="s.duration"/>
 						</div>
-						<div flex="50" flex-gt-sm="10">
-							{{s.name}}
+						<div ng-if="editing != s">
+							{{s.duration}}
 						</div>
-						<div class="clickable" flex="50" flex-gt-sm="10" ng-click="edit(s)">
-							Edit
-						</div>
-					</div>
-				</div>
-			</div>
-			<div ng-if="editing">
-				<label>T</label><input ng-model="editing.time"></input>
-				<label>V</label><input ng-model="editing.val"></input>
-				<button ng-click="submit()">Submit</button>
-			</div>
+					</td>
+					<td colspan="2" ng-if="running">
+					</td>
+					<td class="clickable" ng-click="on_edit_click(s)" ng-if="!running">
+						{{editing == s ? 'W' : 'E'}}
+					</td>
+					<td class="clickable" ng-click="settings.splice($index, 1)" ng-if="!running">
+						X
+					</td>
+				</tr>
+			</table>
+			<md-button ng-click="run()" ng-if="!running" ng-disable="editing">
+				Run
+			</md-button>
+			<md-button ng-click="abort()" ng-if="running">
+				Abort
+			</md-button>
 		</md-content>
 	</div>
 

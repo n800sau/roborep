@@ -57,7 +57,12 @@ Ticker flipper;
 bool heating;
 bool cooling;
 
+bool running = false;
+unsigned long start_millis;
+int stage = 0;
+
 double temp2set = -10000;
+const double max_cold_temp = 30;
 double v, r, temp;
 double Output;
 
@@ -68,18 +73,27 @@ PID heatPID(&temp, &Output, &temp2set, Kp, Ki, Kd, DIRECT);
 int WindowSize = 5000;
 unsigned long windowStartTime;
 
-void readSettings(AsyncWebServerRequest *request)
-{
-	String path = "/settings.json";
-	if(SPIFFS.exists(path)) {
-		File file = SPIFFS.open(path, "r");
-		request->send(file, "text/json");
+AsyncCallbackJsonWebHandler* settings_handler = new AsyncCallbackJsonWebHandler("/settings.json",[](AsyncWebServerRequest *request, JsonVariant &json) {
+	const String path = "/settings.json";
+	if(request->method() == HTTP_GET) {
+		if(SPIFFS.exists(path)) {
+			File file = SPIFFS.open(path, "r");
+			request->send(file, "text/json");
 //		request->streamFile(file, "text/json");
+			file.close();
+		} else {
+			request->send(200, "text/json", "[]");
+		}
+	} else if(request->method() == HTTP_POST) {
+		JsonObject& jsonObj = json.as<JsonObject>();
+		File file = SPIFFS.open(path, "w");
+		jsonObj.printTo(file);
 		file.close();
-	} else {
-		request->send(200, "text/json", "[]");
+		jsonObj.printTo(Serial);
+		request->send(200, "text/json", "{\"Result\":\"OK\"}");
 	}
-}
+});
+
 
 AsyncCallbackJsonWebHandler* temp_handler = new AsyncCallbackJsonWebHandler("/temp/set",[](AsyncWebServerRequest *request, JsonVariant &json) {
 	StaticJsonBuffer<200> jsonBuffer;
@@ -173,7 +187,7 @@ const char * hostName = "heat-server";
 const char* http_username = "admin";
 const char* http_password = "parol";
 
-int analogRead()
+int tempAnalogRead()
 {
 	int val = 0;
 	for(int i = 0; i < 20; i++) {
@@ -196,9 +210,9 @@ const double T_25 = T_0 + 25;
 
 // 10k
 const double beta = 3435;
-const double R_25 = 10000; // 100k ohm
-//const unsigned int Rs = 10000;
-const unsigned int Rs = 9690;
+const double R_25 = 10000; // 10k ohm
+const unsigned int Rs = 10000;
+//const unsigned int Rs = 9690;
 
 
 double thermister(double r)
@@ -209,7 +223,9 @@ double thermister(double r)
 
 void update_temp()
 {
-	v = analogRead()/1024.;
+//	Serial.print("A0:");
+//	Serial.println(analogRead(TEMP_PIN));
+	v = tempAnalogRead()/1024.;
 	r = v/((3.3-v)/Rs);
 	temp = thermister(r);
 }
@@ -217,7 +233,6 @@ void update_temp()
 void flip()
 {
 	StaticJsonBuffer<200> jsonBuffer;
-	update_temp();
 	update_heater();
 	JsonObject& root = jsonBuffer.createObject();
 	root["v"] = v;
@@ -228,14 +243,21 @@ void flip()
 	}
 	root["heating"] = heating;
 	root["cooling"] = cooling;
+	if(running) {
+		root["running_time"] = millis() - start_millis;
+		root["stage"] = stage;
+	}
 	String output;
 	root.printTo(output);
+
 	root.printTo(Serial);
 	Serial.println();
+
 	ws.printfAll(output.c_str());
 }
 
 void setup(){
+	running = false;
 	pinMode(HEAT_PIN, OUTPUT);
 	pinMode(COOL_PIN, OUTPUT);
 	digitalWrite(HEAT_PIN, LOW);
@@ -262,16 +284,28 @@ void setup(){
 	ws.onEvent(onWsEvent);
 	server.addHandler(&ws);
 
+
+	server.addHandler(temp_handler);
+	server.addHandler(settings_handler);
+
 	server.addHandler(new SPIFFSEditor(http_username,http_password));
+
+	server.on("/run", HTTP_GET, [](AsyncWebServerRequest *request){
+		running = true;
+		request->send(200, "text/plain", String(ESP.getFreeHeap()));
+	});
+
+	server.on("/abort", HTTP_GET, [](AsyncWebServerRequest *request){
+		running = false;
+		temp2set = -10000;
+		request->send(200, "text/plain", String(ESP.getFreeHeap()));
+	});
 
 	server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
 		request->send(200, "text/plain", String(ESP.getFreeHeap()));
 	});
 
 	server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
-
-	server.on("/settings.json", HTTP_GET, readSettings);
-	server.addHandler(temp_handler);
 
 	server.onNotFound([](AsyncWebServerRequest *request){
 		Serial.printf("NOT_FOUND: ");
@@ -349,6 +383,10 @@ void update_heater()
 {
 	update_temp();
 
+	// find current stage
+	if(running) {
+	}
+
 	// test if temp does not change for some time then stop heating and cooling?
 
 	heating = false;
@@ -360,7 +398,7 @@ void update_heater()
 			windowStartTime += WindowSize;
 		}
 		heating = Output < millis() - windowStartTime;
-		cooling = !heating;
+		cooling = (temp < max_cold_temp) ? false : !heating;
 	}
 	digitalWrite(HEAT_PIN, heating ? HIGH : LOW);
 	digitalWrite(COOL_PIN, cooling ? HIGH : LOW);

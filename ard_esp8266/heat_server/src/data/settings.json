@@ -1,0 +1,12 @@
+{
+	"settings": [
+		{
+			"temp": 60,
+			"duration": 30
+		},
+		{
+			"temp": 90,
+			"duration": 30
+		}
+	]
+}
