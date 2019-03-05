@@ -256,8 +256,7 @@ const double T_25 = T_0 + 25;
 // 10k
 const double beta = 3435;
 const double R_25 = 10000; // 10k ohm
-const unsigned int Rs = 10000;
-//const unsigned int Rs = 9690;
+const unsigned int Rs = 32600;
 
 
 double thermister(double r)
