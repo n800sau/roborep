@@ -70,14 +70,59 @@ double Output;
 double Kp=2, Ki=5, Kd=1;
 PID heatPID(&temp, &Output, &temp2set, Kp, Ki, Kd, DIRECT);
 
-int WindowSize = 5000;
+unsigned long WindowSize = 5000;
 unsigned long windowStartTime;
 
+const char *settings_path = "/settings.json";
+
+void readStageAndTemp(int &stage, double &temp)
+{
+	stage = 0;
+	temp = 0;
+	if(SPIFFS.exists(settings_path)) {
+		File file = SPIFFS.open(settings_path, "r");
+		// Allocate the memory pool on the stack.
+		// Don't forget to change the capacity to match your JSON document.
+		// Use arduinojson.org/assistant to compute the capacity.
+		StaticJsonBuffer<512> jsonBuffer;
+		// Parse the root object
+		JsonObject &root = jsonBuffer.parseObject(file);
+		if(root.success()) {
+			long secs = (millis() - start_millis)/1000;
+			for(unsigned int i=0; i<root["settings"].size(); i++) {
+//Serial.print("secs:");
+//Serial.println(secs);
+				secs -= (int)root["settings"][i]["duration"];
+//Serial.print("duration:");
+//Serial.println((int)root["settings"][i]["duration"]);
+//Serial.print("secs remaining:");
+//Serial.println(secs);
+				if(secs < 0) {
+					stage = i + 1;
+					temp = root["settings"][i]["temp"];
+					break;
+				}
+			}
+			if(!stage) {
+				Serial.println("Finished");
+				stop_running();
+			}
+		} else {
+			Serial.println(F("Failed to read settings"));
+		}
+	}
+}
+
+void stop_running()
+{
+	running = false;
+	temp2set = -10000;
+}
+
 AsyncCallbackJsonWebHandler* settings_handler = new AsyncCallbackJsonWebHandler("/settings.json",[](AsyncWebServerRequest *request, JsonVariant &json) {
-	const String path = "/settings.json";
 	if(request->method() == HTTP_GET) {
-		if(SPIFFS.exists(path)) {
-			File file = SPIFFS.open(path, "r");
+		if(SPIFFS.exists(settings_path)) {
+			File file = SPIFFS.open(settings_path, "r");
 			request->send(file, "text/json");
 //		request->streamFile(file, "text/json");
 			file.close();
@@ -86,7 +131,7 @@ AsyncCallbackJsonWebHandler* settings_handler = new AsyncCallbackJsonWebHandler(
 		}
 	} else if(request->method() == HTTP_POST) {
 		JsonObject& jsonObj = json.as<JsonObject>();
-		File file = SPIFFS.open(path, "w");
+		File file = SPIFFS.open(settings_path, "w");
 		jsonObj.printTo(file);
 		file.close();
 		jsonObj.printTo(Serial);
@@ -256,7 +301,8 @@ void flip()
 	ws.printfAll(output.c_str());
 }
 
-void setup(){
+void setup()
+{
 	running = false;
 	pinMode(HEAT_PIN, OUTPUT);
 	pinMode(COOL_PIN, OUTPUT);
@@ -296,8 +342,7 @@ void setup(){
 	});
 
 	server.on("/abort", HTTP_GET, [](AsyncWebServerRequest *request){
-		running = false;
-		temp2set = -10000;
+		stop_running();
 		request->send(200, "text/plain", String(ESP.getFreeHeap()));
 	});
 
@@ -385,6 +430,7 @@ void update_heater()
 
 	// find current stage
 	if(running) {
+		readStageAndTemp(stage, temp2set);
 	}
 
 	// test if temp does not change for some time then stop heating and cooling?
