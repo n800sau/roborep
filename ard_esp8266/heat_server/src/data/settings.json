@@ -5,6 +5,10 @@
 			"duration": 30
 		},
 		{
+			"temp": 50,
+			"duration": 10
+		},
+		{
 			"temp": 90,
 			"duration": 30
 		}

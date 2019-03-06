@@ -93,10 +93,10 @@ void readStageAndTemp(int &stage, double &temp)
 //Serial.print("secs:");
 //Serial.println(secs);
 				secs -= (int)root["settings"][i]["duration"];
-//Serial.print("duration:");
-//Serial.println((int)root["settings"][i]["duration"]);
-//Serial.print("secs remaining:");
-//Serial.println(secs);
+Serial.print("duration:");
+Serial.println((int)root["settings"][i]["duration"]);
+Serial.print("secs remaining:");
+Serial.println(secs);
 				if(secs < 0) {
 					stage = i + 1;
 					temp = root["settings"][i]["temp"];
@@ -256,7 +256,8 @@ const double T_25 = T_0 + 25;
 // 10k
 const double beta = 3435;
 const double R_25 = 10000; // 10k ohm
-const unsigned int Rs = 32600;
+//const unsigned int Rs = 32600;
+const unsigned int Rs = 33000;
 
 
 double thermister(double r)
@@ -337,6 +338,8 @@ void setup()
 
 	server.on("/run", HTTP_GET, [](AsyncWebServerRequest *request){
 		running = true;
+		start_millis = millis();
+		stage = 0;
 		request->send(200, "text/plain", String(ESP.getFreeHeap()));
 	});
 
