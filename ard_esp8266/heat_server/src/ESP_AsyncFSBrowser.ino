@@ -59,6 +59,7 @@ bool cooling;
 
 bool running = false;
 unsigned long start_millis;
+int secs_remaining;
 int stage = 0;
 
 double temp2set = -10000;
@@ -100,6 +101,7 @@ Serial.println(secs);
 				if(secs < 0) {
 					stage = i + 1;
 					temp = root["settings"][i]["temp"];
+					secs_remaining = -secs;
 					break;
 				}
 			}
@@ -159,7 +161,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 		client->printf("{\"msg\":\"Hello Client %d\"}", client->id());
 		client->ping();
 	} else if(type == WS_EVT_DISCONNECT){
-		Serial.printf("ws[%s][%d] disconnect: %d\n", server->url(), client->id());
+		Serial.printf("ws[%s][%d] disconnect\n", server->url(), client->id());
 	} else if(type == WS_EVT_ERROR){
 		Serial.printf("ws[%s][%d] error(%d): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
 	} else if(type == WS_EVT_PONG){
@@ -277,7 +279,7 @@ void update_temp()
 
 void flip()
 {
-	StaticJsonBuffer<200> jsonBuffer;
+	StaticJsonBuffer<300> jsonBuffer;
 	update_heater();
 	JsonObject& root = jsonBuffer.createObject();
 	root["v"] = v;
@@ -291,6 +293,7 @@ void flip()
 	if(running) {
 		root["running_time"] = millis() - start_millis;
 		root["stage"] = stage;
+		root["secs_remaining"] = secs_remaining;
 	}
 	String output;
 	root.printTo(output);
@@ -339,7 +342,6 @@ void setup()
 	server.on("/run", HTTP_GET, [](AsyncWebServerRequest *request){
 		running = true;
 		start_millis = millis();
-		stage = 0;
 		request->send(200, "text/plain", String(ESP.getFreeHeap()));
 	});
 
@@ -439,6 +441,8 @@ void update_heater()
 
 	heating = false;
 	cooling = false;
+
+/*
 	if(temp2set > -1000) {
 		heatPID.Compute();
 		if(millis() - windowStartTime > WindowSize) {
@@ -448,25 +452,19 @@ void update_heater()
 		heating = Output < millis() - windowStartTime;
 		cooling = (temp < max_cold_temp) ? false : !heating;
 	}
-	digitalWrite(HEAT_PIN, heating ? HIGH : LOW);
-	digitalWrite(COOL_PIN, cooling ? HIGH : LOW);
+*/
 
-/*
 	double dt = temp2set-temp;
 	if(dt > 0.5) {
 		// heat
-		digitalWrite(HEAT_PIN, HIGH);
-		digitalWrite(COOL_PIN, LOW);
 		heating = true;
 	} else if(dt < -0.5) {
 		// cool
-		digitalWrite(HEAT_PIN, LOW);
-		digitalWrite(COOL_PIN, HIGH);
 		cooling = true;
-	} else {
-		digitalWrite(HEAT_PIN, LOW);
-		digitalWrite(COOL_PIN, LOW);
-	}*/
+	}
+
+	digitalWrite(HEAT_PIN, heating ? HIGH : LOW);
+	digitalWrite(COOL_PIN, cooling ? HIGH : LOW);
 
 	if(heating) {
 		Serial.println("heating...");
