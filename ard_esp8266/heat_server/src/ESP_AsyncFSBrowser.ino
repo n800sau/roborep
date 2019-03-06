@@ -60,6 +60,9 @@ bool cooling;
 bool running = false;
 unsigned long start_millis;
 int secs_remaining;
+int group_index;
+int repeat;
+int stage_index;
 int stage = 0;
 
 double temp2set = -10000;
@@ -85,23 +88,43 @@ void readStageAndTemp(int &stage, double &temp)
 		// Allocate the memory pool on the stack.
 		// Don't forget to change the capacity to match your JSON document.
 		// Use arduinojson.org/assistant to compute the capacity.
-		StaticJsonBuffer<512> jsonBuffer;
+		StaticJsonBuffer<1024> jsonBuffer;
 		// Parse the root object
 		JsonObject &root = jsonBuffer.parseObject(file);
 		if(root.success()) {
 			long secs = (millis() - start_millis)/1000;
 			for(unsigned int i=0; i<root["settings"].size(); i++) {
+Serial.print("group:");
+Serial.println(i);
+				JsonObject &group = root["settings"][i];
+				for(unsigned int j=0; j<group["repeat"]; j++) {
+Serial.print("repeat:");
+Serial.println(j);
+					for(unsigned int k=0; k<group["items"].size(); k++) {
+Serial.print("item:");
+Serial.println(k);
 //Serial.print("secs:");
 //Serial.println(secs);
-				secs -= (int)root["settings"][i]["duration"];
+						secs -= (int)group["items"][k]["duration"];
 Serial.print("duration:");
-Serial.println((int)root["settings"][i]["duration"]);
+Serial.println((int)group["items"][k]["duration"]);
 Serial.print("secs remaining:");
 Serial.println(secs);
-				if(secs < 0) {
-					stage = i + 1;
-					temp = root["settings"][i]["temp"];
-					secs_remaining = -secs;
+						if(secs < 0) {
+							group_index = i;
+							repeat = j;
+							stage_index = k;
+							stage = k + 1;
+							temp = group["items"][k]["temp"];
+							secs_remaining = -secs;
+							break;
+						}
+					}
+					if(stage>0) {
+						break;
+					}
+				}
+				if(stage>0) {
 					break;
 				}
 			}
@@ -292,8 +315,11 @@ void flip()
 	root["cooling"] = cooling;
 	if(running) {
 		root["running_time"] = millis() - start_millis;
-		root["stage"] = stage;
 		root["secs_remaining"] = secs_remaining;
+		root["group_index"] = group_index;
+		root["repeat"] = repeat;
+		root["stage_index"] = stage_index;
+		root["stage"] = stage;
 	}
 	String output;
 	root.printTo(output);

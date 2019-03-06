@@ -1,16 +1,38 @@
 {
 	"settings": [
 		{
-			"temp": 60,
-			"duration": 30
+			"repeat": 1,
+			"items": [
+				{
+					"temp": 60,
+					"duration": 6
+				},
+				{
+					"temp": 50,
+					"duration": 10
+				},
+				{
+					"temp": 90,
+					"duration": 8
+				}
+			]
 		},
 		{
-			"temp": 50,
-			"duration": 10
-		},
-		{
-			"temp": 90,
-			"duration": 30
+			"repeat": 10,
+			"items": [
+				{
+					"temp": 70,
+					"duration": 6
+				},
+				{
+					"temp": 80,
+					"duration": 10
+				},
+				{
+					"temp": 65,
+					"duration": 8
+				}
+			]
 		}
 	]
 }

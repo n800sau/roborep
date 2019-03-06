@@ -88,72 +88,114 @@
 					</tr>
 				</table>
 			</div>
+
 			<table>
-				<colgroup>
-					<col class="col-stage"/>
-					<col class="col-NN"/>
-					<col class="col-T"/>
-					<col class="col-D"/>
-					<col class="col-E"/>
-					<col class="col-X"/>
-				</colgroup>
 				<tr>
 					<th>
+						Pos
 					</th>
 					<th>
+						Rep
 					</th>
 					<th>
-					</th>
-					<th>
-						T
-					</th>
-					<th>
-						D
-					</th>
-					<th>
-					</th>
-					<th ng-if="running">
-					</th>
-					<th class="clickable" ng-click="add_new()" ng-if="!running">
-						+
+						<div class="clickable" ng-click="add_group()" ng-if="!running">
+							+
+						</div>
 					</th>
 				</tr>
-				<tr ng-repeat="s in settings track by $index" ng-drop="true" ng-drop-success="onDropComplete($index, $data, $event)">
+				<tr ng-repeat-start="grp in settings track by $index" ng-class-odd="odd" ng-class-odd="even" ng-init="group_index=$index">
 					<td>
-						<span ng-if="running ? stage == $index+1 : false">*</span>
-					</td>
-					<td>
-						{{$index+1}}
+						G-{{group_index+1}}
 					</td>
 					<td>
-						<div ng-class="{handle: !running}" ng-drag-handle ng-drag="!running" ng-drag-data="s" >&nbsp;</div>
-					</td>
-					<td>
-						<div ng-if="editing == s">
-							<input type="number" ng-model="s.temp"/>
+						<div ng-if="editing == grp">
+							<input type="number" ng-model="grp.repeat"/>
 						</div>
-						<div ng-if="editing != s">
-							{{s.temp}}
+						<div ng-if="editing != grp">
+							<span ng-if="running && server_state.group_index==group_index">{{server_state.repeat+1}}/</span>{{grp.repeat}}
 						</div>
 					</td>
-					<td>
-						<div ng-if="editing == s">
-							<input type="number" ng-model="s.duration"/>
-						</div>
-						<div ng-if="editing != s">
-							{{s.duration}}
-						</div>
-					</td>
-					<td colspan="2" ng-if="running">
-						<div ng-if="stage == $index+1">
-							{{secs_remaining}}
-						</div>
-					</td>
-					<td class="clickable" ng-click="on_edit_click(s)" ng-if="!running">
-						{{editing == s ? 'W' : 'E'}}
+					<td class="clickable" ng-click="on_edit_click(grp)" ng-if="!running">
+						{{editing == grp ? 'W' : 'E'}}
 					</td>
 					<td class="clickable" ng-click="settings.splice($index, 1)" ng-if="!running">
 						X
+					</td>
+					<td>
+						<div class="clickable" ng-click="add_group_item(grp)" ng-if="!running">
+							+
+						</div>
+					</td>
+				</tr>
+				<tr ng-repeat-end>
+					<td colspan="3">
+						<table class="group-item">
+							<colgroup>
+								<col class="col-stage"/>
+								<col class="col-NN"/>
+								<col class="col-T"/>
+								<col class="col-D"/>
+								<col class="col-E"/>
+								<col class="col-X"/>
+							</colgroup>
+							<tr>
+								<th>
+								</th>
+								<th>
+								</th>
+								<th>
+								</th>
+								<th>
+									T
+								</th>
+								<th>
+									D
+								</th>
+								<th>
+								</th>
+							</tr>
+							<tr ng-repeat="s in grp.items track by $index" ng-drop="grp.items.includes(temp.dragged_item)" ng-drop-success="onDropComplete(grp.items, $index, $data)">
+								<td>
+									<span ng-if="running ? server_state.stage_index == $index && server_state.group_index == group_index: false">*</span>
+								</td>
+								<td>
+									{{$index+1}}
+								</td>
+								<td>
+									<div ng-class="{handle: !running}" ng-drag-handle ng-drag="!running" ng-drag-data="s"
+											ng-drag-start="temp.dragged_item=s" ng-center-anchor="false" ng-drag-stop="temp.dragged_item=undefined">
+										<span ng-if="temp.dragged_item==s" class="draggable-preview">{{temp.dragged_item.temp}}/{{temp.dragged_item.duration}}</span>
+									</div>
+								</td>
+								<td>
+									<div ng-if="editing == s">
+										<input type="number" ng-model="s.temp"/>
+									</div>
+									<div ng-if="editing != s">
+										{{s.temp}}
+									</div>
+								</td>
+								<td>
+									<div ng-if="editing == s">
+										<input type="number" ng-model="s.duration"/>
+									</div>
+									<div ng-if="editing != s">
+										{{s.duration}}
+									</div>
+								</td>
+								<td colspan="2" ng-if="running">
+									<div ng-if="server_state.stage_index == $index && server_state.group_index ==  group_index" class="text-right">
+										{{server_state.secs_remaining}}
+									</div>
+								</td>
+								<td class="clickable" ng-click="on_edit_click(s)" ng-if="!running">
+									{{editing == s ? 'W' : 'E'}}
+								</td>
+								<td class="clickable" ng-click="grp.items.splice($index, 1)" ng-if="!running">
+									X
+								</td>
+							</tr>
+						</table>
 					</td>
 				</tr>
 			</table>
