@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 
-import os, datetime, pickle
+import os, datetime, pickle, time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
+from sklearn.cluster import DBSCAN
 
 PLOTDIR = 'output/plots'
+TESTDIR = 'test_images'
 
 if not os.path.exists(PLOTDIR):
 	os.makedirs(PLOTDIR)
 
-plotdata = pickle.load(open(os.path.join(PLOTDIR, 'plotdata.pickle'), 'rb'))
+#plotdata = pickle.load(open(os.path.join(PLOTDIR, 'plotdata.pickle'), 'rb'))
+plotdata = pickle.load(open(os.path.join(TESTDIR, 'plotdata.pickle'), 'rb'))
 
 def get_median_filtered(signal, threshold=3):
 	signal = signal.copy()
@@ -25,11 +28,20 @@ def get_median_filtered(signal, threshold=3):
 	signal[mask] = np.median(signal)
 	return signal
 
+clt = DBSCAN(metric="euclidean", n_jobs=-1)
+
 for k,v in plotdata.items():
 
 	v.sort(key=lambda x: x['ts'])
 
 	ts = [t['ts'] for t in v]
+
+	# cluster by close time
+	clt.fit([[time.mktime(t['ts'].timetuple())] for t in v])
+	labelIDs = np.unique(clt.labels_)
+	print('Uniq count', len(labelIDs))
+
+
 	labels = np.array([l['v'] for l in v])
 	filtered_labels = get_median_filtered(labels, threshold=2)
 	print('filtered_labels', filtered_labels)

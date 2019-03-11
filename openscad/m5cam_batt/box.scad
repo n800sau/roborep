@@ -1,7 +1,13 @@
-use <GoPro_End2.scad>
+// to show box set to true
+show_box = true;
+// to show box lid set to true
+show_lid = true;
+// to show button holder set to true
+show_bh = true;
+
 use <ear.scad>
 
-$fn = 30;
+$fn = 50;
 wall = 2;
 pcb_hole_width = 21;
 pcb_hole_length = 45;
@@ -176,7 +182,23 @@ module connector() {
   }
   translate([26.5, 5.4, 5.4]) {
     rotate([0, 90, 90]) {
-      gopro_end2();
+      for(y=[0, 6.4]) {
+        translate([-10.2, 6.9+y, 7.6]) {
+          rotate([90, 0, 0]) {
+            difference() {
+              union() {
+                cylinder(d=14.7, h=2.6, center=true);
+                translate([5, 0, 0]) {
+                  cube([10, 14.7, 2.6], center=true);
+                }
+              }
+              translate([-1.4, 0.1, 0]) {
+                cylinder(d=6, h=3, center=true);
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -212,8 +234,13 @@ module button_hold() {
   }
 }
 
-//m5box();
-translate([0, 0, 25]) { 
-  m5flat_holes_lid();
-}
-//button_hold();
+if(show_box)
+  m5box();
+if(show_lid)
+  translate([0, 0, 25]) { 
+    m5flat_holes_lid();
+  }
+if(show_bh)
+  translate([0, 0, 50]) { 
+    button_hold();
+  }

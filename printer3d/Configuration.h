@@ -517,7 +517,7 @@
   #define DELTA_DIAGONAL_ROD 218.0 // mm
 
   // height from z=0 to home position
-  #define DELTA_HEIGHT 310.00 // get this value from auto calibrate
+  #define DELTA_HEIGHT 330.00 // get this value from auto calibrate
 
   #define DELTA_ENDSTOP_ADJ { 0.0, 0.0, 0.0 } // get these from auto calibrate
 
@@ -763,7 +763,8 @@
 // my old
 //#define Z_PROBE_OFFSET_FROM_EXTRUDER -15.8  // Z offset: -below +above  [the nozzle]
 // my for glass
-#define Z_PROBE_OFFSET_FROM_EXTRUDER -16.2  // Z offset: -below +above  [the nozzle]
+//#define Z_PROBE_OFFSET_FROM_EXTRUDER -16.2  // Z offset: -below +above  [the nozzle]
+#define Z_PROBE_OFFSET_FROM_EXTRUDER -15.4  // Z offset for toll? extruder
 
 // X and Y axis travel speed (mm/m) between probes
 #define XY_PROBE_SPEED 4000
