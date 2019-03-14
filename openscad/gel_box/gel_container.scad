@@ -1,14 +1,19 @@
+show_container = false;
+show_all = false;
+show_wall_insert=false;
+show_comb_insert = true;
+
 $fn = 50;
 
-wall = 3;
+wall = 2;
 
 ext_sz_x = 110;
-ext_sz_y = 90;
-ext_sz_z = 50;
+ext_sz_y = 86.2;
+ext_sz_z = 40;
 
-acryl_sz_x = 100;
-acryl_sz_y = 80;
-acryl_sz_z = 2;
+acryl_sz_x = 103;
+acryl_sz_y = 82;
+acryl_sz_z = 3;
 
 bottom_sz_z = acryl_sz_z + wall;
 
@@ -18,11 +23,15 @@ int_sz_z = ext_sz_z - bottom_sz_z;
 insert_x_pos = [-ext_sz_x/2+15, -ext_sz_x/2+25, 0, ext_sz_x/2-25, ext_sz_x/2-15];
 insert_sz_x = 6;
 insert_sz_y = (ext_sz_y - int_sz_y)/2;
-insert_sz_z = 3;
+insert_sz_z = int_sz_z - 1.2;
+insert_handle_sz_z = 3;
+
+comb_sz_x = 3;
+comb_sz_z = int_sz_z - 3;
 
 gap = 0.5;
 
-rubber_sz_z = 6;
+rubber_sz_z = 15;
 rubber_sz_x = 1.5;
 
 tooth_sz_z = 20;
@@ -36,14 +45,14 @@ module gel_container() {
 			for(xpos=insert_x_pos) {
 				for(ysgn=[-1, 1]) {
 					// top inserts
-					translate([xpos, ysgn * (ext_sz_y-insert_sz_y)/2, (ext_sz_z-insert_sz_z)/2]) {
-						cube([insert_sz_x+2*gap, insert_sz_y, insert_sz_z], center = true);
+					translate([xpos, ysgn * (ext_sz_y-insert_sz_y)/2, (ext_sz_z-insert_handle_sz_z)/2]) {
+						cube([insert_sz_x+2*gap, insert_sz_y, insert_handle_sz_z], center = true);
 					}
 				}
 			}
 			// internal emptiness
-			translate([0, 0, bottom_sz_z + insert_sz_z/2]) {
-				cube([ext_sz_x, int_sz_y, ext_sz_z + insert_sz_z], center = true);
+			translate([0, 0, bottom_sz_z + insert_handle_sz_z/2]) {
+				cube([ext_sz_x, int_sz_y, ext_sz_z + insert_handle_sz_z], center = true);
 			}
 			// acrylic place
 			translate([0, 0, bottom_sz_z-acryl_sz_z]) {
@@ -57,45 +66,66 @@ module gel_container() {
 
 module wall_insert() {
 	// handle
-	translate([0, 0, (ext_sz_z+insert_sz_z)/2]) {
-		cube([insert_sz_x, ext_sz_y + 20, insert_sz_z], center=true);
+	translate([0, 0, (int_sz_z-insert_handle_sz_z)/2]) {
+		cube([insert_sz_x, ext_sz_y + 20, insert_handle_sz_z], center=true);
 	}
 	// thiner part whole height
-	cube([insert_sz_x-2*rubber_sz_x, int_sz_y-2*gap, int_sz_z], center=true);
+  translate([(insert_sz_x-2*rubber_sz_x)/2, 0, 0]) {
+    cube([insert_sz_x-2*rubber_sz_x, int_sz_y-2*gap, insert_sz_z], center=true);
+  }
 	// thicker part above rubber
-	translate([0, 0, (-int_sz_z + rubber_sz_z)/2]) {
-		cube([insert_sz_x, int_sz_y-2*gap, rubber_sz_z], center=true);
+	translate([0, 0, rubber_sz_z/2]) {
+		cube([insert_sz_x, int_sz_y-2*gap, insert_sz_z-rubber_sz_z], center=true);
 	}
 }
 
-module comb() {
+module comb_insert() {
 	difference() {
 		union() {
 			// handle
-			translate([0, 0, (ext_sz_z+insert_sz_z)/2]) {
-				cube([insert_sz_x, ext_sz_y + 20, insert_sz_z], center=true);
+			translate([0, 0, (int_sz_z-insert_handle_sz_z)/2]) {
+				cube([insert_sz_x, ext_sz_y + 20, insert_handle_sz_z], center=true);
 			}
 			// thiner part whole height
-			cube([insert_sz_x-2*rubber_sz_x, int_sz_y-2*gap, int_sz_z], center=true);
+      translate([comb_sz_x/2, 0, 0]) {
+        cube([comb_sz_x, int_sz_y-2*gap, comb_sz_z], center=true);
+      }
 		}
-		for(ypos=[0:3]) {
+		for(ypos=[0:4]) {
 			for(ysgn=[-1,1]) {
 				translate([0, ysgn*(ypos*(tooth_sz_y+tooth_gap_y)), (-int_sz_z+tooth_sz_z)/2]) {
-					cube([insert_sz_x, tooth_sz_y, tooth_sz_z], center=true);
+					cube([insert_sz_x, tooth_gap_y, tooth_sz_z], center=true);
 				}
 			}
 		}
 	}
 }
 
-gel_container();
-for(xpos=[insert_x_pos[0], insert_x_pos[-1]]) {
-	translate([xpos, 0, bottom_sz_z]) {
-		wall_insert();
-	}
+if(show_container || show_all) {
+  gel_container();
 }
-for(xi=[1:len(insert_x_pos)-1]) {
-	translate([insert_x_pos[xi], 0, bottom_sz_z]) {
-		comb();
-	}
+if(show_all) {
+  for(xpos=[insert_x_pos[0], insert_x_pos[len(insert_x_pos)-1]]) {
+    translate([xpos, 0, bottom_sz_z/2]) {
+      wall_insert();
+    }
+  }
+  for(xi=[1:len(insert_x_pos)-2]) {
+    translate([insert_x_pos[xi], 0, bottom_sz_z/2]) {
+      comb_insert();
+    }
+  }
+}
+if(show_comb_insert) {
+  rotate([0, 90, 0]) {
+    comb_insert();
+  }
+}
+
+if(show_wall_insert) {
+  translate([37, 0, 0]) {
+    rotate([0, 90, 0]) {
+      wall_insert();
+    }
+  }
 }
