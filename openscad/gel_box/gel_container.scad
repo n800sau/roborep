@@ -80,7 +80,7 @@ module comb() {
 		}
 		for(ypos=[0:3]) {
 			for(ysgn=[-1,1]) {
-				translate([0, ysgn*(ypos*(tooth_sz_y+tooth_gap_y)), (int_sz_z-tooth_sz_z)/2]) {
+				translate([0, ysgn*(ypos*(tooth_sz_y+tooth_gap_y)), (-int_sz_z+tooth_sz_z)/2]) {
 					cube([insert_sz_x, tooth_sz_y, tooth_sz_z], center=true);
 				}
 			}
