@@ -1,7 +1,7 @@
 show_container = false;
 show_all = false;
-show_wall_insert=false;
-show_comb_insert = true;
+show_wall_insert=true;
+show_comb_insert = false;
 
 $fn = 50;
 
@@ -20,14 +20,21 @@ bottom_sz_z = acryl_sz_z + wall;
 int_sz_y = ext_sz_y - 2 * wall;
 int_sz_z = ext_sz_z - bottom_sz_z;
 
-insert_x_pos = [-ext_sz_x/2+15, -ext_sz_x/2+25, 0, ext_sz_x/2-25, ext_sz_x/2-15];
+insert_x_pos = [
+  -ext_sz_x/2+8,
+  -ext_sz_x/2+22, 
+  0,
+  ext_sz_x/2-22,
+  ext_sz_x/2-8
+];
 insert_sz_x = 6;
 insert_sz_y = (ext_sz_y - int_sz_y)/2;
-insert_sz_z = int_sz_z - 1.2;
-insert_handle_sz_z = 3;
+insert_sz_z = int_sz_z - 6;
+insert_handle_sz_z = 10;
 
 comb_sz_x = 3;
-comb_sz_z = int_sz_z - 3;
+comb_sz_z = int_sz_z - 5;
+comb_handle_sz_z = 15;
 
 gap = 0.5;
 
@@ -38,6 +45,8 @@ tooth_sz_z = 20;
 tooth_sz_y = 5;
 tooth_gap_y = 3;
 
+insert_place_sz_z = max(insert_handle_sz_z, comb_handle_sz_z);
+
 module gel_container() {
 	difference() {
 		cube([ext_sz_x, ext_sz_y, ext_sz_z], center = true);
@@ -45,14 +54,14 @@ module gel_container() {
 			for(xpos=insert_x_pos) {
 				for(ysgn=[-1, 1]) {
 					// top inserts
-					translate([xpos, ysgn * (ext_sz_y-insert_sz_y)/2, (ext_sz_z-insert_handle_sz_z)/2]) {
-						cube([insert_sz_x+2*gap, insert_sz_y, insert_handle_sz_z], center = true);
+					translate([xpos, ysgn * (ext_sz_y-insert_sz_y)/2, (ext_sz_z-insert_place_sz_z)/2]) {
+						cube([insert_sz_x+2*gap, insert_sz_y, insert_place_sz_z], center = true);
 					}
 				}
 			}
 			// internal emptiness
-			translate([0, 0, bottom_sz_z + insert_handle_sz_z/2]) {
-				cube([ext_sz_x, int_sz_y, ext_sz_z + insert_handle_sz_z], center = true);
+			translate([0, 0, bottom_sz_z+insert_place_sz_z/2]) {
+				cube([ext_sz_x, int_sz_y, ext_sz_z+insert_place_sz_z], center = true);
 			}
 			// acrylic place
 			translate([0, 0, bottom_sz_z-acryl_sz_z]) {
@@ -83,8 +92,8 @@ module comb_insert() {
 	difference() {
 		union() {
 			// handle
-			translate([0, 0, (int_sz_z-insert_handle_sz_z)/2]) {
-				cube([insert_sz_x, ext_sz_y + 20, insert_handle_sz_z], center=true);
+			translate([0, 0, (int_sz_z-comb_handle_sz_z)/2]) {
+				cube([insert_sz_x, ext_sz_y + 20, comb_handle_sz_z], center=true);
 			}
 			// thiner part whole height
       translate([comb_sz_x/2, 0, 0]) {
