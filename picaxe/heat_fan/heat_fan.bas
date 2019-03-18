@@ -1,0 +1,65 @@
+symbol P1 = 0x81
+symbol P2 = 0x82
+symbol P3 = 0x83
+symbol S1 = 0x91
+symbol S2 = 0x92
+symbol S3 = 0x93
+
+symbol SERIN_PIN  = B.6
+symbol SEROUT_PIN = C.0
+symbol SER_MODE = N2400
+
+symbol DIR_PIN = pinC.6
+symbol PWM_1 = C.5
+symbol PWM_2 = C.2
+symbol PWM_3 = C.3
+
+symbol AMP_PIN = B.0
+symbol TERM1_PIN = B.1
+symbol TERM2_PIN = B.2
+symbol TERM3_PIN = B.3
+
+
+get_val:
+	serin [200, no_cmd],SERIN_PIN,SER_MODE,("CMD"), b2
+	return
+
+main:
+	if DIR_PIN = 1 then
+		fvrsetup FVR4096
+		adcconfig %011
+		serout SEROUT_PIN,SER_MODE,("temp")
+		readadc TERM1_PIN, b1
+		serout SEROUT_PIN,SER_MODE,(b1)
+		readadc TERM2_PIN, b1
+		serout SEROUT_PIN,SER_MODE,(b1)
+		readadc TERM3_PIN, b1
+		serout SEROUT_PIN,SER_MODE,(b1)
+	else
+		serin [100, no_cmd],SERIN_PIN,SER_MODE,("CMD"), b1
+		select b1
+		case P1
+			gosub get_val
+			let b2 = b2 * 10
+			pwmout PWM_1,255,b2	
+		case P2
+			gosub get_val
+			let b2 = b2 * 10
+			pwmout PWM_2,255,b2	
+		case P3
+			gosub get_val
+			let b2 = b2 * 10
+			pwmout PWM_3,255,b2	
+		case S1
+			pwmout PWM_1,off
+		case S2
+			pwmout PWM_2,off
+		case S3
+			pwmout PWM_3,off
+		else
+			goto no_cmd
+		endselect
+	endif
+no_cmd:
+	goto main
+
