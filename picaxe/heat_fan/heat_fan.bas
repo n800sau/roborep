@@ -25,6 +25,7 @@ symbol AMP_PIN = B.0
 symbol TERM1_PIN = B.1
 symbol TERM2_PIN = B.2
 symbol TERM3_PIN = B.3
+symbol CURRENT_PIN = B.4
 
 symbol PWM_PERIOD = 128;
 
@@ -45,6 +46,10 @@ main:
 		serout SEROUT_PIN,SER_MODE,(b1)
 		readadc TERM3_PIN, b1
 	sertxd ("TEMP3 ", #b1,CR,LF)
+		serout SEROUT_PIN,SER_MODE,(b1)
+		serout SEROUT_PIN,SER_MODE,("CURR")
+		readadc CURRENT_PIN, b1
+	sertxd ("CURRENT ", #b1,CR,LF)
 		serout SEROUT_PIN,SER_MODE,(b1)
 	else
 		serin [100, no_cmd],SERIN_PIN,SER_MODE,("CMD"), b1
