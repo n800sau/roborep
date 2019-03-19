@@ -1,3 +1,5 @@
 Arduino
-D8 - B.6
-D9 - C.0
+D8 - B.6 serin
+D9 - C.0 serout
+
+led to mark heating?
