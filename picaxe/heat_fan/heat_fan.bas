@@ -1,17 +1,22 @@
+' set pwm <duty>
 symbol P1 = 0x81
 symbol P2 = 0x82
 symbol P3 = 0x83
+' stop pwm
 symbol S1 = 0x91
 symbol S2 = 0x92
 symbol S3 = 0x93
 
+' set high
 symbol PH1 = 0xA1
 symbol PH2 = 0xA2
 symbol PH3 = 0xA3
+' set low
 symbol PL1 = 0xB1
 symbol PL2 = 0xB2
 symbol PL3 = 0xB3
 
+' read data
 symbol GD = 0xC1
 
 symbol SERIN_PIN  = B.6
@@ -32,6 +37,22 @@ symbol PWM_PERIOD = 128;
 
 get_val:
 	serin [200, no_cmd],SERIN_PIN,SER_MODE,b2
+	return
+
+' b8 - pin
+' w5 - accamulator
+' b1 - temp
+read_adc:
+	sertxd("READ START ")
+	w5 = 0
+	for b9 = 1 to 10
+		readadc b8, b1
+		sertxd(#b8, ":", #w5, "+", #b1)
+		let w5 = w5 + b1
+		sertxd("=", #w5, " ")
+	next b9
+	let b1 = w5 + 5 / 10
+	sertxd("STOP ", #w5,CR,LF)
 	return
 
 main:
@@ -82,19 +103,21 @@ sertxd ("CMD PL3 ", #b1,CR,LF)
 	case GD
 		fvrsetup FVR4096
 		adcconfig %011
-		serout SEROUT_PIN,SER_MODE,("TEMP")
-		readadc TERM1_PIN, b1
+		serout SEROUT_PIN,SER_MODE,("T")
+'		readadc TERM1_PIN, b1
+		b8 = TERM1_PIN
+		gosub read_adc
 	sertxd ("TEMP1 ", #b1,CR,LF)
 		serout SEROUT_PIN,SER_MODE,(b1)
-		readadc TERM2_PIN, b1
+		b8 = TERM2_PIN
+		gosub read_adc
 	sertxd ("TEMP2 ", #b1,CR,LF)
 		serout SEROUT_PIN,SER_MODE,(b1)
-		readadc TERM3_PIN, b1
+		b8 = TERM3_PIN
+		gosub read_adc
 	sertxd ("TEMP3 ", #b1,CR,LF)
 		serout SEROUT_PIN,SER_MODE,(b1)
-		serout SEROUT_PIN,SER_MODE,("CURR")
-		readadc CURRENT_PIN, b1
-		let w8 = b1 * 5 + b1 * 4 / 10
+		serout SEROUT_PIN,SER_MODE,("C")
 	sertxd ("CURRENT ", #b1,CR,LF)
 		serout SEROUT_PIN,SER_MODE,(b1)
 	else
