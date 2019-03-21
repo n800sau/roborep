@@ -95,6 +95,15 @@ module meter_box_fwd() {
 }
 
 module meter_box_back() {
+	difference() {
+		cube([meter_ext_x, meter_ext_y, meter_ext_z], center=true);
+		translate([0, -(meter_ext_y-meter_int_y)/2, -(meter_ext_z-meter_int_z)/2]) {
+			cube([meter_int_x, meter_int_y, meter_int_z], center=true);
+		}
+		translate([0, 0, (meter_ext_z-meter_int_z)/2]) {
+			meter_stand_or_holes(hole_through_d, meter_ext_z);
+		}
+	}
 }
 
 module stand_or_holes(d, h) {
@@ -140,12 +149,14 @@ module thread_stands() {
 
 
 translate([0, 0, bottom_box_ext_z+top_box_ext_z/2+gap]) {
-	top_box();
+//	top_box();
 }
 translate([0, 0, bottom_box_ext_z+top_box_stand_z/2+gap]) {
-	thread_stands();
+//	thread_stands();
 }
 translate([0, 0, bottom_box_ext_z/2]) {
-	bottom_box();
+//	bottom_box();
 }
 
+//meter_box_fwd();
+meter_box_back();
