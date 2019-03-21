@@ -49,15 +49,19 @@ meter_box_int_y = meter_box_ext_y - wall;
 meter_box_int_z = meter_box_ext_z - wall;
 meter_box_hole_dist_x = meter_box_int_x - 2 * 5;
 meter_box_hole_dist_z = meter_box_int_z - 2 * 5;
-meter1_pos_x = -meter_box_int_x / 2;
-meter2_pos_x = meter_box_int_x / 2;
+meter1_pos_x = -meter_box_int_x / 4;
+meter2_pos_x = meter_box_int_x / 4;
 
+echo("meter_box_ext_x=", meter_box_ext_x);
+echo("meter_box_ext_y=", meter_box_ext_y);
+echo("meter_box_ext_z=", meter_box_ext_z);
 
 module meter_stand_or_holes(d, h) {
 	for(xsgn=[-1, 1]) {
 		for(ysgn=[-1, 1]) {
-			translate([xsgn*meter_box_dist_x/2, ysgn*meter_box_dist_y/2, 0]) {
+			translate([xsgn*meter_box_hole_dist_x/2, ysgn*meter_box_hole_dist_z/2, 0]) {
 				cylinder(d=d, h=h, center=true);
+			}
 		}
 	}
 }
@@ -65,25 +69,25 @@ module meter_stand_or_holes(d, h) {
 module meter_box_fwd() {
 	difference() {
 		union() {
-			cube([meter_ext_x, meter_ext_y, meter_ext_z], center=true);
-			translate([0, 0, (meter_ext_z-meter_int_z)/2]) {
-				meter_stand_or_holes(hole_d+2*hole_wall, meter_int_z);
+			cube([meter_box_ext_x, meter_box_ext_y, meter_box_ext_z], center=true);
+			translate([0, 0, (meter_box_ext_z-meter_box_int_z)/2]) {
+				meter_stand_or_holes(hole_d+2*hole_wall, meter_box_int_z);
 			}
 		}
-		translate([0, (meter_ext_y-meter_int_y)/2, (meter_ext_z-meter_int_z)/2]) {
-			cube([meter_int_x, meter_int_y, meter_int_z], center=true);
+		translate([0, (meter_box_ext_y-meter_box_int_y)/2, (meter_box_ext_z-meter_box_int_z)/2]) {
+			cube([meter_box_int_x, meter_box_int_y, meter_box_int_z], center=true);
 		}
-		translate([0, 0, (meter_ext_z-meter_int_z)/2]) {
-			meter_stand_or_holes(hole_d, meter_int_z);
+		translate([0, 0, (meter_box_ext_z-meter_box_int_z)/2]) {
+			meter_stand_or_holes(hole_d, meter_box_int_z);
 		}
 		for(xpos=[meter1_pos_x, meter2_pos_x]) {
-			translate([xpos, meter_ext_y/2+meter_sz_y/2, 0]) {
+			translate([xpos, -meter_box_ext_y/2+meter_sz_y/2, 0]) {
 				rotate([90, 0, 0]) {
 					cylinder(d=meter_d, h=meter_sz_y, center=true);
 					for(xsgn=[-1,1]) {
 						for(ysgn=[-1,1]) {
 							translate([xsgn*meter_box_hole_dist_x/2, ysgn*meter_box_hole_dist_z/2, 0]) {
-								cylinder(d=hole_through_d, h=meter_sz_y, center=true);
+								cylinder(d=hole_d_through, h=meter_sz_y, center=true);
 							}
 						}
 					}
@@ -96,12 +100,12 @@ module meter_box_fwd() {
 
 module meter_box_back() {
 	difference() {
-		cube([meter_ext_x, meter_ext_y, meter_ext_z], center=true);
-		translate([0, -(meter_ext_y-meter_int_y)/2, -(meter_ext_z-meter_int_z)/2]) {
-			cube([meter_int_x, meter_int_y, meter_int_z], center=true);
+		cube([meter_box_ext_x, meter_box_ext_y, meter_box_ext_z], center=true);
+		translate([0, -(meter_box_ext_y-meter_box_int_y)/2, -(meter_box_ext_z-meter_box_int_z)/2]) {
+			cube([meter_box_int_x, meter_box_int_y, meter_box_int_z], center=true);
 		}
-		translate([0, 0, (meter_ext_z-meter_int_z)/2]) {
-			meter_stand_or_holes(hole_through_d, meter_ext_z);
+		translate([0, 0, (meter_box_ext_z-meter_box_int_z)/2]) {
+			meter_stand_or_holes(hole_d_through, meter_box_ext_z);
 		}
 	}
 }
@@ -111,6 +115,7 @@ module stand_or_holes(d, h) {
 		for(ysgn=[-1, 1]) {
 			translate([xsgn*hole_dist_x/2, ysgn*hole_dist_y/2, 0]) {
 				cylinder(d=d, h=h, center=true);
+			}
 		}
 	}
 }
