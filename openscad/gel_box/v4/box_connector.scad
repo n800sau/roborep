@@ -3,6 +3,7 @@ left_back = 0;
 right_fwd = 0;
 right_back = 1;
 
+use <../../lib/vent.scad>
 
 $fn = 50;
 
@@ -288,9 +289,17 @@ module right_box_back() {
     translate([back_box_sz_x/2-9, -12, (back_box_sz_z-mod_sz_z_above)/2-wall]) {
       cylinder(d=socket_d, h=50);
     }
-    // control hole
-    translate([-16.5, -6, back_box_sz_z/2]) {
+    // control hole (fixed)
+    translate([-15, -13, back_box_sz_z/2]) {
       cylinder(d=6, h=50, center=true); 
+    }
+    translate([0, (back_box_sz_y-wall)/2, (back_box_sz_z-25)/2-wall]) {
+      vent(x_size=60, z_size=20, y_size=wall, x_count=10, z_count=3, negate=true);
+    }
+    translate([-2, (back_box_sz_y-30)/2, (back_box_sz_z-wall)/2]) {
+      rotate([90, 0, 0]) {
+        vent(x_size=40, z_size=20, y_size=wall, x_count=10, z_count=3, negate=true);
+      }
     }
   }
   difference() {
@@ -339,3 +348,4 @@ if(right_back) {
       right_box_back();
   }
 }
+
