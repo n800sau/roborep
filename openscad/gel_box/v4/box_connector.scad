@@ -44,7 +44,7 @@ mod_hole_pos = [
   [-mod_hole_dist_x, -mod_hole_dist_y2],
   [0, -mod_hole_dist_y1]
 ];
-  
+
 mod_hole_wall = 2;
 
 back_box_sz_x = meter_box_sz_x;
@@ -348,4 +348,3 @@ if(right_back) {
       right_box_back();
   }
 }
-
