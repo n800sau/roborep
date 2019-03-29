@@ -102,20 +102,20 @@ module vertical_box_fwd() {
 	difference() {
 		union() {
 			// wall left
-			translate([-meter_box_sz_x/2, 0, 0]) {
-				cube([wall, meter_box_sz_y, meter_box_sz_z], center= true);
+			translate([(-wall-meter_box_sz_x)/2, 0, -wall/2]) {
+				cube([wall, meter_box_sz_y+wall, meter_box_sz_z+wall], center= true);
 			}
 			// wall right
-			translate([meter_box_sz_x/2, 0, 0]) {
-				cube([wall, meter_box_sz_y, meter_box_sz_z], center= true);
+			translate([(meter_box_sz_x+wall)/2, -wall/2, -wall/2]) {
+				cube([wall, meter_box_sz_y+wall, meter_box_sz_z+wall], center= true);
 			}
 			// bottom
-			translate([0, 0, -meter_box_sz_z/2]) {
-				cube([meter_box_sz_x, meter_box_sz_y, wall], center= true);
+			translate([0, -wall/2, (-wall-meter_box_sz_z)/2]) {
+				cube([meter_box_sz_x+2*wall, meter_box_sz_y+2*wall, wall], center= true);
 			}
 			// face
-			translate([0, -meter_box_sz_y/2, 0]) {
-				cube([meter_box_sz_x, wall, meter_box_sz_z], center= true);
+			translate([0, (-wall-meter_box_sz_y)/2, -wall/2]) {
+				cube([meter_box_sz_x+2*wall, wall, meter_box_sz_z+wall], center= true);
 			}
 		}
 		translate([0, -meter_box_sz_y/2, (meter_sz_z-meter_box_sz_z)/2-gap]) {
@@ -164,13 +164,13 @@ module vertical_box_fwd() {
 
 module vertical_box_back() {
 	// back
-	translate([0, meter_box_sz_y/2, 0]) {
-		cube([meter_box_sz_x, wall, meter_box_sz_z], center= true);
+	translate([0, (meter_box_sz_y+wall)/2, -wall/2]) {
+		cube([meter_box_sz_x+2*wall, wall, meter_box_sz_z+2*wall], center= true);
 	}
 	difference() {
 		// top
-		translate([0, 0, meter_box_sz_z/2]) {
-			cube([meter_box_sz_x, meter_box_sz_y, wall], center= true);
+		translate([0, -wall/2, meter_box_sz_z/2]) {
+			cube([meter_box_sz_x+2*wall, meter_box_sz_y+2*wall, wall], center= true);
 		}
 		for(xsgn=[-1, 1]) {
 			for(ysgn=[-1, 1]) {
