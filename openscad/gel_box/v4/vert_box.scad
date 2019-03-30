@@ -54,6 +54,8 @@ back_box_sz_z = meter_box_sz_z+wall;
 socket_d = 4.5;
 power12_d = 8.4;
 
+font = "Liberation Sans";
+
 module meter_holes() {
 	rotate([-90, 0, 0]) {
 		cylinder(d=meter_d, h=meter_sz_y, center=true);
@@ -112,8 +114,8 @@ module vertical_box_fwd() {
 				cube([wall, meter_box_sz_y+wall, meter_box_sz_z+wall], center= true);
 			}
 			// bottom
-			translate([0, 0, (-wall-meter_box_sz_z)/2]) {
-				cube([meter_box_sz_x+2*wall, meter_box_sz_y+2*wall, wall], center= true);
+			translate([0, -wall/2, (-wall-meter_box_sz_z)/2]) {
+				cube([meter_box_sz_x+2*wall, meter_box_sz_y+wall, wall], center= true);
 			}
 			// face
 			translate([0, (-wall-meter_box_sz_y)/2, -wall/2]) {
@@ -141,13 +143,13 @@ module vertical_box_fwd() {
 			}
 		}
 		// 12v power hole
-		translate([-meter_box_sz_x/2, meter_box_sz_y/4, 0]) {
+		translate([-meter_box_sz_x/2, meter_box_sz_y/4, -meter_box_sz_y/2]) {
 			rotate([0, 90, 0]) {
 				cylinder(d=power12_d, h=50, center=true);
 			}
 		}
 		// switch
-		translate([-meter_box_sz_x/2, meter_box_sz_y/4, (power12_d+60)/2]) {
+		translate([-meter_box_sz_x/2, meter_box_sz_y/4, (power12_d+40)/2]) {
 			rotate([0, 90, 0]) {
 				switch_holes();
 			}
@@ -160,19 +162,49 @@ module vertical_box_fwd() {
 					bolt_hole_cone();
 				}
 			}
-		}
+    }
+  }
+	for(xsgn=[-1, 1]) {
+    translate([xsgn*meter_box_sz_x/2, meter_box_sz_y/2, -meter_box_sz_z/2+wall]) {
+      rotate([90, xsgn < 0 ? 0 : 180, 180]) {
+        bolt_hole_cone();
+      }
+    }
 	}
 }
 
 module vertical_box_back() {
 	// back
-	translate([0, (meter_box_sz_y+wall)/2, wall/2]) {
-		cube([meter_box_sz_x+2*wall, wall, meter_box_sz_z+wall], center= true);
-	}
+  difference() {
+    translate([0, (meter_box_sz_y+wall)/2, 0]) {
+      cube([meter_box_sz_x+2*wall, wall, meter_box_sz_z+2*wall], center= true);
+    }
+    for(xsgn=[-1, 1]) {
+      translate([xsgn*(meter_box_sz_x/2-6.5), meter_box_sz_y/2, -meter_box_sz_z/2+wall]) {
+        rotate([90, xsgn < 0 ? 0 : 180, 180]) {
+          cylinder(d=hole_d_through, h=50, center=true);
+        }
+      }
+    }
+    translate([0, (meter_box_sz_y+wall)/2, -meter_box_sz_z/6]) {
+      vent(meter_box_sz_x-10, z_size=meter_box_sz_z/2, y_size=wall, x_count=10, z_count=10, negate=true);
+    }
+  }
 	difference() {
 		// top
 		translate([0, 0, (meter_box_sz_z+wall)/2]) {
-			cube([meter_box_sz_x+2*wall, meter_box_sz_y+2*wall, wall], center= true);
+//      union() {
+      difference() {
+        cube([meter_box_sz_x+2*wall, meter_box_sz_y+2*wall, wall], center= true);
+        translate([-meter_box_sz_x/2+14, 6, 0]) {
+          linear_extrude(height = 3) {
+            text("DC STEP UP", font = font, size = 7, direction = "ltr", spacing = 1 );
+            translate([0, -10, 0]) {
+              text("   45-390V", font = font, size = 7, direction = "ltr", spacing = 1 );
+            }
+          }
+        }
+      }
 		}
 		for(xsgn=[-1, 1]) {
 			for(ysgn=[-1, 1]) {
@@ -181,6 +213,11 @@ module vertical_box_back() {
 				}
 			}
 		}
+    translate([-2, meter_box_sz_y/3+1, (meter_box_sz_z+wall)/2]) {
+      rotate([90, 0, 0]) {
+        vent(x_size=meter_box_sz_x/2, z_size=meter_box_sz_y/4, y_size=wall, x_count=10, z_count=3, negate=true);
+      }
+    }
 // need adjustment
     translate([-15, -13, back_box_sz_z/2]) {
       cylinder(d=6, h=50, center=true); 
