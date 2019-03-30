@@ -82,10 +82,12 @@ module mod_stand_or_holes(stand=true) {
 			translate([0, 0, (h-mod_sz_z_above)/2]) {
 				if(stand) {
 					d = pos[2] ? hole_d+2*mod_hole_wall : 2*mod_hole_wall;
+          cylinder(d=d, h=h, center=true);
 				} else {
-					d = hole_d;
+          if(pos[2]) {
+            cylinder(d=hole_d, h=h, center=true);
+          }
 				}
-				cylinder(d=d, h=h, center=true);
 			}
 		}
 	}
@@ -102,7 +104,7 @@ module vertical_box_fwd() {
 	difference() {
 		union() {
 			// wall left
-			translate([(-wall-meter_box_sz_x)/2, 0, -wall/2]) {
+			translate([(-wall-meter_box_sz_x)/2, -wall/2, -wall/2]) {
 				cube([wall, meter_box_sz_y+wall, meter_box_sz_z+wall], center= true);
 			}
 			// wall right
@@ -110,7 +112,7 @@ module vertical_box_fwd() {
 				cube([wall, meter_box_sz_y+wall, meter_box_sz_z+wall], center= true);
 			}
 			// bottom
-			translate([0, -wall/2, (-wall-meter_box_sz_z)/2]) {
+			translate([0, 0, (-wall-meter_box_sz_z)/2]) {
 				cube([meter_box_sz_x+2*wall, meter_box_sz_y+2*wall, wall], center= true);
 			}
 			// face
@@ -125,7 +127,7 @@ module vertical_box_fwd() {
 			meter_holes();
 		}
 		// high voltage GND socket
-		translate([0, -meter_box_sz_y/4, meter_box_sz_z/4]) {
+		translate([0, -meter_box_sz_y/4, 50]) {
 			translate([-meter_box_sz_x/2, 0, 0]) {
 				rotate([0, 90, 0]) {
 					cylinder(d=socket_d, h=50, center=true);
@@ -153,7 +155,7 @@ module vertical_box_fwd() {
 	}
 	for(xsgn=[-1, 1]) {
 		for(ysgn=[-1, 1]) {
-			translate([xsgn*(meter_box_sz_x-wall)/2, ysgn*(meter_box_sz_y/2-wall), meter_box_sz_z/2]) {
+			translate([xsgn*meter_box_sz_x/2, ysgn*(meter_box_sz_y/2-wall), meter_box_sz_z/2]) {
 				rotate([0, 0, xsgn < 0 ? 180 : 0]) {
 					bolt_hole_cone();
 				}
@@ -164,24 +166,28 @@ module vertical_box_fwd() {
 
 module vertical_box_back() {
 	// back
-	translate([0, (meter_box_sz_y+wall)/2, -wall/2]) {
-		cube([meter_box_sz_x+2*wall, wall, meter_box_sz_z+2*wall], center= true);
+	translate([0, (meter_box_sz_y+wall)/2, wall/2]) {
+		cube([meter_box_sz_x+2*wall, wall, meter_box_sz_z+wall], center= true);
 	}
 	difference() {
 		// top
-		translate([0, -wall/2, meter_box_sz_z/2]) {
+		translate([0, 0, (meter_box_sz_z+wall)/2]) {
 			cube([meter_box_sz_x+2*wall, meter_box_sz_y+2*wall, wall], center= true);
 		}
 		for(xsgn=[-1, 1]) {
 			for(ysgn=[-1, 1]) {
-				translate([xsgn*(meter_box_sz_x-wall)/2, ysgn*(meter_box_sz_y/2-wall), meter_box_sz_z/2]) {
+				translate([xsgn*(meter_box_sz_x/2-6.5), ysgn*(meter_box_sz_y/2-wall), meter_box_sz_z/2]) {
 					cylinder(d=hole_d_through, h=100, center=true);
 				}
 			}
 		}
+// need adjustment
+    translate([-15, -13, back_box_sz_z/2]) {
+      cylinder(d=6, h=50, center=true); 
+    }
 	}
 	// pcb
-	translate([24, 21, (meter_box_sz_z-mod_sz_z_above)/2-wall]) {
+	translate([24, 21, (meter_box_sz_z-mod_sz_z_above)/2]) {
 		mod_stand_with_holes();
 	}
 }
@@ -191,5 +197,8 @@ if(vertical_fwd) {
 }
 
 if(vertical_back) {
-	vertical_box_back();
+  color("blue")
+  translate([0, 0, 0]) {
+    vertical_box_back();
+  }
 }
