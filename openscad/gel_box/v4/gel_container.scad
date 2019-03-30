@@ -1,14 +1,16 @@
-show_container = false;
-show_all = false;
-show_wall_insert=true;
-show_comb_insert = false;
+withwin = 0;
+show_container = 1;
+show_all = 0;
+show_wall_insert = 0;
+show_comb_insert = 0;
 
 $fn = 50;
 
 wall = 2;
 
 ext_sz_x = 110;
-ext_sz_y = 86.2;
+//ext_sz_y = 86.2;
+ext_sz_y = 85.8;
 ext_sz_z = 40;
 
 acryl_sz_x = 103;
@@ -36,7 +38,7 @@ comb_sz_x = 3;
 comb_sz_z = int_sz_z - 5;
 comb_handle_sz_z = 15;
 
-gap = 0.5;
+gap = 0.2;
 
 rubber_sz_z = 15;
 rubber_sz_x = 1.5;
@@ -63,13 +65,15 @@ module gel_container() {
 			translate([0, 0, bottom_sz_z+insert_place_sz_z/2]) {
 				cube([ext_sz_x, int_sz_y, ext_sz_z+insert_place_sz_z], center = true);
 			}
-			// acrylic place
-			translate([0, 0, bottom_sz_z-acryl_sz_z]) {
-				cube([acryl_sz_x, acryl_sz_y, ext_sz_z], center = true);
-			}
-			// transparent hole
-			cube([acryl_sz_x-2*wall, acryl_sz_y-2*wall, ext_sz_z], center = true);
-		}
+      if(withwin) {
+        // acrylic place
+        translate([0, 0, bottom_sz_z-acryl_sz_z]) {
+  				cube([acryl_sz_x, acryl_sz_y, ext_sz_z], center = true);
+        }
+        // transparent hole
+  			cube([acryl_sz_x-2*wall, acryl_sz_y-2*wall, ext_sz_z], center = true);
+      }
+    }
 	}
 }
 
