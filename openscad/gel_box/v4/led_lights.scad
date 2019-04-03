@@ -44,9 +44,9 @@ pcb_holder_plate_sz_z = wall;
 module a_led_holder(with_hole=true) {
 	difference() {
 		if(with_hole) {
-			cylinder(d=led_d+2*led_holder_wall, h=led_holder_sz_z, center=true);
+			cylinder(d=led_leg_encircle+2*led_holder_wall, h=led_holder_sz_z, center=true);
 		}
-		cylinder(d=led_d, h=led_holder_sz_z, center=true);
+		cylinder(d=led_leg_encircle, h=led_holder_sz_z, center=true);
 	}
 }
 
@@ -57,6 +57,15 @@ module pcb_holder_plate() {
 			for(y=[0:led_count_y]) {
 				translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2, 0]) {
 					a_led_holder(with_hole=false);
+				}
+			}
+		}
+		for(xsgn=[-1,0,1]) {
+			for(ysgn=[-1,0,1]) {
+				if(xsgn != 0 || ysgn != 0) {
+					translate([xsgn*(pcb_sz_x+holder_skirt_sz)/2, ysgn*(pcb_sz_y+holder_skirt_sz)/2, 0]) {
+						cylinder(d=3.2, h=50, center=true);
+					}
 				}
 			}
 		}
