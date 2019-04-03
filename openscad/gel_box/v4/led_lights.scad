@@ -40,6 +40,7 @@ pcb_holder_plate_sz_x = pcb_sz_x + 2 * holder_skirt_sz;
 pcb_holder_plate_sz_y = pcb_sz_y + 2 * holder_skirt_sz;
 pcb_holder_plate_sz_z = wall;
 
+stepdown_holder_sz_z = 15; //?
 
 module a_led_holder(with_hole=true) {
 	difference() {
@@ -95,6 +96,23 @@ module double_pcb_holder_plate() {
 	}
 }
 
-
+module stepdown_holder() {
+	for(ysgn=[-1,1]) {
+		translate([0, ysgn*pcb_holder_plate_sz_y/2, 0]) {
+			cube([pcb_holder_plate_sz_x+2*wall, wall, stepdown_holder_sz_z], center=true);
+		}
+	}
+	for(xsgn=[-1,1]) {
+		translate([xsgn*pcb_holder_plate_sz_x/2, 0, 0]) {
+			cube([wall, pcb_holder_plate_sz_y+2*wall, stepdown_holder_sz_z], center=true);
+		}
+	}
+	translate([0, 0, -stepdown_holder_sz_z/2]) {
+		cube([pcb_holder_plate_sz_x+2*wall, pcb_holder_plate_sz_y+2*wall, wall], center=true);
+	}
+}
 
 double_pcb_holder_plate();
+translate([0, 0, -stepdown_holder_sz_z]) {
+	stepdown_holder();
+}
