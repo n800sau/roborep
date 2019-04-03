@@ -14,6 +14,8 @@ pcb_sz_z = 1.2;
 pcb_hole_dist = 2.54;
 pcb_first_hole_x = (pcb_sz_x - pcb_hole_dist * (hole_count_x-1))/2;
 pcb_first_hole_y = (pcb_sz_y - pcb_hole_dist * (hole_count_y-1))/2;
+//pcb_first_hole_x = 0;
+//pcb_first_hole_y = 0;
 //echo("pcb_first_hole_x=", pcb_first_hole_x);
 //echo("pcb_first_hole_y=", pcb_first_hole_y);
 
@@ -53,46 +55,54 @@ module a_led_holder(with_hole=true) {
 
 module pcb_holder_plate() {
 	difference() {
-		cube([pcb_holder_plate_sz_x, pcb_holder_plate_sz_y, pcb_holder_plate_sz_z], center=true);
-		for(x=[0:led_count_x]) {
-			for(y=[0:led_count_y]) {
-				translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2, 0]) {
-					a_led_holder(with_hole=false);
-				}
-			}
-		}
-		for(xsgn=[-1,0,1]) {
-			for(ysgn=[-1,0,1]) {
-				if(xsgn != 0 || ysgn != 0) {
-					translate([xsgn*(pcb_sz_x+holder_skirt_sz)/2, ysgn*(pcb_sz_y+holder_skirt_sz)/2, 0]) {
-						cylinder(d=3.2, h=50, center=true);
-					}
-				}
-			}
-		}
-	}
-		for(xsgn=[-1,1]) {
-			for(ysgn=[-1,1]) {
-				translate([xsgn*hole_dist_x/2, ysgn*hole_dist_y/2, 0]) {
-					cylinder(d=2, h=50, center=true);
-				}
-			}
-		}
-	for(x=[0:led_count_x]) {
-		for(y=[0:led_count_y]) {
-			translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2, (led_holder_sz_z+pcb_holder_plate_sz_z)/2]) {
-				a_led_holder(with_hole=true);
-			}
-		}
-	}
-}
-
-module double_pcb_holder_plate() {
-	translate([0, -pcb_sz_y/2-1, 0]) {
-		pcb_holder_plate();
-	}
-	translate([0, pcb_sz_y/2+1, 0]) {
-		pcb_holder_plate();
+    for(ygs1=[-1,1]) {
+      translate([0, ygs1*(pcb_sz_y/2+0.25), 0]) {
+        cube([pcb_holder_plate_sz_x, pcb_holder_plate_sz_y, pcb_holder_plate_sz_z], center=true);
+        for(x=[0:led_count_x-1]) {
+          for(y=[0:led_count_y-1]) {
+            translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2+pcb_hole_dist/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2+pcb_hole_dist, (led_holder_sz_z+pcb_holder_plate_sz_z)/2]) {
+              a_led_holder(with_hole=true);
+            }
+          }
+        }
+      }
+    }
+    for(ygs2=[-1,1]) {
+      translate([0, ygs2*(pcb_sz_y/2+0.25), 0]) {
+        // pcb holes
+        for(x=[0:hole_count_x-1]) {
+          for(y=[0:hole_count_y-1]) {
+            translate([pcb_first_hole_x+x*pcb_hole_dist-pcb_sz_x/2, pcb_first_hole_y+y*pcb_hole_dist-pcb_sz_y/2, 0]) {
+    //          cylinder(d=2, h=50, center=true);
+            }
+          }
+        }
+        for(x=[0:led_count_x-1]) {
+          for(y=[0:led_count_y-1]) {
+            translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2+pcb_hole_dist/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2+pcb_hole_dist, 0]) {
+              a_led_holder(with_hole=false);
+            }
+          }
+        }
+        for(xsgn=[-1,0,1]) {
+          for(ysgn=[-1,0,1]) {
+            if(xsgn!=0 || (ysgn==-1 && ygs2==-1) || (ysgn==1 && ygs2==1)) {
+              translate([xsgn*(pcb_sz_x+holder_skirt_sz)/2, ysgn*(pcb_sz_y+holder_skirt_sz)/2, 0]) {
+                cylinder(d=3.2, h=50, center=true);
+              }
+            }
+          }
+        }
+        // holes in pcb
+        for(xsgn=[-1,1]) {
+          for(ysgn=[-1,1]) {
+            translate([xsgn*hole_dist_x/2, ysgn*hole_dist_y/2, 0]) {
+              cylinder(d=2, h=50, center=true);
+            }
+          }
+        }
+      }
+    }
 	}
 }
 
@@ -112,7 +122,7 @@ module stepdown_holder() {
 	}
 }
 
-double_pcb_holder_plate();
+pcb_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
-	stepdown_holder();
+	//stepdown_holder();
 }
