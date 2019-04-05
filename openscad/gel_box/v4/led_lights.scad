@@ -60,7 +60,7 @@ module a_led_holder(with_hole=true) {
 	}
 }
 
-module sandwich_holes(d, h, arc=false, arc_start=0, arc_end=180) {
+module sandwich_holes(d, h=50, arc=false, arc_start=0, arc_end=180) {
 	// sandwich holes
 	for(xsgn=[-1, 0, 1]) {
 		for(ysgn=[-1, -0.5, 0, 0.5, 1]) {
@@ -71,18 +71,24 @@ module sandwich_holes(d, h, arc=false, arc_start=0, arc_end=180) {
 							if(abs(xsgn) == 1 && abs(ysgn) == 1) {
 								linear_extrude(height = h) {
 									$angle = ysgn > 0 ? (xsgn > 0 ? 135 : -135) : (xsgn > 0 ? 45 : -45);
-									donutSlice(d-2*wall, d, $angle, $angle+180);
+									rotate([0, 0, angle]) {
+										donutSlice(d-2*wall, d, -90, 90);
+									}
 								}
 							} else if(abs(xsgn) == 1) {
 								linear_extrude(height = h) {
 									$angle = xsgn > 0 ? 90 : -90;
-									donutSlice(d-2*wall, d, $angle, $angle+180);
+									rotate([0, 0, angle]) {
+										donutSlice(d-2*wall, d, -90, 90);
+									}
 								}
 							} else {
 								if(abs(ysgn) != 0) {
 									linear_extrude(height = h) {
 										$angle = ysgn > 0 ? 180 : 0;
-										donutSlice(d-2*wall, d, $angle, $angle+180);
+										rotate([0, 0, angle]) {
+											donutSlice(d-2*wall, d, -90, 90);
+										}
 									}
 								}
 							}
@@ -127,16 +133,6 @@ module pcb_holder_plate() {
 						}
 					}
 				}
-				// sandwich holes
-				for(xsgn=[-1,0,1]) {
-					for(ysgn=[-1,0,1]) {
-						if(xsgn!=0 || (ysgn==-1 && ygs2==-1) || (ysgn==1 && ygs2==1)) {
-							translate([xsgn*(pcb_sz_x+holder_skirt_sz)/2, ysgn*(pcb_sz_y+holder_skirt_sz)/2, 0]) {
-//								cylinder(d=hole_d, h=50, center=true);
-							}
-						}
-					}
-				}
 				// holes in pcb
 				for(xsgn=[-1,1]) {
 					for(ysgn=[-1,1]) {
@@ -147,7 +143,7 @@ module pcb_holder_plate() {
 				}
 			}
 		}
-		sandwich_holes(d=hole_d, h=50);
+		sandwich_holes(d=hole_d);
 	}
 }
 
@@ -168,9 +164,14 @@ module stepdown_holder() {
 				cube([pcb_holder_plate_sz_x+2*wall, full_size_pcb_holder_plate_sz_y+2*wall, wall], center=true);
 			}
 		}
-		sandwich_holes(d=hole_d+wall*4, h=stepdown_holder_sz_z);
+		sandwich_holes(d=hole_d+wall*4);
 	}
-	sandwich_holes(d=hole_d+wall*4, h=stepdown_holder_sz_z, arc=true, arc_start=0, arc_end=180);
+	translate([0, 0, -wall/2]) {
+		sandwich_holes(d=hole_d+4*wall, h=stepdown_holder_sz_z, arc=true, arc_start=0, arc_end=180);
+	}
+	translate([0, 0, stepdown_holder_sz_z/2]) {
+		sandwich_holes(d=hole_d+wall*4, h=wall);
+	}
 }
 
 //pcb_holder_plate();
