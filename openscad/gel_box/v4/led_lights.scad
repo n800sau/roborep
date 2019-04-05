@@ -68,16 +68,22 @@ module sandwich_holes(d, h, arc=false, arc_start=0, arc_end=180) {
 				translate([xsgn*(pcb_holder_plate_sz_x-holder_skirt_sz)/2, ysgn*(full_size_pcb_holder_plate_sz_y-holder_skirt_sz)/2, 0]) {
 					if(arc) {
 						translate([0, 0, -h/2]) {
-							if(abs(xsgn) == 1) {
+							if(abs(xsgn) == 1 && abs(ysgn) == 1) {
+								linear_extrude(height = h) {
+									$angle = ysgn > 0 ? (xsgn > 0 ? 135 : -135) : (xsgn > 0 ? 45 : -45);
+									donutSlice(d-2*wall, d, $angle, $angle+180);
+								}
+							} else if(abs(xsgn) == 1) {
 								linear_extrude(height = h) {
 									$angle = xsgn > 0 ? 90 : -90;
 									donutSlice(d-2*wall, d, $angle, $angle+180);
 								}
-							}
-							if(abs(ysgn) != 0) {
-								linear_extrude(height = h) {
-									$angle = ysgn > 0 ? 180 : 0;
-									donutSlice(d-2*wall, d, $angle, $angle+180);
+							} else {
+								if(abs(ysgn) != 0) {
+									linear_extrude(height = h) {
+										$angle = ysgn > 0 ? 180 : 0;
+										donutSlice(d-2*wall, d, $angle, $angle+180);
+									}
 								}
 							}
 						}
