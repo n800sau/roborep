@@ -90,8 +90,10 @@ module holder_hook() {
   }
   translate([0, -18, 22]) {
     difference() {
-      cube([4+2*wall, 2*wall+5.3, 20], center=true);
-      translate([0, 0, ]) {
+      union() {
+        cube([4+2*wall, 2*wall+5.3, 20], center=true);
+      }
+      translate([0, 0, -wall]) {
         cube([4+2*wall, 5.3, 20], center=true);
       }
     }
