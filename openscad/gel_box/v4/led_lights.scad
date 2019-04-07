@@ -1,13 +1,13 @@
 $fn = 50;
 
 use <MCAD/2Dshapes.scad>
-
+use <pcb_led_cvf.scad>
 
 wall = 2;
 hole_d = 3.2;
 
 hole_dist_x = 64;
-hole_dist_y = 44.5;
+hole_dist_y = 42.5;
 
 hole_count_x = 24;
 hole_count_y = 18;
@@ -49,7 +49,24 @@ pcb_holder_plate_sz_z = wall;
 pcb_inter_gap = 0.5;
 full_size_pcb_holder_plate_sz_y = 2 * pcb_sz_y + pcb_inter_gap + 2 * holder_skirt_sz;
 
-stepdown_holder_sz_z = 15; //?
+stepdown_pcb_sz_x = 48.3;
+stepdown_pcb_sz_y = 24;
+stepdown_pcb_sz_z = 1.1;;
+
+stepdown_holder_sz_x = pcb_sz_x - wall;
+stepdown_holder_sz_y = full_size_pcb_holder_plate_sz_y - 2 * holder_skirt_sz - 2 * wall;
+stepdown_holder_sz_z = 17;
+
+power12_d = 8.4;
+
+acryl_sz_x = 90.7;
+acryl_sz_y = 105; //?
+acryl_sz_z = 3.2;
+
+acryl_holder_sz_x = pcb_holder_plate_sz_x;
+acryl_holder_sz_y = full_size_pcb_holder_plate_sz_y;
+acryl_holder_sz_z = 17;
+
 
 module a_led_holder(with_hole=true) {
 	difference() {
@@ -58,6 +75,16 @@ module a_led_holder(with_hole=true) {
 		}
 		cylinder(d=led_leg_encircle, h=led_holder_sz_z, center=true);
 	}
+}
+
+module switch_holes() {
+  cube([9.5, 5, 50], center=true);
+  translate([9.5, 0, 0]) {
+    cylinder(d=2.5, h = 50, center=true);
+  }
+  translate([-9.5, 0, 0]) {
+    cylinder(d=2.5, h = 50, center=true);
+  }
 }
 
 module sandwich_holes(d, h=50, arc=false, arc_start=0, arc_end=180) {
@@ -70,24 +97,24 @@ module sandwich_holes(d, h=50, arc=false, arc_start=0, arc_end=180) {
 						translate([0, 0, -h/2]) {
 							if(abs(xsgn) == 1 && abs(ysgn) == 1) {
 								linear_extrude(height = h) {
-									$angle = ysgn > 0 ? (xsgn > 0 ? 135 : -135) : (xsgn > 0 ? 45 : -45);
+									angle = xsgn > 0 ? (ysgn > 0 ? -135 : 135) : (ysgn > 0 ? -45 : 45);
 									rotate([0, 0, angle]) {
-										donutSlice(d-2*wall, d, -90, 90);
+										donutSlice(d-wall, d, -90, 90);
 									}
 								}
 							} else if(abs(xsgn) == 1) {
 								linear_extrude(height = h) {
-									$angle = xsgn > 0 ? 90 : -90;
+									angle = xsgn > 0 ? 180 : 0;
 									rotate([0, 0, angle]) {
-										donutSlice(d-2*wall, d, -90, 90);
+										donutSlice(d-wall, d, -90, 90);
 									}
 								}
 							} else {
 								if(abs(ysgn) != 0) {
 									linear_extrude(height = h) {
-										$angle = ysgn > 0 ? 180 : 0;
+										angle = ysgn > 0 ? -90 : 90;
 										rotate([0, 0, angle]) {
-											donutSlice(d-2*wall, d, -90, 90);
+											donutSlice(d-wall, d, -90, 90);
 										}
 									}
 								}
@@ -122,7 +149,7 @@ module pcb_holder_plate() {
 				%for(x=[0:hole_count_x-1]) {
 					for(y=[0:hole_count_y-1]) {
 						translate([pcb_first_hole_x+x*pcb_hole_dist-pcb_sz_x/2, pcb_first_hole_y+y*pcb_hole_dist-pcb_sz_y/2, 0]) {
-							cylinder(d=2, h=50, center=true);
+				//			cylinder(d=2, h=50, center=true);
 						}
 					}
 				}
@@ -147,7 +174,7 @@ module pcb_holder_plate() {
 	}
 }
 
-module stepdown_holder() {
+module stepdown_holder_v1() {
 	difference() {
 		union() {
 			for(ysgn=[-1,1]) {
@@ -167,13 +194,82 @@ module stepdown_holder() {
 		sandwich_holes(d=hole_d+wall*4);
 	}
 	translate([0, 0, -wall/2]) {
-		sandwich_holes(d=hole_d+4*wall, h=stepdown_holder_sz_z, arc=true, arc_start=0, arc_end=180);
+		sandwich_holes(d=hole_d+wall, h=stepdown_holder_sz_z, arc=true, arc_start=0, arc_end=180);
 	}
 	translate([0, 0, stepdown_holder_sz_z/2]) {
 		sandwich_holes(d=hole_d+wall*4, h=wall);
 	}
 }
 
+module stepdown_holder() {
+  difference() {
+		union() {
+			for(ysgn=[-1,1]) {
+        // long ends
+				translate([0, ysgn*(stepdown_holder_sz_y+wall)/2, 0]) {
+					cube([stepdown_holder_sz_x, wall, stepdown_holder_sz_z], center=true);
+          translate([0, ysgn*(holder_skirt_sz+wall)/2, (stepdown_holder_sz_z-wall)/2]) {
+            cube([stepdown_holder_sz_x+2*wall, holder_skirt_sz, wall], center=true);
+          }
+				}
+			}
+			for(xsgn=[-1,1]) {
+        // short ends
+				translate([xsgn*(stepdown_holder_sz_x+wall)/2, 0, 0]) {
+					cube([wall, stepdown_holder_sz_y+2*wall, stepdown_holder_sz_z], center=true);
+          translate([xsgn*(holder_skirt_sz+wall)/2, 0, (stepdown_holder_sz_z-wall)/2]) {
+            cube([holder_skirt_sz, 2*holder_skirt_sz+stepdown_holder_sz_y+2*wall, wall], center=true);
+          }
+				}
+			}
+			translate([0, 0, -stepdown_holder_sz_z/2]) {
+				cube([stepdown_holder_sz_x+2*wall, stepdown_holder_sz_y+2*wall, wall], center=true);
+			}
+      translate([-25, -40 , -stepdown_holder_sz_z/2]) {
+        pcb_led_cvf();
+      }
+		}
+		sandwich_holes(d=hole_d);
+    // 12v power hole
+    translate([-19, stepdown_holder_sz_y-25, 0]) {
+      rotate([90, 0, 0]) {
+        cylinder(d=power12_d, h=50);
+      }
+    }
+    translate([10, stepdown_holder_sz_y-50, 0]) {
+      rotate([90, 0, 0]) {
+        switch_holes();
+      }
+    }
+  }
+}
+
+module acryl_holder() {
+  difference() {
+		union() {
+			for(ysgn=[-1,1]) {
+        // long ends
+				translate([0, ysgn*(stepdown_holder_sz_y+wall)/2, 0]) {
+					cube([stepdown_holder_sz_x, wall, stepdown_holder_sz_z], center=true);
+				}
+			}
+			for(xsgn=[-1,1]) {
+        // short ends
+				translate([xsgn*(stepdown_holder_sz_x+wall)/2, 0, 0]) {
+					cube([wall, stepdown_holder_sz_y+2*wall, stepdown_holder_sz_z], center=true);
+				}
+			}
+			translate([0, 0, stepdown_holder_sz_z/2]) {
+				%cube([acryl_sz_x, acryl_sz_y, acryl_sz_z], center=true);
+			}
+		}
+		sandwich_holes(d=hole_d);
+  }
+}
+
+//translate([0, 0, stepdown_holder_sz_z]) {
+//	acryl_holder();
+//}
 //pcb_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
 	stepdown_holder();
