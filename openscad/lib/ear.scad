@@ -40,7 +40,7 @@ module bolt_hole_cone_center(
 ) {
 
   out_d = hole_d + hole_wall * 2;
-  translate([-out_d/2-base_dist, 0, -hole_height/2]) {
+  translate([0, 0, -hole_height/2]) {
     difference() {
       hull() {
         cylinder(d=out_d, h=hole_height, center=true);
@@ -57,10 +57,10 @@ module bolt_hole_cone_center(
   
 }
 
-%cube([5, 10, 20], center=true);
-translate([-7.5, 0, 2.5]) {
-	%cube([10, 10, 5], center=true);
+translate([3+2+2.9+01, 0, 0]) {
+  %cube([5, 10, 20], center=true);
+  translate([-7.5, 0, 2.5]) {
+    %cube([10, 10, 5], center=true);
+  }
 }
-translate([-2.5, 0, 0]) {
-	bolt_hole_cone_center();
-}
+bolt_hole_cone_center();
