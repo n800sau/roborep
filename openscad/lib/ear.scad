@@ -1,3 +1,5 @@
+$fn = 30;
+
 module bolt_hole_cone(
     base_height=3,
     hole_d=2.9,
@@ -28,5 +30,37 @@ module bolt_hole_cone(
   
 }
 
-$fn = 30;
-bolt_hole_cone();
+module bolt_hole_cone_center(
+    hole_height=4,
+    hole_d=2.9,
+    hole_wall = 2,
+    base_dist = 3,
+    height = 7,
+    border = 0.1
+) {
+
+  out_d = hole_d + hole_wall * 2;
+  translate([-out_d/2-base_dist, 0, -hole_height/2]) {
+    difference() {
+      hull() {
+        cylinder(d=out_d, h=hole_height, center=true);
+        translate([(out_d/2+base_dist)/2, 0, 0]) {
+          cube([out_d/2+base_dist, out_d, hole_height], center=true);
+          translate([(out_d/2+base_dist-border)/2, 0, -hole_height/2-(height-hole_height)+1/2]) {
+            cube([border, out_d, 1], center=true);
+          }
+        }
+      }
+      cylinder(d=hole_d, h=hole_height+2*height, center=true);
+    }
+  }
+  
+}
+
+%cube([5, 10, 20], center=true);
+translate([-7.5, 0, 2.5]) {
+	%cube([10, 10, 5], center=true);
+}
+translate([-2.5, 0, 0]) {
+	bolt_hole_cone_center();
+}
