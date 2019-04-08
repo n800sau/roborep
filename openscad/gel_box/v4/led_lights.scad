@@ -2,9 +2,11 @@ $fn = 50;
 
 use <MCAD/2Dshapes.scad>
 use <pcb_led_cvf.scad>
+use <../../lib/ear.scad>
 
 wall = 2;
 hole_d = 3.2;
+hole_d_through = 4;
 
 hole_dist_x = 64;
 hole_dist_y = 42.5;
@@ -63,10 +65,9 @@ acryl_sz_x = 90.7;
 acryl_sz_y = 105; //?
 acryl_sz_z = 3.2;
 
-acryl_holder_sz_x = pcb_holder_plate_sz_x;
-acryl_holder_sz_y = full_size_pcb_holder_plate_sz_y;
+acryl_holder_sz_x = max(pcb_holder_plate_sz_x, acryl_sz_x + 2 * wall);
+acryl_holder_sz_y = max(full_size_pcb_holder_plate_sz_y, acryl_sz_y + 2 * wall);
 acryl_holder_sz_z = 17;
-
 
 module a_led_holder(with_hole=true) {
 	difference() {
@@ -78,16 +79,16 @@ module a_led_holder(with_hole=true) {
 }
 
 module switch_holes() {
-  cube([9.5, 5, 50], center=true);
-  translate([9.5, 0, 0]) {
-    cylinder(d=2.5, h = 50, center=true);
-  }
-  translate([-9.5, 0, 0]) {
-    cylinder(d=2.5, h = 50, center=true);
-  }
+	cube([9.5, 5, 50], center=true);
+	translate([9.5, 0, 0]) {
+		cylinder(d=2.5, h = 50, center=true);
+	}
+	translate([-9.5, 0, 0]) {
+		cylinder(d=2.5, h = 50, center=true);
+	}
 }
 
-module sandwich_holes(d, h=50, arc=false, arc_start=0, arc_end=180) {
+module sandwich_holes(d, h=50, arc=false) {
 	// sandwich holes
 	for(xsgn=[-1, 0, 1]) {
 		for(ysgn=[-1, -0.5, 0, 0.5, 1]) {
@@ -116,6 +117,43 @@ module sandwich_holes(d, h=50, arc=false, arc_start=0, arc_end=180) {
 										rotate([0, 0, angle]) {
 											donutSlice(d-wall, d, -90, 90);
 										}
+									}
+								}
+							}
+						}
+					} else {
+						cylinder(d=d, h=h, center=true);
+					}
+				}
+			}
+		}
+	}
+}
+
+module ear(base_dist, height) {
+	translate([(3+3+2*3)/2, 0, 0]) {
+		bolt_hole_cone_center(base_dist=base_dist, hole_d=3, hole_wall=3, height=height);
+	}
+}
+
+module ear_holes(d, h=50, base_dist=3, ear_mode=false, height=7) {
+	// sandwich holes
+	for(xsgn=[-1, 1]) {
+		for(ysgn=[-1, 1]) {
+			if(abs(xsgn)==1 || abs(ysgn)==1) {
+				translate([xsgn*(pcb_holder_plate_sz_x-holder_skirt_sz)/2, ysgn*(full_size_pcb_holder_plate_sz_y-holder_skirt_sz)/2, 0]) {
+					if(ear_mode) {
+						translate([base_dist, 0, 0]) {
+							if(abs(xsgn) == 1) {
+								angle = xsgn > 0 ? 0 : 180;
+								rotate([180, 0, angle]) {
+									ear(base_dist=base_dist, height=height);
+								}
+							} else {
+								if(abs(ysgn) != 0) {
+									angle = ysgn > 0 ? 90 : -90;
+									rotate([180, 0, angle]) {
+										ear(base_dist=base_dist, height=height);
 									}
 								}
 							}
@@ -170,7 +208,7 @@ module pcb_holder_plate() {
 				}
 			}
 		}
-		sandwich_holes(d=hole_d);
+		ear_holes(d=hole_d);
 	}
 }
 
@@ -191,85 +229,94 @@ module stepdown_holder_v1() {
 				cube([pcb_holder_plate_sz_x+2*wall, full_size_pcb_holder_plate_sz_y+2*wall, wall], center=true);
 			}
 		}
-		sandwich_holes(d=hole_d+wall*4);
+		ear_holes(d=hole_d+wall*4);
 	}
 	translate([0, 0, -wall/2]) {
-		sandwich_holes(d=hole_d+wall, h=stepdown_holder_sz_z, arc=true, arc_start=0, arc_end=180);
+		ear_holes(d=hole_d+wall, h=stepdown_holder_sz_z);
 	}
 	translate([0, 0, stepdown_holder_sz_z/2]) {
-		sandwich_holes(d=hole_d+wall*4, h=wall);
+		ear_holes(d=hole_d+wall*4, h=wall);
 	}
 }
 
 module stepdown_holder() {
-  difference() {
+	difference() {
 		union() {
 			for(ysgn=[-1,1]) {
-        // long ends
+				// long ends
 				translate([0, ysgn*(stepdown_holder_sz_y+wall)/2, 0]) {
 					cube([stepdown_holder_sz_x, wall, stepdown_holder_sz_z], center=true);
-          translate([0, ysgn*(holder_skirt_sz+wall)/2, (stepdown_holder_sz_z-wall)/2]) {
-            cube([stepdown_holder_sz_x+2*wall, holder_skirt_sz, wall], center=true);
-          }
+					translate([0, ysgn*(holder_skirt_sz+wall)/2, (stepdown_holder_sz_z-wall)/2]) {
+						cube([stepdown_holder_sz_x+2*wall, holder_skirt_sz, wall], center=true);
+					}
 				}
 			}
 			for(xsgn=[-1,1]) {
-        // short ends
+				// short ends
 				translate([xsgn*(stepdown_holder_sz_x+wall)/2, 0, 0]) {
 					cube([wall, stepdown_holder_sz_y+2*wall, stepdown_holder_sz_z], center=true);
-          translate([xsgn*(holder_skirt_sz+wall)/2, 0, (stepdown_holder_sz_z-wall)/2]) {
-            cube([holder_skirt_sz, 2*holder_skirt_sz+stepdown_holder_sz_y+2*wall, wall], center=true);
-          }
+					translate([xsgn*(holder_skirt_sz+wall)/2, 0, (stepdown_holder_sz_z-wall)/2]) {
+						cube([holder_skirt_sz, 2*holder_skirt_sz+stepdown_holder_sz_y+2*wall, wall], center=true);
+					}
 				}
 			}
 			translate([0, 0, -stepdown_holder_sz_z/2]) {
 				cube([stepdown_holder_sz_x+2*wall, stepdown_holder_sz_y+2*wall, wall], center=true);
 			}
-      translate([-25, -40 , -stepdown_holder_sz_z/2]) {
-        pcb_led_cvf();
-      }
+			translate([-25, -40 , -stepdown_holder_sz_z/2]) {
+				pcb_led_cvf();
+			}
 		}
-		sandwich_holes(d=hole_d);
-    // 12v power hole
-    translate([-19, stepdown_holder_sz_y-25, 0]) {
-      rotate([90, 0, 0]) {
-        cylinder(d=power12_d, h=50);
-      }
-    }
-    translate([10, stepdown_holder_sz_y-50, 0]) {
-      rotate([90, 0, 0]) {
-        switch_holes();
-      }
-    }
-  }
+		ear_holes(d=hole_d_through);
+		// 12v power hole
+		translate([-19, stepdown_holder_sz_y-25, 0]) {
+			rotate([90, 0, 0]) {
+				cylinder(d=power12_d, h=50);
+			}
+		}
+		translate([10, stepdown_holder_sz_y-50, 0]) {
+			rotate([90, 0, 0]) {
+				switch_holes();
+			}
+		}
+	}
 }
 
 module acryl_holder() {
-  difference() {
+	difference() {
 		union() {
 			for(ysgn=[-1,1]) {
-        // long ends
-				translate([0, ysgn*(stepdown_holder_sz_y+wall)/2, 0]) {
-					cube([stepdown_holder_sz_x, wall, stepdown_holder_sz_z], center=true);
+				// long ends
+				translate([0, ysgn*(acryl_holder_sz_y+wall)/2, 0]) {
+					cube([acryl_holder_sz_x+2*wall, wall, acryl_holder_sz_z], center=true);
+					translate([0, -ysgn*(acryl_holder_sz_y-stepdown_holder_sz_y)/4, -(acryl_holder_sz_z-wall)/2]) {
+						cube([acryl_holder_sz_x+2*wall, (acryl_holder_sz_y-stepdown_holder_sz_y)/2, wall], center=true);
+					}
 				}
 			}
 			for(xsgn=[-1,1]) {
-        // short ends
-				translate([xsgn*(stepdown_holder_sz_x+wall)/2, 0, 0]) {
-					cube([wall, stepdown_holder_sz_y+2*wall, stepdown_holder_sz_z], center=true);
+				// short ends
+				translate([xsgn*(acryl_holder_sz_x+wall)/2, 0, 0]) {
+					cube([wall, acryl_holder_sz_y+2*wall, acryl_holder_sz_z], center=true);
+					translate([-xsgn*(acryl_holder_sz_x-stepdown_holder_sz_x)/4, 0, -(acryl_holder_sz_z-wall)/2]) {
+						cube([(acryl_holder_sz_x-stepdown_holder_sz_x)/2, acryl_holder_sz_y+2*wall, wall], center=true);
+					}
 				}
 			}
-			translate([0, 0, stepdown_holder_sz_z/2]) {
+			translate([0, 0, acryl_holder_sz_z/2]) {
 				%cube([acryl_sz_x, acryl_sz_y, acryl_sz_z], center=true);
 			}
 		}
-		sandwich_holes(d=hole_d);
-  }
+		ear_holes(d=hole_d);
+	}
+	translate([0, 0, -acryl_holder_sz_z/2]) {
+		ear_holes(d=hole_d, ear_mode=true, height=(acryl_holder_sz_z-acryl_sz_z));
+	}
 }
 
-//translate([0, 0, stepdown_holder_sz_z]) {
-//	acryl_holder();
-//}
+translate([0, 0, acryl_holder_sz_z]) {
+	acryl_holder();
+}
 //pcb_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
 	stepdown_holder();
