@@ -61,7 +61,7 @@ stepdown_holder_sz_z = 17;
 
 power12_d = 8.4;
 
-acryl_sz_x = 90.7;
+acryl_sz_x = 90;
 acryl_sz_y = 118; //?
 acryl_sz_z = 3.2;
 

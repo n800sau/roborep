@@ -138,14 +138,14 @@ module lock() {
 }
 
 
-//isolat();
+isolat();
 translate([0, holder_sz_y-h+9-3, electrode_sz_z+wall/2+2+wall]) {
-//  socket();
+  socket();
 }
-//hook();
+hook();
 translate([0, h-7, 0]) {
   holder_hook();
 }
 translate([0, holder_sz_y-h+16, electrode_sz_z-12]) {
-//  lock();
+  lock();
 }

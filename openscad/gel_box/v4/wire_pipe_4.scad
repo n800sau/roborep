@@ -2,7 +2,7 @@ $fn = 50;
 
 // for electrode
 
-gap = 1;
+gap = 0.5;
 wall = 3;
 electrode_sz_z = 32;
 
@@ -10,9 +10,9 @@ max_sz_y = 86.5;
 
 h=max_sz_y - 2 * wall - 2 * gap - 10;
 
-electrode_d = 8;
+electrode_d = 9.5;
 
-holder_d = ext_d + 2 * wall + gap;
+holder_d = electrode_d + 2 * wall + gap;
 holder_sz_y = 10;
 
 module isolat(extra_d=0) {
@@ -35,11 +35,11 @@ module hook() {
           rotate([90, 0, 0]) {
             cylinder(d=holder_d, h=holder_sz_y);
           }
-          translate([0, (wall-holder_d)/2, electrode_sz_z/2]) {
+          translate([0, -holder_sz_y/2, electrode_sz_z/2]) {
             cube([4+2*wall, holder_sz_y, electrode_sz_z], center=true);
-            translate([0, -15+holder_sz_y/2, (electrode_sz_z+5)/2]) {
+            translate([0, -18+holder_sz_y/2, (electrode_sz_z+5)/2]) {
               difference() {
-                cube([4+2*wall, 30, 5], center=true);
+                cube([4+2*wall, 36, 5], center=true);
                 translate([0, -7.5, 0]) {
                   cylinder(d=3.2, h=40, center=true);
                 }
@@ -118,15 +118,15 @@ module lock() {
   difference() {
     union() {
       // top
-      translate([0, -4.25, 10]) {
-        cube([4+2*wall, 18, wall], center=true);
+      translate([0, -7, 10]) {
+        cube([4+2*wall, 24, wall], center=true);
       }
       cube([4+2*wall, 2*wall+3.4, 20], center=true);
     }
     translate([0, 0, -wall/2]) {
       cube([4+2*wall, 3.4, 20], center=true);
     }
-    translate([0, -7, 0]) {
+    translate([0, -9, 0]) {
       cylinder(d=3.2, h=50, center=true);
     }
   }
@@ -134,13 +134,13 @@ module lock() {
 
 
 %isolat();
-translate([0, holder_sz_y-h+9-3, electrode_sz_z+wall/2+2+wall]) {
+translate([0, holder_sz_y-h+6.5-3, electrode_sz_z+wall/2+4+wall]) {
   socket();
 }
 hook();
 translate([0, h-7, 0]) {
-  holder_hook();
+//  holder_hook();
 }
-translate([0, holder_sz_y-h+16, electrode_sz_z-12]) {
+translate([0, holder_sz_y-h+15, electrode_sz_z-13]) {
   lock();
 }
