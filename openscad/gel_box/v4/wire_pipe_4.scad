@@ -66,7 +66,7 @@ module holder_hook() {
           rotate([90, 0, 0]) {
             cylinder(d=holder_d, h=holder_sz_y);
           }
-          translate([0, (wall-holder_d)/2, electrode_sz_z/2]) {
+          translate([0, -holder_sz_y/2, electrode_sz_z/2]) {
             cube([4+2*wall, holder_sz_y, electrode_sz_z], center=true);
             translate([0, +15-holder_sz_y/2, (electrode_sz_z+5)/2]) {
               difference() {
@@ -139,7 +139,7 @@ translate([0, holder_sz_y-h+6.5-3, electrode_sz_z+wall/2+4+wall]) {
 }
 hook();
 translate([0, h-7, 0]) {
-//  holder_hook();
+  holder_hook();
 }
 translate([0, holder_sz_y-h+15, electrode_sz_z-13]) {
   lock();
