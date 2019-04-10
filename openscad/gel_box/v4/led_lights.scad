@@ -317,8 +317,57 @@ module acryl_holder() {
   }
 }
 
+module diffuser(x_count, y_count, step_x, step_y) {
+	sz_x = x_count*step_x;
+	sz_y = y_count*step_y;
+	sz_z = max(step_x, step_y);
+	difference() {
+		union() {
+			translate([-sz_x/2, -sz_y/2, 0]) {
+				for(x=[0:x_count]) {
+					for(y=[0:y_count]) {
+						translate([x*step_x, y*step_y, 0]) {
+							sphere(d=max(step_x, step_y), center=true);
+						}
+					}
+				}
+			}
+			translate([0, 0, 0.5]) {
+				cube([sz_x, sz_y, 1], center=true);
+			}
+		}
+		translate([0, 0, -sz_z/2]) {
+			cube([sz_x*2, sz_y*2, sz_z], center=true);
+		}
+	}
+}
+
+module led_diffuser() {
+	d = max(led_step_x, led_step_y);
+	for(ygs1=[-1,1]) {
+		translate([0, ygs1*(pcb_sz_y/2+0.25), 0]) {
+			cube([pcb_sz_x, pcb_sz_y, 1], center=true);
+			for(x=[0:led_count_x-1]) {
+				for(y=[0:led_count_y-1]) {
+					translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2+pcb_hole_dist/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2+pcb_hole_dist, 0]) {
+						difference() {
+							sphere(d=d, center=true);
+							translate([0, 0, -d/2]) {
+								cube([d, d, d], center=true);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//diffuser(10, 10, pcb_hole_dist, pcb_hole_dist);
+led_diffuser();
+
 translate([0, 0, acryl_holder_sz_z]) {
-	acryl_holder();
+//	acryl_holder();
 }
 //pcb_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
