@@ -1,5 +1,5 @@
- $fn = 50;
-d = 4;
+$fn = 10;
+d = 2;
 scale([1, 1, 0.5]) {
   difference() {
     union() {
