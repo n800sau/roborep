@@ -5,12 +5,12 @@ scale([1, 1, 0.5]) {
     union() {
       for(x=[-10:10]) {
         for(y=[-10:10]) {
-          translate([x*d, y*d, 0]) {
+          translate([x*d, y*d, 1]) {
             sphere(d=d, center=true);
           }
         }
       }
-      translate([0, 0, -1]) {
+      translate([0, 0, 0]) {
         cube([42, 42, 2], center=true);
       }
     }
