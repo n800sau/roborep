@@ -343,10 +343,11 @@ module diffuser(x_count, y_count, step_x, step_y) {
 }
 
 module led_diffuser() {
+	$fn = 10;
 	d = max(led_step_x, led_step_y);
 	for(ygs1=[-1,1]) {
-		translate([0, ygs1*(pcb_sz_y/2+0.25), 0]) {
-			cube([pcb_sz_x, pcb_sz_y, 1], center=true);
+		translate([0, ygs1*(pcb_sz_y-wall)/2, 0]) {
+			cube([pcb_sz_x-wall, pcb_sz_y-wall, wall], center=true);
 			for(x=[0:led_count_x-1]) {
 				for(y=[0:led_count_y-1]) {
 					translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2+pcb_hole_dist/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2+pcb_hole_dist, 0]) {
@@ -364,7 +365,9 @@ module led_diffuser() {
 }
 
 //diffuser(10, 10, pcb_hole_dist, pcb_hole_dist);
-led_diffuser();
+translate([0, 0, acryl_holder_sz_z]) {
+	led_diffuser();
+}
 
 translate([0, 0, acryl_holder_sz_z]) {
 //	acryl_holder();
