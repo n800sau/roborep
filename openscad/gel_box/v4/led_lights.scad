@@ -345,14 +345,26 @@ module diffuser(x_count, y_count, step_x, step_y) {
 module led_diffuser() {
 	$fn = 10;
 	d = max(led_step_x, led_step_y);
+  scale([0.99, 0.99, 1]) {
+    difference() {
+        cube([acryl_holder_sz_x-2*wall, acryl_holder_sz_y-2*wall, 1], center=true);
+        translate([0, 0, -(acryl_holder_sz_z-acryl_sz_z)/2]) {
+          ear_holes(d=hole_d);
+          ear_holes(d=hole_d, ear_mode=true, height=acryl_holder_sz_z-acryl_sz_z-wall);
+        }
+    }
+  }
 	for(ygs1=[-1,1]) {
 		translate([0, ygs1*(pcb_sz_y-wall)/2, 0]) {
-			cube([pcb_sz_x-wall, pcb_sz_y-wall, wall], center=true);
+
+//			cube([pcb_sz_x-wall, pcb_sz_y-wall, 1], center=true);
 			for(x=[0:led_count_x-1]) {
 				for(y=[0:led_count_y-1]) {
 					translate([pcb_first_hole_x+x*led_step_x-pcb_sz_x/2+pcb_hole_dist/2, pcb_first_hole_y+y*led_step_y-pcb_sz_y/2+pcb_hole_dist, 0]) {
 						difference() {
-							sphere(d=d, center=true);
+							scale([1, 1, 0.6]) {
+								sphere(d=d, center=true);
+							}
 							translate([0, 0, -d/2]) {
 								cube([d, d, d], center=true);
 							}
@@ -366,7 +378,16 @@ module led_diffuser() {
 
 //diffuser(10, 10, pcb_hole_dist, pcb_hole_dist);
 translate([0, 0, acryl_holder_sz_z]) {
+//union() {
+difference() {
 	led_diffuser();
+	translate([40, 0, 0]) {
+//		cube([100, 100, 100], center=true);
+	}
+	translate([0, 40, 0]) {
+//		cube([100, 100, 100], center=true);
+	}
+}
 }
 
 translate([0, 0, acryl_holder_sz_z]) {

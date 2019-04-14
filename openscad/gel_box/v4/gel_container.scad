@@ -1,8 +1,8 @@
 withwin = 0;
-show_container = 1;
+show_container = 0;
 show_all = 0;
 show_wall_insert = 0;
-show_comb_insert = 0;
+show_comb_insert = 1;
 
 $fn = 50;
 
@@ -34,7 +34,7 @@ insert_sz_y = (ext_sz_y - int_sz_y)/2;
 insert_sz_z = int_sz_z - 6;
 insert_handle_sz_z = 10;
 
-comb_sz_x = 3;
+comb_sz_x = 1.5;
 comb_sz_z = int_sz_z - 5;
 comb_handle_sz_z = 15;
 
@@ -100,7 +100,7 @@ module comb_insert() {
 				cube([insert_sz_x, ext_sz_y + 20, comb_handle_sz_z], center=true);
 			}
 			// thiner part whole height
-      translate([comb_sz_x/2, 0, 0]) {
+      translate([(insert_sz_x-comb_sz_x)/2, 0, 0]) {
         cube([comb_sz_x, int_sz_y-2*gap, comb_sz_z], center=true);
       }
 		}
