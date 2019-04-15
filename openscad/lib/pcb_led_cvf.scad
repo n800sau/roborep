@@ -21,33 +21,27 @@
 
 $fn=50;
 
-//Uno is 2.7" x 2.1" which is 68.58 mm x 53.34 mm
-//Round up to 69 mm x 54 mm
-pcb_width = 48.2;
-pcb_length =24.1;
-pcb_height =1.1;
-slisse = 0.8;
+module pcb_led_cvf(
 
-pcb_bottom_margin = 1;
-wall_width_thick = 2;
-wall_width = wall_width_thick-slisse;
-box_height = 7;
+	pcb_width = 48.2,
+	pcb_length =24.1,
+	pcb_height =1.1,
+	slisse = 0.8,
 
-//tab parameters
-tab_hole_radius=2;
-tab_outer_radius=4;
+	pcb_bottom_margin = 1,
+	wall_width_thick = 2,
+	box_height = 7,
 
-inner_margin = 4;
+	//tab parameters
+	tab_hole_radius=2,
+	tab_outer_radius=4,
 
-add_tabs = true;
+	inner_margin = 4,
 
-module pcb_led_cvf() {
-	difference() {
-		box();
-		pcb();
-		holes();
-	}
-}
+	add_tabs = true
+
+) {
+	wall_width = wall_width_thick-slisse;
 
 module tab() {
 	difference(){
@@ -121,6 +115,14 @@ module holes() {
 		translate([inner_margin +wall_width, inner_margin+wall_width, -0.1])
 			cube([pcb_width-inner_margin*2,pcb_length -inner_margin*2,wall_width + 0.2]);
 }
+
+	difference() {
+		box();
+		pcb();
+		holes();
+	}
+}
+
 
 
 pcb_led_cvf();
