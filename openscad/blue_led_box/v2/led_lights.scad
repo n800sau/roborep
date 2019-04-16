@@ -1,4 +1,4 @@
-$fn = 50;
+$fn = 10;
 
 use <MCAD/2Dshapes.scad>
 use <../../lib/pcb_led_cvf.scad>
@@ -13,7 +13,7 @@ led_count_y = 10;
 
 led_d = 5.5;
 led_leg_sz = 16;
-led_holder_sz_z = min(4, led_leg_sz - 7);
+led_holder_sz_z = 1;
 
 led_step_x = led_d + 1.5;
 led_step_y = led_step_x;
@@ -45,16 +45,21 @@ acryl_holder_sz_x = max(led_holder_plate_sz_x, acryl_sz_x + acryl_gap);
 acryl_holder_sz_y = max(led_holder_plate_sz_y, acryl_sz_y + acryl_gap);
 acryl_holder_sz_z = 30;
 
-module a_led_holder(with_hole=true) {
+module a_led_holder() {
 	difference() {
-		if(with_hole) {
-			cylinder(d=led_leg_encircle+2*led_holder_wall, h=led_holder_sz_z, center=true);
-		}
-		difference() {
-			cylinder(d=led_leg_encircle, h=led_holder_sz_z, center=true);
-			cube([1, led_leg_encircle+2*led_holder_wall, led_holder_sz_z], center=true);
-		}
+    cylinder(d=led_leg_encircle+2*led_holder_wall, h=led_holder_sz_z, center=true);
+    difference() {
+      cylinder(d=led_leg_encircle, h=led_holder_sz_z+100, center=true);
+      cube([1, led_leg_encircle+2*led_holder_wall, led_holder_sz_z], center=true);
+    }
 	}
+}
+
+module a_led_hole() {
+    difference() {
+      cylinder(d=led_leg_encircle, h=led_holder_sz_z+100, center=true);
+      cube([1, led_leg_encircle, led_holder_sz_z+100], center=true);
+    }
 }
 
 module switch_holes() {
@@ -102,19 +107,21 @@ module ear_holes(d, h=50, base_dist=3, ear_mode=false, height=7) {
 module led_holder_plate() {
 	difference() {
 		union() {
-			cube([led_holder_plate_sz_x, led_holder_plate_sz_y, led_holder_plate_sz_z], center=true);
-			for(x=[1:led_count_x]) {
-				for(y=[1:led_count_y]) {
-					translate([-led_holder_plate_sz_x/2+x*led_step_x+led_step_x/2, -led_holder_plate_sz_y/2+y*led_step_y+led_step_y/2, (led_holder_sz_z+led_holder_plate_sz_z)/2]) {
-						a_led_holder(with_hole=true);
+      difference() {
+        cube([led_holder_plate_sz_x, led_holder_plate_sz_y, led_holder_plate_sz_z], center=true);
+        for(x=[0:led_count_x-1]) {
+          for(y=[0:led_count_y-1]) {
+            translate([-led_holder_plate_sz_x/2+holder_skirt_sz+x*led_step_x+led_step_x/2, -led_holder_plate_sz_y/2+holder_skirt_sz+y*led_step_y+led_step_y/2, (led_holder_sz_z+led_holder_plate_sz_z)/2]) {
+              a_led_hole();
+            }
+          }
+        }
+      }
+			for(x=[0:led_count_x-1]) {
+				for(y=[0:led_count_y-1]) {
+					translate([-led_holder_plate_sz_x/2+holder_skirt_sz+x*led_step_x+led_step_x/2, -led_holder_plate_sz_y/2+holder_skirt_sz+y*led_step_y+led_step_y/2, (led_holder_sz_z+led_holder_plate_sz_z)/2]) {
+						a_led_holder();
 					}
-				}
-			}
-		}
-		for(x=[0:led_count_x-1]) {
-			for(y=[0:led_count_y-1]) {
-				translate([-led_holder_plate_sz_x/2+x*led_step_x+led_step_x/2, -led_holder_plate_sz_y/2+y*led_step_y+led_step_y/2, (led_holder_sz_z+led_holder_plate_sz_z)/2]) {
-					a_led_holder(with_hole=false);
 				}
 			}
 		}
