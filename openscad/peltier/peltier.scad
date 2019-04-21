@@ -2,9 +2,9 @@ $fn = 50;
 
 wall = 3;
 
-block_sz_x = 40.2;
-block_sz_y = 40.2;
-block_sz_z = 4.2;
+block_sz_x = 40;
+block_sz_y = 40;
+block_sz_z = 4;
 
 hole_dist = 72;
 
@@ -18,6 +18,44 @@ heat_block_sz_y = 16;
 heat_block_sz_z = 12;
 
 heat_block_cover_off_z = heat_block_sz_z - block_sz_z;
+
+module pcr_tube() {
+  tube_top_d = 9.6;
+  tube_top_h = 17;
+  tube_middle_d = 7.5;
+  tube_middle_h = 12.1;
+  tube_bottom_d = 4;
+  translate([0, 0, tube_middle_h]) {
+    cylinder(d2=tube_top_d, d1=tube_middle_d, h=tube_top_h);
+  }
+  cylinder(d2=tube_middle_d, d1=tube_bottom_d, h=tube_middle_h);
+}
+
+module holes_block(holes=true) {
+    for(angle=[0, 90, 180, 270]) {
+      rotate([0, 0, angle]) {
+        translate([(block_sz_x-wall)/2-4, (block_sz_y-wall)/2-8, 0]) {
+          if(holes) {
+            cylinder(d=8, h=wall, center=true);
+          } else {
+            difference() {
+              translate([0, 0, 9]) {
+                cylinder(d=12, h=20, center=true);
+              }
+              translate([0, 0, -9]) {
+                pcr_tube();
+              }
+            }
+          }
+        }
+        if(holes) {
+          translate([(block_sz_x-wall)/2-17, (block_sz_y-wall)/2-8.5, 0]) {
+            cylinder(d=8, h=wall, center=true);
+          }
+        }
+      }
+    }
+}
 
 module spec_cross(make_hole=true) {
   difference() {
@@ -35,20 +73,12 @@ module spec_cross(make_hole=true) {
                 }
               }
           }
+          holes_block(holes=false);
         }
         if(make_hole) {
           cube([block_sz_x-wall, block_sz_y-wall, wall], center=true);
         } else {
-          for(angle=[0, 90, 180, 270]) {
-            rotate([0, 0, angle]) {
-              translate([(block_sz_x-wall)/2-4, (block_sz_y-wall)/2-7.5, 0]) {
-                cylinder(d=8, h=wall, center=true);
-              }
-              translate([(block_sz_x-wall)/2-17, (block_sz_y-wall)/2-7.5, 0]) {
-                cylinder(d=8, h=wall, center=true);
-              }
-            }
-          }
+          holes_block();
         }
         for(xsgn=[-1,1]) {
           for(ysgn=[-1,1]) {
@@ -96,12 +126,14 @@ module stand() {
  
 rotate([180, 0, 0]) {
   translate([0, 0, (block_sz_z+wall)/2]) {
-    peltier_fan_holder();
+    //peltier_fan_holder();
   }
 }
 translate([0, 0, heat_block_cover_off_z+(block_sz_z+wall)/2]) {
-  heater_holder();
+//	scale([1, 1, 0.3]) {
+    heater_holder();
+//  }
 }
 translate([0, 0, (block_sz_z+wall)/2]) {
-  stand();
+  //stand();
 }
