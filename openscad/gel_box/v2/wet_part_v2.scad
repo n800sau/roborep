@@ -10,7 +10,7 @@ show_wireset_cover = 0;
 show_light_enclosure = 0;
 show_light_enclosure_lid = 0;
 show_pcb_panel = 0;
-show_cam_stand = 1;
+show_cam_stand = 0;
 
 // wire set type: "wire" or "carbon"
 wire_set_holder_type = "carbon";
@@ -139,7 +139,7 @@ module chamber() {
       translate([0, 0, comb_place_top_h]) {
         cube([glass_x, wet_y, height], center=true);
         // comb zone
-        for(i=[comb_start+1,0,comb_end-1]) {
+        for(i=[comb_start+1:1:comb_end-1]) {
           translate([i*istep, 0, -comb_place_h]) {
             cube([comb_place_sz_x, wet_y, height], center=true);
           }
