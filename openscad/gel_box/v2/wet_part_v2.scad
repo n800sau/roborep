@@ -7,105 +7,13 @@ show_wireset_carbon = 1;
 show_wireset_holder = 1;
 show_wireset_attach = 1;
 show_wireset_cover = 1;
-show_light_enclosure = 1;
-show_light_enclosure_lid = 1;
-show_pcb_panel = 1;
-
-// wire set type: "wire" or "carbon"
-wire_set_holder_type = "carbon";
-//wire_set_holder_type = "wire";
 
 use <ear.scad>
-use <led_pcb_holder.scad>
-//use <pcb_led_cvf.scad>
 use <threads.scad>
+include <const.scad>
 
 $fn=50;
 
-height = 20;
-
-glass_x = 100.8;
-glass_y = 82;
-glass_h = 2.7;
-wall = 3;
-
-pad_y = 2;
-wet_x = glass_x + 20;
-wet_y = glass_y + 10 + pad_y*2;
-
-wire_holder_z = 5;
-wire_holder_h_offset=-6;
-wire_hole_d = 2;
-
-istep = 10;
-
-//for comb (and bariers) places
-comb_place_top_h = wall+glass_h+15;
-comb_place_h = 5;
-comb_place_sz_x = 6;
-comb_places = 9;
-comb_start = -comb_places/2;
-comb_end = comb_places/2;
-
-chamber_h = comb_place_top_h;
-
-pad = 0.5;
-electrode_plate_x = 5;
-electrode_top_x = 6;
-electrode_plate_y = wet_y-pad*2;
-electrode_plate_bottom = 5;
-
-border_x = comb_place_sz_x-pad*2; // limited by gel box
-border_y = wall + 3;
-bolt_plate_x = 10;
-bolt_plate_y = wall;
-bolt_plate_z = 10;
-bolt_plate_case_base_y = 30+wall*2;
-
-// for comb
-comb_sz_x = comb_place_sz_x - 0.8;
-comb_h = comb_place_h;
-glass_tooth_gap = 1.5;
-comb_tooth_h = comb_place_top_h-comb_place_h-wall-glass_h-glass_tooth_gap;
-comb_well_sz_y = 5;
-comb_well_sz_x = 2;
-comb_handle_h = 3;
-comb_handle_sz_x = comb_sz_x - 1;
-
-barrier_h = comb_place_top_h-wall-glass_h+pad;
-barrier_thin_h = 10.5;
-barrier_thin_sz_x = 2.8;
-barrier_sz_x = comb_place_sz_x - 0.8;
-
-leg_h = 40;
-leg_sz_x = 20;
-leg_h_extra = 3;
-
-hole_d = 3.1;
-hole_through_d = 4;
-
-lenc_h = 30;
-lenc_sz_x = glass_x;
-lenc_sz_y = glass_y;
-lenc_led_hole = 20;
-lenc_led_hole_dist = 32;
-
-hole_x_pos_list = [17.5, 80, 100];
-
-carbon_h = 12;
-// carbon_wire_hole_d = 1.6 // for steel
-carbon_wire_hole_d = 1.1;
-
-carbon_d = carbon_wire_hole_d + 3;
-carbon_sz_x = 2;
-carbox_sz_y = glass_y-pad*2;
-//carbox_sz_y = 10;
-
-power_pcb_sz_x = 48.5;
-power_pcb_sz_y = 1.2;
-power_pcb_h = 24.2;
-
-stand_sz = 12;
 
 module top_hole(xpos=0, d) {
   hole_h = 50;
@@ -138,7 +46,7 @@ module chamber() {
       translate([0, 0, comb_place_top_h]) {
         cube([glass_x, wet_y, height], center=true);
         // comb zone
-        for(i=[comb_start+1:1:comb_end-1]) {
+        for(i=[comb_start+1,comb_start+2,comb_start+3,0,comb_end-3,comb_end-2,comb_end-1]) {
           translate([i*istep, 0, -comb_place_h]) {
             cube([comb_place_sz_x, wet_y, height], center=true);
           }
@@ -471,131 +379,6 @@ module leg() {
   }
 }
 
-module pcb_panel_holes(d) {
-  x_step = lenc_sz_x/4;
-  for(pos=[
-      [-3*x_step/2, lenc_h/4],
-      [3*x_step/2, lenc_h/4],
-      [-3*x_step/2, -lenc_h/4],
-      [3*x_step/2, -lenc_h/4]
-      ]) {
-    translate([pos[0], 0, pos[1]]) {
-      rotate([90, 0, 0]) {
-        cylinder(d=d, h=50, center=true);
-      }
-    }
-  }
-}
-
-module light_enclosure() {
-  difference() {
-    union() {
-      cube([lenc_sz_x-pad*2, lenc_sz_y-pad*2, lenc_h], center=true);
-      // attachment to chamber
-      for(x_p=[[-1, 1, 1], [1, 1, 1], [-1, 2, 0], [1, 2, 0]]) {
-        rotate([0, 0, x_p[2]*180])
-        translate([x_p[0]*(hole_x_pos_list[x_p[1]]-wet_x)/2, (wet_y/2+wall)/2, (lenc_h-wall)/2]) {
-          cube([10, wet_y/2+wall, wall], center=true);
-        }
-      }
-      // holes for bottom lid
-      for(pos=[
-        [-1, 1, 0],
-        [-1, -1, 0],
-        [1, 1, 180],
-        [1, -1, 180]
-          ]) {
-        translate([pos[0]*(lenc_sz_x/2-pad), pos[1]*(lenc_sz_y/2-10), -lenc_h/2]) {
-          rotate([180, 0, pos[2]]) {
-            bolt_hole_cone(wall_extra=0, height_extra=5);
-          }
-        }
-      }
-      // holes for wires
-      for(x_sgn=[-1, 1]) {
-        translate([x_sgn * (lenc_sz_x/2), 0, lenc_h/2-5]) {
-          rotate([90, 0, 0]) {
-            difference() {
-              cylinder(d=5+4, h=wall, center=true);
-              cylinder(d=5, h=wall, center=true);
-            }
-          }
-        }
-      }
-    }
-    cube([lenc_sz_x-wall*2, lenc_sz_y-wall*2, lenc_h], center=true);
-    translate([0, -lenc_sz_y/2, 0]) {
-      pcb_panel_holes(d=hole_d);
-    }
-    x_step = lenc_sz_x/4;
-    for(pos=[
-        [-3*x_step/2, lenc_h/4],
-        [3*x_step/2, lenc_h/4],
-        [-3*x_step/2, -lenc_h/4],
-        [3*x_step/2, -lenc_h/4]
-        ]) {
-      translate([pos[0], -lenc_sz_y/2, pos[1]]) {
-        rotate([90, 0, 0]) {
-          cylinder(d=hole_d, h=50, center=true);
-        }
-      }
-    }
-  }
-}
-
-module light_enclosure_lid() {
-  cube([lenc_sz_x-pad*2, lenc_sz_y-pad*2, wall], center=true);
-      // holes for bottom lid
-      for(pos=[
-        [-1, 1, 0],
-        [-1, -1, 0],
-        [1, 1, 180],
-        [1, -1, 180]
-          ]) {
-        translate([pos[0]*(lenc_sz_x/2-pad-0.4), pos[1]*(lenc_sz_y/2-10), -wall/2]) {
-          rotate([180, 0, pos[2]]) {
-            bolt_hole_cone(wall_extra=0, height_extra=0, hole_d=4);
-          }
-        }
-      }
-}
-
-module pcb_panel() {
-  difference() {
-    union() {
-      cube([lenc_sz_x-12, wall, lenc_h], center=true);
-      %translate([7, -7, 0]) {
-        //cube([power_pcb_sz_x, power_pcb_sz_y, power_pcb_h], center=true);
-      }
-      translate([-18, -0.3, (-lenc_h+wall)/2]) {
-        rotate([90, 0, 0]) {
-          pcb_led_cvf();
-        }
-      }
-    }
-    pcb_panel_holes(d=hole_through_d);
-    // power hole
-    translate([-28, 0, 0]) {
-      rotate([90, 0, 0]) {
-        cylinder(d=8.8, h=50 , center=true);
-      }
-    }
-    // wire hole
-    for(sgn=[-1,1]) {
-      translate([-21, 0, sgn*9]) {
-        rotate([90, 0, 0]) {
-          cylinder(d=5, h=50 , center=true);
-        }
-      }
-    }
-    translate([35, 0, 0]) {
-      rotate([90, 0, 0]) {
-        cylinder(d=5, h=50 , center=true);
-      }
-    }
-  }
-}
-
 //------------------------------------------------------
 // main show
 //------------------------------------------------------
@@ -622,39 +405,6 @@ if(show_leg) {
     holes_through(d=hole_through_d);
   }
 }
-
-if(show_pcb_panel) {
-  color("green") {
-    translate([0, (-lenc_sz_y-wall)/2-stand_sz, -(lenc_h+chamber_h)/2]) {
-      pcb_panel();
-    }
-  }
-}
-
-if(show_light_enclosure) {
-  color("orange")
-    difference() {
-      translate([0, 0, -(lenc_h+chamber_h)/2]) {
-        light_enclosure();
-      }
-      holes_through(d=hole_through_d);
-    }
-    %translate([25, lenc_sz_y/2+10, -lenc_h/2-11]) {
-      rotate([90, 30, 0]) {
-        led_pcb_holder();
-      }
-    }
-}
-
-if(show_light_enclosure_lid) {
-  color("brown")
-    difference() {
-      translate([0, 0, -(lenc_h+(chamber_h+wall)/2+1)]) {
-        light_enclosure_lid();
-      }
-    }
-}
-
 
 if(show_comb)
   color("brown")
