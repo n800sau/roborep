@@ -1,16 +1,15 @@
 // to show stuff
 show_chamber = 1;
-show_leg = 0;
-show_comb = 0;
-show_barrier = 0;
-show_wireset_carbon = 0;
-show_wireset_holder = 0;
-show_wireset_attach = 0;
-show_wireset_cover = 0;
+show_leg = 1;
+show_comb = 1;
+show_barrier = 1;
+show_wireset_carbon = 1;
+show_wireset_holder = 1;
+show_wireset_attach = 1;
+show_wireset_cover = 1;
 show_light_enclosure = 0;
 show_light_enclosure_lid = 0;
 show_pcb_panel = 0;
-show_cam_stand = 0;
 
 // wire set type: "wire" or "carbon"
 wire_set_holder_type = "carbon";
@@ -597,50 +596,12 @@ module pcb_panel() {
   }
 }
 
-module cam_stand() {
-	h = 100;
-	x_sz = 30;
-	holder_x_sz = 90;
-	holder_y_sz = 50;
-	holder_h = 10;
-	translate([0, 0, 0]) {
-    for(side=[-1,1]) {
-      translate([0, side * ((wet_y+wall)/2+6+pad), 0]) {
-        cube([x_sz, 8, height], center=true);
-		translate([0, side * (8/2-10), -height/2-wall]) {
-	        cube([x_sz, 20, wall], center=true);
-		}
-        translate([0, 0, 0]) {
-metric_thread (diameter=8, pitch=1, length=h-height-pad);
-        }
-      }
-    }
-  }
-	translate([0, 0, h]) {
-		difference() {
-			union() {
-				cube([x_sz, wet_y+wall*4, wall], center=true);
-				cube([holder_x_sz+wall*2, holder_y_sz+wall*2, holder_h+wall], center=true);
-			}
-			translate([0, 0, wall]) {
-				cube([holder_x_sz, holder_y_sz, holder_h], center=true);
-			}
-			// hole for camera
-			cylinder(d=10, h=20, center=true);
-		}
-	}
-}
-
+//------------------------------------------------------
+// main show
 //------------------------------------------------------
 
 if(show_chamber) {
   chamber();
-}
-if(show_cam_stand) {
-  difference() {
-    cam_stand();
-    holes_through(d=hole_through_d);
-  }
 }
 if(show_leg) {
   difference() {
