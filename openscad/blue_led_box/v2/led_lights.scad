@@ -153,13 +153,16 @@ module stepdown_holder() {
 			translate([0, 0, -stepdown_holder_sz_z/2]) {
 				cube([stepdown_holder_sz_x+2*wall, stepdown_holder_sz_y+2*wall, wall], center=true);
 			}
-			translate([-25, -40 , -stepdown_holder_sz_z/2]) {
-				pcb_led_cvf(
-					pcb_width = stepdown_pcb_sz_x,
-					pcb_length = stepdown_pcb_sz_y,
-					pcb_height = stepdown_pcb_sz_z,
-					add_tabs = false
-				);
+//			translate([-25, -40 , -stepdown_holder_sz_z/2+stepdown_pcb_sz_y/2]) {
+			translate([-25, -20 , -stepdown_holder_sz_z/2]) {
+				rotate([90, 0, 90]) {
+					pcb_led_cvf(
+						pcb_width = stepdown_pcb_sz_x,
+						pcb_length = stepdown_pcb_sz_y,
+						pcb_height = stepdown_pcb_sz_z,
+						add_tabs = false
+					);
+				}
 			}
 		}
 		ear_holes(d=hole_d_through);
@@ -291,7 +294,7 @@ difference() {
 translate([0, 0, acryl_holder_sz_z]) {
 //	acryl_holder();
 }
-led_holder_plate();
+//led_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
-//	stepdown_holder();
+	stepdown_holder();
 }
