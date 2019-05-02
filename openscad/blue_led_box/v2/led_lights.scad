@@ -30,9 +30,9 @@ stepdown_pcb_sz_x = 48.1;
 stepdown_pcb_sz_y = 24;
 stepdown_pcb_sz_z = 1.1;
 
-stepdown_holder_sz_x = led_holder_plate_sz_x - 2 * holder_skirt_sz;
-stepdown_holder_sz_y = led_holder_plate_sz_y - 2 * holder_skirt_sz;
-stepdown_holder_sz_z = 27;
+stepdown_holder_sz_x = led_holder_plate_sz_x - 2 * holder_skirt_sz + 2 * wall;
+stepdown_holder_sz_y = led_holder_plate_sz_y - 2 * holder_skirt_sz + 2 * wall;
+stepdown_holder_sz_z = 37;
 stepdown_holder_holes_z = 1.5+wall;
 
 power12_d = 8.4;
@@ -48,19 +48,19 @@ acryl_holder_sz_z = 30;
 
 module a_led_holder() {
 	difference() {
-    cylinder(d=led_leg_encircle+2*led_holder_wall, h=led_holder_sz_z, center=true);
-    difference() {
-      cylinder(d=led_leg_encircle, h=led_holder_sz_z+100, center=true);
-      cube([1, led_leg_encircle+2*led_holder_wall, led_holder_sz_z], center=true);
-    }
+		cylinder(d=led_leg_encircle+2*led_holder_wall, h=led_holder_sz_z, center=true);
+		difference() {
+			cylinder(d=led_leg_encircle, h=led_holder_sz_z+100, center=true);
+			cube([1, led_leg_encircle+2*led_holder_wall, led_holder_sz_z], center=true);
+		}
 	}
 }
 
 module a_led_hole() {
-    difference() {
-      cylinder(d=led_leg_encircle, h=led_holder_sz_z+100, center=true);
-      cube([1, led_leg_encircle, led_holder_sz_z+100], center=true);
-    }
+		difference() {
+			cylinder(d=led_leg_encircle, h=led_holder_sz_z+100, center=true);
+			cube([1, led_leg_encircle, led_holder_sz_z+100], center=true);
+		}
 }
 
 module switch_holes() {
@@ -74,28 +74,28 @@ module switch_holes() {
 }
 
 module ear(base_dist, height, d=3, cone=false) {
-	bolt_hole_cone_center(base_dist=base_dist, hole_d=3, hole_wall=3, height=height, hole_height=cone ? height/2 : height);
+	bolt_hole_cone_center(base_dist=base_dist, hole_d=d, hole_wall=3, height=height, hole_height=cone ? height/2 : height);
 }
 
 module ear_holes(d, h=50, base_dist=3, ear_mode=false, cone=false, height=7) {
 	for(xsgn=[-1, 1]) {
 		for(ysgn=[-1, 1]) {
-      translate([xsgn*(led_holder_plate_sz_x-holder_skirt_sz)/2, ysgn*(led_holder_plate_sz_y-holder_skirt_sz)/2, 0]) {
-        if(ear_mode) {
-          angle = cone ?
-            (xsgn > 0 ? 
-              (
-                (ysgn > 0) ? -135 : 135
-              ) :
-                (ysgn > 0) ? -45 : 45
-            ) :
-            (xsgn > 0 ? 0 : 180);
-          rotate([cone ? 0 : 180, 0, angle]) {
-            ear(base_dist=base_dist, height=height, d=d, cone=cone);
-          }
-        } else {
-          cylinder(d=d, h=h, center=true);
-        }
+			translate([xsgn*(led_holder_plate_sz_x-holder_skirt_sz)/2, ysgn*(led_holder_plate_sz_y-holder_skirt_sz)/2, 0]) {
+				if(ear_mode) {
+					angle = cone ?
+						(xsgn > 0 ? 
+							(
+								(ysgn > 0) ? -135 : 135
+							) :
+								(ysgn > 0) ? -45 : 45
+						) :
+						(xsgn > 0 ? 0 : 180);
+					rotate([cone ? 0 : 180, 0, angle]) {
+						ear(base_dist=base_dist, height=height, d=d, cone=cone);
+					}
+				} else {
+					cylinder(d=d, h=h, center=true);
+				}
 			}
 		}
 	}
@@ -104,16 +104,16 @@ module ear_holes(d, h=50, base_dist=3, ear_mode=false, cone=false, height=7) {
 module led_holder_plate() {
 	difference() {
 		union() {
-      difference() {
-        cube([led_holder_plate_sz_x, led_holder_plate_sz_y, led_holder_plate_sz_z], center=true);
-        for(x=[0:led_count_x-1]) {
-          for(y=[0:led_count_y-1]) {
-            translate([-led_holder_plate_sz_x/2+holder_skirt_sz+x*led_step_x+led_step_x/2, -led_holder_plate_sz_y/2+holder_skirt_sz+y*led_step_y+led_step_y/2, (led_holder_sz_z+led_holder_plate_sz_z)/2]) {
-              a_led_hole();
-            }
-          }
-        }
-      }
+			difference() {
+				cube([led_holder_plate_sz_x, led_holder_plate_sz_y, led_holder_plate_sz_z], center=true);
+				for(x=[0:led_count_x-1]) {
+					for(y=[0:led_count_y-1]) {
+						translate([-led_holder_plate_sz_x/2+holder_skirt_sz+x*led_step_x+led_step_x/2, -led_holder_plate_sz_y/2+holder_skirt_sz+y*led_step_y+led_step_y/2, (led_holder_sz_z+led_holder_plate_sz_z)/2]) {
+							a_led_hole();
+						}
+					}
+				}
+			}
 			for(x=[0:led_count_x-1]) {
 				for(y=[0:led_count_y-1]) {
 					translate([-led_holder_plate_sz_x/2+holder_skirt_sz+x*led_step_x+led_step_x/2, -led_holder_plate_sz_y/2+holder_skirt_sz+y*led_step_y+led_step_y/2, (led_holder_sz_z+led_holder_plate_sz_z)/2]) {
@@ -132,13 +132,20 @@ module stepdown_holder() {
 			for(ysgn=[-1,1]) {
 				// long ends
 				translate([0, ysgn*(stepdown_holder_sz_y+wall)/2, 0]) {
-					cube([stepdown_holder_sz_x, wall, stepdown_holder_sz_z], center=true);
+					cube([stepdown_holder_sz_x-6, wall, stepdown_holder_sz_z], center=true);
 				}
 			}
 			for(xsgn=[-1,1]) {
 				// short ends
 				translate([xsgn*(stepdown_holder_sz_x+wall)/2, 0, 0]) {
-					cube([wall, stepdown_holder_sz_y+2*wall, stepdown_holder_sz_z], center=true);
+					cube([wall, stepdown_holder_sz_y-6, stepdown_holder_sz_z], center=true);
+					translate([0, stepdown_holder_sz_y/2, 0]) {
+						for(angle=[45,-45]) {
+							rotate([0, 0, xsgn*angle]) {
+								cube([wall, 10, stepdown_holder_sz_z], center=true);
+							}
+						}
+					}
 				}
 			}
 			translate([0, 0, -stepdown_holder_sz_z/2]) {
@@ -166,18 +173,18 @@ module stepdown_holder() {
 				switch_holes();
 			}
 		}
-    // holes to adjust current
-    for(xpos=[-23+12.5/*+33.5, 0, 20*/]) {
-      translate([xpos, -stepdown_holder_sz_y/2+10, -stepdown_holder_sz_z/2+stepdown_holder_holes_z]) {
-        rotate([90, 0, 0]) {
-          cylinder(d=6, h=20);
-        }
-      }
+		// holes to adjust current
+		for(xpos=[-23+12.5/*+33.5, 0, 20*/]) {
+			translate([xpos, -stepdown_holder_sz_y/2+10, -stepdown_holder_sz_z/2+stepdown_holder_holes_z]) {
+				rotate([90, 0, 0]) {
+					cylinder(d=6, h=20);
+				}
+			}
 		}
 	}
-  translate([0, 0, stepdown_holder_sz_z/2]) {
+	translate([0, 0, stepdown_holder_sz_z/2]) {
 		ear_holes(d=hole_d_through, ear_mode=true, base_dist=2.5, cone=true, height=10);
-  }
+	}
 }
 
 module acryl_holder() {
@@ -294,12 +301,9 @@ difference() {
 translate([0, 0, acryl_holder_sz_z]) {
 //	acryl_holder();
 }
-led_holder_plate();
+//led_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
-  difference() {
-//	stepdown_holder();
-    translate([0, 33, 0]) {
-//      cube([100, 100, 100], center=true);
-    }
-  }
+	difference() {
+	stepdown_holder();
+	}
 }
