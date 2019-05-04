@@ -214,8 +214,8 @@ module acryl_holder() {
 				// long ends
 				translate([0, ysgn*(acryl_holder_sz_y+wall)/2, 0]) {
 					cube([acryl_holder_sz_x+2*wall, wall, acryl_holder_sz_z], center=true);
-					translate([0, -ysgn*wall, -acryl_sz_z/2]) {
-						cube([acryl_holder_sz_x+2*wall, wall, acryl_holder_sz_z-acryl_sz_z], center=true);
+					translate([0, -ysgn*wall, -(wall+acryl_sz_z)/2]) {
+						cube([acryl_holder_sz_x+2*wall, wall, acryl_holder_sz_z-acryl_sz_z-wall], center=true);
 					}
 					translate([0, -ysgn*(acryl_holder_sz_y-stepdown_holder_sz_y)/4, -(acryl_holder_sz_z-wall)/2]) {
 						cube([acryl_holder_sz_x+2*wall, (acryl_holder_sz_y-stepdown_holder_sz_y)/2, wall], center=true);
@@ -226,8 +226,8 @@ module acryl_holder() {
 				// short ends
 				translate([xsgn*(acryl_holder_sz_x+wall)/2, 0, 0]) {
 					cube([wall, acryl_holder_sz_y+2*wall, acryl_holder_sz_z], center=true);
-					translate([-xsgn*wall, 0, -acryl_sz_z/2]) {
-						cube([wall, acryl_holder_sz_y+2*wall, acryl_holder_sz_z-acryl_sz_z], center=true);
+					translate([-xsgn*wall, 0, -(wall+acryl_sz_z)/2]) {
+						cube([wall, acryl_holder_sz_y+2*wall, acryl_holder_sz_z-acryl_sz_z-wall], center=true);
 					}
 					translate([-xsgn*(acryl_holder_sz_x-stepdown_holder_sz_x)/4, 0, -(acryl_holder_sz_z-wall)/2]) {
 						cube([(acryl_holder_sz_x-stepdown_holder_sz_x)/2, acryl_holder_sz_y+2*wall, wall], center=true);
@@ -239,8 +239,18 @@ module acryl_holder() {
 			}
 		}
 		ear_holes(d=hole_d);
+    // side holes
+    for(ysgn=[-1,1]) {
+      for(xsgn=[-1,1]) {
+        translate([xsgn*(acryl_holder_sz_y-30)/2, ysgn*(acryl_holder_sz_y+wall)/2, acryl_holder_sz_z/2-wall-acryl_sz_z-5]) {
+          rotate([90, 0, 0]) {
+            cylinder(d=hole_d_through, h=10, center=true);
+          }
+        }
+      }
+    }
 	}
-	translate([0, 0, -(acryl_holder_sz_z-acryl_sz_z)/2]) {
+	translate([0, 0, (-acryl_holder_sz_z+wall-wall)/2]) {
 		ear_holes(d=hole_d, ear_mode=true, height=acryl_holder_sz_z-acryl_sz_z-wall);
 	}
 }
@@ -276,7 +286,7 @@ module top_cover() {
       }
     }
     cube([led_total_sz_x, led_total_sz_y, wall], center=true);
-		ear_holes(d=hole_d_through);
+    ear_holes(d=hole_d_through);
   }
 }
 
@@ -355,9 +365,9 @@ difference() {
 
 translate([0, 0, acryl_holder_sz_z]) {
   translate([0, 0, acryl_holder_sz_z/2+2]) {
-    top_cover();
+  //  top_cover();
   }
-	//acryl_holder();
+	acryl_holder();
 }
 //led_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
