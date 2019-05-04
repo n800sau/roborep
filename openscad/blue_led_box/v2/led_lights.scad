@@ -22,8 +22,10 @@ led_leg_encircle = 3.1;
 led_holder_wall = 1;
 
 holder_skirt_sz = 8;
-led_holder_plate_sz_x = led_step_x * led_count_x + 2 * holder_skirt_sz;
-led_holder_plate_sz_y = led_step_y * led_count_y + 2 * holder_skirt_sz;
+led_total_sz_x = led_step_x * led_count_x;
+led_total_sz_y = led_step_y * led_count_y;
+led_holder_plate_sz_x = led_total_sz_x + 2 * holder_skirt_sz;
+led_holder_plate_sz_y = led_total_sz_y + 2 * holder_skirt_sz;
 led_holder_plate_sz_z = wall;
 
 stepdown_pcb_sz_x = 48.1;
@@ -44,7 +46,12 @@ acryl_sz_z = 3.2;
 acryl_gap = 0.5;
 acryl_holder_sz_x = max(led_holder_plate_sz_x, acryl_sz_x + acryl_gap);
 acryl_holder_sz_y = max(led_holder_plate_sz_y, acryl_sz_y + acryl_gap);
-acryl_holder_sz_z = 30;
+acryl_holder_sz_z = 40;
+
+top_cover_ear_sz_x = 10;
+top_cover_ear_sz_y = 3;
+top_cover_ear_sz_z = 20;
+top_cover_ear_hole_d = 4.5;
 
 module a_led_holder() {
 	difference() {
@@ -139,11 +146,11 @@ module stepdown_holder() {
 				// short ends
 				translate([xsgn*(stepdown_holder_sz_x+wall)/2, 0, 0]) {
 					cube([wall, stepdown_holder_sz_y-6, stepdown_holder_sz_z], center=true);
-					translate([0, stepdown_holder_sz_y/2, 0]) {
-						for(angle=[45,-45]) {
-							rotate([0, 0, xsgn*angle]) {
-								cube([wall, 10, stepdown_holder_sz_z], center=true);
-							}
+          for(yside=[-1,1]) {
+            translate([-xsgn*3, yside*(stepdown_holder_sz_y/2-2), 0]) {
+              rotate([0, 0, xsgn*yside*45]) {
+                cube([wall, 9, stepdown_holder_sz_z], center=true);
+              }
 						}
 					}
 				}
@@ -162,6 +169,19 @@ module stepdown_holder() {
 				}
 			}
 		}
+			for(xsgn=[-1,1]) {
+				// short ends
+				translate([xsgn*(stepdown_holder_sz_x+wall)/2, 0, -9]) {
+          for(yside=[-1,1]) {
+            translate([xsgn*2, yside*(stepdown_holder_sz_y/2+1), 0]) {
+              rotate([0, 0, xsgn*yside*45]) {
+                cube([10, 20, stepdown_holder_sz_z], center=true);
+              }
+						}
+					}
+				}
+			}
+    
 		// 12v power hole
 		translate([-19, stepdown_holder_sz_y-25, 0]) {
 			rotate([90, 0, 0]) {
@@ -183,7 +203,7 @@ module stepdown_holder() {
 		}
 	}
 	translate([0, 0, stepdown_holder_sz_z/2]) {
-		ear_holes(d=hole_d_through, ear_mode=true, base_dist=2.5, cone=true, height=10);
+		ear_holes(d=hole_d_through, ear_mode=true, base_dist=1, cone=true, height=10);
 	}
 }
 
@@ -223,6 +243,41 @@ module acryl_holder() {
 	translate([0, 0, -(acryl_holder_sz_z-acryl_sz_z)/2]) {
 		ear_holes(d=hole_d, ear_mode=true, height=acryl_holder_sz_z-acryl_sz_z-wall);
 	}
+}
+
+module top_cover() {
+  difference() {
+    union() {
+      translate([top_cover_ear_sz_x/2, 0, 0]) {
+        cube([acryl_holder_sz_x+2*wall+top_cover_ear_sz_x, acryl_holder_sz_y+2*wall, wall], center=true);
+      }
+      translate([top_cover_ear_sz_x, 0, top_cover_ear_sz_z/2]) {
+        for(ysgn=[-1,1]) {
+          translate([(acryl_holder_sz_x-top_cover_ear_sz_x)/2+wall, ysgn*(acryl_holder_sz_y+2*wall-top_cover_ear_sz_y)/2, 0]) {
+            for(yoff=[0, -3*top_cover_ear_sz_y]) {
+              translate([0, ysgn*yoff, 0]) {
+                difference() {
+                  union() {
+                    translate([0, 0, -top_cover_ear_sz_z/4]) {
+                      cube([top_cover_ear_sz_x, top_cover_ear_sz_y, top_cover_ear_sz_z/2], center=true);
+                    }
+                    rotate([90, 0, 0]) {
+                      cylinder(d=top_cover_ear_sz_x, h=top_cover_ear_sz_y, center=true);
+                    }
+                  }
+                  rotate([90, 0, 0]) {
+                    cylinder(d=top_cover_ear_hole_d, h=top_cover_ear_sz_y, center=true);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    cube([led_total_sz_x, led_total_sz_y, wall], center=true);
+		ear_holes(d=hole_d_through);
+  }
 }
 
 module diffuser(x_count, y_count, step_x, step_y) {
@@ -299,11 +354,12 @@ difference() {
 }
 
 translate([0, 0, acryl_holder_sz_z]) {
-//	acryl_holder();
+  translate([0, 0, acryl_holder_sz_z/2+2]) {
+    top_cover();
+  }
+	//acryl_holder();
 }
 //led_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
-	difference() {
-	stepdown_holder();
-	}
+//	stepdown_holder();
 }
