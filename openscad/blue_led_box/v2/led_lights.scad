@@ -5,6 +5,7 @@ use <../../lib/pcb_led_cvf.scad>
 use <../../lib/ear.scad>
 
 wall = 2;
+gap = 0.5;
 hole_d = 3.2;
 hole_d_through = 4;
 
@@ -290,6 +291,14 @@ module top_cover() {
   }
 }
 
+module mask_plate() {
+  difference() {
+    cube([acryl_holder_sz_x-gap, acryl_holder_sz_y-gap, wall], center=true);
+    cube([led_total_sz_x, led_total_sz_y, wall], center=true);
+    ear_holes(d=hole_d_through);
+  }
+}
+
 module diffuser(x_count, y_count, step_x, step_y) {
 	sz_x = x_count*step_x;
 	sz_y = y_count*step_y;
@@ -366,8 +375,9 @@ difference() {
 translate([0, 0, acryl_holder_sz_z]) {
   translate([0, 0, acryl_holder_sz_z/2+2]) {
   //  top_cover();
+    mask_plate();
   }
-	acryl_holder();
+//	acryl_holder();
 }
 //led_holder_plate();
 translate([0, 0, -stepdown_holder_sz_z]) {
