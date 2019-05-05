@@ -1,11 +1,18 @@
-$fn = 10;
+show_side_plates = 0;
+show_mask_plate = 1;
+show_acryl_holder = 0;
+show_led_holder_plate = 0;
+show_stepdown_holder = 0;
+
+$fn = 20;
 
 use <MCAD/2Dshapes.scad>
 use <../../lib/pcb_led_cvf.scad>
 use <../../lib/ear.scad>
 
 wall = 2;
-gap = 0.5;
+gap = 0.25;
+gaps = 2 * gap;
 hole_d = 3.2;
 hole_d_through = 4;
 
@@ -51,7 +58,9 @@ acryl_holder_sz_z = 40;
 
 top_cover_ear_sz_x = 10;
 top_cover_ear_sz_y = 3;
-top_cover_ear_sz_z = 20;
+top_cover_ear_sz_z = 40;
+top_cover_ear_below_sz_z = 14;
+top_cover_ear_sideplate_sz_z = 10;
 top_cover_ear_hole_d = 4.5;
 
 module a_led_holder() {
@@ -208,6 +217,18 @@ module stepdown_holder() {
 	}
 }
 
+module side_holes() {
+  for(ysgn=[-1,1]) {
+    for(xsgn=[-1,1]) {
+      translate([xsgn*(acryl_holder_sz_y-30)/2, ysgn*(acryl_holder_sz_y+wall)/2, acryl_holder_sz_z/2-wall-acryl_sz_z-5]) {
+        rotate([90, 0, 0]) {
+          cylinder(d=hole_d_through, h=10, center=true);
+        }
+      }
+    }
+  }
+}
+
 module acryl_holder() {
 	difference() {
 		union() {
@@ -241,36 +262,39 @@ module acryl_holder() {
 		}
 		ear_holes(d=hole_d);
     // side holes
-    for(ysgn=[-1,1]) {
-      for(xsgn=[-1,1]) {
-        translate([xsgn*(acryl_holder_sz_y-30)/2, ysgn*(acryl_holder_sz_y+wall)/2, acryl_holder_sz_z/2-wall-acryl_sz_z-5]) {
-          rotate([90, 0, 0]) {
-            cylinder(d=hole_d_through, h=10, center=true);
-          }
-        }
-      }
-    }
+    side_holes();
 	}
 	translate([0, 0, (-acryl_holder_sz_z+wall-wall)/2]) {
 		ear_holes(d=hole_d, ear_mode=true, height=acryl_holder_sz_z-acryl_sz_z-wall);
 	}
 }
 
-module top_cover() {
+module side_plates() {
   difference() {
     union() {
-      translate([top_cover_ear_sz_x/2, 0, 0]) {
-        cube([acryl_holder_sz_x+2*wall+top_cover_ear_sz_x, acryl_holder_sz_y+2*wall, wall], center=true);
+      translate([(acryl_holder_sz_x+top_cover_ear_sz_x)/2+wall+gap, 0, acryl_holder_sz_z/2-top_cover_ear_below_sz_z]) {
+        cube([top_cover_ear_sz_x, acryl_holder_sz_y+2*top_cover_ear_sz_y+gaps+2*wall, wall], center=true);
       }
-      translate([top_cover_ear_sz_x, 0, top_cover_ear_sz_z/2]) {
+      translate([top_cover_ear_sz_x, 0, acryl_holder_sz_z-top_cover_ear_below_sz_z]) {
         for(ysgn=[-1,1]) {
-          translate([(acryl_holder_sz_x-top_cover_ear_sz_x)/2+wall, ysgn*(acryl_holder_sz_y+2*wall-top_cover_ear_sz_y)/2, 0]) {
+          translate([(acryl_holder_sz_x-top_cover_ear_sz_x)/2+wall, ysgn*(acryl_holder_sz_y+2*wall+2*top_cover_ear_sz_y+gaps-top_cover_ear_sz_y)/2, 0]) {
             for(yoff=[0, -3*top_cover_ear_sz_y]) {
               translate([0, ysgn*yoff, 0]) {
                 difference() {
                   union() {
                     translate([0, 0, -top_cover_ear_sz_z/4]) {
                       cube([top_cover_ear_sz_x, top_cover_ear_sz_y, top_cover_ear_sz_z/2], center=true);
+                    }
+                    if(yoff==0) {
+                      // side panel
+                      translate([(top_cover_ear_sz_x-acryl_holder_sz_x)/2-wall, 0, (top_cover_ear_sideplate_sz_z-top_cover_ear_sz_z-wall)/2]) {
+                        cube([acryl_holder_sz_x-10, top_cover_ear_sz_y, top_cover_ear_sideplate_sz_z], center=true);
+                        translate([(-acryl_holder_sz_x+10+wall)/2, 0, 0]) {
+                          rotate([90, 0, 0]) {
+                            cylinder(d=top_cover_ear_sideplate_sz_z, h=top_cover_ear_sz_y, center=true);
+                          }
+                        }
+                      }
                     }
                     rotate([90, 0, 0]) {
                       cylinder(d=top_cover_ear_sz_x, h=top_cover_ear_sz_y, center=true);
@@ -286,14 +310,13 @@ module top_cover() {
         }
       }
     }
-    cube([led_total_sz_x, led_total_sz_y, wall], center=true);
-    ear_holes(d=hole_d_through);
+    side_holes();
   }
 }
 
 module mask_plate() {
   difference() {
-    cube([acryl_holder_sz_x-gap, acryl_holder_sz_y-gap, wall], center=true);
+    cube([acryl_holder_sz_x-gaps, acryl_holder_sz_y-gaps, wall], center=true);
     cube([led_total_sz_x, led_total_sz_y, wall], center=true);
     ear_holes(d=hole_d_through);
   }
@@ -373,13 +396,23 @@ difference() {
 }
 
 translate([0, 0, acryl_holder_sz_z]) {
-  translate([0, 0, acryl_holder_sz_z/2+2]) {
-  //  top_cover();
-    mask_plate();
+  if(show_side_plates) {
+    side_plates();
   }
-//	acryl_holder();
+  translate([0, 0, (acryl_holder_sz_z-wall-acryl_sz_z)/2]) {
+    if(show_mask_plate) {
+      mask_plate();
+    }
+  }
+  if(show_acryl_holder) {
+    acryl_holder();
+  }
 }
-//led_holder_plate();
+if(show_led_holder_plate) {
+  led_holder_plate();
+}
 translate([0, 0, -stepdown_holder_sz_z]) {
-//	stepdown_holder();
+  if(show_stepdown_holder) {
+    stepdown_holder();
+  }
 }
