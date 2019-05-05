@@ -1,5 +1,5 @@
-show_side_plates = 0;
-show_mask_plate = 1;
+show_side_plates = 1;
+show_mask_plate = 0;
 show_acryl_holder = 0;
 show_led_holder_plate = 0;
 show_stepdown_holder = 0;
@@ -217,12 +217,12 @@ module stepdown_holder() {
 	}
 }
 
-module side_holes() {
+module side_holes(d=hole_d_through) {
   for(ysgn=[-1,1]) {
     for(xsgn=[-1,1]) {
       translate([xsgn*(acryl_holder_sz_y-30)/2, ysgn*(acryl_holder_sz_y+wall)/2, acryl_holder_sz_z/2-wall-acryl_sz_z-5]) {
         rotate([90, 0, 0]) {
-          cylinder(d=hole_d_through, h=10, center=true);
+          cylinder(d=d, h=10, center=true);
         }
       }
     }
@@ -262,7 +262,7 @@ module acryl_holder() {
 		}
 		ear_holes(d=hole_d);
     // side holes
-    side_holes();
+    side_holes(d=hole_d);
 	}
 	translate([0, 0, (-acryl_holder_sz_z+wall-wall)/2]) {
 		ear_holes(d=hole_d, ear_mode=true, height=acryl_holder_sz_z-acryl_sz_z-wall);
