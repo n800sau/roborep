@@ -6,6 +6,7 @@ from datetime import datetime
 from ftplib import FTP, all_errors
 from credential import cred
 
+# no test for existing files on FTP
 
 SRCDPATH = '/var/lib/motion'
 
@@ -15,7 +16,9 @@ BASE_DNAME = 'rus_hard/garage'
 pathlist = None
 while True:
 	try:
+		print 'Collecting files..'
 		flist =[fname for fname in glob.glob(os.path.join(SRCDPATH, '*.*')) if os.path.splitext(fname)[1] in ('.avi', '.jpg')]
+		print '%d found' % len(flist)
 		if len(flist) > 0:
 			ftp_h = FTP('192.168.1.1')
 			try:
