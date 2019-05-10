@@ -1,0 +1,3 @@
+#!/bin/sh
+
+find /var/lib/motion/ -mtime +6 -type f -delete
