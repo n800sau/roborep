@@ -24,7 +24,8 @@ while True:
 			try:
 				ftp_h.login('writer', cred['writer@192.168.1.1'])
 				ftp_h.cwd(BASE_DNAME)
-				for fname in flist:
+				# to start from the most fresh files
+				for fname in sorted(flist, reverse=True):
 					if os.path.isfile(fname):
 						bname = os.path.basename(fname)
 						m = reg.match(bname)
