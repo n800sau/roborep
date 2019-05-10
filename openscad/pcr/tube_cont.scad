@@ -92,4 +92,7 @@ module tube_container() {
 difference() {
   tube_container();
   pcr_tube();
+  translate([4.5, -4.5, 0]) {
+    cylinder(d=1.5, h=80, center=true);
+  }
 }
