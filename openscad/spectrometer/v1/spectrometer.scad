@@ -32,8 +32,8 @@ cam_hole_dist_y = 21;
 cam_hole_dist_z = 12;
 cam_hole_d = 2.5;
 
-cam_wire_sz_z = 1;
-cam_wire_sz_y = 16;
+cam_wire_sz_z = 5;
+cam_wire_sz_y = 18;
 
 middle_insert_hole_sz_x = wall + gap;
 middle_wall_offset = wall + 17 + wall + middle_insert_hole_sz_x/2;
@@ -136,11 +136,20 @@ module cam_holder() {
   difference() {
     translate([-(box_sz_x-wall)/2+cam_wall_offset-2*wall-cam_pcb_sz_x-7, 0, 0]) {
       difference() {
-        rotate([0, -cam_wall_angle, 0]) {
-          difference() {
-            cube([wall, box_sz_y-2*wall, cam_wall_sz_z-2*wall], center=true);
-            translate([0, 0, -cam_wall_sz_z/2+2*wall]) {
-              cube([wall, cam_wire_sz_y, cam_wire_sz_z], center=true);
+        union() {
+          rotate([0, -cam_wall_angle, 0]) {
+            difference() {
+              cube([wall, box_sz_y-2*wall, cam_wall_sz_z-2*wall], center=true);
+              translate([0, 0, -cam_wall_sz_z/2+2*wall]) {
+                cube([wall, cam_wire_sz_y, cam_wire_sz_z], center=true);
+              }
+            }
+          }
+          translate([cam_pcb_sz_x, 0, 0]) {
+            rotate([0, -cam_wall_angle, 0]) {
+              translate([-0.5, 0, cam_bottom_reserve+2*wall-(cam_wall_sz_z-2*wall-cam_pcb_sz_z)/2]) {
+                cam_holes(d=cam_hole_d+gap+2, h=3);
+              }
             }
           }
         }
@@ -229,14 +238,14 @@ module grate_holder() {
 }
 
 translate([0, 0, 5]) {
-  top_lid();
+  //top_lid();
 }
-sp_base();
+//sp_base();
 translate([middle_wall_offset, 0, 0]) {
 	//slot_insert();
 }
 translate([0, 0, 0]) {
   cam_holder();
 }
-grate_holder();
+//grate_holder();
 
