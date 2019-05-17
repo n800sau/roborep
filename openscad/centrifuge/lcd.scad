@@ -1,3 +1,5 @@
+use <../lib/lcd16x2.scad>
+
 $fn = 50;
 
 pcb_l = 80;
@@ -28,11 +30,8 @@ attach_w = 21+box_h;
 lid_box_h = 9;
 lid_inbox_h = lid_box_h - wall;
 
-lcd_l = 71;
-lcd_w = 24;
-
 module lid() {
-  color("green") {
+//  color("green") {
 //import("/home/n800s/work/printer3d/openscad/good2print/bio/centrifuge/2.stl");
     translate([0, 0, lid_box_h]) {
       difference() {
@@ -42,20 +41,10 @@ module lid() {
               cube([box_l, box_w, lid_box_h], center=true);
             }
             cube([inbox_l, inbox_w, lid_inbox_h], center=true);
-            cube([lcd_l, lcd_w, 50], center=true);
+            lcd_box_hole(h=50);
           }
-          // hole walls
-          translate([interhole_l/2, interhole_w/2, pcb_h/4]) {
-            cylinder(d=hole_wall_d, h=lid_inbox_h-pcb_h/2, center=true);
-          }
-          translate([-interhole_l/2, interhole_w/2, pcb_h/4]) {
-            cylinder(d=hole_wall_d, h=lid_inbox_h-pcb_h/2, center=true);
-          }
-          translate([-interhole_l/2, -interhole_w/2, pcb_h/4]) {
-            cylinder(d=hole_wall_d, h=lid_inbox_h-pcb_h/2, center=true);
-          }
-          translate([interhole_l/2, -interhole_w/2, pcb_h/4]) {
-            cylinder(d=hole_wall_d, h=lid_inbox_h-pcb_h/2, center=true);
+          translate([0, 0, pcb_h/4]) {
+            lcd_holes(h=lid_inbox_h-pcb_h/2, box_h=0, d=hole_wall_d);
           }
           // attachment
           difference() {
@@ -76,28 +65,14 @@ module lid() {
             }
           }
         }
-        // holes
-        translate([0, 0, -25]) {
-          translate([interhole_l/2, interhole_w/2, 25]) {
-            cylinder(d=pass_hole_d, h=50, center=true);
-          }
-          translate([-interhole_l/2, interhole_w/2, 25]) {
-            cylinder(d=pass_hole_d, h=50, center=true);
-          }
-          translate([-interhole_l/2, -interhole_w/2, 25]) {
-            cylinder(d=pass_hole_d, h=50, center=true);
-          }
-          translate([interhole_l/2, -interhole_w/2, 25]) {
-            cylinder(d=pass_hole_d, h=50, center=true);
-          }
-        }
+        lcd_holes(h=50);
       }
     }
-  }
+//  }
 }
 
 module box() {
-  color("blue") {
+//  color("blue") {
     difference() {
       union() {
         difference() {
@@ -106,44 +81,20 @@ module box() {
           }
           cube([inbox_l, inbox_w, inbox_h], center=true);
         }
-        // hole walls
-        translate([interhole_l/2, interhole_w/2, -pcb_h/4]) {
-          cylinder(d=hole_wall_d, h=inbox_h-pcb_h/2, center=true);
-        }
-        translate([-interhole_l/2, interhole_w/2, -pcb_h/4]) {
-          cylinder(d=hole_wall_d, h=inbox_h-pcb_h/2, center=true);
-        }
-        translate([-interhole_l/2, -interhole_w/2, -pcb_h/4]) {
-          cylinder(d=hole_wall_d, h=inbox_h-pcb_h/2, center=true);
-        }
-        translate([interhole_l/2, -interhole_w/2, -pcb_h/4]) {
-          cylinder(d=hole_wall_d, h=inbox_h-pcb_h/2, center=true);
+        translate([0, 0, -pcb_h/4]) {
+          lcd_holes(h=inbox_h-pcb_h/2, d=hole_wall_d);
         }
       }
-      // holes
-      translate([0, 0, -25]) {
-        translate([interhole_l/2, interhole_w/2, 25]) {
-          cylinder(d=hole_d, h=50, center=true);
-        }
-        translate([-interhole_l/2, interhole_w/2, 25]) {
-          cylinder(d=hole_d, h=50, center=true);
-        }
-        translate([-interhole_l/2, -interhole_w/2, 25]) {
-          cylinder(d=hole_d, h=50, center=true);
-        }
-        translate([interhole_l/2, -interhole_w/2, 25]) {
-          cylinder(d=hole_d, h=50, center=true);
-        }
-      }
+      lcd_holes(h=50, d=hole_d);
       // wire hole
       wh_w = 13;
       translate([inbox_l/2, -inbox_w/2+wh_w/2+5, 0]) {
         cube([20, wh_w,  inbox_h], center=true);
       }
     }
-  }
+//  }
 }
 
-lid();
-//box();
+//lid();
+box();
 
