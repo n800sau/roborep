@@ -1,3 +1,9 @@
+use <../lib/lcd16x2.scad>
+
+$fn = 36;
+
+wall = 2;
+gap = 0.5;
 
 ard_pcb_sz_x = 47.8;
 ard_pcb_sz_y = 18;
@@ -25,7 +31,6 @@ lcd_pcb_sz_z = 9;
 // display x - center 1602A
 lcd_display_pins_off_y = 7;
 lcd_display_top_off_y = 5;
-lcd_display_sz_z = 3.8;
 
 lcd_hole_dist_x = 75;
 lcd_hole_dist_y = 31;
@@ -36,12 +41,86 @@ lcd_hole_dist_y = 31;
 // mf52at 100k 3950
 // ntc 10k 3435 mf5b
 
-bolt_connector_sz_x = 11;
-bolt_connector_sz_y = 7.5;
-bolt_connector_sz_z = 10;
-bolt_connector_pin_sz_z = 4.5;;
-
-au_connector_d = 6;
+bolt_connector_count = 3;
 
 pin_dist = 2.75;
 
+bolt_connector_sz_x = 11;
+bolt_connector_space_sz_x = pin_dist*5;
+bolt_area_sz_x = bolt_connector_count * bolt_connector_space_sz_x;
+bolt_connector_sz_y = 7.5;
+bolt_connector_sz_z = 10 + 50;
+bolt_connector_pin_sz_z = 4.5;;
+
+proto_pcb_sz_x = 70;
+proto_pcb_sz_y = 50.5;
+proto_pcb_sz_z = 1.2;
+
+bolt_connector_pcb_x = proto_pcb_sz_x;
+bolt_connector_pcb_y = proto_pcb_sz_y;
+bolt_connector_pcb_z = 1.2;
+
+au_connector_d = 6;
+
+box_sz_x = max(lcd_sz_x, proto_pcb_sz_x, batt_sz_x) + 10;
+box_sz_y = max(lcd_sz_y, proto_pcb_sz_y, batt_sz_y) + 10;
+box_sz_z = 10 + batt_sz_z + 10;
+
+module top_lid() {
+	difference() {
+		translate([0, 0, (box_sz_z+wall)/2]) {
+			difference() {
+				cube([box_sz_x, box_sz_y, wall], center=true);
+				lcd_box_hole(h=50);
+				lcd_holes(h=50);
+			}
+			translate([-wall, (box_sz_y-bolt_connector_sz_y+wall)/2, -(box_sz_z-10)/2]) {
+				cube([bolt_area_sz_x+2*wall, bolt_connector_sz_y+wall, box_sz_z-10], center=true);
+			}
+		}
+		translate([0, (box_sz_y-proto_pcb_sz_y)/2, -box_sz_z/2+5]) {
+			bolt_connectors();
+		}
+	}
+}
+
+module a_bolt_connector() {
+	cube([bolt_connector_sz_x, bolt_connector_sz_y, bolt_connector_sz_z], center=true);
+}
+
+module bolt_connectors() {
+	translate([-(bolt_area_sz_x-bolt_connector_sz_x)/2, (proto_pcb_sz_y-bolt_connector_sz_y)/2, bolt_connector_sz_z/2]) {
+		for(i=[0:bolt_connector_count-1]) {
+			translate([i*bolt_connector_space_sz_x, wall, 0]) {
+				a_bolt_connector();
+			}
+		}
+	}
+	// pcb
+	cube([proto_pcb_sz_x, proto_pcb_sz_y, proto_pcb_sz_z], center=true);
+}
+
+module bottom_box() {
+	translate([0, (box_sz_y-proto_pcb_sz_y)/2, 5]) {
+		%bolt_connectors();
+	}
+	translate([0, 0, wall/2]) {
+		cube([box_sz_x, box_sz_y, wall], center=true);
+		translate([0, (box_sz_y-wall)/2, 5/2]) {
+			cube([box_sz_x, wall, 5], center=true);
+		}
+		// back wall
+		translate([0, -(box_sz_y-wall)/2, box_sz_z/2]) {
+			cube([box_sz_x, wall, box_sz_z], center=true);
+		}
+		// side walls
+		for(xsgn=[-1,1]) {
+			translate([xsgn*box_sz_x/2, 0, box_sz_z/2]) {
+				cube([wall, box_sz_y, box_sz_z], center=true);
+			}
+		}
+	}
+}
+
+top_lid();
+//bottom_box();
