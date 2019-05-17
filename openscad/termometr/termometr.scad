@@ -1,9 +1,12 @@
 use <../lib/lcd16x2.scad>
+use <../lib/ear.scad>
 
 $fn = 36;
 
 wall = 2;
 gap = 0.5;
+hole_d = 3.2;
+hole_d_through = 4;
 
 ard_pcb_sz_x = 47.8;
 ard_pcb_sz_y = 18;
@@ -66,6 +69,34 @@ box_sz_x = max(lcd_sz_x, proto_pcb_sz_x, batt_sz_x) + 10;
 box_sz_y = max(lcd_sz_y, proto_pcb_sz_y, batt_sz_y) + 10;
 box_sz_z = 10 + batt_sz_z + 10;
 
+module ear(base_dist, height, d=3, cone=false) {
+	bolt_hole_cone_center(base_dist=base_dist, hole_d=d, hole_wall=3, height=height, hole_height=cone ? height/2 : height);
+}
+
+module ear_holes(d, h=50, base_dist=3, ear_mode=false, cone=false, height=7) {
+	for(xsgn=[-1, 1]) {
+		for(ysgn=[-1, 1]) {
+			translate([xsgn*box_sz_x/2, ysgn*box_sz_y/2, 0]) {
+				if(ear_mode) {
+					angle = cone ?
+						(xsgn > 0 ? 
+							(
+								(ysgn > 0) ? -135 : 135
+							) :
+								(ysgn > 0) ? -45 : 45
+						) :
+						(xsgn > 0 ? 0 : 180);
+					rotate([cone ? 0 : 180, 0, angle]) {
+						ear(base_dist=base_dist, height=height, d=d, cone=cone);
+					}
+				} else {
+					cylinder(d=d, h=h, center=true);
+				}
+			}
+		}
+	}
+}
+
 module top_lid() {
 	difference() {
 		translate([0, 0, (box_sz_z+wall)/2]) {
@@ -81,6 +112,7 @@ module top_lid() {
 		translate([0, (box_sz_y-proto_pcb_sz_y)/2, -box_sz_z/2+5]) {
 			bolt_connectors();
 		}
+		ear_holes(d=hole_d);
 	}
 }
 
