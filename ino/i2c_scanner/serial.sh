@@ -1,6 +1,3 @@
 source vars.sh
-#ino serial &> serial.log
-#ino serial
-picocom -b 115200 $DEV &>serial.log
-#picocom -b 115200 $DEV
-
+#../../bin/miniterm.py -p $DEV -b 115200 --exit-char=0x1b &> serial.log
+../../bin/miniterm.py -p $DEV -b 115200 --exit-char=0x1b
