@@ -1,7 +1,7 @@
 pad = 0.5;
-wall = 2;
-base_sz_x = 40;
-base_sz_y = 40;
+wall = 3;
+base_sz_x = 60;
+base_sz_y = 60;
 base_sz_z = wall;
 
 dist_y = 12;
@@ -9,9 +9,9 @@ dist_y = 12;
 pole_d = 12;
 pole_sz_z = 270;
 
-pole_socket_int_d = pole_d + 2*pad;
-pole_socket_ext_d = pole_d + 2*pad + 2*wall;
-pole_socket_sz_z = 20;
+pole_socket_int_d = pole_d + pad;
+pole_socket_ext_d = pole_d + 2*wall;
+pole_socket_sz_z = 50;
 
 clip_sz_z = 10;
 clip_wall = 3;
@@ -45,15 +45,19 @@ module pole() {
 }
 
 module pole_socket() {
-	translate([0, 0, base_sz_z/2]) {
-		cube([base_sz_x, base_sz_y, base_sz_z], center=true);
-	}
-	translate([0, 0, (pole_socket_sz_z+base_sz_z)/2]) {
-		difference() {
+	difference() {
+  hull() {
+    translate([0, 0, base_sz_z/2]) {
+      cube([base_sz_x, base_sz_y, base_sz_z], center=true);
+    }
+    translate([0, 0, (pole_socket_sz_z+base_sz_z)/2]) {
 			cylinder(d=pole_socket_ext_d, h=pole_socket_sz_z, center=true);
-			cylinder(d=pole_socket_int_d, h=pole_socket_sz_z, center=true);
-		}
+    }
 	}
+    translate([0, 0, (pole_socket_sz_z+base_sz_z)/2+pole_socket_sz_z-30]) {
+			cylinder(d=pole_socket_int_d, h=pole_socket_sz_z, center=true);
+    }
+  }
 }
 
 
@@ -101,7 +105,7 @@ module rpi_plate() {
 	}
 }
 
-for(sgn=[-1, 1]) {
+for(sgn=[1]) {
 	translate([0, sgn*(dist_y+base_sz_y)/2, 0]) {
 		pole_socket();
 //		pole();

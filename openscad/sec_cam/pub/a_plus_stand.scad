@@ -1,5 +1,8 @@
+show_tube = true;
+show_rpi_plate = true;
+show_back_lid = true;
+
 use <pcb_protect.scad>;
-connector = "Axis_change_connector.stl";
 
 $fn = 50;
 cover_thickness = 3;
@@ -221,19 +224,30 @@ module tube_with_ears() {
   }
 }
 
-module connector() {
-  rotate([-90, 0, 90]) {
-    //forward,vertical,side
-    translate([-40, -68, -55]) {
-      difference() {
-        translate([0, -248, 50]) {
-          import(connector, convexity=10);
-          translate([2, 339, -20]) {
-            cube([50, 10, 50]);
+module gopro_like_attach() {
+  for(y=[0, 6.4]) {
+    translate([-10.2, 6.9+y, 7.6]) {
+      rotate([90, 0, 0]) {
+        difference() {
+          union() {
+            cylinder(d=14.7, h=2.6, center=true);
+            translate([5, 0, 0]) {
+              cube([10, 14.7, 2.6], center=true);
+            }
+          }
+          translate([-1.4, 0.1, 0]) {
+            cylinder(d=6, h=3, center=true);
           }
         }
-//        cube(103, 100, 100);
       }
+    }
+  }
+}
+
+module connector() {
+  translate([10, 0, -31]) {
+    rotate([0, -90, 90]) {
+      gopro_like_attach();
     }
   }
 }
@@ -326,7 +340,10 @@ module back_lid() {
   
 }
 
-rpi_plate();
-tube_with_ears();
-back_lid();
+if(show_rpi_plate)
+  rpi_plate();
+if(show_tube)
+  tube_with_ears();
+if(show_back_lid)
+  back_lid();
 

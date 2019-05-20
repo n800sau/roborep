@@ -39,6 +39,25 @@ module bottom_part() {
           }
         }
       }
+      for(ypos=[-sz_x/2-gap+5-wall, 0, sz_x/2+gap-5+wall]) {
+        translate([ypos, 0, wall/2]) {
+          difference() {
+            union() {
+              cube([10, sz_y+2*gap+2*wall+10, wall], center=true);
+              for(sgn=[-1,1]) {
+                translate([0, sgn*(sz_y/2+gap+wall+5), 0]) {
+                  cylinder(d=10, h=wall, center=true);
+                }
+              }
+            }
+            for(sgn=[-1,1]) {
+              translate([0, sgn*(sz_y/2+gap+wall+5), 0]) {
+                cylinder(d=3.8, h=wall, center=true);
+              }
+            }
+          }
+        }
+      }
     }
     for(ypos=[-holes_y_dist/2, holes_y_dist/2]) {
       for(xpos=[-holes_x_dist/2, holes_x_dist/2]) {
@@ -107,7 +126,7 @@ module top_part() {
             }
           }
           translate([0, 0, -wall-gap]) {
-            cylinder(d=3.2, h=top_part_h, center=true);
+            cylinder(d=3.4, h=top_part_h, center=true);
           }
         }
       }

@@ -65,7 +65,7 @@ module lid() {
             }
           }
         }
-        lcd_holes(h=50);
+        lcd_holes(h=50, d=pass_hole_d);
       }
     }
 //  }

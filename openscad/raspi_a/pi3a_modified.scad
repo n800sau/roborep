@@ -15,7 +15,7 @@ bottom_design=5; // [0:None,1:Pi Logo,2:Custom Text,3:Open Source Logo,4:Custom 
 
 // holes for camera box
 cambox_attachment = 1; // [:No,1:Yes]
-camera_box = 1;
+camera_box = 0;
 
 // Mounting Arms
 arms=1; // [0:No,1:Yes]

@@ -4,8 +4,8 @@ left
 gnd gnd
 gnd gnd
 +5 +5
-ser C.0
-ser B.6
+serout C.0 - D9
+serin B.6 - D8
 
 left
 1x3
