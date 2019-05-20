@@ -10,7 +10,7 @@ module lcd_box_hole(h) {
   cube([lcd_l, lcd_w, h], center=true);
 }
 
-module lcd_holes(h, d=pass_hole_d) {
+module lcd_holes(h, d) {
   for(xsgn=[-1,1]) {
     for(ysgn=[-1,1]) {
       translate([xsgn*interhole_l/2, ysgn*interhole_w/2, 0]) {
