@@ -7,7 +7,7 @@ lcd_w = 24;
 interhole_l = 75.5;
 interhole_w = 31.5;
 
-lcd_holes_shift_z = 2;
+lcd_holes_shift_y = 1;
 
 module lcd_box_hole(h) {
   cube([lcd_l, lcd_w, h], center=true);
@@ -24,7 +24,7 @@ module lcd_holes(h, d) {
 }
 
 module lcd_all_holes(h=10, d=3.5) {
-  translate([0, 0, lcd_holes_shift_z]) {
+  translate([0, lcd_holes_shift_y, 0]) {
     lcd_holes(d=d, h=h);
   }
   lcd_box_hole(h=h);
