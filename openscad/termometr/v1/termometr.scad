@@ -190,21 +190,21 @@ module pcb_holder() {
 	translate([0, pcb_sz_y/2, 0]) {
 		cube([pcb_sz_x, wall, pcb_space_under], center=true);
 	}
-	translate([0, (pcb_sz_y-wall)/2+pcb_lcd_out_dist_y, lcd_wall_sz_y/2]) {
+	translate([0, (pcb_sz_y-wall)/2+pcb_lcd_out_dist_y, -pcb_space_under]) {
 		difference() {
-			// a big wall
-      cube([lcd_wall_sz_x, wall, lcd_wall_sz_y], center=true);
-			translate([pcb_lcd_shift_x, 0, 0]) {
-				union() {
-					translate([0, -(pcb_lcd_stand_sz_y+wall)/2, lcd_sz_y/2+pcb_lcd_dist_z/2]) {
-						rotate([90, 0, 0]) {
-              lcd_holes(h=pcb_lcd_stand_sz_y, d=hole_d_through+2*wall);
-						}
+			translate([0, 0, (lcd_wall_sz_y)/2]) {
+				// a big wall
+				cube([lcd_wall_sz_x, wall, lcd_wall_sz_y], center=true);
+			}
+			translate([pcb_lcd_shift_x, 0, lcd_sz_y/2+pcb_lcd_dist_z]) {
+				translate([0, -(pcb_lcd_stand_sz_y+wall)/2, 0]) {
+					rotate([90, 0, 0]) {
+						lcd_holes(h=pcb_lcd_stand_sz_y, d=hole_d_through+2*wall);
 					}
 				}
 				translate([0, 0, 0]) {
 					rotate([90, 0, 0]) {
-            lcd_all_holes(h=50, d=hole_d_through);
+						lcd_all_holes(h=50, d=hole_d_through);
 					}
 				}
 			}
@@ -215,46 +215,56 @@ module pcb_holder() {
 module pcb_holder_top() {
 	translate([0, 0, lcd_wall_sz_y+wall/2]) {
 		// top wall
-		cube([lcd_wall_sz_x, pcb_sz_y+pcb_lcd_out_dist_y, wall], center=true);
+		cube([lcd_wall_sz_x+wall, pcb_sz_y+pcb_lcd_out_dist_y+wall, wall], center=true);
 		// side walls
 		for(xsgn=[-1,1]) {
 			translate([xsgn*lcd_wall_sz_x/2, 0, -lcd_wall_sz_y/2]) {
-				cube([wall, pcb_sz_y+pcb_lcd_out_dist_y, lcd_wall_sz_y], center=true);
+				cube([wall, pcb_sz_y+pcb_lcd_out_dist_y+wall, lcd_wall_sz_y+wall], center=true);
 			}
 		}
 		// connector wall
 		translate([0, -(pcb_sz_y+pcb_lcd_out_dist_y)/2, -lcd_wall_sz_y/2]) {
-			cube([lcd_wall_sz_x, wall, lcd_wall_sz_y], center=true);
+//			cube([lcd_wall_sz_x+wall, wall, lcd_wall_sz_y+wall], center=true);
+		}
+	}
+	translate([0, 0, (lcd_wall_sz_y+wall)/2]) {
+		difference() {
+			translate([0, -(pcb_sz_y-bolt_connector_sz_y)/2+wall, bolt_connector_sz_z/2]) {
+				cube([bolt_connector_space_sz_x*3+2*wall, bolt_connector_sz_y+wall, lcd_wall_sz_y+wall], center=true);
+			}
+			for(xi=[0, 1, 2]) {
+				translate([-xi*bolt_connector_space_sz_x+(pcb_sz_x-bolt_connector_sz_x)/2-15.7, -(pcb_sz_y-bolt_connector_sz_y)/2, bolt_connector_sz_z/2]) {
+					%cube([bolt_connector_sz_x, bolt_connector_sz_y, lcd_wall_sz_y+wall], center=true);
+				}
+			}
 		}
 	}
 }
 
-
-
 module pcb_subst() {
-  translate([0, 0, pcb_sz_z/2]) {
-    cube([pcb_sz_x, pcb_sz_y, pcb_sz_z], center=true);
-    for(xi=[0, 1, 2]) {
-      translate([-xi*bolt_connector_space_sz_x+(pcb_sz_x-bolt_connector_sz_x)/2-15.7, -(pcb_sz_y-bolt_connector_sz_y)/2, bolt_connector_sz_z/2]) {
-        cube([bolt_connector_sz_x, bolt_connector_sz_y, bolt_connector_sz_z], center=true);
-      }
-    }
-    translate([pcb_lcd_shift_x, (pcb_sz_y+lcd_sz_z)/2, lcd_sz_y/2+pcb_lcd_dist_z]) {
-      cube([lcd_sz_x, lcd_sz_z, lcd_sz_y], center=true);
-      translate([0, 0, 1]) {
-        rotate([-90, 0, 180]) {
-          lcd_all_holes(h=lcd_pcb_sz_z, d=hole_d_through);
-        }
-      }
-    }
-  }
+	translate([0, 0, pcb_sz_z/2]) {
+		cube([pcb_sz_x, pcb_sz_y, pcb_sz_z], center=true);
+		for(xi=[0, 1, 2]) {
+			translate([-xi*bolt_connector_space_sz_x+(pcb_sz_x-bolt_connector_sz_x)/2-15.7, -(pcb_sz_y-bolt_connector_sz_y)/2, bolt_connector_sz_z/2]) {
+				cube([bolt_connector_sz_x, bolt_connector_sz_y, bolt_connector_sz_z], center=true);
+			}
+		}
+		translate([pcb_lcd_shift_x, (pcb_sz_y+lcd_sz_z)/2, lcd_sz_y/2+pcb_lcd_dist_z]) {
+			cube([lcd_sz_x, lcd_sz_z, lcd_sz_y], center=true);
+			translate([0, 0, 1]) {
+				rotate([-90, 0, 180]) {
+					lcd_all_holes(h=lcd_pcb_sz_z, d=hole_d_through);
+				}
+			}
+		}
+	}
 }
 
 //top_lid();
 //bottom_box();
 
 translate([0, 0, 0]) {
-	//pcb_holder_top();
+	pcb_holder_top();
 }
 %pcb_subst();
-pcb_holder();
+//pcb_holder();
