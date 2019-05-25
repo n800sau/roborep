@@ -8,7 +8,7 @@ lcd_pcb_w = 36;
 lcd_l = 71;
 lcd_w = 24;
 
-interhole_l = 75.5;
+interhole_l = 75;
 interhole_w = 31.5;
 
 lcd_holes_shift_y = 1;
