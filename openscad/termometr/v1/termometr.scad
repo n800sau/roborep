@@ -14,7 +14,7 @@ pcb_sz_x = 70.5;
 pcb_sz_y = 50.5;
 pcb_sz_z = 1.5;
 pcb_free_side_border = 3;
-pcb_space_under = 3.5;
+pcb_space_under = 4.5;
 
 box_sz_x = 100;
 box_sz_y = pcb_sz_y + 2 * wall + 5;
@@ -147,14 +147,16 @@ module ear_holes(top=false, holes=false) {
 		translate([0, 0, 15]) {
 			for(xpos=[[wall+6, 180], [box_sz_x-6-wall, 0]]) {
 				translate([xpos[0], 0, 0]) {
-					rotate([90+xpos[1], 0, xpos[1]]) {
-						if(holes) {
-              translate([0, wall, 0]) {
+					if(holes) {
+            translate([0, 0, -wall]) {
+              rotate([90+xpos[1], 0, 0]) {
                 cylinder(d=hole_d_through, h=30, center=true);
               }
-						} else {
-							ear(3, 10, cone=true);
-						}
+            }
+					} else {
+            rotate([90+xpos[1], 0, xpos[1]]) {
+              ear(3, 10, cone=true);
+            }
 					}
 				}
 			}
@@ -266,14 +268,14 @@ module pcb_holder_top() {
 				cube([box_sz_x, wall, box_sz_z+wall]);
 			}
 			// connectors wall box
-			translate([(box_sz_x-pcb_sz_x)/2+10.7-2*wall, 0, pcb_space_under+pcb_sz_z+wall+gap]) {
-				cube([bolt_connector_space_sz_x*3+2*wall, bolt_connector_sz_y+2*wall, box_sz_z-pcb_space_under-pcb_sz_z-wall-gap]);
+			translate([(box_sz_x-pcb_sz_x)/2+12-2*wall, 0, pcb_space_under+pcb_sz_z-wall+gap]) {
+				cube([bolt_connector_space_sz_x*3+2*wall, bolt_connector_sz_y+2*wall, box_sz_z-pcb_space_under-pcb_sz_z]);
 			}
 		}
 		translate([(box_sz_x-pcb_sz_x)/2, 0, pcb_space_under]) {
 			for(xi=[0, 1, 2]) {
-				translate([xi*bolt_connector_space_sz_x+10.7-gap, 0, pcb_sz_z+wall]) {
-					cube([bolt_connector_sz_x+2*gap, bolt_connector_sz_y+wall+gap, box_sz_z]);
+				translate([xi*bolt_connector_space_sz_x+12-gap, 0, pcb_sz_z-wall]) {
+					cube([bolt_connector_sz_x+4*gap, bolt_connector_sz_y+wall+gap, box_sz_z]);
 				}
 			}
     }
@@ -309,7 +311,7 @@ module pcb_subst() {
 		cube([pcb_sz_x, pcb_sz_y, pcb_sz_z]);
 		// connectors
 		for(xi=[0, 1, 2]) {
-			translate([xi*bolt_connector_space_sz_x+10.7, 0, pcb_sz_z]) {
+			translate([xi*bolt_connector_space_sz_x+12, 0, pcb_sz_z]) {
 				cube([bolt_connector_sz_x, bolt_connector_sz_y, bolt_connector_sz_z]);
 			}
 		}
@@ -323,7 +325,7 @@ module pcb_subst() {
 }
 
 translate([0, -wall, wall]) {
-  pcb_holder_top();
+//  pcb_holder_top();
 }
-//%pcb_subst();
-//pcb_holder();
+%pcb_subst();
+pcb_holder();
