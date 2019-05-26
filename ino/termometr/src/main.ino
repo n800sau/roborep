@@ -144,12 +144,12 @@ void loop()
 	{
 		Serial.print("Temperature for the device 1 (index 0) is: ");
 		Serial.println(tempC);
-		lcd.setCursor(11, 0);
+		lcd.setCursor(11, 1);
 		lcd.print(tempC);
 	} 
 	else
 	{
-		lcd.setCursor(11, 0);
+		lcd.setCursor(11, 1);
 		lcd.print("???");
 	}
 	delay(1000);
