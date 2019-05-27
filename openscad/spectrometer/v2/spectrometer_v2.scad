@@ -10,6 +10,19 @@ grating_window_sz = 40;
 tube_sz = 60;
 tube_len = 120;
 
+cam_pcb_sz_x = 4;
+cam_pcb_sz_y = 25;
+cam_pcb_sz_z = 24;
+
+cam_hole_offset_z = 9.5;
+cam_bottom_reserve = 10;
+cam_hole_dist_y = 21;
+cam_hole_dist_z = 12;
+cam_hole_d = 2.5;
+
+cam_wire_sz_z = 5;
+cam_wire_sz_y = 18;
+
 module grating_insert() {
   difference() {
     union() {
@@ -86,6 +99,64 @@ module camera_block() {
   }
 }
 
+module cam_holder_holes(d) {
+  translate([-(box_sz_x-wall)/2+cam_wall_offset-2*wall-cam_pcb_sz_x-7, 0, 0]) {
+    translate([-5, 0, -5]) {
+      rotate([90, 0, 0]) {
+        cylinder(d=d, h=2*box_sz_y, center=true);
+      }
+    }
+  }
+}
+
+module cam_holder() {
+  difference() {
+    translate([-(box_sz_x-wall)/2+cam_wall_offset-2*wall-cam_pcb_sz_x-7, 0, 0]) {
+      difference() {
+        union() {
+          rotate([0, -cam_wall_angle, 0]) {
+            difference() {
+              cube([wall, box_sz_y-2*wall, cam_wall_sz_z-2*wall], center=true);
+              translate([0, 0, -cam_wall_sz_z/2+2*wall]) {
+                cube([wall, cam_wire_sz_y, cam_wire_sz_z], center=true);
+              }
+            }
+          }
+          translate([cam_pcb_sz_x, 0, 0]) {
+            rotate([0, -cam_wall_angle, 0]) {
+              translate([-0.5, 0, cam_bottom_reserve+2*wall-(cam_wall_sz_z-2*wall-cam_pcb_sz_z)/2]) {
+                cam_holes(d=cam_hole_d+gap+2, h=3);
+              }
+            }
+          }
+        }
+        translate([cam_pcb_sz_x, 0, 0]) {
+          rotate([0, -cam_wall_angle, 0]) {
+            translate([0, 0, cam_bottom_reserve+2*wall-(cam_wall_sz_z-2*wall-cam_pcb_sz_z)/2]) {
+              cam_holes(d=cam_hole_d+gap, h=20);
+              %cam_pcb_sub();
+            }
+          }
+        }
+      }
+      for(ysgn=[-1, 1]) {
+        translate([0, ysgn*(box_sz_y-3*wall-gap)/2, 0.5]) {
+          difference() {
+            cube([cam_wall_sz_x, wall, box_sz_z-2*wall], center=true);
+            translate([cam_wall_sz_x/2, 0, (box_sz_z-2*wall)/2]) {
+              rotate([0, 45, 0]) {
+                cube([cam_wall_sz_z, wall, sqrt(pow(cam_wall_sz_x, 2)-pow(cam_wall_sz_z/2, 2))*2-wall/2], center=true);
+              }
+            }
+          }
+        }
+      }
+    }
+    cam_holder_holes(d=hole_d);
+  }
+}
+
+
 translate([5, -10, 0]) {
   rotate([0, 0, 45]) {
     translate([10, 0, 51/2+2*wall]) {
@@ -100,4 +171,5 @@ translate([-tube_len/2, 0, 0]) {
 //  tube_block();
 }
 //camera_block();
+cam_holder();
 
