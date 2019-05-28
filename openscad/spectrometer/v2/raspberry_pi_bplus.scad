@@ -18,6 +18,7 @@ have_camera = 0; // [ 1:true, 0:false ]
 have_camera_cable = 1; // [ 1:true, 0:false ]
 have_sdcard_support = 1; // [ 1:true, 0:false ]
 have_leds = 1; // [ 1:true, 0:false ]
+have_top_holes = 1; // [ 1:true, 0:false ]
 
 /* [Hidden] */
 mil2mm = 0.0254;
@@ -233,8 +234,18 @@ module top() {
             c_cube(cam_box, cam_box, wall+2*extra);
         // camera cable opening
         if (have_camera_cable)
-          translate([-8.0, 0, pcb2roof - extra]) 
-            c_cube(cam_cable_sz_x, cam_cable_sz_y, wall+2*extra);
+          translate([-3, 16, pcb2roof - extra]) 
+            c_cube(cam_cable_sz_x, cam_cable_sz_y+2, wall+2*extra);
+        // holes for bolts
+        if (have_top_holes) {
+          for(x=[30,20,10,-12,-22]) {
+            for(y=[-10,0,10,x>0 ? 20 : 10]) {
+              translate([x, y, pcb2roof - extra]) {
+                cylinder(d=3, h=20, center=true);
+              }
+            }
+          }
+        }
     }
 
 	module add() {
