@@ -15,6 +15,7 @@ part = "top"; // [ top, bottom, all, demo ]
 have_plugrow = 1; // [ 1:true, 0:false ]
 have_open_plugrow = 0; // [ 1:true, 0:false ]
 have_camera = 0; // [ 1:true, 0:false ]
+have_camera_cable = 1; // [ 1:true, 0:false ]
 have_sdcard_support = 1; // [ 1:true, 0:false ]
 have_leds = 1; // [ 1:true, 0:false ]
 
@@ -70,6 +71,9 @@ leddia = 2.0;
 plugrow1 = [pcb[0]/2 - 29.0 - mil2mm*100*11, 3.5 - pcb[1]/2, 0]; // coordinates D7 pin, mid
 
 cam_box = 34.5;
+
+cam_cable_sz_x = 5;
+cam_cable_sz_y = 18;
 
 frame_w = 2.5; // width of lip for frame 
 snap_dia = 1.8; // snap lock ridge diameter
@@ -227,6 +231,10 @@ module top() {
         if (have_camera)
           translate([-8.0, 0, pcb2roof - extra]) 
             c_cube(cam_box, cam_box, wall+2*extra);
+        // camera cable opening
+        if (have_camera_cable)
+          translate([-8.0, 0, pcb2roof - extra]) 
+            c_cube(cam_cable_sz_x, cam_cable_sz_y, wall+2*extra);
     }
 
 	module add() {
