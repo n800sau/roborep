@@ -129,8 +129,8 @@ module camera_block() {
 	translate([0, tube_sz/2, 0]) {
 		cube([wall, 90-tube_sz/2, tube_sz+wall], centre=true);
 	}
-	translate([60, tube_sz/2, 0]) {
-		cube([wall, 90, tube_sz+wall], centre=true);
+	translate([60, -tube_sz/2, 0]) {
+		cube([wall, 90+tube_sz/2, tube_sz+wall], centre=true);
 	}
 }
 
