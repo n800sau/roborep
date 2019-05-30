@@ -12,6 +12,8 @@ grating_window_sz = 40;
 tube_sz = 60;
 tube_len = 120;
 
+cam_block_tube_len = 30;
+
 cam_pcb_sz_x = 4;
 cam_pcb_sz_y = 25;
 cam_pcb_sz_z = 24;
@@ -78,16 +80,15 @@ module tube_block() {
 				}
 			}
 		}
+		// side walls
 		for(ysgn=[-1,1]) {
 			difference() {
 				translate([0, ysgn*(tube_sz+wall)/2, 0]) {
 					cube([tube_len, wall, tube_sz], center=true);
-					translate([0, ysgn*-5, 0]) {
-						for(xsgn=[-1,1]) {
-							translate([xsgn * 30, 0, tube_sz/2]) {
-								rotate([0, 0, ysgn*90]) {
-									ear(0, 10, cone=true);
-								}
+					for(xsgn=[-1,1]) {
+						translate([xsgn * 30, ysgn*-5, tube_sz/2]) {
+							rotate([0, 0, ysgn*90]) {
+								ear(0, 10, cone=true);
 							}
 						}
 					}
@@ -122,10 +123,42 @@ module tube_block() {
 }
 
 module camera_block() {
+	translate([-cam_block_tube_len/2, 0, tube_sz/2+wall]) {
+		translate([0, 0, -(tube_sz+wall)/2]) {
+			difference() {
+				// bottom
+				cube([cam_block_tube_len, tube_sz+2*wall, wall], center=true);
+				translate([54, 0, 0]) {
+					cylinder(d=hole_d, h=20, center=true);
+				}
+			}
+		}
+		// side walls
+		for(ysgn=[-1,1]) {
+			difference() {
+				translate([tube_sz/2, ysgn*(tube_sz+wall)/2, 0]) {
+					translate([ysgn>0 ? -tube_sz/2 : 0, ysgn*(tube_sz+wall)/2, 0]) {
+						cube([cam_block_tube_len+(ysgn<0 ? tube_sz : 0), wall, tube_sz], center=true);
+					}
+					for(xsgn=ysgn>0 ? [-1 : 1] : [1]) {
+						translate([xsgn * 30, ysgn*-5, tube_sz/2]) {
+							rotate([0, 0, ysgn*90]) {
+								ear(0, 10, cone=true);
+							}
+						}
+					}
+				}
+				translate([54, ysgn*(tube_sz+wall)/2, 0]) {
+					rotate([ysgn*90, 0, 0]) {
+						cylinder(d=hole_d, h=20, center=true);
+					}
+				}
+			}
+		}
+	}
 	translate([0, -tube_sz/2-wall, 0]) {
 		cube([60, 120, wall], centre=true);
 	}
-	color("blue")
 	translate([0, tube_sz/2, 0]) {
 		cube([wall, 90-tube_sz/2, tube_sz+wall], centre=true);
 	}
