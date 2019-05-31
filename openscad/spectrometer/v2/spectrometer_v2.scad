@@ -3,6 +3,7 @@ use <../../lib/ear.scad>
 $fn = 36;
 
 wall = 2;
+gap = 0.3;
 
 grating_sz = 53;
 grating_sz_z = 1.5;
@@ -118,6 +119,31 @@ module tube_block() {
 					cube([30, 45, 60], center=true);
 				}
 			}
+		}
+	}
+}
+
+module tube_block_top() {
+	translate([0, 0, wall+tube_sz+wall/2]) {
+		difference() {
+			cube([tube_len+wall+4, tube_sz+2*wall, wall], center=true);
+			// side wall ear holes
+			for(ysgn=[-1,1]) {
+				for(xsgn=[-1,1]) {
+					translate([xsgn * 30, ysgn*-5, tube_sz/2]) {
+						cylinder(d=hole_d_through, h=20, center=true);
+					}
+				}
+			}
+		}
+	}
+}
+
+module slit_plate() {
+	translate([-tube_len/2, 0, tube_sz/2]) {
+		difference() {
+			cube([wall-gap, tube_sz-gap, tube_sz-gap], center=true);
+			cube([wall, 0.5, 30], center=true);
 		}
 	}
 }
@@ -242,10 +268,12 @@ translate([15, -10, 0]) {
 }
 
 translate([-tube_len/2, 0, 0]) {
-//	tube_block();
+	tube_block();
+	slit_plate();
+//	tube_block_top();
 }
 
-camera_block();
+//camera_block();
 
 translate([30, 40, 24]) {
 	rotate([90, 0, 180]) {
