@@ -155,6 +155,40 @@ module slit_plate() {
 	}
 }
 
+module tube_and_camera_block_connector() {
+  difference() {
+    translate([-13.5, 0, 0]) {
+color("blue")
+      union() {
+        translate([0, tube_sz/2+wall+gap, -wall-gap]) {
+          // side
+          cube([26, wall, tube_sz-gap]);
+        }
+        translate([0, -(tube_sz/2+2*wall+gap), -wall-gap]) {
+          // side
+          cube([26, wall, tube_sz-gap]);
+        }
+        translate([0, -tube_sz/2-wall-gap, -wall-gap]) {
+          // bottom
+          cube([26, tube_sz+2*wall+2*gap, wall]);
+        }
+      }
+    }
+    for(xsgn=[-1,1]) {
+      for(ysgn=[-1,1]) {
+        translate([0.5+xsgn*6.5, ysgn*(tube_sz+wall)/2, tube_sz/2+wall]) {
+          rotate([90, 0, 0]) {
+            cylinder(d=hole_d_through, h=20, center=true);
+          }
+        }
+      }
+      translate([-1+xsgn*8, 0, 0]) {
+        cylinder(d=hole_d_through, h=20, center=true);
+      }
+    }
+  }
+}
+
 module camera_block() {
 	translate([-cam_block_tube_len/2, 0, tube_sz/2+wall]) {
 		translate([0, 0, -(tube_sz+wall)/2]) {
@@ -386,13 +420,13 @@ module oval_washer(ext_d, d, h, dist) {
 // -----------------------------------------------------
 
 translate([-tube_len/2, 0, 0]) {
-	tube_block();
+//color("green")	tube_block();
 	//slit_plate();
 //  tube_block_top();
 }
 
 translate([cam_block_tube_len, 0, 0]) {
-  camera_block();
+//  camera_block();
   //camera_block_top();
   translate([22, 3, 0]) {
     rotate([0, 0, $t*360]) {
@@ -424,6 +458,10 @@ translate([cam_block_tube_len, 0, 0]) {
       }
     }
   }
+}
+
+translate([0, 0, 0]) {
+  tube_and_camera_block_connector();
 }
 
 difference() {
