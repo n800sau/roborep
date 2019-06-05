@@ -131,15 +131,15 @@ module tube_block_top() {
 	translate([0, 0, wall+tube_sz+wall/2]) {
 		difference() {
 			translate([(-wall-slit_plate_sz_x-wall/2)/2, 0, 0]) {
-				cube([tube_len+wall+slit_plate_sz_x+wall/2, tube_sz+2*wall, wall], center=true);
+				cube([tube_len+wall+slit_plate_sz_x+wall/2+wall+gap, tube_sz+4*wall+2*gap, wall], center=true);
 				// slit side parabrick
-				translate([-(tube_len+wall+slit_plate_sz_x+wall/2)/2-gap, 0, -wall]) {
+				translate([(tube_len+wall+slit_plate_sz_x+wall/2)/2+gap, 0, -wall]) {
 					cube([wall, tube_sz+2*wall+2*gap, wall], center=true);
 				}
 				// side parabrick
 				for(ysgn=[-1,1]) {
 					translate([0, ysgn*(tube_sz+2*wall+2*gap)/2, -wall]) {
-						cube([tube_len+wall+slit_plate_sz_x+wall/2, wall, wall], center=true);
+						cube([tube_len+wall+slit_plate_sz_x+wall/2+wall+gap, wall, wall], center=true);
 					}
 				}
 			}
@@ -432,7 +432,7 @@ module oval_washer(ext_d, d, h, dist) {
 // -----------------------------------------------------
 
 translate([-tube_len/2, 0, 0]) {
-	color("green")	tube_block();
+//	color("green")	tube_block();
 	//slit_plate();
 	tube_block_top();
 }
