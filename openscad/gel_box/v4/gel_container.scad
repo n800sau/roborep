@@ -34,7 +34,7 @@ insert_sz_y = (ext_sz_y - int_sz_y)/2;
 insert_sz_z = int_sz_z - 6;
 insert_handle_sz_z = 10;
 
-comb_sz_x = 1.5;
+comb_sz_x = 2;
 comb_sz_z = int_sz_z - 5;
 comb_handle_sz_z = 15;
 
@@ -104,7 +104,7 @@ module comb_insert() {
         cube([comb_sz_x, int_sz_y-2*gap, comb_sz_z], center=true);
       }
 		}
-		for(ypos=[0:4]) {
+		for(ypos=[0:5]) {
 			for(ysgn=[-1,1]) {
 				translate([0, ysgn*(ypos*(tooth_sz_y+tooth_gap_y)), (-int_sz_z+tooth_sz_z)/2]) {
 					cube([insert_sz_x, tooth_gap_y, tooth_sz_z], center=true);
