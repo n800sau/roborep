@@ -20,7 +20,8 @@ while True:
 		flist =[fname for fname in glob.glob(os.path.join(SRCDPATH, '*.*')) if os.path.splitext(fname)[1] in ('.avi', '.jpg')]
 		print '%d found' % len(flist)
 		if len(flist) > 0:
-			ftp_h = FTP('192.168.1.1')
+			ftp_h = FTP()
+			ftp_h.connect('192.168.1.1', 21, 3)
 			try:
 				ftp_h.login('writer', cred['writer@192.168.1.1'])
 				ftp_h.cwd(BASE_DNAME)
