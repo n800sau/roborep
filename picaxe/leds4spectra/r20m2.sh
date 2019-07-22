@@ -1,1 +1,1 @@
-picaxe20m2 -s leds4spectra.bas
+picaxe20m2 leds4spectra.bas
