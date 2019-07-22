@@ -78,20 +78,23 @@ module vhrod() {
 			}
 			// led holder
 			translate([hrod_lock_d/2-wall, -hrod_sz_y/2, 0]) {
-				translate([0, hrod_sz_y/2, -hrod_sz_y/2]) {
-					difference() {
-						cube([wall, hrod_lock_sz_z, hrod_sz_y]);
-						for(i=[0:9]) {
-							translate([-5, 0, 4+i*led_d+(i>=5 ? 12: 0)]) {
-								rotate([0, 90, 0]) {
-									for(j=[0,1]) {
-										translate([j*led_leg_dist, 0, 0]) {
-											cylinder(d=led_leg_d, h=10);
-										}
-									}
-								}
-							}
-						}
+				translate([0, hrod_sz_y/2, 0]) {
+          cube([wall, 4, hrod_lock_sz_z]);
+          translate([0, 4, -hrod_sz_y/2+5]) {
+            difference() {
+              cube([wall, hrod_lock_sz_z, hrod_sz_y]);
+              for(i=[0:9]) {
+                translate([-5, 0, 6+i*(led_d+0.5)]) {
+                  rotate([0, 90, 0]) {
+                    for(j=[0,1]) {
+                      translate([0, 4+j*led_leg_dist, 0]) {
+                        cylinder(d=led_leg_d, h=10);
+                      }
+                    }
+                  }
+                }
+              }
+            }
 					}
 				}
 			}
@@ -114,7 +117,7 @@ module vhrod() {
 }
 
 
-vrod();
+//vrod();
 translate([0, 0, vrod_sz_z/2]) {
 	vhrod();
 }
