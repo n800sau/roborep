@@ -46,6 +46,19 @@ module pcb_box(
 		}
 	}
 
+	if(pcb_wall_gap > 0) {
+		for(x=[0,1]) {
+			for(y=[0,1]) {
+				translate([wall+x*(pcb_sz_x+2*pcb_wall_gap), wall+y*(pcb_sz_y+2*pcb_wall_gap), 0]) {
+					difference() {
+						cylinder(d=pcb_wall_gap, h=side_sz_z, center=true);
+						cylinder(d=screw_d, h=side_sz_z, center=true);
+					}
+				}
+			}
+		}
+	}
+
 }
 
 module pcb_box_7x6(leg_sz_z=0, leg_pos=[]) {
