@@ -115,8 +115,7 @@ module control_support_box() {
 		union() {
 			lock_ring();
 			translate([hrod_lock_d/2-wall, -30, 0]) {
-				pcb_box_7x6(
-					leg_sz_z=vrod_base_h+wall,
+				pcb_box_7x5(
 					leg_pos=[
 						[-6, -6],
 						[-6, 6]
@@ -132,4 +131,6 @@ module control_support_box() {
 translate([0, 0, vrod_sz_z/2]) {
 //	vhrod();
 }
-control_support_box();
+translate([0, 0, vrod_base_h+wall]) {
+  control_support_box();
+}
