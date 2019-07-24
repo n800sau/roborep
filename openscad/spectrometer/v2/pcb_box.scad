@@ -1,9 +1,7 @@
 $fn = 20;
 
-
-
 module pcb_box(
-	// make_type - bottom, top
+	// make_type - bottom, top, middle
 	make_type="bottom",
 	wall = 2,
 	pcb_sz_x = 30,
@@ -19,6 +17,7 @@ module pcb_box(
 	leg_d = 5,
 	corner_screw_d=3
 ) {
+
 	// mode - 'stand' or 'hole'
 	module corner_holes(mode) {
 			for(x=[0,1]) {
@@ -46,12 +45,25 @@ module pcb_box(
 			}
 	}
 
+  module legs(
+        leg_sz_z = 0,
+        leg_pos = [],
+        leg_d = 5
+      ) {
+    for(p=leg_pos) {
+      translate([wall+2*pcb_wall_gap+(p[0]>=0 ? p[0] : pcb_sz_x+p[0]), wall+2*pcb_wall_gap+(p[1]>=0 ? p[1] : pcb_sz_y+p[1]), -leg_sz_z/2]) {
+        cylinder(d=leg_d, h=leg_sz_z, center=true);
+      }
+    }
+  }
 
 	difference() {
 		union() {
-			translate([wall, wall, (make_type == "bottom" ? 0 : side_sz_z-wall)]) {
-				cube([pcb_sz_x+2*pcb_wall_gap, pcb_sz_y+2*pcb_wall_gap, wall]);
-			}
+      if(make_type != "middle") {
+        translate([wall, wall, (make_type == "bottom" ? 0 : side_sz_z-wall)]) {
+          cube([pcb_sz_x+2*pcb_wall_gap, pcb_sz_y+2*pcb_wall_gap, wall]);
+        }
+      }
 			// walls along x
 			for(y=[0, pcb_sz_y+2*pcb_wall_gap+wall]) {
 				translate([0, y, 0]) {
@@ -84,11 +96,10 @@ module pcb_box(
 		}
 
 		if(leg_sz_z>0) {
-			for(p=leg_pos) {
-				translate([wall+2*pcb_wall_gap+(p[0]>=0 ? p[0] : pcb_sz_x+p[0]), wall+2*pcb_wall_gap+(p[1]>=0 ? p[1] : pcb_sz_y+p[1]), -leg_sz_z/2]) {
-					cylinder(d=leg_d, h=leg_sz_z, center=true);
-				}
-			}
+      legs(leg_sz_z=leg_sz_z, leg_pos=leg_pos, leg_d=leg_d);
+
+
+
 		}
 
 		for(p=screw_holes) {
@@ -105,7 +116,9 @@ module pcb_box(
 	}
 }
 
-module pcb_box_7x5(make_type="bottom", side_sz_z = 8, leg_sz_z=0, leg_pos=[]) {
+module pcb_box_7x5(
+    make_type="bottom", side_sz_z = 8, leg_sz_z=0, leg_pos=[], corner_screw_d=3
+  ) {
 	pcb_box(
 		make_type=make_type,
 		pcb_sz_x = 70,
@@ -120,11 +133,22 @@ module pcb_box_7x5(make_type="bottom", side_sz_z = 8, leg_sz_z=0, leg_pos=[]) {
 			[-3, 3],
 		],
 		leg_sz_z=leg_sz_z,
-		leg_pos=leg_pos
+		leg_pos=leg_pos,
+    corner_screw_d=corner_screw_d
 	);
 }
 
+
+
 translate([0, 0, 20]) {
-	pcb_box_7x5(make_type="top", side_sz_z=20);
+//	pcb_box_7x5(make_type="top", side_sz_z=20, corner_screw_d=4);
+}
+translate([0, 0, 8]) {
+  pcb_box_7x5(make_type="middle", side_sz_z=2);
+  for(x=[-1,1]) {
+    translate([84, 27+x*18, -20]) {
+      cube([2, 10, 2+8+12]);
+    }
+  }
 }
 //pcb_box_7x5(make_type="bottom");
