@@ -21,15 +21,18 @@ main:
 	goto main
 
 update_leds:
-	for b0=0 to 10
+	for b0=0 to 9
 		readtable b0,b1
 		if b0 = cur_led then
+'SERTXD ("high", #b1, 13, 10)
 			high b1
 		else
+'SERTXD ("low", #b1, 13, 10)
 			low b1
 		endif
 	next b0
-	pause 1000
-	debug
+'SERTXD (13, 10)
+	pause 200
+'	debug
 	return
 
