@@ -3,11 +3,11 @@
 #include <WebServer.h>
 #include <WiFiClient.h>
 
-#include <IotWebConf.h>
-
 #include "SimStreamer.h"
 #include "OV2640Streamer.h"
 #include "CRtspSession.h"
+
+#include <Ticker.h>
 
 #define HOSTNAME "devcam"
 
@@ -30,15 +30,10 @@ WebServer server(80);
 #endif
 
 // -- Initial name of the Thing. Used e.g. as SSID of the own Access Point.
-const char thingName[] = HOSTNAME;
+const char hostname[] = HOSTNAME;
 
 // -- Initial password to connect to the Thing, when it creates an own Access Point.
 const char wifiInitialApPassword[] = "password";
-
-DNSServer dnsServer;
-
-IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword);
-
 
 OV2640 cam;
 
@@ -46,13 +41,14 @@ OV2640 cam;
 WiFiServer rtspServer(8554);
 #endif
 
+Ticker informer;
 
 #ifdef SOFTAP_MODE
 IPAddress apIP = IPAddress(192, 168, 1, 1);
 #else
 #include "config.h"
-const char *ssid = SSID;
-const char *password = PASSWORD;
+const char *ssid = WIFI_SSID;
+const char *password = WIFI_PASSWORD;
 #endif
 
 #ifdef ENABLE_WEBSERVER
@@ -120,8 +116,25 @@ void lcdMessage(String msg)
   #endif
 }
 
+void inform()
+{
+	if(WiFi.status() == WL_CONNECTED) {
+		Serial.print("Connected:");
+		Serial.println(WiFi.localIP());
+	} else {
+		Serial.println("Disconnected");
+	}
+}
+
 void setup()
 {
+
+	Serial.begin(115200);
+	while (!Serial)
+	{
+		yield();
+	}
+
   #ifdef ENABLE_OLED
 	hasDisplay = display.init();
 	if(hasDisplay) {
@@ -132,27 +145,13 @@ void setup()
   #endif
 	lcdMessage("booting");
 
-	Serial.begin(115200);
-	while (!Serial)
-	{
-		yield();
-	}
 	cam.init(esp32cam_config);
 
 	IPAddress ip;
 
-	const char *hostname = HOSTNAME;
-
-
-  iotWebConf.init();
-
-  // -- Set up required URL handlers on the web server.
-  server.on("/", handleRoot);
-  server.on("/config", []{ iotWebConf.handleConfig(); });
-  server.onNotFound([](){ iotWebConf.handleNotFound(); });
 
 #ifdef SOFTAP_MODE
-	// WiFi.hostname(hostname); // FIXME - find out why undefined
+	WiFi.hostname(hostname); // FIXME - find out why undefined
 	lcdMessage("starting softAP");
 	WiFi.mode(WIFI_AP);
 	WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
@@ -174,13 +173,13 @@ void setup()
 	lcdMessage(String("join ") + ssid);
 
 
-//	WiFi.mode(WIFI_STA);
-//	WiFi.begin(ssid, password);
-//	while (WiFi.status() != WL_CONNECTED)
-//	{
-//		delay(500);
-//		Serial.print(F("."));
-//	}
+	WiFi.mode(WIFI_STA);
+	WiFi.begin(ssid, password);
+	while (WiFi.status() != WL_CONNECTED)
+	{
+		delay(500);
+		Serial.print(F("."));
+	}
 	ip = WiFi.localIP();
 	Serial.println(F("WiFi connected"));
 	Serial.println("");
@@ -190,15 +189,18 @@ void setup()
 	lcdMessage(ip.toString());
 
 #ifdef ENABLE_WEBSERVER
-	server.on("/", HTTP_GET, handle_jpg_stream);
+	server.on("/jpg_stream", HTTP_GET, handle_jpg_stream);
 	server.on("/jpg", HTTP_GET, handle_jpg);
-	server.onNotFound(handleNotFound);
+//	server.onNotFound(handleNotFound);
 	server.begin();
 #endif
 
 #ifdef ENABLE_RTSPSERVER
 	rtspServer.begin();
 #endif
+
+  informer.attach(5, inform);
+
 }
 
 CStreamer *streamer;
@@ -207,8 +209,6 @@ WiFiClient client; // FIXME, support multiple clients
 
 void loop()
 {
-  iotWebConf.doLoop();
-
 #ifdef ENABLE_WEBSERVER
 	server.handleClient();
 #endif
@@ -256,20 +256,3 @@ void loop()
 	}
 #endif
 }
-
-void handleRoot()
-{
-  // -- Let IotWebConf test and handle captive portal requests.
-  if (iotWebConf.handleCaptivePortal())
-  {
-    // -- Captive portal request were already served.
-    return;
-  }
-  String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-  s += "<title>IotWebConf 01 Minimal</title></head><body>Hello world!";
-  s += "Go to <a href='config'>configure page</a> to change settings.";
-  s += "</body></html>\n";
-
-  server.send(200, "text/html", s);
-}
-
