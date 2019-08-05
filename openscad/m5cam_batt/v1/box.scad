@@ -6,6 +6,7 @@ show_lid = true;
 show_bh = true;
 
 use <ear.scad>
+use <../../lib/flexbatter.scad>
 
 $fn = 50;
 wall = 2;
@@ -137,13 +138,11 @@ module m5box() {
   }
 }
 
-module m5lid() {
+module m5batt() {
   cones_with_holes(upside_down=true, height_extra=0, hole_d=3.2);
   cube([pcb_hole_length+wall*2, pcb_hole_width+wall*2, lid_height]);
-  translate([38, wall-0.5, -6.9]) {
-    rotate([90, 0, 0]) {
-      import("single-cell-charger.stl");
-    }
+  translate([0, -20-wall, 0]) {
+		battery(18650P);
   }
 }
 
@@ -244,3 +243,8 @@ if(show_bh)
   translate([0, 0, 50]) { 
     button_hold();
   }
+
+translate([0, 0, 40]) { 
+	m5batt();
+}
+
