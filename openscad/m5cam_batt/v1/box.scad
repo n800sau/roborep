@@ -3,7 +3,7 @@ show_box = true;
 // to show box lid set to true
 show_lid = true;
 // to show button holder set to true
-show_bh = true;
+show_bh = 0;
 
 use <ear.scad>
 use <../../lib/flexbatter.scad>
@@ -17,7 +17,10 @@ stand_width = 5;
 box_main_height = 18;
 stand_height = 4;
 lid_height = 3;
-hole_d = 1.6;
+hole_d = 1.8;
+hole_d_through = 2.5;
+lid_length = 60;
+extra = (lid_length - (pcb_hole_length+wall*2))/2;
 
 module stand() {
   cube([stand_length, stand_width, stand_height]);
@@ -92,7 +95,7 @@ module m5box() {
         // hole for reset
         translate([pcb_hole_length-8.5,
             pcb_hole_width+wall-3, stand_height+wall]) {
-          cube([5, 10, 3]);
+          cube([5, 10, 5]);
         }
         // hole for on/off button
         translate([pcb_hole_length-22-wall,
@@ -139,38 +142,47 @@ module m5box() {
 }
 
 module m5batt() {
-  cones_with_holes(upside_down=true, height_extra=0, hole_d=3.2);
-  cube([pcb_hole_length+wall*2, pcb_hole_width+wall*2, lid_height]);
-  translate([0, -20-wall, 0]) {
-		battery(18650P);
+//  cones_with_holes(upside_down=true, height_extra=0, hole_d=3.2);
+//  cube([pcb_hole_length+wall*2, pcb_hole_width+wall*2, lid_height]);
+  difference() {
+    translate([64, 12.5, 0]) {
+      rotate([0, 0, 180]) {
+        battery(batteryType(4), make_bolt_holes=false, alt=0);
+      }
+    }
+    translate([-extra/2, 0, 0]) {
+      m5flat_holes_lid_holes(d1=hole_d_through, d2=hole_d_through+wall);
+    }
+  }
+}
+
+module m5flat_holes_lid_holes(d1=hole_d, d2=hole_d, h=wall) {
+  // hole for wires
+  translate([lid_length-15, pcb_hole_width/2+wall, 0]) {
+    cylinder(d=5, h=h);
+  }
+  translate([4.5, pcb_hole_width/2+wall, 0]) {
+    translate([0, 6.25, 0]) {
+      cylinder(d1=d1, d2=d2, h=h);
+    }
+    translate([0, -6.25, 0]) {
+      cylinder(d1=d1, d2=d2, h=h);
+    }
+    translate([51.5, 6.25, 0]) {
+      cylinder(d1=d1, d2=d2, h=h);
+    }
+    translate([51.5, -6.25, 0]) {
+      cylinder(d1=d1, d2=d2, h=h);
+    }
   }
 }
 
 module m5flat_holes_lid() {
   cones_with_holes(upside_down=true, height_extra=0, hole_d=3.2);
-  lid_length = 60;
-  extra = (lid_length - (pcb_hole_length+wall*2))/2;
   translate([-extra/2, 0, 0]) {
     difference() {
       cube([lid_length, pcb_hole_width+wall*2, lid_height]);
-      // hole for wires
-      translate([lid_length-15, pcb_hole_width/2+wall, 0]) {
-        cylinder(d=5, h=10);
-      }
-      translate([4.5, pcb_hole_width/2+wall, 0]) {
-        translate([0, 6.25, 0]) {
-          cylinder(d=hole_d, h=10);
-        }
-        translate([0, -6.25, 0]) {
-          cylinder(d=hole_d, h=10);
-        }
-        translate([51.5, 6.25, 0]) {
-          cylinder(d=hole_d, h=10);
-        }
-        translate([51.5, -6.25, 0]) {
-          cylinder(d=hole_d, h=10);
-        }
-      }
+      m5flat_holes_lid_holes(h=lid_height);
     }
   }
 }
@@ -244,7 +256,7 @@ if(show_bh)
     button_hold();
   }
 
-translate([0, 0, 40]) { 
+translate([0, 0, 29]) { 
 	m5batt();
 }
 
