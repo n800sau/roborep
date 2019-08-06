@@ -13,38 +13,27 @@ lead_screw_nut_hole_r_dist = 4;
 base_sz_x = rod_bearing_sz * 2;
 base_sz_y = rod_bearing_d + 6; // shortest
 base_sz_z = rod_bearing_pos_z[1] + rod_bearing_d;
-side_sz_x = 4;
-side_sz_z = base_sz_z + 16;
-side_hole_d = 4.5;
+hole_d = 4;
 
 module gantry_base() {
 
 	difference() {
-		union() {
-			cube([base_sz_x, base_sz_y, base_sz_z], center=true);
-			// sides
-			for(xpos=[-1,1]) {
-				translate([xpos*((base_sz_x-side_sz_x)/2), 0, 0]) {
-//					difference() {
-					union() {
-						cube([side_sz_x, base_sz_y, side_sz_z], center=true);
-						for(ypos=[-1,1]) {
-							for(zpos=[-1,1]) {
-								translate([0, ypos*(base_sz_y/2-side_hole_d-2), zpos*(side_sz_z/2-(side_sz_z-base_sz_z)/4)]) {
-									translate([xpos*(side_sz_x+3)/2, 0, zpos*4]) {
-										cube([side_sz_x+3, base_sz_y, side_hole_d/2], center=true);
-									}
-									rotate([0, 90, 0]) {
-										cylinder(d=side_hole_d, h=side_sz_x*2, center=true);
-									}
-								}
-							}
-						}
+
+		cube([base_sz_x, base_sz_y, base_sz_z], center=true);
+
+		// holes for mounting
+		for(zpos=[-1, 1]) {
+			for(ypos=[-1, 1]) {
+				translate([0, ypos * (hole_d+2), zpos*(base_sz_z/2-5)]) {
+					rotate([0, 90, 0]) {
+						cylinder(d=hole_d, h=base_sz_x, center=true);
 					}
 				}
 			}
 		}
 
+
+		// holes for rod bearings
 		for(zpos=rod_bearing_pos_z) {
 			translate([0, 0, -base_sz_z/2+zpos]) {
 				rotate([0, 90, 0]) {
@@ -53,6 +42,7 @@ module gantry_base() {
 			}
 		}
 
+		// holes for the screw lead
 		translate([0, 0, -base_sz_z/2+lead_screw_nut_pos_z]) {
 			rotate([0, 90, 0]) {
 				cylinder(d=lead_screw_nut_d, h=base_sz_x, center=true);
