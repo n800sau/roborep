@@ -10,7 +10,7 @@ const char* ssid	 = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
 #define HOSTNAME "esp32cam"
-#define MAX_CLIENT_COUNT 5
+#define MAX_CLIENT_COUNT 2
 
 OV2640 cam;
 WebServer server(80);
@@ -35,12 +35,12 @@ int first_free_slot()
 }
 
 void send_frame(WiFiClient &client) {
-	server.sendContent(
+	client.write(
 		"--frame\r\n"
 		"Content-Type: image/jpeg\r\n\r\n"
 	);
 	client.write((char *)cam.getfb(), cam.getSize());
-	server.sendContent("\r\n");
+	client.write("\r\n");
 }
 
 void handle_jpg_stream(void)
@@ -61,10 +61,6 @@ void handle_jpg(void)
 {
 	WiFiClient client = server.client();
 
-	if (!client.connected())
-	{
-		return;
-	}
 	String response = "HTTP/1.1 200 OK\r\n";
 	response += "Content-disposition: inline; filename=capture.jpg\r\n";
 	response += "Content-type: image/jpeg\r\n\r\n";
@@ -95,6 +91,7 @@ void setup()
 	}
 	Serial.setDebugOutput(true);
 	cam.init(esp32cam_config);
+//	cam.setFrameSize(FRAMESIZE_QQVGA);
 
 	// We start by connecting to a WiFi network
 
@@ -105,8 +102,10 @@ void setup()
 
 	WiFi.begin(ssid, password);
 
+	int level = LOW;
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(500);
+		level = !level;
 		Serial.print(".");
 	}
 
