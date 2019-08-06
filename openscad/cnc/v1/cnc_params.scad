@@ -3,6 +3,7 @@ $fn = 40;
 wall = 3;
 
 rod_d = 12;
+rod_sz = 150;
 rod_bearing_d = 16; //?
 rod_bearing_sz = 30; //?
 rod_bearing_pos_z = [20, 50];
@@ -15,7 +16,7 @@ lead_screw_nut_hole_r_dist = 4;
 
 base_sz_x = rod_bearing_sz * 2;
 base_sz_y = rod_bearing_d + 6; // shortest
-base_sz_z = rod_bearing_pos_z[1] + rod_bearing_d;
+base_sz_z = min(rod_sz-10, rod_bearing_pos_z[1] + rod_bearing_d);
 hole_d = 4;
 
 motor_sz = 30; //?
