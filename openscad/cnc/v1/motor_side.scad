@@ -6,7 +6,9 @@ module motor_side() {
 		cube([top_block_sz_x, top_block_sz_y, top_block_sz_z], center=true);
 		translate([0, (top_block_sz_y-base_sz_y)/2-wall, 0]) {
 			cube([base_sz_x, base_sz_y, top_block_sz_z], center=true);
-			mounting_holes();
+			translate([0, 0, top_block_sz_z/2-mounting_hole_offset]) {
+				mounting_holes(d=hole_d_through);
+			}
 		}
 		translate([0, -(top_block_sz_y-motor_sz)/2+wall, top_block_sz_z/4]) {
 			cube([motor_sz, motor_sz, top_block_sz_z/2], center=true);
@@ -19,8 +21,8 @@ module motor_side() {
 					}
 				}
 				// rod holes
-				translate([xpos*(motor_sz/2+(top_block_sz_x-motor_sz)/4), 0, -top_block_sz_z/2]) {
-					cylinder(d=rod_bearing_d, h=top_block_sz_z, center=true);
+				translate([xpos*23.25, 0, -top_block_sz_z/2]) {
+					cylinder(d=rod_d, h=top_block_sz_z, center=true);
 				}
 			}
 		}

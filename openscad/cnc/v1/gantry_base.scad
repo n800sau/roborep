@@ -1,15 +1,15 @@
 include <cnc_params.scad>
 
-module mounting_holes() {
+module mounting_holes(d=hole_d) {
 	for(ypos=[-1, 1]) {
 		translate([0, ypos * (hole_d+2), 0]) {
 			rotate([0, 90, 0]) {
-				cylinder(d=hole_d, h=base_sz_x*2, center=true);
+				cylinder(d=d, h=base_sz_x+2*wall, center=true);
 			}
 		}
 	}
 	rotate([90, 0, 0]) {
-		cylinder(d=hole_d, h=base_sz_x*2, center=true);
+		cylinder(d=d, h=base_sz_y+2*wall, center=true);
 	}
 }
 
@@ -21,7 +21,7 @@ module gantry_base() {
 
 		// holes for top and bottom mounting
 		for(zpos=[-1, 1]) {
-			translate([0, 0, zpos*(base_sz_z/2-5)]) {
+			translate([0, 0, zpos*(base_sz_z/2-mounting_hole_offset)]) {
 				mounting_holes();
 			}
 		}
