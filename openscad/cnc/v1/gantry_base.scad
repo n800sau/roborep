@@ -30,7 +30,7 @@ module gantry_base() {
 		for(zpos=rod_bearing_pos_z) {
 			translate([0, 0, -base_sz_z/2+zpos]) {
 				rotate([0, 90, 0]) {
-					cylinder(d=rod_bearing_d, h=base_sz_x, center=true);
+					cylinder(d=rod_bearing_d, h=base_sz_x+wall, center=true);
 				}
 			}
 		}
@@ -38,11 +38,11 @@ module gantry_base() {
 		// holes for the screw lead
 		translate([0, 0, -base_sz_z/2+lead_screw_nut_pos_z]) {
 			rotate([0, 90, 0]) {
-				cylinder(d=lead_screw_nut_d, h=base_sz_x, center=true);
+				cylinder(d=lead_screw_nut_d, h=base_sz_x+wall, center=true);
 				for(angle=[45:90:345]) {
 					rotate([0, 0, angle]) {
 						translate([lead_screw_nut_hole_r_dist, 0, 0]) {
-							cylinder(d=lead_screw_nut_hole_d, h=base_sz_x, center=true);
+							cylinder(d=lead_screw_nut_hole_d, h=base_sz_x+wall, center=true);
 						}
 					}
 				}
@@ -52,7 +52,10 @@ module gantry_base() {
 
 }
 
-rotate([0, 0, 45]) {
+rotate([0, 0, 90]) {
 	gantry_base();
 }
 
+//translate([4.5, -200, -140]) {
+//  import("/home/n800s/work/roborep/openscad/cnc/v1/spindle_carriage.stl", convexity = 5);
+//}
