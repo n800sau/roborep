@@ -6,13 +6,13 @@ rod_d = 12;
 rod_sz = 150;
 rod_bearing_d = 21;
 rod_bearing_sz = 30;
-rod_rod_dist = 30+rod_bearing_d;
+rod_rod_dist = 34+rod_bearing_d;
 rod_bearing_pos_z = [15+12/2, 15 + 12/2 + rod_rod_dist + 12/2];
 lead_screw_d = 8;
 lead_screw_bearing_d = 22;
 lead_screw_bearing_sz = 7;
 lead_screw_nut_d = 11;
-lead_screw_nut_pos_z = rod_bearing_pos_z[0] + 18.5 + 8/2 + 12/2;
+lead_screw_nut_pos_z = rod_bearing_pos_z[0] + 20.5 + 8/2 + 12/2;
 lead_screw_nut_hole_d = 2.4;
 lead_screw_nut_hole_r_dist = 8;
 
@@ -37,5 +37,3 @@ top_block_sz_z = 10;
 bottom_block_sz_x = top_block_sz_x;
 bottom_block_sz_y = top_block_sz_y - 10;
 bottom_block_sz_z = lead_screw_bearing_sz + wall;
-
-
