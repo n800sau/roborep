@@ -11,6 +11,8 @@ const char* password = WIFI_PASSWORD;
 
 #define HOSTNAME "esp32cam"
 #define MAX_CLIENT_COUNT 2
+// from esp32/working/1ZLAB_ESP32_Wifi_Camera/源代码/esp32-cam-demo/main/app_main.c
+#define CAMERA_LED_GPIO 16
 
 OV2640 cam;
 WebServer server(80);
@@ -83,6 +85,8 @@ void handleNotFound()
 
 void setup()
 {
+	pinMode(CAMERA_LED_GPIO, OUTPUT);
+	digitalWrite(CAMERA_LED_GPIO, HIGH);
 	Serial.begin(115200);
 
 	while (!Serial)
