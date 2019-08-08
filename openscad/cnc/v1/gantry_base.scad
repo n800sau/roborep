@@ -8,9 +8,13 @@ module mounting_holes(d=hole_d) {
 			}
 		}
 	}
-	rotate([90, 0, 0]) {
-		cylinder(d=d, h=base_sz_y+2*wall, center=true);
-	}
+  for(xpos=[-1, 0, 1]) {
+		translate([xpos*15, 0, 0]) {
+      rotate([90, 0, 0]) {
+        cylinder(d=d, h=base_sz_y+2*wall, center=true);
+      }
+    }
+  }
 }
 
 module gantry_base() {
@@ -22,6 +26,13 @@ module gantry_base() {
 		// holes for top and bottom mounting
 		for(zpos=[-1, 1]) {
 			translate([0, 0, zpos*(base_sz_z/2-mounting_hole_offset)]) {
+				mounting_holes();
+			}
+		}
+
+		// holes just in case
+		for(zoff=[20, 30, 40, 76, 103]) {
+			translate([0, 0, base_sz_z/2-zoff]) {
 				mounting_holes();
 			}
 		}
