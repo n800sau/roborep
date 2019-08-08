@@ -21,7 +21,7 @@ module motor_side() {
 					}
 				}
 				// rod holes
-				translate([xpos*23.25, 0, -top_block_sz_z/2]) {
+				translate([xpos*23.25, 0, -top_block_sz_z/4-wall]) {
 					cylinder(d=rod_d, h=top_block_sz_z, center=true);
 				}
 			}

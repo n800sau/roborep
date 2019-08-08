@@ -31,7 +31,7 @@ module gantry_base() {
 		}
 
 		// holes just in case
-		for(zoff=[20, 30, 40, 76, 103]) {
+		for(zoff=[20, 30, 40, 50, 93, 119]) {
 			translate([0, 0, base_sz_z/2-zoff]) {
 				mounting_holes();
 			}
