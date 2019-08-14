@@ -1,6 +1,8 @@
 $fn = 40;
 
 use <../lib/switch.scad>
+use <../lib/gopro_like_connector.scad>
+use <MCAD/nuts_and_bolts.scad>
 
 wall = 2;
 gap = 1;
@@ -94,7 +96,31 @@ module switch_box() {
   }
 }
 
+module gp_connector() {
+  connector();
+  translate([17, 5.5, 8]) {
+    difference() {
+      cube([20, 30, 4], center=true);
+      translate([0, -8, 0]) {
+        cylinder(d=hole_d_through, h=20, center=true);
+        translate([0, 0, 1]) {
+          nutHole(3);
+        }
+        translate([0, 0, -2.5]) {
+          rotate([90, 0, 0]) {
+            cylinder(d=hole_d_through, h=20, center=true);
+          }
+        }
+      }
+    }
+  }
+}
+
 //led_wheel_holder();
 translate([0, 0, -20]) {
-  switch_box();
+  //switch_box();
+}
+
+translate([27, 2.5, 0]) {
+  gp_connector();
 }
