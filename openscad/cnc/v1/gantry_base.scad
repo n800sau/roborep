@@ -1,10 +1,18 @@
 include <cnc_params.scad>
 
-module mounting_holes(d=hole_d) {
+module mounting_holes(d=hole_d, cone=false) {
 	for(ypos=[-1, 1]) {
 		translate([0, ypos * (hole_d+2), 0]) {
 			rotate([0, 90, 0]) {
-				cylinder(d=d, h=base_sz_x+2*wall, center=true);
+				cylinder(d=d, h=base_sz_x+2*wall+10, center=true);
+				if(cone) {
+					translate([0, 0, base_sz_x/2+wall]) {
+						cylinder(d1=d, d2=d+4, h=3, center=true);
+					}
+					translate([0, 0, -base_sz_x/2-wall]) {
+						cylinder(d2=d, d1=d+4, h=3, center=true);
+					}
+				}
 			}
 		}
 	}
@@ -12,9 +20,25 @@ module mounting_holes(d=hole_d) {
 		translate([xpos*15, 0, 0]) {
       rotate([90, 0, 0]) {
         cylinder(d=d, h=base_sz_y+2*wall, center=true);
+		if(cone) {
+			translate([0, 0, -base_sz_y/2-wall]) {
+				cylinder(d2=d, d1=d+4, h=3, center=true);
+			}
+			translate([0, 0, base_sz_y/2+wall]) {
+				cylinder(d1=d, d2=d+4, h=3, center=true);
+			}
+		}
       }
     }
   }
+}
+
+module holes_just_in_case(d=hole_d, cone=false) {
+	for(zoff=[20, 30, 40, 50, 93, 119]) {
+		translate([0, 0, base_sz_z/2-zoff]) {
+			mounting_holes(d=d, cone=cone);
+		}
+	}
 }
 
 module gantry_base() {
@@ -30,12 +54,7 @@ module gantry_base() {
 			}
 		}
 
-		// holes just in case
-		for(zoff=[20, 30, 40, 50, 93, 119]) {
-			translate([0, 0, base_sz_z/2-zoff]) {
-				mounting_holes();
-			}
-		}
+		holes_just_in_case();
 
 		// holes for rod bearings
 		for(zpos=rod_bearing_pos_z) {
