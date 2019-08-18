@@ -12,47 +12,47 @@ top_block_reduce_y = 15;
 motor_bolt_hole_d = 4;
 
 module motor_bolt_holes(d=motor_bolt_hole_d) {
-  for(xpos=[-1,1]) {
-    for(ypos=[-1,1]) {
-      // motor bolt holes
-      translate([xpos*motor_hole_dist/2, ypos*motor_hole_dist/2, 0]) {
-        cylinder(d=d, h=top_block_sz_z*4, center=true);
-      }
-    }
-  }
+	for(xpos=[-1,1]) {
+		for(ypos=[-1,1]) {
+			// motor bolt holes
+			translate([xpos*motor_hole_dist/2, ypos*motor_hole_dist/2, 0]) {
+				cylinder(d=d, h=top_block_sz_z*4, center=true);
+			}
+		}
+	}
 }
 
 module rod_holes() {
-  for(xpos=[-1,1]) {
-    // rod holes
-    translate([xpos*23.25, 0, -top_block_sz_z/4-wall]) {
-      cylinder(d=rod_d, h=top_block_sz_z, center=true);
-    }
-  }
+	for(xpos=[-1,1]) {
+		// rod holes
+		translate([xpos*23.25, 0, -top_block_sz_z/4-wall]) {
+			cylinder(d=rod_d, h=top_block_sz_z, center=true);
+		}
+	}
 }
 
-module  motor_raise() {
-  translate([0, -(top_block_sz_y-motor_sz)/2+wall+motor_shift_y, (motor_raise_sz_z+top_block_sz_z)/2]) {
-    difference() {
-      translate([0, 0, (wall-motor_raise_sz_z)/2]) {
-        roundedBox([motor_sz, motor_sz, wall], 2, true);
-        translate([0, 0, (motor_raise_sz_z-wall)/2]) {
-          rotate([0, 0, 45]) {
-            difference() {
-              roundedBox([motor_sz-3*motor_raise_wall_sz, motor_sz-3*motor_raise_wall_sz, motor_raise_sz_z], 2, true);
-              roundedBox([motor_sz-4*motor_raise_wall_sz, motor_sz-4*motor_raise_wall_sz, motor_raise_sz_z], 2, true);
-            }
-          }
-        }
-      }
-      motor_bolt_holes(d=motor_bolt_hole_d);
-      motor_center_hole(d=motor_d);
-    }
-  }
+module	motor_raise() {
+	translate([0, -(top_block_sz_y-motor_sz)/2+wall+motor_shift_y, (motor_raise_sz_z+top_block_sz_z)/2]) {
+		difference() {
+			translate([0, 0, (wall-motor_raise_sz_z)/2]) {
+				roundedBox([motor_sz, motor_sz, wall], 2, true);
+				translate([0, 0, (motor_raise_sz_z-wall)/2]) {
+					rotate([0, 0, 45]) {
+						difference() {
+							roundedBox([motor_sz-3*motor_raise_wall_sz, motor_sz-3*motor_raise_wall_sz, motor_raise_sz_z], 2, true);
+							roundedBox([motor_sz-4*motor_raise_wall_sz, motor_sz-4*motor_raise_wall_sz, motor_raise_sz_z], 2, true);
+						}
+					}
+				}
+			}
+			motor_bolt_holes(d=motor_bolt_hole_d);
+			motor_center_hole(d=motor_d);
+		}
+	}
 }
 
 module motor_center_hole(d=motor_d) {
-  cylinder(d=d, h=top_block_sz_z*4, center=true);
+	cylinder(d=d, h=top_block_sz_z*4, center=true);
 }
 
 module motor_side() {
@@ -70,24 +70,24 @@ module motor_side() {
 						cube([wall, base_sz_y+2*wall, top_block_sz_z + extra_border_sz_z], center=true);
 					}
 				}
-        // side support triangle
-        for(x=[-1,1]) {
-          translate([x*(top_block_sz_x-wall)/2+wall/2, (triangle_sz_y-wall)/2, wall]) {
-            rotate([0, 90, 180]) {
-              triangle(triangle_sz_y, extra_border_sz_z, wall);
-            }
-          }
-        }
+				// side support triangle
+				for(x=[-1,1]) {
+					translate([x*(top_block_sz_x-wall)/2+wall/2, (triangle_sz_y-wall)/2, wall]) {
+						rotate([0, 90, 180]) {
+							triangle(triangle_sz_y, extra_border_sz_z, wall);
+						}
+					}
+				}
 			}
 		}
-    // corner cuts
-    for(x=[-1,1]) {
-      translate([x*(top_block_sz_x-25), -top_block_sz_y/2, 0]) {
-        rotate([0, 0, 45]) {
-          cube([50, 50, top_block_sz_z], center=true);
-        }
-      }
-    }
+		// corner cuts
+		for(x=[-1,1]) {
+			translate([x*(top_block_sz_x-25), -top_block_sz_y/2, 0]) {
+				rotate([0, 0, 45]) {
+					cube([50, 50, top_block_sz_z], center=true);
+				}
+			}
+		}
 		translate([0, (top_block_sz_y-base_sz_y)/2-wall, 0]) {
 			cube([base_sz_x+wall, base_sz_y+1, top_block_sz_z+extra_border_sz_z*2], center=true);
 			translate([0, 0, top_block_sz_z/2-mounting_hole_offset]) {
@@ -98,11 +98,11 @@ module motor_side() {
 			}
 		}
 		translate([0, -(top_block_sz_y-motor_sz)/2+wall, top_block_sz_z/4]) {
-      translate([0, motor_shift_y, 0]) {
-        motor_center_hole();
-        motor_bolt_holes();
-      }
-      rod_holes();
+			translate([0, motor_shift_y, 0]) {
+				motor_center_hole();
+				motor_bolt_holes();
+			}
+			rod_holes();
 		}
 	}
 }

@@ -16,10 +16,10 @@ module mounting_holes(d=hole_d, cone=false) {
 			}
 		}
 	}
-  for(xpos=[-1, 0, 1]) {
+	for(xpos=[-1, 0, 1]) {
 		translate([xpos*15, 0, 0]) {
-      rotate([90, 0, 0]) {
-        cylinder(d=d, h=base_sz_y+2*wall, center=true);
+			rotate([90, 0, 0]) {
+				cylinder(d=d, h=base_sz_y+2*wall, center=true);
 		if(cone) {
 			translate([0, 0, -base_sz_y/2-wall]) {
 				cylinder(d2=d, d1=d+4, h=3, center=true);
@@ -28,9 +28,9 @@ module mounting_holes(d=hole_d, cone=false) {
 				cylinder(d1=d, d2=d+4, h=3, center=true);
 			}
 		}
-      }
-    }
-  }
+			}
+		}
+	}
 }
 
 module holes_just_in_case(d=hole_d, cone=false) {
@@ -87,5 +87,5 @@ rotate([0, 0, 90]) {
 }
 
 //translate([4.5, -200, -140]) {
-//  import("/home/n800s/work/roborep/openscad/cnc/v1/spindle_carriage.stl", convexity = 5);
+//	import("/home/n800s/work/roborep/openscad/cnc/v1/spindle_carriage.stl", convexity = 5);
 //}
