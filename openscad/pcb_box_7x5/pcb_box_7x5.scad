@@ -1,3 +1,5 @@
+type="single"; // single, double (sided)
+
 $fn = 30;
 
 module pcb_box(
@@ -139,10 +141,10 @@ module pcb_box_7x5(
 		pcb_wall_gap = 6,
 		side_sz_z = side_sz_z,
 		screw_holes=[
-			[3, 3],
-			[3, -3],
-			[-3, -3],
-			[-3, 3],
+			[4, 3],
+			[4, -3],
+			[-4, -3],
+			[-4, 3],
 		],
 		leg_sz_z=leg_sz_z,
 		leg_pos=leg_pos,
@@ -207,9 +209,18 @@ translate([0, 0, 8]) {
     }
   }
 }
-//pcb_box_7x5(make_type="bottom");
-pcb_box_double_7x5(
-  make_type="bottom",
-	pcb_under_sz_z = 7,
-  side_sz_z=11
-);
+
+if(type=="single") {
+	pcb_box_7x5(
+		make_type="bottom"
+	);
+}
+
+if(type=="double") {
+	pcb_box_double_7x5(
+		make_type="bottom",
+		pcb_under_sz_z = 7,
+		side_sz_z=11
+	);
+}
+
