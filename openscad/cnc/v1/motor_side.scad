@@ -1,5 +1,6 @@
 include <cnc_params.scad>
 use <gantry_base.scad>
+use <gantry.scad>
 use <MCAD/boxes.scad>
 use <MCAD/triangles.scad>
 
@@ -18,15 +19,6 @@ module motor_bolt_holes(d=motor_bolt_hole_d) {
 			translate([xpos*motor_hole_dist/2, ypos*motor_hole_dist/2, 0]) {
 				cylinder(d=d, h=top_block_sz_z*4, center=true);
 			}
-		}
-	}
-}
-
-module rod_holes() {
-	for(xpos=[-1,1]) {
-		// rod holes
-		translate([xpos*23.25, 0, -top_block_sz_z/4-wall]) {
-			cylinder(d=rod_d, h=top_block_sz_z, center=true);
 		}
 	}
 }
@@ -102,7 +94,7 @@ module motor_side() {
 				motor_center_hole();
 				motor_bolt_holes();
 			}
-			rod_holes();
+			vert_rod_holes(z_off=-top_block_sz_z/4-wall);
 		}
 	}
 }

@@ -11,7 +11,7 @@ rod_bearing_pos_z = [15+12/2, 15 + 12/2 + rod_rod_dist + 12/2];
 lead_screw_d = 8;
 lead_screw_bearing_d = 22;
 lead_screw_bearing_sz = 7;
-lead_screw_nut_d = 11;
+lead_screw_nut_d = 11.6;
 lead_screw_nut_pos_z = rod_bearing_pos_z[0] + 20.5 + 8/2 + 12/2;
 lead_screw_nut_hole_d = 2.4;
 lead_screw_nut_hole_r_dist = 8;
@@ -32,7 +32,7 @@ mounting_hole_offset = 5;
 motor_sz = 43;
 motor_d = 24;
 motor_hole_dist = 30.2;
-rod_distance = 66.2 - rod_bearing_d;
+rod_distance = 66.2 - rod_bearing_d; //rod_distance/2 = 23.25??? (66.2 - 21)/2 = 45.2/2 = 22.6 !!!
 // motor shift from rod axis
 motor_shift_y = 5;
 
