@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd SdRoot
+cd html
 HOSTNAME=esp8266sd.local
 URL="$HOSTNAME"/up
-PREFIX=test2
+PREFIX=
 for sdname in `find -type d`
 do
 	for fname in `find $sdname -type f`
