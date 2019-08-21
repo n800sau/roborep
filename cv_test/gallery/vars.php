@@ -4,7 +4,7 @@
 	$ARATIO = 4./3;
 	$SRCPATH = $BASEPATH . '/images';
 	$THUMBPATH = $BASEPATH . '/thumbs';
-	$TH_WIDTH = 64;
-	$TH_HEIGHT = $TH_WIDTH  / $ARATIO;
+	$TH_MAXWIDTH = 64;
+	$TH_MAXHEIGHT = $TH_MAXWIDTH  / $ARATIO;
 
 ?>
