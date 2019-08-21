@@ -39,7 +39,7 @@ void returnFail(String msg) {
 bool loadFromSdCard(String path) {
 	String dataType = "text/plain";
 	if (path.endsWith("/")) {
-		path += "index.htm";
+		path += "index.html";
 	}
 
 	if (path.endsWith(".src")) {
@@ -67,8 +67,9 @@ bool loadFromSdCard(String path) {
 	}
 
 	File dataFile = SD.open(path.c_str());
+	DBG_OUTPUT_PORT.println("Sending " + path + "...");
 	if (dataFile.isDirectory()) {
-		path += "/index.htm";
+		path += "/index.html";
 		dataType = "text/html";
 		dataFile = SD.open(path.c_str());
 	}
