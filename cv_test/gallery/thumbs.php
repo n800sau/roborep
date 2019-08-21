@@ -11,33 +11,36 @@
 	foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($SRCPATH)) as $dname)
 	{
 		foreach(glob($dname->getPathname() . '/*') as $fpath) {
-			$itype = exif_imagetype($fpath);
-			if($itype) {
-				if($i >= $start) {
-					// check if thumb exists
-					$bname = basename($fpath);
-					$ftime = filemtime($fpath);
-					$thpath = $THUMBPATH . '/' . $bname;
-					$thtime = file_exists($thpath) ? filemtime($thpath) : NULL;
-					if(is_null($thtime) || ($thtime < $ftime)) {
-						// make thumbnail
-						$thumb = new \Imagick($fpath);
-						$thumb->resizeImage($TH_MAXWIDTH, $TH_MAXHEIGHT, imagick::INTERPOLATE_BICUBIC, -1, TRUE);
-						$thumb->writeImage($thpath);
+			$it = mime_content_type($fpath);
+			if($it == 'image/jpeg') {
+				$itype = exif_imagetype($fpath);
+				if($itype) {
+					if($i >= $start) {
+						// check if thumb exists
+						$bname = basename($fpath);
+						$ftime = filemtime($fpath);
+						$thpath = $THUMBPATH . '/' . $bname;
+						$thtime = file_exists($thpath) ? filemtime($thpath) : NULL;
+						if(is_null($thtime) || ($thtime < $ftime)) {
+							// make thumbnail
+							$thumb = new \Imagick($fpath);
+							$thumb->resizeImage($TH_MAXWIDTH, $TH_MAXHEIGHT, imagick::INTERPOLATE_BICUBIC, -1, TRUE);
+							$thumb->writeImage($thpath);
+						}
+						$fpathlist = explode('/', $fpath);
+						$flist[] = array(
+							'thumb' => $thpath,
+							'image' => $fpath,
+							'bname' => $bname,
+							'dname' => $fpathlist[count($fpathlist)-3],
+						);
+						$count--;
+						if($count <= 0) {
+								break;
+						}
 					}
-					$fpathlist = explode('/', $fpath);
-					$flist[] = array(
-						'thumb' => $thpath,
-						'image' => $fpath,
-						'bname' => $bname,
-						'dname' => $fpathlist[count($fpathlist)-3],
-					);
-					$count--;
-					if($count <= 0) {
-						break;
-					}
+					$i++;
 				}
-				$i++;
 			}
 		}
 		if($count <= 0) {

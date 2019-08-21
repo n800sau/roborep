@@ -1,8 +1,12 @@
 #!/bin/bash
 
-SCADFILE=bb_anycube_lid.scad
+#SCADFILE=sec_cam/tube.scad
+#SCADFILE=bb_anycube_lid.scad
 #SCADFILE=bb_anycube_case.scad
 #SCADFILE=wbbone_box.scad
+#SCADFILE=stl2img.scad
+#SCADFILE=alpha.scad
+SCADFILE="V-Slot.scad"
 
 STEPS=180
 PERFRAME=5

@@ -1,0 +1,52 @@
+from side
+
+i005 
+i014
++3.3
+gnd
+i012 (rx) - blue - C0
+i013 (tx) - green - B6
+
+power pins
+gnd gnd
+gnd gnd
++12v +12v
+
+
+usb-serial
+rts - reset
+dtr - i00
+
+
+-----------------
+mosfet pcb
+
+from big +12 picaxe side
+
+B1
+B2
+B3
+B4
+B5
+
+Green B6
+Blue  C0
++5
+gnd
+gnd
+
+--------------------
+from big +12 other side
+
+NC
+in big +12
+gnd
+out +5
+
+big - mosfet
+big - mosfet
+big - mosfet
+
+big +12
+big +12
+big +12

@@ -17,6 +17,7 @@
 	echo '$scope.angle = (' . $r->get('phase.angle') . "+ 0) || 0;\n";
 	echo '$scope.distance = (' . $r->get('phase.distance') . "+ 0) || 300;\n";
 	echo '$scope.z = (' . $r->get('phase.z') . "+ 0) || 200;\n";
+	echo '$scope.x = (' . $r->get('phase.x') . "+ 0) || 0;\n";
 
 ?>
 			var reload_deferred;
@@ -34,7 +35,7 @@
 			var reloadData = function() {
 				$scope.processing = true;
 				var load_id = (new Date()).getTime();
-				$http.get('phase.php?load_id=' + load_id + '&z=' + $scope.z + '&distance=' + $scope.distance + '&angle=' + $scope.angle).then(
+				$http.get('phase.php?load_id=' + load_id + '&z=' + $scope.z + '&distance=' + $scope.distance + '&angle=' + $scope.angle + '&x=' + $scope.x).then(
 					function(response) {
 						$scope.processing = false;
 						$scope.data = response.data;
@@ -81,6 +82,16 @@
 				debounceReloadData();
 			}
 
+			$scope.move_left = function() {
+				$scope.x -= 10;
+				debounceReloadData();
+			}
+
+			$scope.move_right = function() {
+				$scope.x += 10;
+				debounceReloadData();
+			}
+
 		});
 	</script>
 </head>
@@ -94,11 +105,13 @@
 		<table>
 		<tr>
 			<td>
+				<button ng-click="move_left()" ng-disabled="processing"><-</button>
 			</td>
 			<td>
 				<button ng-click="move_up()" ng-disabled="processing">&uarr;</button>
 			</td>
 			<td>
+				<button ng-click="move_right()" ng-disabled="processing">-></button>
 			</td>
 		</tr>
 		<tr>

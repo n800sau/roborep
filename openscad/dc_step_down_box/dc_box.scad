@@ -43,11 +43,11 @@ module lid() {
       translate([26, -6, -wall]) {
         cube([51, 16+6, wall*4]);
       }
-    translate([wall, wall*2+pad+lid_pad+pcb_w/2, wall]) {
-      linear_extrude(height = 2) {
-        text("DC STEP DOWN", font = font, size = 7, direction = "ltr", spacing = 1 );
+      translate([wall, wall*2+pad+lid_pad+pcb_w/2, wall]) {
+        linear_extrude(height = 2) {
+          text("DC STEP DOWN", font = font, size = 7, direction = "ltr", spacing = 1 );
+        }
       }
-    }
     }
   }
   translate([-left_pad-pcb_l/2, -pcb_w/2-pad, wall-lid_pad]) {
