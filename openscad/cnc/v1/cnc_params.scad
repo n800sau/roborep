@@ -11,11 +11,11 @@ rod_bearing_pos_z = [15+12/2, 15 + 12/2 + rod_rod_dist + 12/2];
 lead_screw_d = 8;
 lead_screw_bearing_d = 22;
 lead_screw_bearing_sz = 7;
-lead_screw_nut_d = 11.6;
+lead_screw_nut_d = 10.6;
 lead_screw_nut_pos_z = rod_bearing_pos_z[0] + 20.5 + 8/2 + 12/2;
 lead_screw_nut_hole_d = 2.4;
 lead_screw_nut_hole_r_dist = 8;
-lead_screw_nut_attach_plate_d = 22.5;
+lead_screw_nut_attach_plate_d = 22.4;
 
 echo("rod 1-lead ", lead_screw_nut_pos_z-rod_bearing_pos_z[0], ", lead to  rod2 ", lead_screw_nut_pos_z - rod_bearing_pos_z[1]);
 
