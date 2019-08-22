@@ -24,13 +24,13 @@
 						if(is_null($thtime) || ($thtime < $ftime)) {
 							// make thumbnail
 							$thumb = new \Imagick($fpath);
-							$thumb->resizeImage($TH_WIDTH, $TH_HEIGHT, imagick::INTERPOLATE_BICUBIC, -1);
+							$thumb->resizeImage($TH_MAXWIDTH, $TH_MAXHEIGHT, imagick::INTERPOLATE_BICUBIC, -1, TRUE);
 							$thumb->writeImage($thpath);
 						}
 						$fpathlist = explode('/', $fpath);
 						$flist[] = array(
 							'thumb' => $thpath,
-								'image' => $fpath,
+							'image' => $fpath,
 							'bname' => $bname,
 							'dname' => $fpathlist[count($fpathlist)-3],
 						);
