@@ -1,6 +1,6 @@
 include<cnc_params.scad>
-use<gantry_base.scad>
-use<gantry.scad>
+use<gantry_x.scad>
+use<gantry_z.scad>
 use<motor_side.scad>
 use<bottom_side.scad>
 

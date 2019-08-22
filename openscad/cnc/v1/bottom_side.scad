@@ -1,5 +1,5 @@
 include <cnc_params.scad>
-use <gantry_base.scad>
+use <gantry_x.scad>
 use <MCAD/triangles.scad>
 
 triangle_sz_y = 20;
