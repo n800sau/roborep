@@ -1,5 +1,6 @@
 include <cnc_params.scad>
 use <gantry_x.scad>
+use <gantry_z.scad>
 use <MCAD/triangles.scad>
 
 triangle_sz_y = 20;
@@ -45,12 +46,14 @@ module bottom_side() {
 				// motor hole (lead)
 				cylinder(d=lead_screw_d, h=bottom_block_sz_z*2, center=true);
 			}
-			for(xpos=[-1,1]) {
-				// rod holes
-				translate([xpos*rod_distance/2, 0, 0]) {
-					cylinder(d=rod_d, h=bottom_block_sz_z, center=true);
-				}
-			}
+			vert_rod_holes(h=bottom_block_sz_z, z_off=bottom_block_sz_z/4-wall);
+
+//			for(xpos=[-1,1]) {
+//				// rod holes
+//				translate([xpos*rod_distance/2, 0, 0]) {
+//					cylinder(d=rod_d, h=bottom_block_sz_z, center=true);
+//				}
+//			}
 		}
 	}
 }
