@@ -1,1 +1,1 @@
-wget http://esp8266sd.local/
+wget -d http://esp8266sd.local/aa

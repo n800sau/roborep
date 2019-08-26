@@ -17,6 +17,8 @@ ESP8266WebServer server(80);
 
 using namespace sdfat;
 using sdfat::File;
+using sdfat::FatFile;
+using sdfat::FatFileSystem;
 
 #define SD_CHIP_SELECT 15
 //#define SD_CHIP_SELECT SS
@@ -186,8 +188,11 @@ void printDirectory()
 		return returnFail("BAD ARGS");
 	}
 	String path = server.arg("dir");
+//	FatFile dir = SD.open((char *)path.c_str());
+//	DBG_OUTPUT_PORT.println("Opened file " + path + bool(dir));
+
 	if (path != "/" && !SD.exists((char *)path.c_str())) {
-		return returnFail("BAD PATH");
+		return returnFail("BAD PATH: " + path + ", exists:" + SD.exists((char *)path.c_str()));
 	}
 	File dir = SD.open((char *)path.c_str());
 	path = String();
