@@ -86,49 +86,77 @@ function rgb2hsv (r, g, b) {
 	};
 }
 
-	var ch = new Chart(document.getElementById('plot').getContext('2d'), {
-		type: 'bar',
-		options: {
-			onClick: function(ev, actives) {
-				if(actives.length > 0) {
-					var elementIndex = active[0]._datasetIndex;
-					var idx = actives[0]._index
-					console.log("elementIndex: " + elementIndex + "; array length: " + newArr.length);
-					console.log('click', idx);
-					var chartData = array[elementIndex]['_chart'].config.data;
-					var label = chartData.labels[idx];
-					var value = chartData.datasets[elementIndex].data[idx];
-					var series = chartData.datasets[elementIndex].label;
-					console.log(series + ':' + label + ':' + value);
-				}
-			},
-			responsive: false,
-			legend: {
-				position: 'top',
-			},
-			title: {
-				display: true,
-				text: 'Chart.js Bar Chart'
-			},
-			tooltips: {
-				// Disable the on-canvas tooltip
-				enabled: false,
-			},
-			scales: {
-				yAxes: [{
-					display: false,
-				}],
-				xAxes: [{
-					ticks: {
-						maxTicksLimit: 10,
+var xvals = [];
+
+var xmap = [];
+
+var ch = new Chart(document.getElementById('plot').getContext('2d'), {
+	type: 'bar',
+	options: {
+		onClick: function(ev, actives) {
+			if(actives.length > 0) {
+				var elementIndex = actives[0]._datasetIndex;
+				var idx = actives[0]._index
+//				console.log("elementIndex: " + elementIndex + "; array length: " + actives[0].length);
+				console.log('click', idx);
+//				var chartData = actives[elementIndex]['_chart'].config.data;
+				var chartData = actives[0]['_chart'].config.data;
+				var label = chartData.labels[idx];
+				var value = chartData.datasets[elementIndex].data[idx];
+				var series = chartData.datasets[elementIndex].label;
+				console.log(series + ':' + label + ':' + value);
+				var val = prompt('enter value', '');
+				if(val != null) {
+					for(var i=xmap.length-1; i>0; i--) {
+						if(xmap[i][0] == label) {
+							xmap.splice(i, 1);
+							break;
+						}
 					}
-				}]
-			},
-			animation: {
-				duration: 0,
+					xmap.push([label, val]);
+					xmap.sort();
+				}
 			}
+		},
+		responsive: false,
+		legend: {
+			position: 'top',
+		},
+		title: {
+			display: true,
+			text: 'Chart.js Bar Chart'
+		},
+		tooltips: {
+			// Disable the on-canvas tooltip
+			enabled: false,
+		},
+		scales: {
+			yAxes: [{
+				display: false,
+			}],
+			xAxes: [{
+				ticks: {
+					maxTicksLimit: 10,
+				}
+			}]
+		},
+		animation: {
+			duration: 0,
 		}
-	});
+	}
+});
+
+function map_x(x) {
+	var rs = x;
+console.log(x);
+	for(var i=0; i<xmap.length-1; i++) {
+		if(xmap[i][0]<=x && x<xmap[i+1][0]) {
+			rs = xmap[i][1] + (xmap[i+1][1] - xmap[i][1])/(xmap[i+1][0] - xmap[i][0])*x;
+			break;
+		}
+	}
+	return rs;
+}
 
 function updatePlot() {
 	var data = crop_obj.getCropBoxData();
@@ -144,7 +172,8 @@ function updatePlot() {
 //		console.log(event.detail.scaleY);
 			// find brightness
 			var vals = [];
-			var ylist=[];
+			var xlist=[];
+			xvals = [];
 			for (var y = 0; y < data.height; y++) {
 				var v = 0;
 				for (var x = 0; x < data.width; x++) {
@@ -155,14 +184,15 @@ function updatePlot() {
 					var hsv = rgb2hsv(r, g, b);
 					v += hsv.v;
 				}
-				ylist.push(y);
+				xvals.push(y)
+				xlist.push(map_x(y));
 				vals.push(v/data.width);
 			}
 
 			console.log('vals size', vals.length);
 
 		var barChartData = {
-			labels: ylist,
+			labels: xlist,
 			datasets: [{
 				label: 'Dataset 1',
 				backgroundColor: Chart.helpers.color('gray').alpha(0.5).rgbString(),
@@ -188,53 +218,6 @@ function init_cropper() {
 		},
 	});
 
-	do_crop = function() {
-//		console.log('end', data);
-//		var img = document.getElementById('cropper');
-		var img = croppr.imageClippedEl;
-		console.log('clipsize', img.width + 'x' + img.height);
-
-		var ctx = document.getElementById('result_canvas').getContext('2d');
-		ctx.drawImage(img, data.x, data.y, data.width, data.height, 0, 0, data.width, data.height);
-		var imgData = ctx.getImageData(0, 0, data.width, data.height);
-//		console.log('data', imgData);
-		// find brightness
-		var vals = [];
-		var ylist=[];
-		for (var y = 0; y < data.height; y++) {
-			var v = 0;
-			for (var x = 0; x < data.width; x++) {
-				var i = (x + data.width * y) * 4;
-				var r = imgData.data[i];
-				var g = imgData.data[i+1];
-				var b = imgData.data[i+2];
-				var hsv = rgb2hsv(r, g, b);
-				v += hsv.v;
-			}
-			ylist.push(y);
-			vals.push(v/data.width);
-		}
-
-		console.log('vals size', vals.length);
-
-	var barChartData = {
-		labels: ylist,
-		datasets: [{
-			label: 'Dataset 1',
-			backgroundColor: Chart.helpers.color('gray').alpha(0.5).rgbString(),
-			borderColor: Chart.helpers.color('blue'),
-			borderWidth: 1,
-			data: vals,
-		}]
-	};
-
-	ch.data = barChartData;
-	ch.update();
-
-		// vals - list of mean width value
-//		ctx.putImageData(imgData, data.width, 0); 
-//		ctx.drawImage(img, 0, 0);
-	}
 }
 
 
