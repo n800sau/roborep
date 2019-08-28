@@ -10,7 +10,7 @@ LS_URL = 'http://' + HOSTNAME + '/ls?dir='
 RM_URL= 'http://' + HOSTNAME + '/rmdir?dir='
 
 def sort_key(v):
-	return (0, v['dir']['name']) if 'dir' in v else (1, v['file']['name'])
+	return (1, v['dir']['name']) if 'dir' in v else (0, v['file']['name'])
 
 def list_dir(dname, alist):
 #	print('dname', dname)
@@ -21,6 +21,7 @@ def list_dir(dname, alist):
 
 		for d in data:
 			if d['type'] == 'dir':
+				rm_dir(dname + d['name'])
 				dlist = []
 				list_dir(dname + d['name'], dlist)
 				dlist.sort(key=sort_key)
@@ -30,6 +31,10 @@ def list_dir(dname, alist):
 				alist.append({'file': d})
 	else:
 		print('failed', dname)
+
+def rm_dir(dname):
+	r = requests.get(RM_URL+dname)
+	print('RM', dname, r.content)
 
 def print_dir(dlist, indent):
 	for d in dlist:
@@ -42,6 +47,6 @@ def print_dir(dlist, indent):
 
 alist = []
 list_dir('/', alist)
-
+print('/')
 alist.sort(key=sort_key)
-print_dir(alist, 0)
+print_dir(alist, 1)

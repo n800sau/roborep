@@ -295,6 +295,16 @@ void setup(void) {
 	server.on("/rmdir", HTTP_GET, handleDeleteDir);
 	server.on("/rm", HTTP_GET, handleDeleteFile);
 	server.on("/up", HTTP_POST, []() { returnOK(); }, handleFileUpload);
+	//get heap status, analog input value and all GPIO statuses in one json call
+	server.on("/read_data", HTTP_GET, []() {
+		String json = "{";
+		json += "\"heap\":" + String(ESP.getFreeHeap());
+		json += ", \"analog\":" + String(analogRead(A0));
+		json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
+		json += "}";
+		server.send(200, "text/json", json);
+		json = String();
+	});
 	server.onNotFound(handleNotFound);
 
 	server.begin();
