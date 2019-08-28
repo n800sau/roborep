@@ -88,15 +88,19 @@ void readStageAndTemp(int &stage, double &temp)
 		// Allocate the memory pool on the stack.
 		// Don't forget to change the capacity to match your JSON document.
 		// Use arduinojson.org/assistant to compute the capacity.
-		StaticJsonBuffer<1024> jsonBuffer;
+		DynamicJsonDocument doc(1024);
 		// Parse the root object
-		JsonObject &root = jsonBuffer.parseObject(file);
-		if(root.success()) {
+		deserializeJson(doc, file);
+		auto error = deserializeJson(doc, file);
+		if (error) {
+			Serial.println(F("Failed to read settings"));
+		} else {
+			auto root = doc.to<JsonObject>();
 			long secs = (millis() - start_millis)/1000;
 			for(unsigned int i=0; i<root["settings"].size(); i++) {
 Serial.print("group:");
 Serial.println(i);
-				JsonObject &group = root["settings"][i];
+				JsonObject group = root["settings"][i];
 				for(unsigned int j=0; j<group["repeat"]; j++) {
 Serial.print("repeat:");
 Serial.println(j);
@@ -132,8 +136,6 @@ Serial.println(secs);
 				Serial.println("Finished");
 				stop_running();
 			}
-		} else {
-			Serial.println(F("Failed to read settings"));
 		}
 	}
 }
@@ -155,26 +157,25 @@ AsyncCallbackJsonWebHandler* settings_handler = new AsyncCallbackJsonWebHandler(
 			request->send(200, "text/json", "[]");
 		}
 	} else if(request->method() == HTTP_POST) {
-		JsonObject& jsonObj = json.as<JsonObject>();
+		JsonObject jsonObj = json.as<JsonObject>();
 		File file = SPIFFS.open(settings_path, "w");
-		jsonObj.printTo(file);
+		serializeJson(jsonObj, file);
 		file.close();
-		jsonObj.printTo(Serial);
+		serializeJson(jsonObj, Serial);
 		request->send(200, "text/json", "{\"Result\":\"OK\"}");
 	}
 });
 
 
 AsyncCallbackJsonWebHandler* temp_handler = new AsyncCallbackJsonWebHandler("/temp/set",[](AsyncWebServerRequest *request, JsonVariant &json) {
-	StaticJsonBuffer<200> jsonBuffer;
-	JsonObject& jsonObj = json.as<JsonObject>();
+	JsonObject jsonObj = json.to<JsonObject>();
 	temp2set = jsonObj["temp"];
 	Serial.print("temp2set:");
 	Serial.println(temp2set);
-	JsonObject& root = jsonBuffer.createObject();
-	root["temp2set"] = (int)temp2set;
+	StaticJsonDocument<200> doc;
+	doc["temp2set"] = (int)temp2set;
 	String output;
-	root.printTo(output);
+	serializeJson(doc, output);
 	request->send(200, "text/json", output);
 });
 
@@ -302,29 +303,28 @@ void update_temp()
 
 void flip()
 {
-	StaticJsonBuffer<300> jsonBuffer;
+	StaticJsonDocument<300> doc;
 	update_heater();
-	JsonObject& root = jsonBuffer.createObject();
-	root["v"] = v;
-	root["r"] = r;
-	root["temp"] = temp;
+	doc["v"] = v;
+	doc["r"] = r;
+	doc["temp"] = temp;
 	if(temp2set > -1000) {
-		root["temp2set"] = (int)temp2set;
+		doc["temp2set"] = (int)temp2set;
 	}
-	root["heating"] = heating;
-	root["cooling"] = cooling;
+	doc["heating"] = heating;
+	doc["cooling"] = cooling;
 	if(running) {
-		root["running_time"] = millis() - start_millis;
-		root["secs_remaining"] = secs_remaining;
-		root["group_index"] = group_index;
-		root["repeat"] = repeat;
-		root["stage_index"] = stage_index;
-		root["stage"] = stage;
+		doc["running_time"] = millis() - start_millis;
+		doc["secs_remaining"] = secs_remaining;
+		doc["group_index"] = group_index;
+		doc["repeat"] = repeat;
+		doc["stage_index"] = stage_index;
+		doc["stage"] = stage;
 	}
 	String output;
-	root.printTo(output);
+	serializeJson(doc, output);
 
-	root.printTo(Serial);
+	serializeJson(doc, Serial);
 	Serial.println();
 
 	ws.printfAll(output.c_str());
