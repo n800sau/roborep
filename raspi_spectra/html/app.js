@@ -1,49 +1,93 @@
+function dataURItoBlob(dataURI) {
+	// convert base64/URLEncoded data component to raw binary data held in a string
+	var byteString;
+	if (dataURI.split(',')[0].indexOf('base64') >= 0)
+		byteString = atob(dataURI.split(',')[1]);
+	else
+		byteString = unescape(dataURI.split(',')[1]);
+	// separate out the mime component
+	var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+	// write the bytes of the string to a typed array
+	var ia = new Uint8Array(byteString.length);
+	for (var i = 0; i < byteString.length; i++) {
+		ia[i] = byteString.charCodeAt(i);
+	}
+	return new Blob([ia], {type:mimeString});
+}
+
+function postCanvasToURL() {
+	let snap = document.getElementById('video');
+	// Convert canvas image to Base64
+	var img = snap.toDataURL();
+	// Convert Base64 image to binary
+	var file = dataURItoBlob(img);
+
+	var data = new FormData();
+		  // Binary image
+	data.append('data', file);
+
+	var xhr = new XMLHttpRequest();
+
+	xhr.open('POST', 'upload_canvas.php');
+	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	xhr.onload = function() {
+		if (xhr.status === 200) {
+//			alert('Something went wrong.  Name is now ' + xhr.responseText);
+		}
+		else if (xhr.status !== 200) {
+			alert('Request failed.  Returned status of ' + xhr.status);
+		}
+	};
+	xhr.send(data);
+}
+
+
 async function extractFramesFromVideo(videoUrl, fps=25) {
   return new Promise(async (resolve) => {
 
-    // fully download it first (no buffering):
-    let videoBlob = await fetch(videoUrl).then(r => r.blob());
-    let videoObjectUrl = URL.createObjectURL(videoBlob);
-    let video = document.createElement("video");
+	// fully download it first (no buffering):
+	let videoBlob = await fetch(videoUrl).then(r => r.blob());
+	let videoObjectUrl = URL.createObjectURL(videoBlob);
+	let video = document.createElement("video");
 
-    let seekResolve;
-    video.addEventListener('seeked', async function() {
-      if(seekResolve) seekResolve();
-    });
+	let seekResolve;
+	video.addEventListener('seeked', async function() {
+	  if(seekResolve) seekResolve();
+	});
 
-    video.src = videoObjectUrl;
+	video.src = videoObjectUrl;
 
-    // workaround chromium metadata bug (https://stackoverflow.com/q/38062864/993683)
-    while((video.duration === Infinity || isNaN(video.duration)) && video.readyState < 2) {
-      await new Promise(r => setTimeout(r, 1000));
-      video.currentTime = 10000000*Math.random();
-    }
-    let duration = video.duration;
+	// workaround chromium metadata bug (https://stackoverflow.com/q/38062864/993683)
+	while((video.duration === Infinity || isNaN(video.duration)) && video.readyState < 2) {
+	  await new Promise(r => setTimeout(r, 1000));
+	  video.currentTime = 10000000*Math.random();
+	}
+	let duration = video.duration;
 
-    let canvas = document.getElementById('video');
-    let context = canvas.getContext('2d');
-    let [w, h] = [video.videoWidth, video.videoHeight]
-//    canvas.width =  w;
-//    canvas.height = h;
+	let canvas = document.getElementById('video');
+	let context = canvas.getContext('2d');
+	let [w, h] = [video.videoWidth, video.videoHeight]
+//	canvas.width =  w;
+//	canvas.height = h;
 
-    let frames = [];
-    let interval = 1 / fps;
-    let currentTime = 0;
+	let frames = [];
+	let interval = 1 / fps;
+	let currentTime = 0;
 
-    while(currentTime < duration) {
-      video.currentTime = currentTime;
-      await new Promise(r => seekResolve=r);
+	while(currentTime < duration) {
+	  video.currentTime = currentTime;
+	  await new Promise(r => seekResolve=r);
 
-      context.drawImage(video, 0, 0, w, h);
-      let base64ImageData = canvas.toDataURL();
+	  context.drawImage(video, 0, 0, w, h);
+	  let base64ImageData = canvas.toDataURL();
 
-      frames.push(base64ImageData);
+	  frames.push(base64ImageData);
 		crop_obj.replace(base64ImageData, true)
-//      var img = document.getElementById('cropper');
-//      img.src = base64ImageData;
-      currentTime += interval;
-    }
-    resolve(frames);
+//	  var img = document.getElementById('cropper');
+//	  img.src = base64ImageData;
+	  currentTime += interval;
+	}
+	resolve(frames);
   });
 
 };
@@ -127,13 +171,13 @@ function updatePlot() {
 	if(data.width !== undefined) {
 		var ctx = crop_obj.getCroppedCanvas().getContext('2d');
 		var imgData = ctx.getImageData(0, 0, data.width, data.height);
-//    console.log(event.detail.x);
-//    console.log(event.detail.y);
-//    console.log(event.detail.width);
-//    console.log(event.detail.height);
-//    console.log(event.detail.rotate);
-//    console.log(event.detail.scaleX);
-//    console.log(event.detail.scaleY);
+//	console.log(event.detail.x);
+//	console.log(event.detail.y);
+//	console.log(event.detail.width);
+//	console.log(event.detail.height);
+//	console.log(event.detail.rotate);
+//	console.log(event.detail.scaleX);
+//	console.log(event.detail.scaleY);
 			// find brightness
 			var vals = [];
 			var ylist=[];
@@ -224,7 +268,7 @@ crop_obj = new Cropper(document.getElementById('cropper'), {
 		ch.update();
 
 			// vals - list of mean width value
-//			ctx.putImageData(imgData, data.width, 0); 
+//			ctx.putImageData(imgData, data.width, 0);
 //			ctx.drawImage(img, 0, 0);
 		}
 	}
