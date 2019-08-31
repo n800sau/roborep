@@ -148,7 +148,9 @@ void Read_Magn()
 void Gyro_Init()
 {
 #ifdef GYRO_L3G4200D
-  gyro_L3G4200D.enableDefault(250);
+  gyro_L3G4200D.begin(L3G4200D_SCALE_2000DPS, L3G4200D_DATARATE_400HZ_50);
+  gyro_L3G4200D.calibrate(200);
+
 #else //GYRO_L3G4200D
   // Power up reset defaults
   Wire.beginTransmission(GYRO_ADDRESS);
@@ -185,10 +187,10 @@ void Gyro_Init()
 void Read_Gyro()
 {
 #ifdef GYRO_L3G4200D
-	gyro_L3G4200D.read();
-	gyro[0] = gyro_L3G4200D.g.x;
-	gyro[1] = gyro_L3G4200D.g.y;
-	gyro[2] = gyro_L3G4200D.g.z;
+	Vector raw = gyro_L3G4200D.readRaw();
+	gyro[0] = raw.XAxis;
+	gyro[1] = raw.YAxis;
+	gyro[2] = raw.ZAxis;
 #else //GYRO_L3G4200D
 
   int i = 0;

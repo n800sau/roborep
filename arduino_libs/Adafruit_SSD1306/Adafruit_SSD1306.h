@@ -95,7 +95,8 @@ All text above, and the splash screen must be included in any redistribution
   #define SSD1306_LCDHEIGHT                 16
 #endif
 
-#define SSD1306_SETCONTRAST 0x81
+#define SSD1306_SETCONTRAST 0x90
+//#define SSD1306_SETCONTRAST 0x81
 #define SSD1306_DISPLAYALLON_RESUME 0xA4
 #define SSD1306_DISPLAYALLON 0xA5
 #define SSD1306_NORMALDISPLAY 0xA6

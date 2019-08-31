@@ -1,94 +1,50 @@
-function dataURItoBlob(dataURI) {
-	// convert base64/URLEncoded data component to raw binary data held in a string
-	var byteString;
-	if (dataURI.split(',')[0].indexOf('base64') >= 0)
-		byteString = atob(dataURI.split(',')[1]);
-	else
-		byteString = unescape(dataURI.split(',')[1]);
-	// separate out the mime component
-	var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-	// write the bytes of the string to a typed array
-	var ia = new Uint8Array(byteString.length);
-	for (var i = 0; i < byteString.length; i++) {
-		ia[i] = byteString.charCodeAt(i);
-	}
-	return new Blob([ia], {type:mimeString});
-}
-
-function postCanvasToURL() {
-	let snap = document.getElementById('video');
-	// Convert canvas image to Base64
-	var img = snap.toDataURL();
-	// Convert Base64 image to binary
-	var file = dataURItoBlob(img);
-
-	var data = new FormData();
-		  // Binary image
-	data.append('data', file);
-
-	var xhr = new XMLHttpRequest();
-
-	xhr.open('POST', 'upload_canvas.php');
-	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-	xhr.onload = function() {
-		if (xhr.status === 200) {
-//			alert('Something went wrong.  Name is now ' + xhr.responseText);
-		}
-		else if (xhr.status !== 200) {
-			alert('Request failed.  Returned status of ' + xhr.status);
-		}
-	};
-	xhr.send(data);
-}
-
-
 async function extractFramesFromVideo(videoUrl, fps=25) {
-  return new Promise(async (resolve) => {
+	return new Promise(async (resolve) => {
 
-	// fully download it first (no buffering):
-	let videoBlob = await fetch(videoUrl).then(r => r.blob());
-	let videoObjectUrl = URL.createObjectURL(videoBlob);
-	let video = document.createElement("video");
+		// fully download it first (no buffering):
+		let videoBlob = await fetch(videoUrl).then(r => r.blob());
+		let videoObjectUrl = URL.createObjectURL(videoBlob);
+		let video = document.createElement("video");
 
-	let seekResolve;
-	video.addEventListener('seeked', async function() {
-	  if(seekResolve) seekResolve();
-	});
+		let seekResolve;
+		video.addEventListener('seeked', async function() {
+			if(seekResolve) seekResolve();
+		});
 
-	video.src = videoObjectUrl;
+		video.src = videoObjectUrl;
 
-	// workaround chromium metadata bug (https://stackoverflow.com/q/38062864/993683)
-	while((video.duration === Infinity || isNaN(video.duration)) && video.readyState < 2) {
-	  await new Promise(r => setTimeout(r, 1000));
-	  video.currentTime = 10000000*Math.random();
-	}
-	let duration = video.duration;
+		// workaround chromium metadata bug (https://stackoverflow.com/q/38062864/993683)
+		while((video.duration === Infinity || isNaN(video.duration)) && video.readyState < 2) {
+			await new Promise(r => setTimeout(r, 1000));
+			video.currentTime = 10000000*Math.random();
+		}
+		let duration = video.duration;
 
-	let canvas = document.getElementById('video');
-	let context = canvas.getContext('2d');
-	let [w, h] = [video.videoWidth, video.videoHeight]
-//	canvas.width =  w;
-//	canvas.height = h;
+		let canvas = document.getElementById('video');
+		let context = canvas.getContext('2d');
+		let [w, h] = [video.videoWidth, video.videoHeight]
+//		canvas.width =	w;
+//		canvas.height = h;
 
-	let frames = [];
-	let interval = 1 / fps;
-	let currentTime = 0;
+		let frames = [];
+		let interval = 1 / fps;
+		let currentTime = 0;
 
-	while(currentTime < duration) {
-	  video.currentTime = currentTime;
-	  await new Promise(r => seekResolve=r);
+		while(currentTime < duration) {
+			video.currentTime = currentTime;
+			await new Promise(r => seekResolve=r);
 
-	  context.drawImage(video, 0, 0, w, h);
-	  let base64ImageData = canvas.toDataURL();
+			context.drawImage(video, 0, 0, w, h);
+			let base64ImageData = canvas.toDataURL();
 
-	  frames.push(base64ImageData);
+			frames.push(base64ImageData);
 		crop_obj.replace(base64ImageData, true)
-//	  var img = document.getElementById('cropper');
-//	  img.src = base64ImageData;
-	  currentTime += interval;
-	}
-	resolve(frames);
-  });
+//			var img = document.getElementById('cropper');
+//			img.src = base64ImageData;
+			currentTime += interval;
+		}
+		resolve(frames);
+	});
 
 };
 
@@ -130,57 +86,94 @@ function rgb2hsv (r, g, b) {
 	};
 }
 
-	var ch = new Chart(document.getElementById('plot').getContext('2d'), {
-		type: 'bar',
-		options: {
-			onClick: function(ev, actives) {
-				if(actives.length > 0) {
-					console.log('click', actives[0]._index);
-				}
-			},
-			responsive: false,
-			legend: {
-				position: 'top',
-			},
-			title: {
-				display: true,
-				text: 'Chart.js Bar Chart'
-			},
-			tooltips: {
-				// Disable the on-canvas tooltip
-				enabled: false,
-			},
-			scales: {
-				yAxes: [{
-					display: false,
-				}],
-				xAxes: [{
-					ticks: {
-						maxTicksLimit: 10,
+var xvals = [];
+
+var xmap = [];
+
+var ch = new Chart(document.getElementById('plot').getContext('2d'), {
+	type: 'bar',
+	options: {
+		onClick: function(ev, actives) {
+			if(actives.length > 0) {
+				var elementIndex = actives[0]._datasetIndex;
+				var idx = actives[0]._index
+//				console.log("elementIndex: " + elementIndex + "; array length: " + actives[0].length);
+				console.log('click', idx);
+//				var chartData = actives[elementIndex]['_chart'].config.data;
+				var chartData = actives[0]['_chart'].config.data;
+				var label = chartData.labels[idx];
+				var value = chartData.datasets[elementIndex].data[idx];
+				var series = chartData.datasets[elementIndex].label;
+				console.log(series + ':' + label + ':' + value);
+				var val = prompt('enter value', '');
+				if(val != null) {
+					for(var i=xmap.length-1; i>0; i--) {
+						if(xmap[i][0] == label) {
+							xmap.splice(i, 1);
+							break;
+						}
 					}
-				}]
-			},
-			animation: {
-				duration: 0,
+					xmap.push([label, val]);
+					xmap.sort();
+				}
 			}
+		},
+		responsive: false,
+		legend: {
+			position: 'top',
+		},
+		title: {
+			display: true,
+			text: 'Chart.js Bar Chart'
+		},
+		tooltips: {
+			// Disable the on-canvas tooltip
+			enabled: false,
+		},
+		scales: {
+			yAxes: [{
+				display: false,
+			}],
+			xAxes: [{
+				ticks: {
+					maxTicksLimit: 10,
+				}
+			}]
+		},
+		animation: {
+			duration: 0,
 		}
-	});
+	}
+});
+
+function map_x(x) {
+	var rs = x;
+console.log(x);
+	for(var i=0; i<xmap.length-1; i++) {
+		if(xmap[i][0]<=x && x<xmap[i+1][0]) {
+			rs = xmap[i][1] + (xmap[i+1][1] - xmap[i][1])/(xmap[i+1][0] - xmap[i][0])*x;
+			break;
+		}
+	}
+	return rs;
+}
 
 function updatePlot() {
 	var data = crop_obj.getCropBoxData();
 	if(data.width !== undefined) {
 		var ctx = crop_obj.getCroppedCanvas().getContext('2d');
 		var imgData = ctx.getImageData(0, 0, data.width, data.height);
-//	console.log(event.detail.x);
-//	console.log(event.detail.y);
-//	console.log(event.detail.width);
-//	console.log(event.detail.height);
-//	console.log(event.detail.rotate);
-//	console.log(event.detail.scaleX);
-//	console.log(event.detail.scaleY);
+//		console.log(event.detail.x);
+//		console.log(event.detail.y);
+//		console.log(event.detail.width);
+//		console.log(event.detail.height);
+//		console.log(event.detail.rotate);
+//		console.log(event.detail.scaleX);
+//		console.log(event.detail.scaleY);
 			// find brightness
 			var vals = [];
-			var ylist=[];
+			var xlist=[];
+			xvals = [];
 			for (var y = 0; y < data.height; y++) {
 				var v = 0;
 				for (var x = 0; x < data.width; x++) {
@@ -191,14 +184,15 @@ function updatePlot() {
 					var hsv = rgb2hsv(r, g, b);
 					v += hsv.v;
 				}
-				ylist.push(y);
+				xvals.push(y)
+				xlist.push(map_x(y));
 				vals.push(v/data.width);
 			}
 
 			console.log('vals size', vals.length);
 
 		var barChartData = {
-			labels: ylist,
+			labels: xlist,
 			datasets: [{
 				label: 'Dataset 1',
 				backgroundColor: Chart.helpers.color('gray').alpha(0.5).rgbString(),
@@ -215,70 +209,22 @@ function updatePlot() {
 
 function init_cropper() {
 
-crop_obj = new Cropper(document.getElementById('cropper'), {
-	responsive: false,
-	autoCrop: false,
-	background: false,
-  crop(event) {
-		updatePlot();
-  },
-});
+	crop_obj = new Cropper(document.getElementById('cropper'), {
+		responsive: false,
+		autoCrop: false,
+		background: false,
+		crop(event) {
+			updatePlot();
+		},
+	});
 
-		do_crop = function() {
-//			console.log('end', data);
-//			var img = document.getElementById('cropper');
-			var img = croppr.imageClippedEl;
-			console.log('clipsize', img.width + 'x' + img.height);
-
-			var ctx = document.getElementById('result_canvas').getContext('2d');
-			ctx.drawImage(img, data.x, data.y, data.width, data.height, 0, 0, data.width, data.height);
-			var imgData = ctx.getImageData(0, 0, data.width, data.height);
-//			console.log('data', imgData);
-			// find brightness
-			var vals = [];
-			var ylist=[];
-			for (var y = 0; y < data.height; y++) {
-				var v = 0;
-				for (var x = 0; x < data.width; x++) {
-					var i = (x + data.width * y) * 4;
-					var r = imgData.data[i];
-					var g = imgData.data[i+1];
-					var b = imgData.data[i+2];
-					var hsv = rgb2hsv(r, g, b);
-					v += hsv.v;
-				}
-				ylist.push(y);
-				vals.push(v/data.width);
-			}
-
-			console.log('vals size', vals.length);
-
-		var barChartData = {
-			labels: ylist,
-			datasets: [{
-				label: 'Dataset 1',
-				backgroundColor: Chart.helpers.color('gray').alpha(0.5).rgbString(),
-				borderColor: Chart.helpers.color('blue'),
-				borderWidth: 1,
-				data: vals,
-			}]
-		};
-
-		ch.data = barChartData;
-		ch.update();
-
-			// vals - list of mean width value
-//			ctx.putImageData(imgData, data.width, 0);
-//			ctx.drawImage(img, 0, 0);
-		}
-	}
+}
 
 
 
-	run_extractor = async function(ev) {
-		init_cropper();
-		setInterval(updatePlot, 1000);
-		let frames = await extractFramesFromVideo("https://www.radiantmediaplayer.com/media/bbb-360p.mp4");
-		console.log(frames);
-	}
-
+run_extractor = async function(ev) {
+	init_cropper();
+	setInterval(updatePlot, 1000);
+	let frames = await extractFramesFromVideo("https://www.radiantmediaplayer.com/media/bbb-360p.mp4");
+	console.log(frames);
+}

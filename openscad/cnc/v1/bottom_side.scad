@@ -22,7 +22,7 @@ module bottom_side() {
 				for(x=[-1,1]) {
 					translate([x*(top_block_sz_x-wall)/2-wall/2, (triangle_sz_y)/2-7, -extra_border_sz_z/2]) {
 						rotate([0, 270, 180]) {
-							triangle(triangle_sz_y, extra_border_sz_z, wall);
+							triangle(triangle_sz_y-5, extra_border_sz_z, wall);
 						}
 					}
 				}

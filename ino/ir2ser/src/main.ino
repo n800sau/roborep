@@ -4,6 +4,8 @@
 // Connect a 38KHz remote control sensor to the pin below
 #define IRpin         11
 
+#define TXpin         9
+
 uint16_t ir_code[] = {
 	0x201,
 	0x200,
@@ -43,7 +45,7 @@ uint16_t ir_code[] = {
 
 
 Adafruit_NECremote remote(IRpin);
-SendOnlySoftwareSerial ss(9);
+SendOnlySoftwareSerial ss(TXpin);
 
 void setup(void) {
 	Serial.begin(115200);

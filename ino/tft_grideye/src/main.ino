@@ -61,7 +61,9 @@ const int RIGHT_PANE_OFF = BOXSIZE * 8;
 
 void setup(void) {
 	// serial rate of GridEye Kit
-	Serial.begin(57600);
+	Serial.begin(115200);
+
+	grideye::setup();
 
 	Serial.println(F("GridEye show"));
 
@@ -172,7 +174,7 @@ void loop()
 	byte r, g, b;
 	int color, hue;
 
-	if(refresh_terms()) {
+	if(grideye::refresh_terms()) {
 		for(int col=0; col<8; col++) {
 			for(int row=0; row<8; row++) {
 				hue = temp2hue(terms[row][col]);
