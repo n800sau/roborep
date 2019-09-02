@@ -22,22 +22,30 @@ byte last_key = 0;
 unsigned long  last_change_millis = 0;
 const unsigned long delta_millis = 500;
 
-void loop()
+byte read_key()
 {
-	byte key = 0;
-	for(byte i=0; i<sizeof(oline) && key == 0; i++) {
+	byte rs = 0;
+	for(byte i=0; i<sizeof(oline) && rs == 0; i++) {
 		digitalWrite(oline[i], LOW);
 		for(byte j=0; j<sizeof(iline); j++) {
 			if(digitalRead(iline[j]) == LOW) {
-				key = (i+1)<<4 | (j+1);
+				rs = (i+1)<<4 | (j+1);
 				break;
 			}
 		}
 		digitalWrite(oline[i], HIGH);
 	}
+	return rs;
+}
+
+void loop()
+{
+	byte key = read_key();
 	if(last_key != key) {
-		if(key == 0 && delta_millis + last_change_millis > millis()) {
+		unsigned long m = millis();
+		if(key == 0 && delta_millis + last_change_millis > m) {
 			key = last_key;
+			last_change_millis = m;
 		} else {
 			last_key = key;
 		}
