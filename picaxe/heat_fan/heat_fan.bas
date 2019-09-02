@@ -101,6 +101,7 @@ sertxd ("CMD PL2 ", #b1,CR,LF)
 sertxd ("CMD PL3 ", #b1,CR,LF)
 		low PWM_3
 	case GD
+' read data 4 temp sensors and 1 current sensor
 		fvrsetup FVR4096
 		adcconfig %011
 		serout SEROUT_PIN,SER_MODE,("T")
@@ -118,6 +119,8 @@ sertxd ("CMD PL3 ", #b1,CR,LF)
 	sertxd ("TEMP3 ", #b1,CR,LF)
 		serout SEROUT_PIN,SER_MODE,(b1)
 		serout SEROUT_PIN,SER_MODE,("C")
+		b8 = CURRENT_PIN
+		gosub read_adc
 	sertxd ("CURRENT ", #b1,CR,LF)
 		serout SEROUT_PIN,SER_MODE,(b1)
 	else
