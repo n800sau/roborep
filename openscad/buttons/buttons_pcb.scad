@@ -13,6 +13,7 @@ btn_pressed_sz_z = 4;
 inter_btn_space = pcb_hole_dist;
 btn_space_z = btn_sz_z + 2*wall;
 presser_above_wall = 2;
+button_link_sz_z = 0.5;
 
 module button_presser() {
 		cube([5, 5, gap+2*wall+presser_above_wall], center=true);
@@ -41,14 +42,14 @@ module button_set(btn_coordinates=[], button_presser_mode=false, btn_links=[]) {
 		}
 		if(button_presser_mode) {
 			for(lnk=btn_links) {
-				translate([0, 0, (2*wall+presser_above_wall-1)/2]) {
+				translate([0, 0, (2*gap+2*wall+presser_above_wall-button_link_sz_z)/2]) {
 					hull() {
 						p1 = btn_coordinates[lnk[0]];
 						p2 = btn_coordinates[lnk[1]];
 						translate([pcb_hole_dist*p1[0], pcb_hole_dist*p1[1], 0]) {
-							cube([1, 1, 1], center=true);
+							cube([1, 1, button_link_sz_z], center=true);
 							translate([pcb_hole_dist*(p2[0]-p1[0]), pcb_hole_dist*(p2[1]-p1[1]), 0]) {
-								cube([1, 1, 1], center=true);
+								cube([1, 1, button_link_sz_z], center=true);
 							}
 						}
 					}
@@ -59,17 +60,17 @@ module button_set(btn_coordinates=[], button_presser_mode=false, btn_links=[]) {
 }
 
 button_set1 = [
-				[1.5, 1], [11.5, 1],
+				[1.5, 1],          [11.5, 1],
 				[1.5, 4], [7.5, 4], [11.5, 4], [15.5, 4],
-				[1.5, 7], [11.5, 7],
-					[5.5, 8],
+				[1.5, 7],          [11.5, 7],
+					   [5.5, 8],
 ];
 
 btn_links1 = [
-	[0, 1], 
-	[2, 3], [3, 4], [4, 5],
+	[0, 1], [1, 5],
+	[2, 3], [4, 5],
 	[6, 8], [8, 7],
-	[1, 4], [4, 7],
+  [3, 8], [0, 3],
 ];
 
 pcb_sz_x = 50;
@@ -203,10 +204,10 @@ translate([0, 0, undercase_sz_z+button_top_sz_z-wall]) {
 		//buttons_case();
 	}
 }
-undercase();
+//undercase();
 
 //button_presser();
-//button_set(button_set1, button_presser_mode=true, btn_links=btn_links1);
+button_set(button_set1, button_presser_mode=true, btn_links=btn_links1);
 translate([0, 0, button_top_sz_z]) {
 	//pcb_cover();
 }
