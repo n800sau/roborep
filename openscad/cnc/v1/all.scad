@@ -13,7 +13,7 @@ color("blue")
 translate([0, -(top_block_sz_y)/2, 0]) {
   gantry();
 }
-//gantry_base();
+gantry_base();
 translate([0, -(bottom_block_sz_y-base_sz_y)/2+wall, -(base_sz_z-bottom_block_sz_z)/2]) {
 //	bottom_side();
 }

@@ -35,6 +35,8 @@ while not finished:
 				ser.write('!')
 			elif sys.argv[1] == '2':
 				ser.write('@')
+			elif sys.argv[1] == '3':
+				ser.write('#')
 		time.sleep(0.1)
 		ser.write('c')
 		ser.flush()

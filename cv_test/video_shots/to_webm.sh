@@ -1,5 +1,7 @@
 i=0
-flist=`find ~/work/eye_work/vids/*.avi | sort -R`
+flist="`find  ~/work/roborep/openscad/*.mp4 | sort -R`"
+#flist="`find ~/work/roborep/cv_test/timelapse/ -type f -name '*.avi' | sort -R`"
+#flist="`find  ~/work/spectra/*.avi | sort -R`"
 
 rm file.lst
 

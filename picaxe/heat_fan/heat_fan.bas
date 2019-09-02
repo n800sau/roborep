@@ -27,13 +27,14 @@ symbol PWM_1 = C.5
 symbol PWM_2 = C.2
 symbol PWM_3 = C.3
 
-symbol AMP_PIN = B.0
 symbol TERM1_PIN = B.1
 symbol TERM2_PIN = B.2
 symbol TERM3_PIN = B.3
 symbol CURRENT_PIN = B.4
 
-symbol PWM_PERIOD = 128;
+symbol PWM_PERIOD = 128
+
+symbol R1 = 26800
 
 get_val:
 	serin [200, no_cmd],SERIN_PIN,SER_MODE,b2

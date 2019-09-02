@@ -3,7 +3,7 @@ include <cnc_params.scad>
 $fn = 50;
 
 gantry_sz_x = base_sz_x;
-gantry_sz_y = rod_bearing_d + 4;
+gantry_sz_y = rod_bearing_d + 2 * wall;
 gantry_sz_z = rod_bearing_sz * 2 + 4;
 
 attach_sz_x = 4;
@@ -12,12 +12,14 @@ attach_sz_z = gantry_sz_z-10;
 
 extract_sz_x = lead_screw_nut_attach_plate_d + 2 * wall;
 extract_sz_y = extract_sz_x;
-extract_sz_z = gantry_sz_z - 1;
+extract_sz_z = gantry_sz_z - 15;
+
+rod_dist_x = 67.4 - rod_bearing_d;
 
 module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 	for(xpos=[-1,1]) {
 		// rod holes
-		translate([xpos*23.25, 0, z_off]) {
+		translate([xpos*rod_dist_x/2, 0, z_off]) {
 			cylinder(d=d, h=h, center=true);
 		}
 	}
@@ -26,7 +28,10 @@ module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 module gantry() {
 	difference() {
 		union() {
-			cube([gantry_sz_x-rod_bearing_d+4, gantry_sz_y, gantry_sz_z], center=true);
+			cube([gantry_sz_x-rod_bearing_d+2*wall, gantry_sz_y, gantry_sz_z], center=true);
+			translate([0, wall, 0]) {
+				cube([lead_screw_nut_attach_plate_d, gantry_sz_y, gantry_sz_z], center=true);
+			}
 			// attachment
 			for(xsgn=[-1,1]) {
 				translate([xsgn*(gantry_sz_x-rod_bearing_d)/2, -gantry_sz_y/2, -(gantry_sz_z-attach_sz_z)/2]) {
@@ -51,8 +56,8 @@ module gantry() {
 					}
 				}
 			}
-      // holes for rod bearings
-      vert_rod_holes(d=rod_bearing_d+4, h=gantry_sz_z);
+			// holes for rod bearings
+			vert_rod_holes(d=rod_bearing_d+2*wall, h=gantry_sz_z);
 		}
 
 		translate([0, motor_shift_y, 0]) {

@@ -124,7 +124,7 @@ module pcb_box_7x5(
 		pcb_sz_x = 70,
 		pcb_sz_y = 50,
 		pcb_sz_z = 2,
-		pcb_wall_gap = 5,
+		pcb_wall_gap = 6,
 		side_sz_z = side_sz_z,
 		screw_holes=[
 			[3, 3],
@@ -144,11 +144,11 @@ translate([0, 0, 20]) {
 //	pcb_box_7x5(make_type="top", side_sz_z=20, corner_screw_d=4);
 }
 translate([0, 0, 8]) {
-  pcb_box_7x5(make_type="middle", side_sz_z=2);
+//  pcb_box_7x5(make_type="middle", side_sz_z=2);
   for(x=[-1,1]) {
     translate([84, 27+x*18, -20]) {
-      cube([2, 10, 2+8+12]);
+//      cube([2, 10, 2+8+12]);
     }
   }
 }
-//pcb_box_7x5(make_type="bottom");
+pcb_box_7x5(make_type="bottom");
