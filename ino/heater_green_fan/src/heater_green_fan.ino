@@ -2,12 +2,20 @@
 
 #include <Ticker.h>
 
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define OLED_ADDRESS 0x3c
+Adafruit_SSD1306 display = Adafruit_SSD1306();
+
 bool heating = false;
 bool cooling = false;
 
+// peltier
 const int COOLER_PIN = 2;
 const int HEATER_PIN = 3;
 
+// NTC
 const int TEMP_PIN = A4;
 
 double temp = 0, temp2set = 0;
@@ -181,6 +189,15 @@ void setup()
 	pinMode(HEATER_PIN, OUTPUT);
 	digitalWrite(HEATER_PIN, LOW);
 	analogReference(INTERNAL);
+
+	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+	display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);  // initialize with the I2C addr 0x3C (for the 128x32)
+
+	// Show image buffer on the display hardware.
+	// Since the buffer is intialized with an Adafruit splashscreen
+	// internally, this will display the splashscreen.
+	display.display();
+	delay(500);
 
 	/*
 	* arg 1: pin: Analog pin
