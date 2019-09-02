@@ -139,9 +139,9 @@ module pcb_cover() {
 	}
 }
 
-undercase_sz_z = 15;
+undercase_sz_z = 18;
 attachment_width = 10;
-attachment_external_length = 10;
+attachment_external_length = 5;
 
 module undercase() {
 	difference() {
@@ -156,7 +156,7 @@ module undercase() {
 			// attachment
 			difference() {
 				union() {
-					cube([button_top_sz_x+2*wall+2*attachment_external_length, attachment_width, wall], center=true);
+					cube([button_top_sz_x+2*wall+attachment_external_length, attachment_width, wall], center=true);
 					for(xsgn=[-1, 1]) {
 						translate([xsgn*(button_top_sz_x/2+wall+attachment_external_length/2), 0, 0]) {
 							cylinder(d=attachment_width, h=wall, center=true);
@@ -176,11 +176,8 @@ module undercase() {
 					// corners
 					for(xsgn=[-1,1]) {
 						translate([xsgn*(button_top_sz_x-wall-side_gap)/2, ysgn*-side_gap/2, 0]) {
-							translate([0, ysgn*-wall, 0]) {
-								cube([side_gap, side_gap+wall, undercase_sz_z], center=true);
-							}
-							translate([xsgn*-wall, 0, 0]) {
-								cube([side_gap+wall, side_gap, undercase_sz_z], center=true);
+							translate([0, 0, 0]) {
+								cube([side_gap, side_gap, undercase_sz_z], center=true);
 							}
 						}
 					}
@@ -190,20 +187,20 @@ module undercase() {
 		for(ysgn=[-1, 1]) {
 			for(xsgn=[-1,1]) {
 				translate([xsgn*(button_top_sz_x-wall-side_gap)/2, ysgn*(button_top_sz_y-wall-side_gap)/2, (undercase_sz_z-wall)/2]) {
-					cylinder(d=hole_d, h=20, center=true);
+					cylinder(d=hole_d, h=undercase_sz_z, center=true);
 				}
 			}
 		}
 		// hole for wires
-		translate([button_top_sz_x/2, 0, undercase_sz_z/2]) {
-			cube([10, 10, 5], center=true);
+		translate([button_top_sz_x/2, 0, undercase_sz_z-3.5]) {
+			cube([10, 10, 7], center=true);
 		}
 	}
 }
 
-translate([0, 0, undercase_sz_z+1]) {
+translate([0, 0, undercase_sz_z+button_top_sz_z-wall]) {
 	rotate([180, 0, 0]) {
-		buttons_case();
+		//buttons_case();
 	}
 }
 undercase();
