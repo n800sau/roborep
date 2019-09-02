@@ -1,5 +1,5 @@
 
-const uint8_t oline[] = {5, 6, 7};
+const uint8_t oline[] = {11, 12, 13};
 const uint8_t iline[] = {8, 9, 10};
 
 void setup()
@@ -18,6 +18,9 @@ void setup()
 	Serial.println("\nButton test");
 }
 
+byte last_key = 0;
+unsigned long  last_change_millis = 0;
+const unsigned long delta_millis = 500;
 
 void loop()
 {
@@ -26,14 +29,18 @@ void loop()
 		digitalWrite(oline[i], LOW);
 		for(byte j=0; j<sizeof(iline); j++) {
 			if(digitalRead(iline[j]) == LOW) {
-				key = i<<4 | j;
+				key = (i+1)<<4 | (j+1);
 				break;
 			}
 		}
 		digitalWrite(oline[i], HIGH);
 	}
-	if(key != 0) {
+	if(last_key != key) {
+		if(key == 0 && delta_millis + last_change_millis > millis()) {
+			key = last_key;
+		} else {
+			last_key = key;
+		}
 		Serial.println(key, HEX);
 	}
-
 }
