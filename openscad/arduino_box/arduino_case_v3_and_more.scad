@@ -92,7 +92,7 @@ module Arduino_case_body() {
       //main compartment
       cube(size=[base_x+2*clearance, base_y+2*clearance, wall_height+1], center=false);
     }
-    translate([thick/2, 7.62+thick+clearance+(arduino_type=="NanoExt" ? 2 : 0), wall_height/2+thick+standoff_height]) {
+    translate([thick/2, 7.62+thick+clearance+(arduino_type=="NanoExt" ? 3 : 0), wall_height/2+thick+standoff_height]) {
       //power plug gap
       cube(size=[thick+1, 8.89+2*clearance, wall_height], center=true);
     }
