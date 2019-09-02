@@ -51,13 +51,13 @@ void update_temp()
 //	Serial.print(F("R:"));
 //	Serial.println(r);
 	temp = thermister(r);
-	Serial.print(F("Temp:"));
-	Serial.println(temp);
+//	Serial.print(F("Temp:"));
+//	Serial.println(temp);
 //	Serial.print(F("V:"));
 //	Serial.println(v);
 
 	double tempC = thermistor->readTempC();
-	Serial.println("tempC=" + String(tempC));
+//	Serial.println("tempC=" + String(tempC));
 }
 
 void heat_cool_proc()
@@ -79,16 +79,60 @@ void heat_cool_proc()
 String inputString = "";         // a String to hold incoming data
 bool stringComplete = false;  // whether the string is complete
 
+void parse_line(String line, String &command, String *args, int max_arg_count, int &args_count)
+{
+	command = "";
+	args_count = 0;
+	line.trim();
+	if(line.length() > 0) {
+		args_count = 0;
+		int space_pos = 0;
+		while(space_pos >= 0 && args_count < max_arg_count) {
+			space_pos = line.indexOf(' ');
+			if(command == "") {
+				command = line.substring(0, space_pos);
+				command.toUpperCase();
+			} else {
+				args[args_count++] = line.substring(0, space_pos);
+			}
+			if(space_pos >= 0) {
+				line = line.substring(space_pos+1);
+			}
+		}
+	}
+}
+
+#define MAX_ARGS_COUNT 2
+String command;
+String args[MAX_ARGS_COUNT];
+int args_count;
+String command_error;
+
 void process_proc()
 {
 	if(stringComplete) {
+		command_error = "";
 		if(inputString.length() > 0) {
-			int t = inputString.toInt();
-			if(t) {
-				temp2set = max(min_temp, t);
-				Serial.print(F("temp2set:"));
-				Serial.println(temp2set);
+			// get command
+			parse_line(inputString, command, args, MAX_ARGS_COUNT, args_count);
+			if(command == "T") {
+				if(args_count != 1) {
+					command_error = F("T command has one parameter");
+				} else {
+					Serial.print("Setting temp:");
+					Serial.println(args[0]);
+					temp2set = max(min_temp, args[0].toInt());
+					Serial.print(F("temp2set:"));
+					Serial.println(temp2set);
+				}
+			} else {
+				command_error = "Unknown command line:" + inputString;
 			}
+		}
+		if(command_error.length() > 0) {
+			Serial.println("ERR " + command_error);
+		} else {
+			Serial.println("OK");
 		}
 		inputString = "";
 		stringComplete = false;
