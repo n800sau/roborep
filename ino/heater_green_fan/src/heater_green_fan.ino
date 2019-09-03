@@ -2,6 +2,11 @@
 
 #include <Ticker.h>
 
+#include <keylib.h>
+const uint8_t oline[] = {11, 12, 13};
+const uint8_t iline[] = {8, 9, 10};
+readKey keylib = readKey();
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
@@ -184,6 +189,7 @@ Serial.println("Complete");
 void setup()
 {
 	Serial.begin(115200);
+	keylib.begin(sizeof(oline), sizeof(iline), oline, iline);
 	pinMode(COOLER_PIN, OUTPUT);
 	digitalWrite(COOLER_PIN, LOW);
 	pinMode(HEATER_PIN, OUTPUT);
@@ -222,6 +228,8 @@ void setup()
 
 void loop()
 {
+	byte key = keylib.read_key_debounce();
+	Serial.println(key, HEX);
 	heat_cool_timer.update();
 	process_timer.update();
 }
