@@ -38,6 +38,24 @@ const double beta = 3950;
 const double R_25 = 100000L; // 100k ohm
 const unsigned long Rs = 470000L;
 
+void display_all()
+{
+	display.setCursor(15, 5);
+	display.print("= ");
+	display.print(temp);
+	display.print(" C");
+	display.setCursor(15, 25);
+	display.print("> ");
+	display.print(temp2set);
+	display.print(" C");
+	if(heating) {
+		display.fillTriangle(0, 5, 5, 0, 10, 5, 0xFFFF);
+	} else {
+		display.fillTriangle(0, 0, 5, 5, 10, 0, 0x8888);
+	}
+	display.display();
+}
+
 int tempAnalogRead()
 {
 	int val = 0;
@@ -202,8 +220,11 @@ void setup()
 	// Show image buffer on the display hardware.
 	// Since the buffer is intialized with an Adafruit splashscreen
 	// internally, this will display the splashscreen.
+	display.clearDisplay();
 	display.display();
-	delay(500);
+	// text display tests
+	display.setTextSize(1);
+	display.setTextColor(WHITE);
 
 	/*
 	* arg 1: pin: Analog pin
@@ -232,4 +253,5 @@ void loop()
 	Serial.println(key, HEX);
 	heat_cool_timer.update();
 	process_timer.update();
+	display_all();
 }
