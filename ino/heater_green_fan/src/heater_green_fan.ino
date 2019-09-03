@@ -11,7 +11,7 @@ readKey keylib = readKey();
 #include <Adafruit_SSD1306.h>
 
 #define OLED_ADDRESS 0x3c
-Adafruit_SSD1306 display = Adafruit_SSD1306();
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 
 bool heating = false;
 bool cooling = false;
@@ -21,9 +21,11 @@ const int COOLER_PIN = 2;
 const int HEATER_PIN = 3;
 
 // NTC
-const int TEMP_PIN = A4;
+const int TEMP_PIN = A2;
 
-double temp = 0, temp2set = 0;
+#define UNKNOWN_TEMP -10000
+
+double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP;
 const int max_temp = 100, min_temp = 0;
 double v, r;
 
@@ -40,18 +42,23 @@ const unsigned long Rs = 470000L;
 
 void display_all()
 {
-	display.setCursor(15, 5);
-	display.print("= ");
-	display.print(temp);
-	display.print(" C");
-	display.setCursor(15, 25);
-	display.print("> ");
-	display.print(temp2set);
-	display.print(" C");
+	display.clearDisplay();
+	if(temp != UNKNOWN_TEMP) {
+		display.setCursor(30, 0);
+		display.print("= ");
+		display.print(temp);
+		display.print(" C");
+	}
+	if(temp2set != UNKNOWN_TEMP) {
+		display.setCursor(30, 12);
+		display.print("> ");
+		display.print(temp2set);
+		display.print(" C");
+	}
 	if(heating) {
-		display.fillTriangle(0, 5, 5, 0, 10, 5, 0xFFFF);
+		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
 	} else {
-		display.fillTriangle(0, 0, 5, 5, 10, 0, 0x8888);
+		display.fillTriangle(2, 2, 12, 12, 22, 2, INVERSE);
 	}
 	display.display();
 }
@@ -75,20 +82,23 @@ double thermister(double r)
 
 void update_temp()
 {
-//	Serial.print(F("TEMP_PIN value:"));
-//	Serial.println(analogRead(TEMP_PIN));
+	Serial.print(F("TEMP_PIN value:"));
+	Serial.println(analogRead(TEMP_PIN));
 	v = Vref*tempAnalogRead()/1024.;
 	r = v/((Vcc-v)/Rs);
 //	Serial.print(F("R:"));
 //	Serial.println(r);
 	temp = thermister(r);
-//	Serial.print(F("Temp:"));
-//	Serial.println(temp);
+	Serial.print(F("Temp:"));
+	Serial.println(temp);
+	if(temp2set == UNKNOWN_TEMP) {
+		temp2set = temp;
+	}
 //	Serial.print(F("V:"));
 //	Serial.println(v);
 
 	double tempC = thermistor->readTempC();
-//	Serial.println("tempC=" + String(tempC));
+	Serial.println("tempC=" + String(tempC));
 }
 
 void heat_cool_proc()
@@ -180,7 +190,7 @@ void process_proc()
 	}
 }
 
-Ticker heat_cool_timer(heat_cool_proc, 1000, 0, MILLIS);
+Ticker heat_cool_timer(heat_cool_proc, 2000, 0, MILLIS);
 Ticker process_timer(process_proc, 500, 0, MILLIS);
 
 void serialEvent()
@@ -206,16 +216,20 @@ Serial.println("Complete");
 
 void process_keys()
 {
+	static byte last_key = 0;
 	byte key = keylib.read_key_debounce();
-	switch(key) {
-		case 0x12:
-			temp2set++;
-			break;
-		case 0x13:
-			temp2set--;
-			break;
+	if(last_key != key) {
+		switch(key) {
+			case 0x21:
+				temp2set++;
+				break;
+			case 0x23:
+				temp2set--;
+				break;
+		}
+		Serial.println(key, HEX);
+		last_key = key;
 	}
-	Serial.println(key, HEX);
 }
 
 void setup()
@@ -229,7 +243,11 @@ void setup()
 	analogReference(INTERNAL);
 
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-	display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);  // initialize with the I2C addr 0x3C (for the 128x32)
+	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
+		Serial.println(F("SSD1306 allocation failed"));
+	}
+	display.display();
+	delay(1000);
 
 	// Show image buffer on the display hardware.
 	// Since the buffer is intialized with an Adafruit splashscreen
@@ -239,6 +257,9 @@ void setup()
 	// text display tests
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
+	display.setCursor(30, 10);
+	display.print("I an a thermo");
+	display.display();
 
 	/*
 	* arg 1: pin: Analog pin
@@ -256,7 +277,7 @@ void setup()
 	// For 5V Arduino
 	thermistor = new Thermistor(TEMP_PIN, Vcc, Vref, 1023, Rs, R_25, 25, beta, 5, 40);
 
-//	heat_cool_timer.start();
+	heat_cool_timer.start();
 	process_timer.start();
 	inputString.reserve(100);
 }
