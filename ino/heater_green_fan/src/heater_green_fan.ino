@@ -204,6 +204,20 @@ Serial.println("Complete");
 	}
 }
 
+void process_keys()
+{
+	byte key = keylib.read_key_debounce();
+	switch(key) {
+		case 0x12:
+			temp2set++;
+			break;
+		case 0x13:
+			temp2set--;
+			break;
+	}
+	Serial.println(key, HEX);
+}
+
 void setup()
 {
 	Serial.begin(115200);
@@ -249,8 +263,7 @@ void setup()
 
 void loop()
 {
-	byte key = keylib.read_key_debounce();
-	Serial.println(key, HEX);
+	process_keys();
 	heat_cool_timer.update();
 	process_timer.update();
 	display_all();
