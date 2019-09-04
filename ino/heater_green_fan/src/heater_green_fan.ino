@@ -32,6 +32,12 @@ double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP;
 const int max_temp = 100, min_temp = 0;
 double v, r;
 
+#define TEMP_HISTORY_SIZE 128
+int8_t temp_history[TEMP_HISTORY_SIZE];
+int temp_history_count = 0;
+int plot_max_temp = UNKNOWN_TEMP;
+int plot_min_temp = UNKNOWN_TEMP;
+
 Thermistor *thermistor;
 
 double Vcc = 3.3;
@@ -48,20 +54,27 @@ void display_all()
 	display.clearDisplay();
 	if(temp != UNKNOWN_TEMP) {
 		display.setCursor(30, 0);
-		display.print("= ");
+		display.print(F("= "));
 		display.print(temp);
-		display.print(" C");
+		display.print(F(" C"));
 	}
 	if(temp2set != UNKNOWN_TEMP) {
 		display.setCursor(30, 12);
-		display.print("> ");
+		display.print(F("> "));
 		display.print(temp2set);
-		display.print(" C");
+		display.print(F(" C"));
 	}
 	if(heating) {
 		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
 	} else {
 		display.fillTriangle(2, 2, 12, 12, 22, 2, INVERSE);
+	}
+	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
+		Serial.print(F("history size:"));
+		Serial.println(temp_history_count);
+		for(int i=0; i<temp_history_count; i++) {
+			display.writePixel(i, map(temp_history[i], plot_min_temp, plot_max_temp, 0, 64-24), INVERSE);
+		}
 	}
 	display.display();
 }
@@ -97,6 +110,12 @@ void update_temp()
 	if(temp2set == UNKNOWN_TEMP) {
 		temp2set = temp;
 	}
+	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
+		plot_min_temp = temp;
+	}
+	if(plot_max_temp == UNKNOWN_TEMP || plot_max_temp < temp) {
+		plot_max_temp = temp;
+	}
 //	Serial.print(F("V:"));
 //	Serial.println(v);
 
@@ -109,20 +128,33 @@ void heat_cool_proc()
 	if(heating) {
 		digitalWrite(HEATER_PIN, HIGH);
 		digitalWrite(FAN_PIN, LOW);
-		Serial.println("heating");
+		Serial.println(F("heating"));
 	} else {
 		digitalWrite(HEATER_PIN, LOW);
 		if(cooling) {
 			digitalWrite(COOLER_PIN, HIGH);
 			digitalWrite(FAN_PIN, HIGH);
-			Serial.println("cooling");
+			Serial.println(F("cooling"));
 		} else {
 			digitalWrite(COOLER_PIN, LOW);
 		}
 	}
 }
 
-String inputString = "";         // a String to hold incoming data
+void update_history_proc()
+{
+	if(temp != UNKNOWN_TEMP) {
+		if(temp_history_count+1 >= TEMP_HISTORY_SIZE) {
+			for(int i=1; i<TEMP_HISTORY_SIZE-1; i++) {
+				temp_history[i-1] = temp_history[i];
+			}
+			temp_history_count--;
+		}
+		temp_history[temp_history_count++] = temp;
+	}
+}
+
+String inputString;         // a String to hold incoming data
 bool stringComplete = false;  // whether the string is complete
 
 void parse_line(String line, String &command, String *args, int max_arg_count, int &args_count)
@@ -165,7 +197,7 @@ void process_proc()
 				if(args_count != 1) {
 					command_error = F("T command has one parameter");
 				} else {
-					Serial.print("Setting temp:");
+					Serial.print(F("Setting temp:"));
 					Serial.println(args[0]);
 					temp2set = max(min_temp, args[0].toInt());
 					Serial.print(F("temp2set:"));
@@ -178,7 +210,7 @@ void process_proc()
 		if(command_error.length() > 0) {
 			Serial.println("ERR " + command_error);
 		} else {
-			Serial.println("OK");
+			Serial.println(F("OK"));
 		}
 		inputString = "";
 		stringComplete = false;
@@ -197,6 +229,8 @@ void process_proc()
 
 Ticker heat_cool_timer(heat_cool_proc, 2000, 0, MILLIS);
 Ticker process_timer(process_proc, 500, 0, MILLIS);
+Ticker display_timer(display_all, 500, 0, MILLIS);
+Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 
 void serialEvent()
 {
@@ -206,7 +240,7 @@ void serialEvent()
 		if(stringComplete && isalnum(inChar)) {
 			stringComplete = false;
 			inputString = "";
-Serial.println("Reset");
+Serial.println(F("Reset"));
 		}
 		// add it to the inputString:
 		inputString += inChar;
@@ -214,7 +248,7 @@ Serial.println("Reset");
 		// do something about it:
 		if (inChar == '\n') {
 			stringComplete = true;
-Serial.println("Complete");
+Serial.println(F("Complete"));
 		}
 	}
 }
@@ -253,8 +287,8 @@ void setup()
 	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
 		Serial.println(F("SSD1306 allocation failed"));
 	}
-	display.display();
-	delay(1000);
+//	display.display();
+//	delay(1000);
 
 	// Show image buffer on the display hardware.
 	// Since the buffer is intialized with an Adafruit splashscreen
@@ -264,8 +298,8 @@ void setup()
 	// text display tests
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
-	display.setCursor(30, 10);
-	display.print("I an a thermo");
+//	display.setCursor(30, 10);
+//	display.print(F("I an a thermo"));
 	display.display();
 
 	/*
@@ -286,6 +320,8 @@ void setup()
 
 	heat_cool_timer.start();
 	process_timer.start();
+	temp_history_timer.start();
+	display_timer.start();
 	inputString.reserve(100);
 }
 
@@ -294,5 +330,6 @@ void loop()
 	process_keys();
 	heat_cool_timer.update();
 	process_timer.update();
-	display_all();
+	temp_history_timer.update();
+	display_timer.update();
 }
