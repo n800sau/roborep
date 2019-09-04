@@ -23,6 +23,9 @@ const int HEATER_PIN = 3;
 // NTC
 const int TEMP_PIN = A2;
 
+// Fan
+const int FAN_PIN = 4;
+
 #define UNKNOWN_TEMP -10000
 
 double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP;
@@ -105,11 +108,13 @@ void heat_cool_proc()
 {
 	if(heating) {
 		digitalWrite(HEATER_PIN, HIGH);
+		digitalWrite(FAN_PIN, LOW);
 		Serial.println("heating");
 	} else {
 		digitalWrite(HEATER_PIN, LOW);
 		if(cooling) {
 			digitalWrite(COOLER_PIN, HIGH);
+			digitalWrite(FAN_PIN, HIGH);
 			Serial.println("cooling");
 		} else {
 			digitalWrite(COOLER_PIN, LOW);
@@ -240,6 +245,8 @@ void setup()
 	digitalWrite(COOLER_PIN, LOW);
 	pinMode(HEATER_PIN, OUTPUT);
 	digitalWrite(HEATER_PIN, LOW);
+	pinMode(FAN_PIN, OUTPUT);
+	digitalWrite(FAN_PIN, LOW);
 	analogReference(INTERNAL);
 
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
