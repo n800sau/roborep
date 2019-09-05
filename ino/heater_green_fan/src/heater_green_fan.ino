@@ -69,6 +69,8 @@ void display_status()
 		display.print(F("> "));
 		display.print(temp2set);
 		display.print(F(" C"));
+		Serial.print("> ");
+		Serial.println(temp2set);
 	}
 	if(heating) {
 		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
