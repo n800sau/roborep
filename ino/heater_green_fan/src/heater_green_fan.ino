@@ -237,7 +237,7 @@ void process_proc()
 	}
 }
 
-Ticker heat_cool_timer(heat_cool_proc, 2000, 0, MILLIS);
+Ticker heat_cool_timer(heat_cool_proc, 1000, 0, MILLIS);
 Ticker process_timer(process_proc, 500, 0, MILLIS);
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
@@ -336,6 +336,7 @@ void setup()
 	temp_history_timer.start();
 	status_timer.start();
 	inputString.reserve(100);
+	Serial.println("Ready");
 }
 
 void loop()
