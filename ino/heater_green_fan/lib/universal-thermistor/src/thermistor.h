@@ -24,60 +24,62 @@
 #include <math.h>
 
 #ifdef PARTICLE
-  #include "application.h"
+	#include "application.h"
 #else
-  #include <Arduino.h>
+	#include <Arduino.h>
 #endif
 
 class Thermistor {
-  protected:
-    const int _pin;
-    const double _vcc;
-    const double _analogReference;
-    const double _adcMax;
-    const double _seriesResistor;
-    const double _temperatureNominal;
-    const double _thermistorNominal;
-    const double _bCoef;
-    const int _samples;
-    const int _sampleDelay;
+	protected:
+		int _pin;
+		double _vcc;
+		double _analogReference;
+		double _adcMax;
+		double _seriesResistor;
+		double _temperatureNominal;
+		double _thermistorNominal;
+		double _bCoef;
+		int _samples;
+		int _sampleDelay;
 
-  public:
+	public:
 
-    /*
-    * arg 1: pin: Analog pin
-    * arg 2: vcc: Input voltage
-    * arg 3: analogReference: reference voltage. Typically the same as vcc, but not always (ie ESP8266=1.0)
-    * arg 4: adcMax: The maximum analog-to-digital convert value returned by analogRead (1023 or 4095)
-    * arg 5: seriesResistor: The ohms value of the fixed resistor (based on your hardware setup, usually 10k)
-    * arg 6: thermistorNominal: Resistance at nominal temperature (will be documented with the thermistor, usually 10k)
-    * arg 7: temperatureNominal: Temperature for nominal resistance in celcius (will be documented with the thermistor, assume 25 if not stated)
-    * arg 8: bCoef: Beta coefficient (or constant) of the thermistor (will be documented with the thermistor, typically 3380, 3435, or 3950)
-    * arg 9: samples: Number of analog samples to average (for smoothing)
-    * arg 10: sampleDelay: Milliseconds between samples (for smoothing)
-    */
-    Thermistor(int pin, double vcc, double analogReference, int adcMax, double seriesResistor, double thermistorNominal, int temperatureNominal, int bCoef, int samples, int sampleDelay);
+		Thermistor() {}
 
-    // Smoothed ADC value
-    double readADC() const;
+		/*
+		* arg 1: pin: Analog pin
+		* arg 2: vcc: Input voltage
+		* arg 3: analogReference: reference voltage. Typically the same as vcc, but not always (ie ESP8266=1.0)
+		* arg 4: adcMax: The maximum analog-to-digital convert value returned by analogRead (1023 or 4095)
+		* arg 5: seriesResistor: The ohms value of the fixed resistor (based on your hardware setup, usually 10k)
+		* arg 6: thermistorNominal: Resistance at nominal temperature (will be documented with the thermistor, usually 10k)
+		* arg 7: temperatureNominal: Temperature for nominal resistance in celcius (will be documented with the thermistor, assume 25 if not stated)
+		* arg 8: bCoef: Beta coefficient (or constant) of the thermistor (will be documented with the thermistor, typically 3380, 3435, or 3950)
+		* arg 9: samples: Number of analog samples to average (for smoothing)
+		* arg 10: sampleDelay: Milliseconds between samples (for smoothing)
+		*/
+		void begin(int pin, double vcc, double analogReference, int adcMax, double seriesResistor, double thermistorNominal, int temperatureNominal, int bCoef, int samples, int sampleDelay);
 
-    // Temperature in Kelvin
-    double readTempK() const;
+		// Smoothed ADC value
+		double readADC() const;
 
-    // Temperature in Celsius
-    double readTempC() const;
+		// Temperature in Kelvin
+		double readTempK() const;
 
-    // Temperature in Fahrenheit
-    double readTempF() const;
+		// Temperature in Celsius
+		double readTempC() const;
 
-    // convert ADC value to Kelvin
-    double adcToK(double adc) const;
+		// Temperature in Fahrenheit
+		double readTempF() const;
 
-    // convert Kelvin to Celsius
-    double kToC(double k) const;
+		// convert ADC value to Kelvin
+		double adcToK(double adc) const;
 
-    // convert Celsius to Fahrenheit
-    double cToF(double c) const;
+		// convert Kelvin to Celsius
+		double kToC(double k) const;
+
+		// convert Celsius to Fahrenheit
+		double cToF(double c) const;
 };
 
 #endif

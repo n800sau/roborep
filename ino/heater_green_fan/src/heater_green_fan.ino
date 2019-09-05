@@ -38,7 +38,7 @@ int temp_history_count = 0;
 int plot_max_temp = UNKNOWN_TEMP;
 int plot_min_temp = UNKNOWN_TEMP;
 
-Thermistor *thermistor;
+Thermistor thermistor;
 
 double Vcc = 3.3;
 double Vref = 1.1;
@@ -73,7 +73,7 @@ void display_all()
 		Serial.print(F("history size:"));
 		Serial.println(temp_history_count);
 		for(int i=0; i<temp_history_count; i++) {
-			display.writePixel(i, map(temp_history[i], plot_min_temp, plot_max_temp, 0, 64-24), INVERSE);
+			display.writePixel(i, map(temp_history[i], min(20, plot_min_temp), min(60, plot_max_temp), 0, 64-24), INVERSE);
 		}
 	}
 	display.display();
@@ -90,21 +90,27 @@ int tempAnalogRead()
 	return val;
 }
 
-double thermister(double r)
+double read_temp()
 {
+//	Serial.print(F("TEMP_PIN value:"));
+//	Serial.println(analogRead(TEMP_PIN));
+	v = Vref*tempAnalogRead()/1024.;
+	r = v/((Vcc-v)/Rs);
+//	Serial.print(F("R:"));
+//	Serial.println(r);
+//	Serial.print(F("V:"));
+//	Serial.println(v);
 // R = R_25 * Math.exp(beta * ((1 / (T + T_0)) - (1 / T_25)));
 	return 1 / ((log(r / R_25) / beta) + 1/T_25) - T_0;
 }
 
 void update_temp()
 {
-	Serial.print(F("TEMP_PIN value:"));
-	Serial.println(analogRead(TEMP_PIN));
-	v = Vref*tempAnalogRead()/1024.;
-	r = v/((Vcc-v)/Rs);
-//	Serial.print(F("R:"));
-//	Serial.println(r);
-	temp = thermister(r);
+	double tempC = thermistor.readTempC();
+	Serial.print("tempC=");
+	Serial.println(tempC);
+
+	temp = read_temp();
 	Serial.print(F("Temp:"));
 	Serial.println(temp);
 	if(temp2set == UNKNOWN_TEMP) {
@@ -116,11 +122,6 @@ void update_temp()
 	if(plot_max_temp == UNKNOWN_TEMP || plot_max_temp < temp) {
 		plot_max_temp = temp;
 	}
-//	Serial.print(F("V:"));
-//	Serial.println(v);
-
-	double tempC = thermistor->readTempC();
-	Serial.println("tempC=" + String(tempC));
 }
 
 void heat_cool_proc()
@@ -144,8 +145,8 @@ void heat_cool_proc()
 void update_history_proc()
 {
 	if(temp != UNKNOWN_TEMP) {
-		if(temp_history_count+1 >= TEMP_HISTORY_SIZE) {
-			for(int i=1; i<TEMP_HISTORY_SIZE-1; i++) {
+		if(temp_history_count >= TEMP_HISTORY_SIZE) {
+			for(int i=1; i<TEMP_HISTORY_SIZE; i++) {
 				temp_history[i-1] = temp_history[i];
 			}
 			temp_history_count--;
@@ -258,13 +259,15 @@ void process_keys()
 	static byte last_key = 0;
 	byte key = keylib.read_key_debounce();
 	if(last_key != key) {
-		switch(key) {
-			case 0x21:
-				temp2set++;
-				break;
-			case 0x23:
-				temp2set--;
-				break;
+		if(temp2set != UNKNOWN_TEMP) {
+			switch(key) {
+				case 0x21:
+					temp2set++;
+					break;
+				case 0x23:
+					temp2set--;
+					break;
+			}
 		}
 		Serial.println(key, HEX);
 		last_key = key;
@@ -316,7 +319,8 @@ void setup()
 	*/
 
 	// For 5V Arduino
-	thermistor = new Thermistor(TEMP_PIN, Vcc, Vref, 1023, Rs, R_25, 25, beta, 5, 40);
+	thermistor.begin(TEMP_PIN, Vcc, Vref, 1023, Rs, R_25, 25, beta, 5, 40);
+
 
 	heat_cool_timer.start();
 	process_timer.start();

@@ -22,7 +22,7 @@
 
 #define ABS_ZERO -273.15
 
-Thermistor::Thermistor(
+void Thermistor::begin(
 	int pin,
 	double vcc,
 	double analogReference,
@@ -32,18 +32,19 @@ Thermistor::Thermistor(
 	int temperatureNominal,
 	int bCoef,
 	int samples,
-	int sampleDelay):
-		_pin(pin),
-		_vcc(vcc),
-		_analogReference(analogReference),
-		_adcMax(adcMax),
-		_seriesResistor(seriesResistor),
-		_thermistorNominal(thermistorNominal),
-		_temperatureNominal(temperatureNominal),
-		_bCoef(bCoef),
-		_samples(samples),
-		_sampleDelay(sampleDelay) {
-  pinMode(_pin, INPUT);
+	int sampleDelay)
+{
+	_pin = pin;
+	_vcc = vcc;
+	_analogReference = analogReference;
+	_adcMax = adcMax;
+	_seriesResistor = seriesResistor;
+	_thermistorNominal = thermistorNominal;
+	_temperatureNominal = temperatureNominal;
+	_bCoef = bCoef;
+	_samples = samples;
+	_sampleDelay = sampleDelay;
+	pinMode(_pin, INPUT);
 }
 
 double Thermistor::readADC() const {
