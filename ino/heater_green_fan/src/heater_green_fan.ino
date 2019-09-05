@@ -28,7 +28,7 @@ const int FAN_PIN = 4;
 
 #define UNKNOWN_TEMP -10000
 
-double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP;
+double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, tempC = UNKNOWN_TEMP;
 const int max_temp = 100, min_temp = 0;
 double v, r;
 
@@ -49,7 +49,7 @@ const double beta = 3950;
 const double R_25 = 100000L; // 100k ohm
 const unsigned long Rs = 470000L;
 
-void display_all()
+void display_status()
 {
 	display.clearDisplay();
 	if(temp != UNKNOWN_TEMP) {
@@ -57,6 +57,12 @@ void display_all()
 		display.print(F("= "));
 		display.print(temp);
 		display.print(F(" C"));
+		Serial.print("T ");
+		Serial.println(temp);
+	}
+	if(tempC != UNKNOWN_TEMP) {
+		Serial.print("C ");
+		Serial.println(tempC);
 	}
 	if(temp2set != UNKNOWN_TEMP) {
 		display.setCursor(30, 12);
@@ -66,12 +72,15 @@ void display_all()
 	}
 	if(heating) {
 		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
-	} else {
+		Serial.println("P +");
+	}
+	if(cooling) {
 		display.fillTriangle(2, 2, 12, 12, 22, 2, INVERSE);
+		Serial.println("P -");
 	}
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
-		Serial.print(F("history size:"));
-		Serial.println(temp_history_count);
+//		Serial.print(F("history size:"));
+//		Serial.println(temp_history_count);
 		for(int i=0; i<temp_history_count; i++) {
 			display.writePixel(i, map(temp_history[i], min(20, plot_min_temp), min(60, plot_max_temp), 0, 64-24), INVERSE);
 		}
@@ -106,13 +115,13 @@ double read_temp()
 
 void update_temp()
 {
-	double tempC = thermistor.readTempC();
-	Serial.print("tempC=");
-	Serial.println(tempC);
+	tempC = thermistor.readTempC();
+//	Serial.print("tempC=");
+//	Serial.println(tempC);
 
 	temp = read_temp();
-	Serial.print(F("Temp:"));
-	Serial.println(temp);
+//	Serial.print(F("Temp:"));
+//	Serial.println(temp);
 	if(temp2set == UNKNOWN_TEMP) {
 		temp2set = temp;
 	}
@@ -129,13 +138,13 @@ void heat_cool_proc()
 	if(heating) {
 		digitalWrite(HEATER_PIN, HIGH);
 		digitalWrite(FAN_PIN, LOW);
-		Serial.println(F("heating"));
+//		Serial.println(F("heating"));
 	} else {
 		digitalWrite(HEATER_PIN, LOW);
 		if(cooling) {
 			digitalWrite(COOLER_PIN, HIGH);
 			digitalWrite(FAN_PIN, HIGH);
-			Serial.println(F("cooling"));
+//			Serial.println(F("cooling"));
 		} else {
 			digitalWrite(COOLER_PIN, LOW);
 		}
@@ -230,7 +239,7 @@ void process_proc()
 
 Ticker heat_cool_timer(heat_cool_proc, 2000, 0, MILLIS);
 Ticker process_timer(process_proc, 500, 0, MILLIS);
-Ticker display_timer(display_all, 500, 0, MILLIS);
+Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 
 void serialEvent()
@@ -325,7 +334,7 @@ void setup()
 	heat_cool_timer.start();
 	process_timer.start();
 	temp_history_timer.start();
-	display_timer.start();
+	status_timer.start();
 	inputString.reserve(100);
 }
 
@@ -335,5 +344,5 @@ void loop()
 	heat_cool_timer.update();
 	process_timer.update();
 	temp_history_timer.update();
-	display_timer.update();
+	status_timer.update();
 }
