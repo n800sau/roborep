@@ -50,7 +50,7 @@ if started:
 
 	def run_item(item):
 		print('Run:', json.dumps(item), time.strftime('%d/%m/%Y %H:%M:%S'))
-		ser.write('T %d' % item['t'])
+		ser.write('T %d\n' % item['t'])
 		ser.flush()
 		current_start_ts = time.time()
 		while time.time() < current_start_ts + item['tm']:

@@ -222,7 +222,8 @@ void process_proc()
 		if(command_error.length() > 0) {
 			Serial.println("ERR " + command_error);
 		} else {
-			Serial.println(F("OK"));
+			Serial.print(F("OK "));
+			Serial.println(inputString);
 		}
 		inputString = "";
 		stringComplete = false;
@@ -260,7 +261,7 @@ Serial.println(F("Reset"));
 		// do something about it:
 		if (inChar == '\n') {
 			stringComplete = true;
-Serial.println(F("Complete"));
+//Serial.println(F("Complete"));
 		}
 	}
 }
