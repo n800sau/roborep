@@ -1,4 +1,6 @@
-#include "thermistor.h"
+//#include "thermistor.h"
+#include <VNH3SP30.h>
+
 
 #include <Ticker.h>
 
@@ -17,14 +19,20 @@ bool heating = false;
 bool cooling = false;
 
 // peltier
-const int COOLER_PIN = 2;
-const int HEATER_PIN = 3;
+VNH3SP30 Motor1;    // define control object for 1 motor
+
+// motor pins
+#define M1_PWM 3    // pwm pin motor
+#define M1_INA 4    // control pin INA
+#define M1_INB 5    // control pin INB
+#define M1_DIAG 6   // diagnose pins (combined DIAGA/ENA and DIAGB/ENB)
+#define M1_CS A0    // current sense pin
 
 // NTC
 const int TEMP_PIN = A2;
 
 // Fan
-const int FAN_PIN = 4;
+const int FAN_PIN = 7;
 
 #define UNKNOWN_TEMP -10000
 
@@ -32,13 +40,13 @@ double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, tempC = UNKNOWN_TEMP;
 const int max_temp = 100, min_temp = 0;
 double v, r;
 
-#define TEMP_HISTORY_SIZE 128
+#define TEMP_HISTORY_SIZE 64
 int8_t temp_history[TEMP_HISTORY_SIZE];
 int temp_history_count = 0;
 int plot_max_temp = UNKNOWN_TEMP;
 int plot_min_temp = UNKNOWN_TEMP;
 
-Thermistor thermistor;
+//Thermistor thermistor;
 
 double Vcc = 3.3;
 double Vref = 1.1;
@@ -84,7 +92,8 @@ void display_status()
 //		Serial.print(F("history size:"));
 //		Serial.println(temp_history_count);
 		for(int i=0; i<temp_history_count; i++) {
-			display.writePixel(i, map(temp_history[i], min(20, plot_min_temp), min(60, plot_max_temp), 0, 64-24), INVERSE);
+//			display.writePixel(i, map(temp_history[i], min(20, plot_min_temp), max(30, plot_max_temp), 24, 63), INVERSE);
+			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), INVERSE);
 		}
 	}
 	display.display();
@@ -117,7 +126,7 @@ double read_temp()
 
 void update_temp()
 {
-	tempC = thermistor.readTempC();
+//	tempC = thermistor.readTempC();
 //	Serial.print("tempC=");
 //	Serial.println(tempC);
 
@@ -133,22 +142,27 @@ void update_temp()
 	if(plot_max_temp == UNKNOWN_TEMP || plot_max_temp < temp) {
 		plot_max_temp = temp;
 	}
+	if(plot_min_temp > temp2set) {
+		plot_min_temp = temp2set;
+	}
+	if(plot_max_temp < temp2set) {
+		plot_max_temp = temp2set;
+	}
 }
 
 void heat_cool_proc()
 {
 	if(heating) {
-		digitalWrite(HEATER_PIN, HIGH);
+		Motor1.setSpeed(-400); // motor full-speed "backward"
 		digitalWrite(FAN_PIN, LOW);
 //		Serial.println(F("heating"));
 	} else {
-		digitalWrite(HEATER_PIN, LOW);
 		if(cooling) {
-			digitalWrite(COOLER_PIN, HIGH);
+			Motor1.setSpeed(400); // motor full-speed "forward"
 			digitalWrite(FAN_PIN, HIGH);
 //			Serial.println(F("cooling"));
 		} else {
-			digitalWrite(COOLER_PIN, LOW);
+			Motor1.setSpeed(0); // motor stop
 		}
 	}
 }
@@ -290,13 +304,11 @@ void setup()
 {
 	Serial.begin(115200);
 	keylib.begin(sizeof(oline), sizeof(iline), oline, iline);
-	pinMode(COOLER_PIN, OUTPUT);
-	digitalWrite(COOLER_PIN, LOW);
-	pinMode(HEATER_PIN, OUTPUT);
-	digitalWrite(HEATER_PIN, LOW);
 	pinMode(FAN_PIN, OUTPUT);
 	digitalWrite(FAN_PIN, LOW);
 	analogReference(INTERNAL);
+
+	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
 
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
 	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
@@ -331,7 +343,7 @@ void setup()
 	*/
 
 	// For 5V Arduino
-	thermistor.begin(TEMP_PIN, Vcc, Vref, 1023, Rs, R_25, 25, beta, 5, 40);
+//	thermistor.begin(TEMP_PIN, Vcc, Vref, 1023, Rs, R_25, 25, beta, 5, 40);
 
 
 	heat_cool_timer.start();
