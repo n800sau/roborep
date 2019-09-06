@@ -45,3 +45,19 @@ bottom_block_sz_x = top_block_sz_x;
 bottom_block_sz_y = top_block_sz_y - 10;
 bottom_block_sz_z = lead_screw_bearing_sz + wall;
 
+// ganztry_z params
+
+gantry_sz_x = base_sz_x;
+gantry_sz_y = rod_bearing_d + 2 * wall;
+gantry_sz_z = rod_bearing_sz * 2 + 4;
+
+attach_sz_x = 4;
+attach_sz_y = 25;
+attach_sz_z = gantry_sz_z-10;
+
+extract_sz_x = lead_screw_nut_attach_plate_d + 2 * wall;
+extract_sz_y = extract_sz_x;
+extract_sz_z = gantry_sz_z - 15;
+
+rod_dist_x = 67.4 - rod_bearing_d;
+

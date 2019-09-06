@@ -41,7 +41,7 @@ module holes_just_in_case(d=hole_d, cone=false) {
 	}
 }
 
-module gantry_base() {
+module gantry_x() {
 
 	difference() {
 
@@ -83,7 +83,7 @@ module gantry_base() {
 }
 
 rotate([0, 0, 90]) {
-	gantry_base();
+	gantry_x();
 }
 
 //translate([4.5, -200, -140]) {

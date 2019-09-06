@@ -2,20 +2,6 @@ include <cnc_params.scad>
 
 $fn = 50;
 
-gantry_sz_x = base_sz_x;
-gantry_sz_y = rod_bearing_d + 2 * wall;
-gantry_sz_z = rod_bearing_sz * 2 + 4;
-
-attach_sz_x = 4;
-attach_sz_y = 25;
-attach_sz_z = gantry_sz_z-10;
-
-extract_sz_x = lead_screw_nut_attach_plate_d + 2 * wall;
-extract_sz_y = extract_sz_x;
-extract_sz_z = gantry_sz_z - 15;
-
-rod_dist_x = 67.4 - rod_bearing_d;
-
 module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 	for(xpos=[-1,1]) {
 		// rod holes
@@ -25,7 +11,7 @@ module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 	}
 }
 
-module gantry() {
+module gantry_z() {
 	difference() {
 		union() {
 			cube([gantry_sz_x-rod_bearing_d+2*wall, gantry_sz_y, gantry_sz_z], center=true);
@@ -87,4 +73,4 @@ module gantry() {
 	}
 }
 
-gantry();
+gantry_z();
