@@ -34,27 +34,27 @@ const int TEMP_PIN = A2;
 // Fan
 const int FAN_PIN = 7;
 
-#define UNKNOWN_TEMP -10000
+#define UNKNOWN_TEMP -1000
 
 double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, tempC = UNKNOWN_TEMP;
-const int max_temp = 100, min_temp = 0;
+const uint16_t max_temp = 100, min_temp = 0;
 double v, r;
 
 #define TEMP_HISTORY_SIZE 64
 int8_t temp_history[TEMP_HISTORY_SIZE];
-int temp_history_count = 0;
-int plot_max_temp = UNKNOWN_TEMP;
-int plot_min_temp = UNKNOWN_TEMP;
+uint16_t temp_history_count = 0;
+uint16_t plot_max_temp = UNKNOWN_TEMP;
+uint16_t plot_min_temp = UNKNOWN_TEMP;
 
 //Thermistor thermistor;
 
-double Vcc = 3.3;
-double Vref = 1.1;
-const double T_0 = 273.15;
-const double T_25 = T_0 + 25;
+float Vcc = 3.3;
+float Vref = 1.1;
+const float T_0 = 273.15;
+const float T_25 = T_0 + 25;
 // 100k NTC
-const double beta = 3950;
-const double R_25 = 100000L; // 100k ohm
+const float beta = 3950;
+const float R_25 = 100000L; // 100k ohm
 const unsigned long Rs = 470000L;
 
 void display_status()
@@ -65,11 +65,11 @@ void display_status()
 		display.print(F("= "));
 		display.print(temp);
 		display.print(F(" C"));
-		Serial.print("T ");
+		Serial.print(F("T "));
 		Serial.println(temp);
 	}
 	if(tempC != UNKNOWN_TEMP) {
-		Serial.print("C ");
+		Serial.print(F("C "));
 		Serial.println(tempC);
 	}
 	if(temp2set != UNKNOWN_TEMP) {
@@ -77,16 +77,16 @@ void display_status()
 		display.print(F("> "));
 		display.print(temp2set);
 		display.print(F(" C"));
-		Serial.print("> ");
+		Serial.print(F("> "));
 		Serial.println(temp2set);
 	}
 	if(heating) {
 		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
-		Serial.println("P +");
+		Serial.println(F("P +"));
 	}
 	if(cooling) {
 		display.fillTriangle(2, 2, 12, 12, 22, 2, INVERSE);
-		Serial.println("P -");
+		Serial.println(F("P -"));
 	}
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
 //		Serial.print(F("history size:"));
@@ -127,7 +127,7 @@ double read_temp()
 void update_temp()
 {
 //	tempC = thermistor.readTempC();
-//	Serial.print("tempC=");
+//	Serial.print(F("tempC="));
 //	Serial.println(tempC);
 
 	temp = read_temp();
@@ -135,6 +135,7 @@ void update_temp()
 //	Serial.println(temp);
 	if(temp2set == UNKNOWN_TEMP) {
 		temp2set = temp;
+		Serial.println(F("Ready"));
 	}
 	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
 		plot_min_temp = temp;
@@ -193,6 +194,8 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 		int space_pos = 0;
 		while(space_pos >= 0 && args_count < max_arg_count) {
 			space_pos = line.indexOf(' ');
+//			Serial.print("space_pos: ");
+//			Serial.println(space_pos);
 			if(command == "") {
 				command = line.substring(0, space_pos);
 				command.toUpperCase();
@@ -212,18 +215,22 @@ String args[MAX_ARGS_COUNT];
 int args_count;
 String command_error;
 
-void process_proc()
+void parse_command_proc()
 {
 	if(stringComplete) {
-		command_error = "";
 		if(inputString.length() > 0) {
+			command_error = "";
 			// get command
 			parse_line(inputString, command, args, MAX_ARGS_COUNT, args_count);
+			Serial.print(F("command:"));
+			Serial.println(command);
+			Serial.print(F("args count:"));
+			Serial.println(args_count);
 			if(command == "T") {
 				if(args_count != 1) {
 					command_error = F("T command has one parameter");
 				} else {
-					Serial.print(F("Setting temp:"));
+					Serial.print(F("Setting temp2set:"));
 					Serial.println(args[0]);
 					temp2set = max(min_temp, args[0].toInt());
 					Serial.print(F("temp2set:"));
@@ -232,16 +239,20 @@ void process_proc()
 			} else {
 				command_error = "Unknown command line:" + inputString;
 			}
+			if(command_error.length() > 0) {
+				Serial.println("ERR " + command_error);
+			} else {
+				Serial.print(F("OK "));
+				Serial.println(inputString);
+			}
+			inputString = "";
+			stringComplete = false;
 		}
-		if(command_error.length() > 0) {
-			Serial.println("ERR " + command_error);
-		} else {
-			Serial.print(F("OK "));
-			Serial.println(inputString);
-		}
-		inputString = "";
-		stringComplete = false;
 	}
+}
+
+void process_proc()
+{
 	update_temp();
 	heating = false;
 	cooling = false;
@@ -259,7 +270,8 @@ Ticker process_timer(process_proc, 500, 0, MILLIS);
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 
-void serialEvent()
+//void serialEvent()
+void process_serial()
 {
 	while (Serial.available()) {
 		// get the new byte:
@@ -275,7 +287,7 @@ Serial.println(F("Reset"));
 		// do something about it:
 		if (inChar == '\n') {
 			stringComplete = true;
-//Serial.println(F("Complete"));
+Serial.println(F("Complete"));
 		}
 	}
 }
@@ -350,12 +362,13 @@ void setup()
 	process_timer.start();
 	temp_history_timer.start();
 	status_timer.start();
-	inputString.reserve(100);
-	Serial.println("Ready");
+	inputString.reserve(30);
 }
 
 void loop()
 {
+	process_serial();
+	parse_command_proc();
 	process_keys();
 	heat_cool_timer.update();
 	process_timer.update();

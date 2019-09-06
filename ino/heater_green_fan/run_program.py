@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys, os, time, json
 import serial
 
-execfile("vars.sh")
+exec(open("vars.sh").read())
 
 s_port = DEV
 s_baud = 115200
@@ -19,12 +19,15 @@ ser.flushInput()
 ser.setDTR(True)
 #print s_port, s_baud
 
+def ts():
+	return time.strftime('%d/%m/%Y %H:%M:%S')
+
 started = False
 for i in range(5):
 	line = ser.readline().strip()
 	if line:
 		print('Line:', line)
-	if line == 'Ready':
+	if line == b'Ready':
 		started = True
 		break
 
@@ -33,11 +36,11 @@ if started:
 	program = [
 		{
 			't': 30,
-			'tm': 10,
+			'tm': 30,
 		},
 		{
 			't': 10,
-			'tm': 5,
+			'tm': 20,
 		},
 		{
 			't': 30,
@@ -49,14 +52,21 @@ if started:
 	current_start_ts = None
 
 	def run_item(item):
-		print('Run:', json.dumps(item), time.strftime('%d/%m/%Y %H:%M:%S'))
-		ser.write('T %d\n' % item['t'])
+		print(ts(), 'Run:', json.dumps(item))
+		cmd = b'T %d\n' % item['t']
 		ser.flush()
+		ser.write(cmd)
+		ser.flush()
+		print(ts(), 'Sent:', cmd)
 		current_start_ts = time.time()
 		while time.time() < current_start_ts + item['tm']:
-			print ser.readline()
-			time.sleep(1)
-		print('Stop:', json.dumps(item), time.strftime('%d/%m/%Y %H:%M:%S'))
+			line = ser.readline().strip()
+			if line:
+				print(ts(), line)
+			else:
+				print('sleep')
+				time.sleep(0.1)
+		print(ts(), 'Stop:', json.dumps(item))
 
 	while not finished:
 		if current_index < 0:
