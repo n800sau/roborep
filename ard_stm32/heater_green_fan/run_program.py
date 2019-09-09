@@ -10,13 +10,15 @@ s_baud = 115200
 
 ser = serial.Serial(s_port, s_baud, writeTimeout=5, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,
 			timeout=1, xonxoff=0, rtscts=0)
-# Toggle DTR to reset Arduino
-ser.setDTR(False)
+# Toggle DTR to reset STM32
+ser.setDTR(True)
+# set BOOT0
+ser.setRTS(True)
 time.sleep(1)
 # toss any data already received, see
 # http://pyserial.sourceforge.net/pyserial_api.html#serial.Serial.flushInput
 ser.flushInput()
-ser.setDTR(True)
+ser.setDTR(False)
 #print s_port, s_baud
 
 def ts():
