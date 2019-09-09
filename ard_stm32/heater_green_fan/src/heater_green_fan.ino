@@ -1,6 +1,22 @@
 //#include "thermistor.h"
 #include <VNH3SP30.h>
 
+#define USE_PID
+
+#ifdef USE_PID
+
+#include <PID_v1.h>
+
+//Variables PID'll be connected
+double Setpoint, Input, Output;
+
+//initial tuning parameters
+double Kp=2, Ki=5, Kd=1;
+PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+int WindowSize = 1000;
+unsigned long pid_window_start_time;
+
+#endif //USE_PID
 
 #include <Ticker.h>
 
@@ -40,7 +56,7 @@ double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, tempC = UNKNOWN_TEMP;
 const uint16_t max_temp = 100, min_temp = 0;
 double v, r;
 
-#define TEMP_HISTORY_SIZE 64
+#define TEMP_HISTORY_SIZE 128
 int8_t temp_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
 uint16_t plot_max_temp = UNKNOWN_TEMP;
@@ -49,7 +65,7 @@ uint16_t plot_min_temp = UNKNOWN_TEMP;
 //Thermistor thermistor;
 
 float Vcc = 3.3;
-float Vref = 1.1;
+float Vref = Vcc;
 const float T_0 = 273.15;
 const float T_25 = T_0 + 25;
 // 100k NTC
@@ -114,7 +130,7 @@ double read_temp()
 {
 //	Serial.print(F("TEMP_PIN value:"));
 //	Serial.println(analogRead(TEMP_PIN));
-	v = Vref*tempAnalogRead()/1024.;
+	v = Vref*tempAnalogRead()/4096.;
 	r = v/((Vcc-v)/Rs);
 //	Serial.print(F("R:"));
 //	Serial.println(r);
@@ -156,12 +172,12 @@ void heat_cool_proc()
 	if(heating) {
 		Motor1.setSpeed(-400); // motor full-speed "backward"
 		digitalWrite(FAN_PIN, LOW);
-//		Serial.println(F("heating"));
+		Serial.println(F("heating"));
 	} else {
 		if(cooling) {
 			Motor1.setSpeed(400); // motor full-speed "forward"
 			digitalWrite(FAN_PIN, HIGH);
-//			Serial.println(F("cooling"));
+			Serial.println(F("cooling"));
 		} else {
 			Motor1.setSpeed(0); // motor stop
 		}
@@ -256,6 +272,22 @@ void process_proc()
 	update_temp();
 	heating = false;
 	cooling = false;
+#ifdef USE_PID
+	Input = temp;
+	Setpoint = temp2set;
+	heaterPID.Compute();
+	// turn the output pin on/off based on pid output
+	unsigned long ms = millis();
+	if(ms - pid_window_start_time > WindowSize) {
+		// time to shift the Relay Window
+		pid_window_start_time += WindowSize;
+	}
+	if(Output < ms - pid_window_start_time) {
+		heating = true;
+	} else {
+		cooling = true;
+	}
+#else
 	if(temp < temp2set) {
 		heating = true;
 		cooling = false;
@@ -263,6 +295,7 @@ void process_proc()
 		heating = false;
 		cooling = true;
 	}
+#endif // USE_PID
 }
 
 Ticker heat_cool_timer(heat_cool_proc, 1000, 0, MILLIS);
@@ -363,6 +396,17 @@ void setup()
 	temp_history_timer.start();
 	status_timer.start();
 	inputString.reserve(30);
+
+#ifdef USE_PID
+
+	pid_window_start_time = millis();
+
+	//tell the PID to range between 0 and the full window size
+	heaterPID.SetOutputLimits(0, WindowSize);
+
+	//turn the PID on
+	heaterPID.SetMode(AUTOMATIC);
+#endif // USE_PID
 }
 
 void loop()
