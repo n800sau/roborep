@@ -31,8 +31,8 @@ readKey keylib = readKey();
 #define OLED_ADDRESS 0x3c
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 
-bool heating = false;
-bool cooling = false;
+enum HEATER_STATUS { H_NONE, H_COOLING, H_HEATING };
+HEATER_STATUS heater_status = H_NONE;
 
 // peltier
 VNH3SP30 Motor1;    // define control object for 1 motor
@@ -96,12 +96,12 @@ void display_status()
 		Serial.print(F("> "));
 		Serial.println(temp2set);
 	}
-	if(heating) {
+	if(heater_status == H_HEATING) {
 		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
 		Serial.println(F("P +"));
 	}
-	if(cooling) {
-		display.fillTriangle(2, 2, 12, 12, 22, 2, INVERSE);
+	if(heater_status == H_COOLING) {
+		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, INVERSE);
 		Serial.println(F("P -"));
 	}
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
@@ -252,9 +252,9 @@ void parse_command_proc()
 
 void process_proc()
 {
+	bool old_status = heater_status;
 	update_temp();
-	heating = false;
-	cooling = false;
+	heater_status = H_NONE;
 #ifdef USE_PID
 	Input = temp;
 	Setpoint = temp2set;
@@ -266,30 +266,32 @@ void process_proc()
 		pid_window_start_time += WindowSize;
 	}
 	if(Output < ms - pid_window_start_time) {
-		heating = true;
+		heater_status = H_HEATING;
 	} else {
-		cooling = true;
+		heater_status = H_COOLING;
 	}
 #else
 	if(temp < temp2set) {
-		heating = true;
-		cooling = false;
+		heater_status = H_HEATING;
 	} else if(temp > temp2set) {
-		heating = false;
-		cooling = true;
+		heater_status = H_COOLING;
 	}
 #endif // USE_PID
-	if(heating) {
-		Motor1.setSpeed(-400); // motor full-speed "backward"
-		digitalWrite(FAN_PIN, LOW);
-		Serial.println(F("heating"));
-	} else {
-		if(cooling) {
-			Motor1.setSpeed(400); // motor full-speed "forward"
-			digitalWrite(FAN_PIN, HIGH);
-			Serial.println(F("cooling"));
-		} else {
-			Motor1.setSpeed(0); // motor stop
+	if(old_status != heater_status) {
+		switch(heater_status) {
+			case H_HEATING:
+				Motor1.setSpeed(-400); // motor full-speed "backward"
+				digitalWrite(FAN_PIN, LOW);
+				Serial.println(F("heating"));
+				break;
+			case H_COOLING:
+				Motor1.setSpeed(400); // motor full-speed "forward"
+				digitalWrite(FAN_PIN, HIGH);
+				Serial.println(F("cooling"));
+				break;
+			default:
+				Motor1.setSpeed(0); // motor stop
+				break;
 		}
 	}
 }
