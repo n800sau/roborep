@@ -167,23 +167,6 @@ void update_temp()
 	}
 }
 
-void heat_cool_proc()
-{
-	if(heating) {
-		Motor1.setSpeed(-400); // motor full-speed "backward"
-		digitalWrite(FAN_PIN, LOW);
-		Serial.println(F("heating"));
-	} else {
-		if(cooling) {
-			Motor1.setSpeed(400); // motor full-speed "forward"
-			digitalWrite(FAN_PIN, HIGH);
-			Serial.println(F("cooling"));
-		} else {
-			Motor1.setSpeed(0); // motor stop
-		}
-	}
-}
-
 void update_history_proc()
 {
 	if(temp != UNKNOWN_TEMP) {
@@ -296,10 +279,22 @@ void process_proc()
 		cooling = true;
 	}
 #endif // USE_PID
+	if(heating) {
+		Motor1.setSpeed(-400); // motor full-speed "backward"
+		digitalWrite(FAN_PIN, LOW);
+		Serial.println(F("heating"));
+	} else {
+		if(cooling) {
+			Motor1.setSpeed(400); // motor full-speed "forward"
+			digitalWrite(FAN_PIN, HIGH);
+			Serial.println(F("cooling"));
+		} else {
+			Motor1.setSpeed(0); // motor stop
+		}
+	}
 }
 
-Ticker heat_cool_timer(heat_cool_proc, 1000, 0, MILLIS);
-Ticker process_timer(process_proc, 500, 0, MILLIS);
+Ticker process_timer(process_proc, 200, 0, MILLIS);
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 
@@ -391,7 +386,6 @@ void setup()
 //	thermistor.begin(TEMP_PIN, Vcc, Vref, 1023, Rs, R_25, 25, beta, 5, 40);
 
 
-	heat_cool_timer.start();
 	process_timer.start();
 	temp_history_timer.start();
 	status_timer.start();
@@ -414,7 +408,6 @@ void loop()
 	process_serial();
 	parse_command_proc();
 	process_keys();
-	heat_cool_timer.update();
 	process_timer.update();
 	temp_history_timer.update();
 	status_timer.update();
