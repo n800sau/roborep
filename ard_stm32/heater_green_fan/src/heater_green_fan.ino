@@ -11,10 +11,8 @@
 double Setpoint, Input, Output;
 
 //initial tuning parameters
-double Kp=2, Ki=5, Kd=1;
-PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
-int WindowSize = 1000;
-unsigned long pid_window_start_time;
+double Kp=200, Ki=10, Kd=100;
+PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);
 
 #endif //USE_PID
 
@@ -31,8 +29,8 @@ readKey keylib = readKey();
 #define OLED_ADDRESS 0x3c
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 
-enum HEATER_STATUS { H_NONE, H_COOLING, H_HEATING };
-HEATER_STATUS heater_status = H_NONE;
+int heater_pwm = 0;
+const int min_pwm = -400, max_pwm = 400;
 
 // peltier
 VNH3SP30 Motor1;    // define control object for 1 motor
@@ -53,14 +51,14 @@ const int FAN_PIN = PB12;
 #define UNKNOWN_TEMP -1000
 
 double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, tempC = UNKNOWN_TEMP;
-const uint16_t max_temp = 100, min_temp = 0;
+const uint32_t max_temp = 100, min_temp = 0;
 double v, r;
 
 #define TEMP_HISTORY_SIZE 128
 int8_t temp_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
-uint16_t plot_max_temp = UNKNOWN_TEMP;
-uint16_t plot_min_temp = UNKNOWN_TEMP;
+uint32_t plot_max_temp = UNKNOWN_TEMP;
+uint32_t plot_min_temp = UNKNOWN_TEMP;
 
 //Thermistor thermistor;
 
@@ -96,17 +94,25 @@ void display_status()
 		Serial.print(F("> "));
 		Serial.println(temp2set);
 	}
-	if(heater_status == H_HEATING) {
+	Serial.print(F("PWM:"));
+	Serial.println(heater_pwm);
+	if(heater_pwm < 0) {
+		display.setCursor(3, 14);
+		display.print(map(abs(heater_pwm), 0, abs(max_pwm), 0, 100));
 		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
-		Serial.println(F("P +"));
 	}
-	if(heater_status == H_COOLING) {
+	if(heater_pwm > 0) {
+		display.setCursor(3, 1);
+		display.print(map(abs(heater_pwm), 0, abs(min_pwm), 0, 100));
 		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, INVERSE);
-		Serial.println(F("P -"));
 	}
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
 //		Serial.print(F("history size:"));
 //		Serial.println(temp_history_count);
+//		Serial.print(F("min temp:"));
+//		Serial.println(plot_min_temp);
+//		Serial.print(F("max temp:"));
+//		Serial.println(plot_max_temp);
 		for(int i=0; i<temp_history_count; i++) {
 //			display.writePixel(i, map(temp_history[i], min(20, plot_min_temp), max(30, plot_max_temp), 24, 63), INVERSE);
 			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), INVERSE);
@@ -150,7 +156,7 @@ void update_temp()
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
 	if(temp2set == UNKNOWN_TEMP) {
-		temp2set = temp;
+		temp2set = min(max(temp, min_temp), max_temp);
 		Serial.println(F("Ready"));
 	}
 	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
@@ -252,51 +258,26 @@ void parse_command_proc()
 
 void process_proc()
 {
-	bool old_status = heater_status;
 	update_temp();
-	heater_status = H_NONE;
 #ifdef USE_PID
 	Input = temp;
 	Setpoint = temp2set;
+//	Serial.print("Error:");
+//	Serial.println(temp2set-temp);
 	heaterPID.Compute();
-	// turn the output pin on/off based on pid output
-	unsigned long ms = millis();
-	if(ms - pid_window_start_time > WindowSize) {
-		// time to shift the Relay Window
-		pid_window_start_time += WindowSize;
-	}
-	if(Output < ms - pid_window_start_time) {
-		heater_status = H_HEATING;
-	} else {
-		heater_status = H_COOLING;
-	}
+	heater_pwm = Output;
 #else
 	if(temp < temp2set) {
-		heater_status = H_HEATING;
+		heater_pwm = MAX_PWM;
 	} else if(temp > temp2set) {
-		heater_status = H_COOLING;
+		heater_pwm = MIN_PWM;
 	}
 #endif // USE_PID
-	if(old_status != heater_status) {
-		switch(heater_status) {
-			case H_HEATING:
-				Motor1.setSpeed(-400); // motor full-speed "backward"
-				digitalWrite(FAN_PIN, LOW);
-				Serial.println(F("heating"));
-				break;
-			case H_COOLING:
-				Motor1.setSpeed(400); // motor full-speed "forward"
-				digitalWrite(FAN_PIN, HIGH);
-				Serial.println(F("cooling"));
-				break;
-			default:
-				Motor1.setSpeed(0); // motor stop
-				break;
-		}
-	}
+	Motor1.setSpeed(heater_pwm); // motor full-speed "backward"
+//	digitalWrite(FAN_PIN, heater_pwm > 0 ? LOW : HIGH);
 }
 
-Ticker process_timer(process_proc, 200, 0, MILLIS);
+Ticker process_timer(process_proc, 100, 0, MILLIS);
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 
@@ -348,6 +329,7 @@ void setup()
 	keylib.begin(sizeof(oline), sizeof(iline), oline, iline);
 	pinMode(FAN_PIN, OUTPUT);
 	digitalWrite(FAN_PIN, LOW);
+	digitalWrite(FAN_PIN, HIGH);
 //	analogReference(INTERNAL);
 
 	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
@@ -395,10 +377,8 @@ void setup()
 
 #ifdef USE_PID
 
-	pid_window_start_time = millis();
-
 	//tell the PID to range between 0 and the full window size
-	heaterPID.SetOutputLimits(0, WindowSize);
+	heaterPID.SetOutputLimits(min_pwm, max_pwm);
 
 	//turn the PID on
 	heaterPID.SetMode(AUTOMATIC);
