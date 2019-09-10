@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, time, json
-import serial
+import serial, math
 
 exec(open("vars.sh").read())
 
@@ -69,6 +69,12 @@ if started:
 			line = ser.readline().strip()
 			if line:
 				print(ts(), line)
+				if line.startswith(b'T'):
+					t = float(line.split(b' ')[1])
+					dt = abs(item['t'] - t)
+					if dt < 1:
+						dtm = time.time() - current_start_ts
+						print(ts(), 'Reached temp in %.2f sec (%.2f per sec)' % (dtm, dt/dtm))
 			else:
 				print('sleep')
 				time.sleep(0.1)
