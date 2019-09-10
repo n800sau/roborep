@@ -38,19 +38,23 @@ if started:
 	program = [
 		{
 			't': 96,
-			'tm': 30,
+			'tm': 60,
 		},
 		{
 			't': 55,
-			'tm': 30,
+			'tm': 60,
 		},
 		{
 			't': 72,
-			'tm': 30,
+			'tm': 60,
 		},
 		{
 			't': 40,
 			'tm': 30,
+		},
+		{
+			't': 20,
+			'tm': 1,
 		},
 	]
 
@@ -65,16 +69,21 @@ if started:
 		ser.flush()
 		print(ts(), 'Sent:', cmd)
 		current_start_ts = time.time()
+		temp_reached = False
+		start_temp = None
 		while time.time() < current_start_ts + item['tm']:
 			line = ser.readline().strip()
 			if line:
 				print(ts(), line)
 				if line.startswith(b'T'):
 					t = float(line.split(b' ')[1])
+					if start_temp is None:
+						start_temp = t
 					dt = abs(item['t'] - t)
-					if dt < 1:
+					if dt < 1 and not temp_reached:
 						dtm = time.time() - current_start_ts
-						print(ts(), 'Reached temp in %.2f sec (%.2f per sec)' % (dtm, dt/dtm))
+						temp_reached = True
+						print(ts(), 'Reached temp %d in %.2f sec (%.2f per sec)' % (item['t'], dtm, abs(start_temp-item['t'])/dtm))
 			else:
 				print('sleep')
 				time.sleep(0.1)

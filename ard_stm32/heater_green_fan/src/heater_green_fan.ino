@@ -11,7 +11,7 @@
 double Setpoint, Input, Output;
 
 //initial tuning parameters
-double Kp=200, Ki=10, Kd=100;
+double Kp=250, Ki=10, Kd=200;
 PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);
 
 #endif //USE_PID
@@ -77,25 +77,25 @@ void display_status()
 	display.clearDisplay();
 	if(temp != UNKNOWN_TEMP) {
 		display.setCursor(30, 0);
-		display.print(F("= "));
+		display.print(F("="));
 		display.print(temp);
-		display.print(F(" C"));
+		display.print(F("C"));
 		Serial.print(F("T "));
 		Serial.println(temp);
 	}
 	if(control_temp != UNKNOWN_TEMP) {
-		display.setCursor(90, 0);
-		display.print(F("= "));
+		display.setCursor(80, 0);
+		display.print(F("="));
 		display.print(control_temp);
-		display.print(F(" C"));
+		display.print(F("C"));
 		Serial.print(F("Control temp:"));
 		Serial.println(control_temp);
 	}
 	if(temp2set != UNKNOWN_TEMP) {
 		display.setCursor(30, 12);
-		display.print(F("> "));
+		display.print(F(">"));
 		display.print(temp2set);
-		display.print(F(" C"));
+		display.print(F("C"));
 		Serial.print(F("> "));
 		Serial.println(temp2set);
 	}
@@ -104,12 +104,12 @@ void display_status()
 	if(heater_pwm < 0) {
 		display.setCursor(3, 14);
 		display.print(map(abs(heater_pwm), 0, abs(max_pwm), 0, 100));
-		display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
+		display.fillTriangle(2, 12, 12, 2, 22, 12, WHITE);
 	}
 	if(heater_pwm > 0) {
 		display.setCursor(3, 1);
 		display.print(map(abs(heater_pwm), 0, abs(min_pwm), 0, 100));
-		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, INVERSE);
+		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, WHITE);
 	}
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
 //		Serial.print(F("history size:"));
@@ -119,8 +119,8 @@ void display_status()
 //		Serial.print(F("max temp:"));
 //		Serial.println(plot_max_temp);
 		for(int i=1; i<temp_history_count; i++) {
-			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 63, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), INVERSE);
-//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), INVERSE);
+			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 63, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), WHITE);
+//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), WHITE);
 		}
 	}
 	display.display();
@@ -277,7 +277,6 @@ void process_proc()
 //	digitalWrite(FAN_PIN, heater_pwm > 0 ? LOW : HIGH);
 }
 
-Ticker process_timer(process_proc, 100, 0, MILLIS);
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 
@@ -351,7 +350,6 @@ void setup()
 	display.setTextColor(WHITE);
 	display.display();
 
-	process_timer.start();
 	temp_history_timer.start();
 	status_timer.start();
 	inputString.reserve(30);
@@ -371,7 +369,7 @@ void loop()
 	process_serial();
 	parse_command_proc();
 	process_keys();
-	process_timer.update();
+	process_proc();
 	temp_history_timer.update();
 	status_timer.update();
 }
