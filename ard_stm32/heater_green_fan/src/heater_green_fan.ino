@@ -113,9 +113,9 @@ void display_status()
 //		Serial.println(plot_min_temp);
 //		Serial.print(F("max temp:"));
 //		Serial.println(plot_max_temp);
-		for(int i=0; i<temp_history_count; i++) {
-//			display.writePixel(i, map(temp_history[i], min(20, plot_min_temp), max(30, plot_max_temp), 24, 63), INVERSE);
-			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), INVERSE);
+		for(int i=1; i<temp_history_count; i++) {
+			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 63, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), INVERSE);
+//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), INVERSE);
 		}
 	}
 	display.display();
