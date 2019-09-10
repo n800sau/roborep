@@ -44,13 +44,14 @@ VNH3SP30 Motor1;    // define control object for 1 motor
 
 // NTC
 const int TEMP_PIN = PB1;
+const int CONTROL_TEMP_PIN = PA6;
 
 // Fan
 const int FAN_PIN = PB12;
 
 #define UNKNOWN_TEMP -1000
 
-double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, tempC = UNKNOWN_TEMP;
+double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, control_temp = UNKNOWN_TEMP;
 const uint32_t max_temp = 100, min_temp = 0;
 double v, r;
 
@@ -82,9 +83,13 @@ void display_status()
 		Serial.print(F("T "));
 		Serial.println(temp);
 	}
-	if(tempC != UNKNOWN_TEMP) {
-		Serial.print(F("C "));
-		Serial.println(tempC);
+	if(control_temp != UNKNOWN_TEMP) {
+		display.setCursor(90, 0);
+		display.print(F("= "));
+		display.print(control_temp);
+		display.print(F(" C"));
+		Serial.print(F("Control temp:"));
+		Serial.println(control_temp);
 	}
 	if(temp2set != UNKNOWN_TEMP) {
 		display.setCursor(30, 12);
@@ -121,22 +126,20 @@ void display_status()
 	display.display();
 }
 
-int tempAnalogRead()
+int tempAnalogRead(int temp_pin)
 {
 	int val = 0;
 	for(int i = 0; i < 20; i++) {
-		val += analogRead(TEMP_PIN);
+		val += analogRead(temp_pin);
 		delay(1);
 	}
 	val = val / 20;
 	return val;
 }
 
-double read_temp()
+double read_temp(int temp_pin)
 {
-//	Serial.print(F("TEMP_PIN value:"));
-//	Serial.println(analogRead(TEMP_PIN));
-	v = Vref*tempAnalogRead()/4096.;
+	v = Vref*tempAnalogRead(temp_pin)/4096.;
 	r = v/((Vcc-v)/Rs);
 //	Serial.print(F("R:"));
 //	Serial.println(r);
@@ -148,11 +151,8 @@ double read_temp()
 
 void update_temp()
 {
-//	tempC = thermistor.readTempC();
-//	Serial.print(F("tempC="));
-//	Serial.println(tempC);
-
-	temp = read_temp();
+	temp = read_temp(TEMP_PIN);
+	control_temp = read_temp(CONTROL_TEMP_PIN);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
 	if(temp2set == UNKNOWN_TEMP) {
@@ -349,26 +349,7 @@ void setup()
 	// text display tests
 	display.setTextSize(1);
 	display.setTextColor(WHITE);
-//	display.setCursor(30, 10);
-//	display.print(F("I an a thermo"));
 	display.display();
-
-	/*
-	* arg 1: pin: Analog pin
-	* arg 2: vcc: Input voltage
-	* arg 3: analogReference: reference voltage. Typically the same as vcc, but not always (ie ESP8266=1.0)
-	* arg 4: adcMax: The maximum analog-to-digital convert value returned by analogRead (1023 or 4095)
-	* arg 5: seriesResistor: The ohms value of the fixed resistor (based on your hardware setup, usually 10k)
-	* arg 6: thermistorNominal: Resistance at nominal temperature (will be documented with the thermistor, usually 10k)
-	* arg 7: temperatureNominal: Temperature for nominal resistance in celcius (will be documented with the thermistor, assume 25 if not stated)
-	* arg 8: bCoef: Beta coefficient (or constant) of the thermistor (will be documented with the thermistor, typically 3380, 3435, or 3950)
-	* arg 9: samples: Number of analog samples to average (for smoothing)
-	* arg 10: sampleDelay: Milliseconds between samples (for smoothing)
-	*/
-
-	// For 5V Arduino
-//	thermistor.begin(TEMP_PIN, Vcc, Vref, 1023, Rs, R_25, 25, beta, 5, 40);
-
 
 	process_timer.start();
 	temp_history_timer.start();
