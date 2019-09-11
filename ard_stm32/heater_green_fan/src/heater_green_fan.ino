@@ -10,9 +10,10 @@
 //Variables PID'll be connected
 double Setpoint, Input, Output;
 
-//initial tuning parameters
-double Kp=250, Ki=10, Kd=200;
-PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);
+// tuning parameters
+double hKp=150, hKi=1, hKd=100;
+double cKp=250, cKi=0, cKd=100;
+PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
 
@@ -214,6 +215,18 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 	}
 }
 
+void set_temp2set(int temp)
+{
+	if(temp2set < temp) {
+		// K for cooling
+		heaterPID.SetTunings(cKp, cKi, cKd);
+	} else {
+		// K for heating
+		heaterPID.SetTunings(hKp, hKi, hKd);
+	}
+	temp2set = temp;
+}
+
 #define MAX_ARGS_COUNT 2
 String command;
 String args[MAX_ARGS_COUNT];
@@ -237,7 +250,7 @@ void parse_command_proc()
 				} else {
 					Serial.print(F("Setting temp2set:"));
 					Serial.println(args[0]);
-					temp2set = max(min_temp, args[0].toInt());
+					set_temp2set(max(min_temp, args[0].toInt()));
 					Serial.print(F("temp2set:"));
 					Serial.println(temp2set);
 				}
