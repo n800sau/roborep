@@ -287,7 +287,7 @@ void process_proc()
 	}
 #endif // USE_PID
 	Motor1.setSpeed(heater_pwm); // motor full-speed "backward"
-//	digitalWrite(FAN_PIN, heater_pwm > 0 ? LOW : HIGH);
+	digitalWrite(FAN_PIN, heater_pwm > MAX_PWM/2 ? LOW : HIGH);
 }
 
 Ticker status_timer(display_status, 1000, 0, MILLIS);
