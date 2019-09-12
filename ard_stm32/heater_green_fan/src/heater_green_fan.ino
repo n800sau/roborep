@@ -31,7 +31,7 @@ readKey keylib = readKey();
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 
 int heater_pwm = 0;
-const int min_pwm = -400, max_pwm = 400;
+const int MIN_PWM = -400, MAX_PWM = 400;
 
 // peltier
 VNH3SP30 Motor1;    // define control object for 1 motor
@@ -104,12 +104,12 @@ void display_status()
 	Serial.println(heater_pwm);
 	if(heater_pwm < 0) {
 		display.setCursor(3, 14);
-		display.print(map(abs(heater_pwm), 0, abs(max_pwm), 0, 100));
+		display.print(map(abs(heater_pwm), 0, abs(MAX_PWM), 0, 100));
 		display.fillTriangle(2, 12, 12, 2, 22, 12, WHITE);
 	}
 	if(heater_pwm > 0) {
 		display.setCursor(3, 1);
-		display.print(map(abs(heater_pwm), 0, abs(min_pwm), 0, 100));
+		display.print(map(abs(heater_pwm), 0, abs(MIN_PWM), 0, 100));
 		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, WHITE);
 	}
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
@@ -287,7 +287,11 @@ void process_proc()
 	}
 #endif // USE_PID
 	Motor1.setSpeed(heater_pwm); // motor full-speed "backward"
-	digitalWrite(FAN_PIN, heater_pwm > MAX_PWM/2 ? LOW : HIGH);
+	if(heater_pwm > MAX_PWM/2) {
+		digitalWrite(FAN_PIN, LOW);
+	} else if(heater_pwm < 0) {
+		digitalWrite(FAN_PIN, HIGH);
+	}
 }
 
 Ticker status_timer(display_status, 1000, 0, MILLIS);
@@ -370,7 +374,7 @@ void setup()
 #ifdef USE_PID
 
 	//tell the PID to range between 0 and the full window size
-	heaterPID.SetOutputLimits(min_pwm, max_pwm);
+	heaterPID.SetOutputLimits(MIN_PWM, MAX_PWM);
 
 	//turn the PID on
 	heaterPID.SetMode(AUTOMATIC);
