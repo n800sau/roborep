@@ -143,17 +143,33 @@ void process_proc()
 // function that executes whenever data is received from master
 void receiveEvent(int howMany)
 {
+// set register to read
+// set temp2set
+// start
+// stop
 	Serial.print("Received:");
 	Serial.println(howMany);
 	while(1 < Wire.available()) {
 		byte c = Wire.read();
-		Serial.print(c);
+		Serial.print(c, HEX);
+		Serial.print(" ");
 	}
 	int x = Wire.read();
-	Serial.println(x);
+	Serial.println(x, HEX);
 }
 
-Ticker process_timer(process_proc, 500, 0, MILLIS);
+void requestEvent()
+{
+// read temp
+// read pwm
+// read current
+// read error
+	Wire.write("hello "); // respond with message of 6 bytes
+}
+
+// sample time of PID
+Ticker process_timer(process_proc, 100, 0, MILLIS);
+
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 
 void setup()
@@ -166,7 +182,8 @@ void setup()
 	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
 
 	Wire.begin(8);                // join i2c bus with address #8
-	Wire.onReceive(receiveEvent); // register event
+	Wire.onReceive(receiveEvent);
+	Wire.onRequest(requestEvent);
 
 	process_timer.start();
 	status_timer.start();
