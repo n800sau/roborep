@@ -17,7 +17,7 @@ lcd_holes_shift_y = 0;
 
 pin_hole_sz_x = 8;
 pin_hole_sz_y = 18.6;
-pin_hole_off_x = 0;
+pin_hole_off_x = -2;
 
 module lcd_box_hole(h, center=false) {
 	translate([center ? 0 : lcd_pcb_l/2, center ? 0 : lcd_pcb_w/2, 0]) {
@@ -79,7 +79,7 @@ module lcd_bottom(
 	wall_h = 15,
 	extra_sz_x = 10,
 	extra_sz_y = 10,
-	hole_d_through = 3.4,
+	hole_d_through = 3.6,
 	wall = 2
 ) {
 	difference() {
@@ -108,7 +108,15 @@ module go_pro_connector() {
   gopro_ext_len=20;
 }
 
-lcd_top();
+module go_pro_rod() {
+  include <gopro_mounts_mooncactus.scad>
+  gopro_primary="double";
+  gopro_secondary_what="double";
+  gopro_ext_len=50;
+}
+
+//lcd_top();
 translate([0, 0, 16]) {
 //	lcd_bottom();
 }
+go_pro_rod();
