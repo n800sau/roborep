@@ -1,4 +1,5 @@
 use <MCAD/boxes.scad>
+use <ear.scad>
 
 $fn = 50;
 
@@ -15,10 +16,15 @@ interhole_w = 23.5;
 
 lcd_holes_shift_y = 0;
 
+pin_hole_sz_x = 8;
+pin_hole_sz_y = 20;
+pin_hole_off_x = 10;
+pin_hole_off_y = 3;
+
 module lcd_box_hole(h, center=false) {
 	translate([center ? 0 : lcd_pcb_l/2, center ? 0 : lcd_pcb_w/2, 0]) {
-    cube([lcd_l, lcd_w, h], center=true);
-  }
+		cube([lcd_l, lcd_w, h], center=true);
+	}
 }
 
 module lcd_holes(h, d, center=false) {
@@ -41,59 +47,61 @@ module lcd_all_holes(h=10, d=3.5, center=false) {
 }
 
 module lcd_top(
-  wall_h = 15,
-  extra_sz_x = 6,
-  extra_sz_y = 6,
-  hole_d = 2.9,
-  stand_h = 5,
-  stand_d = 6,
-  wall = 2
+	wall_h = 15,
+	extra_sz_x = 6,
+	extra_sz_y = 6,
+	hole_d = 2.9,
+	stand_h = 5,
+	stand_d = 6,
+	wall = 2
 ) {
-  difference() {
-    union() {
-      translate([0, 0, (wall_h-wall)/2]) {
-      difference() {
-      roundedBox([lcd_pcb_l+extra_sz_x+2*wall, lcd_pcb_w+extra_sz_y+2*wall, wall_h], 2, true);
-      roundedBox([lcd_pcb_l+extra_sz_x, lcd_pcb_w+extra_sz_y, wall_h], 2, true);
-      }
-      }
-      cube([lcd_pcb_l+extra_sz_x, lcd_pcb_w+extra_sz_y, wall], center=true);
-      translate([0, 0, stand_h/2]) {
-        lcd_holes(stand_h, stand_d, center=true);
-      }
-    }
-    translate([0, 0, stand_h/2]) {
-      lcd_holes(h=stand_h, d=hole_d, center=true);
-    }
-    lcd_box_hole(h=stand_h, center=true);
-  }
+	difference() {
+		union() {
+			translate([0, 0, (wall_h-wall)/2]) {
+				difference() {
+					roundedBox([lcd_pcb_l+extra_sz_x+2*wall, lcd_pcb_w+extra_sz_y+2*wall, wall_h], 2, true);
+					roundedBox([lcd_pcb_l+extra_sz_x, lcd_pcb_w+extra_sz_y, wall_h], 2, true);
+				}
+			}
+			cube([lcd_pcb_l+extra_sz_x, lcd_pcb_w+extra_sz_y, wall], center=true);
+			translate([0, 0, stand_h/2]) {
+				lcd_holes(stand_h, stand_d, center=true);
+			}
+		}
+		translate([0, 0, stand_h/2]) {
+			lcd_holes(h=stand_h, d=hole_d, center=true);
+		}
+		lcd_box_hole(h=stand_h, center=true);
+	}
 }
 
 module lcd_bottom(
-  wall_h = 15,
-  extra_sz_x = 6,
-  extra_sz_y = 6,
-  hole_d = 2.9,
-//  stand_h = 15-5-wall-,
-  stand_d = 6,
-  wall = 2
+	wall_h = 15,
+	extra_sz_x = 6,
+	extra_sz_y = 6,
+	hole_d = 2.9,
+	stand_h = wall,
+	stand_d = 6,
+	wall = 2
 ) {
-  difference() {
-    union() {
-      cube([lcd_pcb_l+extra_sz_x+2*wall, lcd_pcb_w+extra_sz_y+2*wall, wall], center=true);
-      translate([0, 0, -stand_h/2]) {
-        lcd_holes(stand_h, stand_d, center=true);
-      }
-    }
-//    translate([0, 0, stand_h/2]) {
-//      lcd_holes(h=stand_h, d=hole_d, center=true);
-//    }
-//    lcd_box_hole(h=stand_h, center=true);
-  }
+	difference() {
+		union() {
+			cube([lcd_pcb_l+extra_sz_x+2*wall, lcd_pcb_w+extra_sz_y+2*wall, wall], center=true);
+			translate([0, 0, -stand_h/2]) {
+				lcd_holes(stand_h, stand_d, center=true);
+			}
+		}
+		translate([0, 0, stand_h/2]) {
+			lcd_holes(h=stand_h, d=hole_d, center=true);
+		}
+		translate([(lcd_pcb_l-pin_hole_sz_x)/2-pin_hole_off_x, (lcd_pcb_w-pin_hole_sz_y)/2-pin_hole_off_y, 0]) {
+			cube([pin_hole_sz_x, pin_hole_sz_y, 20], center=true);
+		}
+	}
 }
 
 //lcd_all_holes(center=true);
-lcd_top();
+//lcd_top();
 translate([0, 0, 16]) {
-//  lcd_bottom();
+	lcd_bottom();
 }
