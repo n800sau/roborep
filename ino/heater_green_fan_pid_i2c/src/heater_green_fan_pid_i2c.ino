@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <Ticker.h>
 
+const byte SLAVE_ADDRESS = 8;
 
 // peltier H-bridge
 VNH3SP30 Motor1;
@@ -181,7 +182,7 @@ void setup()
 
 	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
 
-	Wire.begin(8);                // join i2c bus with address #8
+	Wire.begin(SLAVE_ADDRESS);                // join i2c bus with address SLAVE_ADDRESS
 	Wire.onReceive(receiveEvent);
 	Wire.onRequest(requestEvent);
 
