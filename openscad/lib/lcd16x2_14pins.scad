@@ -7,8 +7,8 @@ lcd_pcb_w = 30;
 
 
 // 16x02 lcd
-lcd_l = 71;
-lcd_w = 24;
+lcd_l = 71.6;
+lcd_w = 24.8;
 
 interhole_l = 82;
 interhole_w = 23.5;
@@ -45,8 +45,8 @@ module lcd_all_holes(h=10, d=3.5, center=false) {
 }
 
 module lcd_top(
-	extra_sz_x = 4,
-	extra_sz_y = 4,
+	extra_sz_x = 10,
+	extra_sz_y = 10,
 	hole_d = 2.9,
 	stand_h = 5,
 	stand_d = 6,
@@ -77,8 +77,8 @@ module lcd_top(
 
 module lcd_bottom(
 	wall_h = 15,
-	extra_sz_x = 4,
-	extra_sz_y = 4,
+	extra_sz_x = 10,
+	extra_sz_y = 10,
 	hole_d_through = 3.4,
 	wall = 2
 ) {
@@ -108,7 +108,7 @@ module go_pro_connector() {
   gopro_ext_len=20;
 }
 
-//lcd_top();
+lcd_top();
 translate([0, 0, 16]) {
-	lcd_bottom();
+//	lcd_bottom();
 }
