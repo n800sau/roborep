@@ -1,8 +1,7 @@
 $fn = 40;
 
 module connector(wall=2) {
-  translate
-([7, 5.5, 7.5]) {
+  translate([7, 5.5, 7.5]) {
     cube([19, 15, wall]);
   }
   translate([26.5, 5.4, 7.4]) {
