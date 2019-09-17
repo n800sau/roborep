@@ -2,7 +2,7 @@ include <cnc_params.scad>
 
 $fn = 50;
 
-holder_sz_y = 15;
+holder_sz_y = 10;
 
 module pen_holder() {
 			// attachment
@@ -29,7 +29,7 @@ module pen_holder() {
 									union() {
 										hull() {
 											cube([gantry_sz_x-rod_bearing_d+attach_sz_x, holder_sz_y, wall], center=true);
-											translate([0, holder_sz_y, (10-wall)/2]) {
+											translate([0, holder_sz_y, (20-wall)/2]) {
 												cylinder(d=10, h=20, center=true);
 											}
 										}
@@ -37,8 +37,8 @@ module pen_holder() {
 											cylinder(d=10, h=30, center=true);
 										}
 									}
-									translate([0, holder_sz_y, 15]) {
-										translate([0, 2.5, 0]) {
+									translate([0, holder_sz_y, 12]) {
+										translate([0, 2.5, 5]) {
 											cube([20, 5, 30], center=true);
 										}
 										cylinder(d=5, h=30, center=true);
