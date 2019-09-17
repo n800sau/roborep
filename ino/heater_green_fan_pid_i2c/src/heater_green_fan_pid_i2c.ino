@@ -157,12 +157,12 @@ void receiveEvent(int howMany)
 // read pwm
 // read current
 // read error
-	Serial.print("Received: ");
-	Serial.print(howMany);
-	Serial.println(" byte(s)");
+//	Serial.print("Received: ");
+//	Serial.print(howMany);
+//	Serial.println(" byte(s)");
 		byte reg = Wire.read();
-		Serial.print("Register:");
-		Serial.println(reg);
+//		Serial.print("Register:");
+//		Serial.println(reg);
 		switch(reg) {
 			case I2C_REG_SET_TEMP:
 				set_temp2set(Wire.read());
@@ -180,8 +180,8 @@ void requestEvent()
 {
 	Wire.write((byte)((i2c_data_buf>>8)&0xff));
 	Wire.write((byte)(i2c_data_buf&0xff));
-	Serial.print(i2c_data_buf);
-	Serial.println(" sent");
+//	Serial.print(i2c_data_buf);
+//	Serial.println(" sent");
 	i2c_data_buf = UNKNOWN_VAL;
 }
 
