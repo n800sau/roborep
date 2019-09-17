@@ -85,8 +85,10 @@ void display_status()
 	}
 
 	int16_t val = read_slave(I2C_REG_READ_TEMP);
-	Serial.print(F("Temp received:"));
-	Serial.println(val);
+	if(val != UNKNOWN_VAL) {
+		Serial.print(F("Temp received:"));
+		Serial.println(val);
+	}
 
 	// set register to read
 	val = read_slave(I2C_REG_READ_PWM);
