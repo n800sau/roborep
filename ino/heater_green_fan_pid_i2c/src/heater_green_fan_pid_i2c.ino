@@ -2,10 +2,13 @@
 #include <Wire.h>
 #include <Ticker.h>
 
-const byte SLAVE_ADDRESS = 8;
+const byte I2C_SLAVE_ADDRESS = 8;
+const byte I2C_REG_SET_TEMP = 1;
+const byte I2C_REG_READ_PWM = 0x10;
+const byte I2C_REG_READ_TEMP = 0x11;
 
 // peltier H-bridge
-VNH3SP30 Motor1;
+VNH3SP30 Peltier;
 
 // peltier H-bridge pins
 #define M1_PWM 3    // pwm pin
@@ -39,9 +42,9 @@ const int TEMP_PIN = A2;
 // Fan
 const int FAN_PIN = 7;
 
-#define UNKNOWN_TEMP -1000
+#define UNKNOWN_VAL -1000
 
-double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP;
+double temp = UNKNOWN_VAL, temp2set = UNKNOWN_VAL;
 const uint16_t max_temp = 100, min_temp = 0;
 
 float Vcc = 3.3;
@@ -55,11 +58,11 @@ const unsigned long Rs = 470000L;
 
 void display_status()
 {
-	if(temp != UNKNOWN_TEMP) {
+	if(temp != UNKNOWN_VAL) {
 		Serial.print(F("T "));
 		Serial.println(temp);
 	}
-	if(temp2set != UNKNOWN_TEMP) {
+	if(temp2set != UNKNOWN_VAL) {
 		Serial.print(F("> "));
 		Serial.println(temp2set);
 	}
@@ -96,7 +99,7 @@ double read_temp(int pin)
 void update_temp()
 {
 	temp = read_temp(TEMP_PIN);
-	if(temp2set == UNKNOWN_TEMP) {
+	if(temp2set == UNKNOWN_VAL) {
 		temp2set = min(max(temp, min_temp), max_temp);
 		Serial.println(F("Ready"));
 	}
@@ -133,13 +136,15 @@ void process_proc()
 		heater_pwm = MIN_PWM;
 	}
 #endif // USE_PID
-	Motor1.setSpeed(heater_pwm); // motor full-speed "backward"
+	Peltier.setSpeed(heater_pwm); // motor full-speed "backward"
 	if(heater_pwm > MAX_PWM/2) {
 		digitalWrite(FAN_PIN, LOW);
 	} else if(heater_pwm < 0) {
 		digitalWrite(FAN_PIN, HIGH);
 	}
 }
+
+int16_t i2c_data_buf = UNKNOWN_VAL;
 
 // function that executes whenever data is received from master
 void receiveEvent(int howMany)
@@ -148,24 +153,36 @@ void receiveEvent(int howMany)
 // set temp2set
 // start
 // stop
-	Serial.print("Received:");
-	Serial.println(howMany);
-	while(1 < Wire.available()) {
-		byte c = Wire.read();
-		Serial.print(c, HEX);
-		Serial.print(" ");
-	}
-	int x = Wire.read();
-	Serial.println(x, HEX);
-}
-
-void requestEvent()
-{
 // read temp
 // read pwm
 // read current
 // read error
-	Wire.write("hello "); // respond with message of 6 bytes
+	Serial.print("Received: ");
+	Serial.print(howMany);
+	Serial.println(" byte(s)");
+		byte reg = Wire.read();
+		Serial.print("Register:");
+		Serial.println(reg);
+		switch(reg) {
+			case I2C_REG_SET_TEMP:
+				set_temp2set(Wire.read());
+				break;
+			case I2C_REG_READ_PWM:
+				i2c_data_buf = heater_pwm;
+				break;
+			case I2C_REG_READ_TEMP:
+				i2c_data_buf = temp;
+				break;
+		}
+}
+
+void requestEvent()
+{
+	Wire.write((byte)((i2c_data_buf>>8)&0xff));
+	Wire.write((byte)(i2c_data_buf&0xff));
+	Serial.print(i2c_data_buf);
+	Serial.println(" sent");
+	i2c_data_buf = UNKNOWN_VAL;
 }
 
 // sample time of PID
@@ -180,9 +197,9 @@ void setup()
 	digitalWrite(FAN_PIN, LOW);
 	analogReference(INTERNAL);
 
-	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
+	Peltier.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Peltier object connected through specified pins 
 
-	Wire.begin(SLAVE_ADDRESS);                // join i2c bus with address SLAVE_ADDRESS
+	Wire.begin(I2C_SLAVE_ADDRESS);
 	Wire.onReceive(receiveEvent);
 	Wire.onRequest(requestEvent);
 
