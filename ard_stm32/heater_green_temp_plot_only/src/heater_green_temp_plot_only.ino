@@ -1,10 +1,12 @@
 #include <Ticker.h>
 #include <Wire.h>
 
-// hw i2c-2
-TwoWire wire2(2, I2C_FAST_MODE);
-#define Wire wire2
-const byte SLAVE_ADDRESS = 8;
+TwoWire WireA(2);
+
+const byte I2C_SLAVE_ADDRESS = 8;
+const byte I2C_REG_SET_TEMP = 0x01;
+const byte I2C_REG_READ_PWM = 0x10;
+const byte I2C_REG_READ_TEMP = 0x11;
 
 #include <keylib.h>
 const uint8_t oline[] = {PA0, PA1, PA2};
@@ -23,17 +25,18 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 // NTC
 const int TEMP_PIN = PB1;
 
-#define UNKNOWN_TEMP -1000
+#define UNKNOWN_VAL -1000
 const int min_temp = 0, max_temp = 100;
 
-double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP;
+double temp = UNKNOWN_VAL, temp2set = UNKNOWN_VAL;
+int16_t heater_pwm = 0;
 double v, r;
 
 #define TEMP_HISTORY_SIZE 128
 int8_t temp_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
-int32_t plot_max_temp = UNKNOWN_TEMP;
-int32_t plot_min_temp = UNKNOWN_TEMP;
+int32_t plot_max_temp = UNKNOWN_VAL;
+int32_t plot_min_temp = UNKNOWN_VAL;
 
 float Vcc = 3.3;
 float Vref = Vcc;
@@ -44,10 +47,27 @@ const float beta = 3950;
 const float R_25 = 100000L; // 100k ohm
 const unsigned long Rs = 470000L;
 
+int16_t read_slave(byte reg)
+{
+	int16_t rs = UNKNOWN_VAL;
+	WireA.beginTransmission(I2C_SLAVE_ADDRESS);
+	WireA.write(reg);
+	WireA.endTransmission();
+	WireA.requestFrom(I2C_SLAVE_ADDRESS, 2);
+
+	if(2 <= WireA.available())    // if two bytes were received
+	{
+		rs = WireA.read();  // receive high byte (overwrites previous reading)
+		rs = rs << 8;    // shift high byte to be high 8 bits
+		rs |= WireA.read(); // receive low byte as lower 8 bits
+	}
+	return rs;
+}
+
 void display_status()
 {
 	display.clearDisplay();
-	if(temp != UNKNOWN_TEMP) {
+	if(temp != UNKNOWN_VAL) {
 		display.setCursor(30, 0);
 		display.print(F("="));
 		display.print(temp);
@@ -55,7 +75,7 @@ void display_status()
 		Serial.print(F("T "));
 		Serial.println(temp);
 	}
-	if(temp2set != UNKNOWN_TEMP) {
+	if(temp2set != UNKNOWN_VAL) {
 		display.setCursor(30, 12);
 		display.print(F(">"));
 		display.print(temp2set);
@@ -63,18 +83,15 @@ void display_status()
 		Serial.print(F("> "));
 		Serial.println(temp2set);
 	}
-	// set register to read
-	Wire.beginTransmission(SLAVE_ADDRESS);
-	Wire.write(byte(0x10));
-	Wire.endTransmission();
-	Wire.requestFrom(SLAVE_ADDRESS, 2);
 
-	int heater_pwm = 0;
-	if(2 <= Wire.available())    // if two bytes were received
-	{
-		heater_pwm = Wire.read();  // receive high byte (overwrites previous reading)
-		heater_pwm = heater_pwm << 8;    // shift high byte to be high 8 bits
-		heater_pwm |= Wire.read(); // receive low byte as lower 8 bits
+	int16_t val = read_slave(I2C_REG_READ_TEMP);
+	Serial.print(F("Temp received:"));
+	Serial.println(val);
+
+	// set register to read
+	val = read_slave(I2C_REG_READ_PWM);
+	if(val != UNKNOWN_VAL) {
+		heater_pwm = val;
 	}
 
 	Serial.print(F("PWM:"));
@@ -89,7 +106,7 @@ void display_status()
 		display.print(map(abs(heater_pwm), 0, abs(MIN_PWM), 0, 100));
 		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, WHITE);
 	}
-	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
+	if(plot_min_temp != UNKNOWN_VAL && plot_max_temp != UNKNOWN_VAL) {
 //		Serial.print(F("history size:"));
 //		Serial.println(temp_history_count);
 //		Serial.print(F("min temp:"));
@@ -132,14 +149,14 @@ void update_temp()
 	temp = read_temp(TEMP_PIN);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
-	if(temp2set == UNKNOWN_TEMP) {
+	if(temp2set == UNKNOWN_VAL) {
 		set_temp2set(min(max(temp, min_temp), max_temp));
 		Serial.println(F("Ready"));
 	}
-	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
+	if(plot_min_temp == UNKNOWN_VAL || plot_min_temp > temp) {
 		plot_min_temp = temp;
 	}
-	if(plot_max_temp == UNKNOWN_TEMP || plot_max_temp < temp) {
+	if(plot_max_temp == UNKNOWN_VAL || plot_max_temp < temp) {
 		plot_max_temp = temp;
 	}
 	if(plot_min_temp > temp2set) {
@@ -152,7 +169,7 @@ void update_temp()
 
 void update_history_proc()
 {
-	if(temp != UNKNOWN_TEMP) {
+	if(temp != UNKNOWN_VAL) {
 		if(temp_history_count >= TEMP_HISTORY_SIZE) {
 			for(int i=1; i<TEMP_HISTORY_SIZE; i++) {
 				temp_history[i-1] = temp_history[i];
@@ -194,10 +211,10 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 void set_temp2set(int temp)
 {
 	temp2set = temp;
-	Wire.beginTransmission(SLAVE_ADDRESS);
-	Wire.write(byte(0x01));
-	Wire.write(byte(temp2set));
-	Wire.endTransmission();      // stop transmitting
+	WireA.beginTransmission(I2C_SLAVE_ADDRESS);
+	WireA.write(I2C_REG_SET_TEMP);
+	WireA.write(byte(temp2set));
+	WireA.endTransmission();      // stop transmitting
 }
 
 #define MAX_ARGS_COUNT 2
@@ -276,7 +293,7 @@ void process_keys()
 	static byte last_key = 0;
 	byte key = keylib.read_key_debounce();
 	if(last_key != key) {
-		if(temp2set != UNKNOWN_TEMP) {
+		if(temp2set != UNKNOWN_VAL) {
 			switch(key) {
 				case 0x23:
 					temp2set++;
@@ -295,16 +312,16 @@ void setup()
 {
 	Serial.begin(115200);
 	keylib.begin(sizeof(oline), sizeof(iline), oline, iline);
-//	analogReference(INTERNAL);
 
-	Wire.begin();
+	Serial.println("Hello");
+	WireA.begin();
 
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
 	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
 		Serial.println(F("SSD1306 allocation failed"));
 	}
-//	display.display();
-//	delay(1000);
+	display.display();
+	delay(1000);
 
 	// Show image buffer on the display hardware.
 	// Since the buffer is intialized with an Adafruit splashscreen
@@ -319,7 +336,6 @@ void setup()
 	temp_history_timer.start();
 	status_timer.start();
 	inputString.reserve(30);
-
 }
 
 void loop()

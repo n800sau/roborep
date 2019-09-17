@@ -85,7 +85,7 @@ if started:
 						temp_reached = True
 						print(ts(), 'Reached temp %d in %.2f sec (%.2f per sec)' % (item['t'], dtm, abs(start_temp-item['t'])/dtm))
 			else:
-				print('sleep')
+#				print('sleep')
 				time.sleep(0.1)
 		print(ts(), 'Stop:', json.dumps(item))
 
