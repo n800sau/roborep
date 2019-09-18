@@ -3,7 +3,8 @@
 #include <Ticker.h>
 
 const byte I2C_SLAVE_ADDRESS = 8;
-const byte I2C_REG_SET_TEMP = 1;
+const byte I2C_REG_SET_TEMP = 0x01;
+const byte I2C_REG_RESTART = 0x02;
 const byte I2C_REG_READ_PWM = 0x10;
 const byte I2C_REG_READ_TEMP = 0x11;
 
@@ -191,6 +192,10 @@ void receiveEvent(int howMany)
 				break;
 			case I2C_REG_READ_TEMP:
 				i2c_data_buf = temp;
+				break;
+			case I2C_REG_RESTART:
+				emergency_stop = false;
+				temp = temp2set = UNKNOWN_VAL;
 				break;
 		}
 }
