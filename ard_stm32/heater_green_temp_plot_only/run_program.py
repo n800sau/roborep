@@ -75,7 +75,7 @@ if started:
 			line = ser.readline().strip()
 			if line:
 				print(ts(), line)
-				if line.startswith(b'T'):
+				if line.startswith(b'T '):
 					t = float(line.split(b' ')[1])
 					if start_temp is None:
 						start_temp = t

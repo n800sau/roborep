@@ -28,7 +28,7 @@ const int TEMP_PIN = PB1;
 #define UNKNOWN_VAL -1000
 const int min_temp = 0, max_temp = 100;
 
-double temp = UNKNOWN_VAL, temp2set = UNKNOWN_VAL;
+double temp = UNKNOWN_VAL, control_temp = UNKNOWN_VAL, temp2set = UNKNOWN_VAL;
 int16_t heater_pwm = 0;
 double v, r;
 
@@ -84,14 +84,7 @@ void display_status()
 		Serial.println(temp2set);
 	}
 
-	int16_t val = read_slave(I2C_REG_READ_TEMP);
-	if(val != UNKNOWN_VAL) {
-		Serial.print(F("Temp received:"));
-		Serial.println(val);
-	}
-
-	// set register to read
-	val = read_slave(I2C_REG_READ_PWM);
+	int16_t val = read_slave(I2C_REG_READ_PWM);
 	if(val != UNKNOWN_VAL) {
 		heater_pwm = val;
 	}
@@ -148,9 +141,14 @@ double read_temp(int temp_pin)
 
 void update_temp()
 {
-	temp = read_temp(TEMP_PIN);
-//	Serial.print(F("Temp:"));
-//	Serial.println(temp);
+	control_temp = read_temp(TEMP_PIN);
+//	Serial.print(F("Control temp:"));
+//	Serial.println(control_temp);
+	int16_t val = read_slave(I2C_REG_READ_TEMP);
+	if(val != UNKNOWN_VAL) {
+		temp = val;
+	}
+
 	if(temp2set == UNKNOWN_VAL) {
 		set_temp2set(min(max(temp, min_temp), max_temp));
 		Serial.println(F("Ready"));
@@ -210,9 +208,9 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 	}
 }
 
-void set_temp2set(int temp)
+void set_temp2set(int t)
 {
-	temp2set = temp;
+	temp2set = t;
 	WireA.beginTransmission(I2C_SLAVE_ADDRESS);
 	WireA.write(I2C_REG_SET_TEMP);
 	WireA.write(byte(temp2set));
