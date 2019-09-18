@@ -105,8 +105,9 @@ void update_temp()
 	}
 }
 
-void set_temp2set(int temp)
+void set_temp2set(int t)
 {
+	temp2set = t;
 #ifdef USE_PID
 	if(temp2set < temp) {
 		// K for cooling
@@ -116,7 +117,6 @@ void set_temp2set(int temp)
 		heaterPID.SetTunings(hKp, hKi, hKd);
 	}
 #endif // USE_PID
-	temp2set = temp;
 }
 
 void process_proc()
@@ -129,6 +129,8 @@ void process_proc()
 //	Serial.println(temp2set-temp);
 	heaterPID.Compute();
 	heater_pwm = Output;
+//	Serial.print("Output:");
+//	Serial.println(heater_pwm);
 #else
 	if(temp < temp2set) {
 		heater_pwm = MAX_PWM;
@@ -186,8 +188,7 @@ void requestEvent()
 }
 
 // sample time of PID
-Ticker process_timer(process_proc, 100, 0, MILLIS);
-
+Ticker process_timer(process_proc, 200, 0, MILLIS);
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 
 void setup()
@@ -202,6 +203,14 @@ void setup()
 	Wire.begin(I2C_SLAVE_ADDRESS);
 	Wire.onReceive(receiveEvent);
 	Wire.onRequest(requestEvent);
+
+#ifdef USE_PID
+	//tell the PID to range between 0 and the full window size
+	heaterPID.SetOutputLimits(MIN_PWM, MAX_PWM);
+
+	//turn the PID on
+	heaterPID.SetMode(AUTOMATIC);
+#endif // USE_PID
 
 	process_timer.start();
 	status_timer.start();
