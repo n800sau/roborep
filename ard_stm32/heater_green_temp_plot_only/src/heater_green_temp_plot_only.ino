@@ -5,6 +5,7 @@ TwoWire WireA(2);
 
 const byte I2C_SLAVE_ADDRESS = 8;
 const byte I2C_REG_SET_TEMP = 0x01;
+const byte I2C_REG_RESTART = 0x02;
 const byte I2C_REG_READ_PWM = 0x10;
 const byte I2C_REG_READ_TEMP = 0x11;
 
@@ -46,6 +47,13 @@ const float T_25 = T_0 + 25;
 const float beta = 3950;
 const float R_25 = 100000L; // 100k ohm
 const unsigned long Rs = 470000L;
+
+void init_slave()
+{
+	WireA.beginTransmission(I2C_SLAVE_ADDRESS);
+	WireA.write(I2C_REG_RESTART);
+	WireA.endTransmission();
+}
 
 int16_t read_slave(byte reg)
 {
@@ -315,6 +323,7 @@ void setup()
 
 	Serial.println("Hello");
 	WireA.begin();
+	init_slave();
 
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
 	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
