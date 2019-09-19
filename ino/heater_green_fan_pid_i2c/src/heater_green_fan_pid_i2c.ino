@@ -155,11 +155,11 @@ void process_proc()
 			heater_pwm = MIN_PWM;
 		}
 #endif // USE_PID
-		if(heater_pwm > MAX_PWM/2) {
-			digitalWrite(FAN_PIN, LOW);
-		} else if(heater_pwm < 0) {
-			digitalWrite(FAN_PIN, HIGH);
-		}
+//		if(heater_pwm > MAX_PWM/2) {
+//			digitalWrite(FAN_PIN, LOW);
+//		} else if(heater_pwm < 0) {
+//			digitalWrite(FAN_PIN, HIGH);
+//		}
 	}
 	Peltier.setSpeed(heater_pwm);
 }
@@ -219,9 +219,9 @@ void emergency_test()
 		} else {
 			if(millis() - emergency_last_ts > 10000) {
 				emergency_last_ts = millis();
-				if(old_heater_pwm > 10 && heater_pwm > 10 && temp - old_temp <= 0) {
+				if(old_heater_pwm > 10 && heater_pwm > 10 && temp - old_temp >= 0) {
 					emergency_stop = true;
-				} else if(old_heater_pwm < 10 && heater_pwm < 10 && temp - old_temp >= 0) {
+				} else if(old_heater_pwm < 10 && heater_pwm < 10 && temp - old_temp <= 0) {
 					emergency_stop = true;
 				}
 				old_temp = temp;
@@ -241,7 +241,7 @@ void emergency_test()
 }
 
 // sample time of PID
-Ticker process_timer(process_proc, 200, 0, MILLIS);
+Ticker process_timer(process_proc, 100, 0, MILLIS);
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker emergency_timer(emergency_test, 1000, 0, MILLIS);
 
@@ -251,7 +251,7 @@ void setup()
 	pinMode(EMERGENCY_LED_PIN, OUTPUT);
 	digitalWrite(EMERGENCY_LED_PIN, LOW);
 	pinMode(FAN_PIN, OUTPUT);
-	digitalWrite(FAN_PIN, LOW);
+	digitalWrite(FAN_PIN, HIGH);
 	analogReference(INTERNAL);
 
 	Peltier.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Peltier object connected through specified pins 
