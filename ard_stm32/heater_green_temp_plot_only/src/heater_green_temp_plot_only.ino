@@ -1,7 +1,11 @@
 #include <Ticker.h>
-#include <Wire.h>
+//#include <Wire.h>
+//TwoWire WireA(2);
 
-TwoWire WireA(2);
+#define WireA Wire
+
+//#include <SoftWire.h>
+//SoftWire WireA(PB10, PB11);
 
 const byte I2C_SLAVE_ADDRESS = 8;
 const byte I2C_REG_SET_TEMP = 0x01;
@@ -61,13 +65,18 @@ int16_t read_slave(byte reg)
 	WireA.beginTransmission(I2C_SLAVE_ADDRESS);
 	WireA.write(reg);
 	WireA.endTransmission();
-	WireA.requestFrom(I2C_SLAVE_ADDRESS, 2);
 
-	if(2 <= WireA.available())    // if two bytes were received
+	delayMicroseconds(100);
+	WireA.requestFrom(I2C_SLAVE_ADDRESS, 2);
+	int available = WireA.available();
+	if(2 == available)    // if two bytes were received
 	{
 		rs = WireA.read();  // receive high byte (overwrites previous reading)
 		rs = rs << 8;    // shift high byte to be high 8 bits
 		rs |= WireA.read(); // receive low byte as lower 8 bits
+	} else {
+		Serial.print("Available:");
+		Serial.println(available);
 	}
 	return rs;
 }
@@ -152,6 +161,7 @@ void update_temp()
 	control_temp = read_temp(TEMP_PIN);
 //	Serial.print(F("Control temp:"));
 //	Serial.println(control_temp);
+
 	int16_t val = read_slave(I2C_REG_READ_TEMP);
 	if(val != UNKNOWN_VAL) {
 		temp = val;
