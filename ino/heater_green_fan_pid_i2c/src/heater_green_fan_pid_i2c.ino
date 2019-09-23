@@ -266,6 +266,7 @@ void setup()
 
 	//turn the PID on
 	heaterPID.SetMode(AUTOMATIC);
+	heaterPID.SetSampleTime(10);
 #endif // USE_PID
 
 	process_timer.start();
