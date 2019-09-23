@@ -335,7 +335,10 @@ void setup()
 	init_slave();
 
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-	display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS, false);
+	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
+		Serial.println(F("SSD1306 allocation failed"));
+	}
+
 
 	// Show image buffer on the display hardware.
 	// Since the buffer is intialized with an Adafruit splashscreen
