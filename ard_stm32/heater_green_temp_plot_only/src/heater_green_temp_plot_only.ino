@@ -1,5 +1,5 @@
 #include <Ticker.h>
-//#include <Wire.h>
+#include <Wire.h>
 //TwoWire WireA(2);
 
 #define WireA Wire
@@ -22,10 +22,10 @@ readKey keylib = readKey();
 #include <Adafruit_SSD1306.h>
 
 #define OLED_ADDRESS 0x3c
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &WireA);
 
 #define MAX_PWM 400
-#define MIN_PWM 0
+#define MIN_PWM -400
 
 // NTC
 const int TEMP_PIN = PB1;
@@ -101,13 +101,9 @@ void display_status()
 		Serial.println(temp2set);
 	}
 
-	int16_t val = read_slave(I2C_REG_READ_PWM);
-	if(val != UNKNOWN_VAL) {
-		heater_pwm = val;
-	}
-
 	Serial.print(F("PWM:"));
 	Serial.println(heater_pwm);
+
 	if(heater_pwm < 0) {
 		display.setCursor(3, 14);
 		display.print(map(abs(heater_pwm), 0, abs(MAX_PWM), 0, 100));
@@ -127,7 +123,6 @@ void display_status()
 //		Serial.println(plot_max_temp);
 		for(int i=1; i<temp_history_count; i++) {
 			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 63, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), WHITE);
-//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), WHITE);
 		}
 	}
 	display.display();
@@ -165,6 +160,10 @@ void update_temp()
 	int16_t val = read_slave(I2C_REG_READ_TEMP);
 	if(val != UNKNOWN_VAL) {
 		temp = val;
+	}
+	val = read_slave(I2C_REG_READ_PWM);
+	if(val != UNKNOWN_VAL) {
+		heater_pwm = val;
 	}
 
 	if(temp2set == UNKNOWN_VAL) {
@@ -336,11 +335,7 @@ void setup()
 	init_slave();
 
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
-		Serial.println(F("SSD1306 allocation failed"));
-	}
-	display.display();
-	delay(1000);
+	display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS, false);
 
 	// Show image buffer on the display hardware.
 	// Since the buffer is intialized with an Adafruit splashscreen
