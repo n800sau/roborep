@@ -11,6 +11,20 @@ module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 	}
 }
 
+module attachment_holes(d=hole_d) {
+	translate([0, -gantry_sz_y/2, -(gantry_sz_z-attach_sz_z)/2]) {
+		translate([0, -attach_sz_y/4, -attach_sz_z/2]) {
+			for(zpos=[10, 25, 40, 55]) {
+				translate([0, 0, zpos]) {
+					rotate([0, 90, 0]) {
+						cylinder(d=hole_d_through, h=attach_sz_x*2, center=true);
+					}
+				}
+			}
+		}
+	}
+}
+
 module gantry_z() {
 	difference() {
 		union() {
@@ -19,28 +33,22 @@ module gantry_z() {
 				cube([lead_screw_nut_attach_plate_d, gantry_sz_y, gantry_sz_z], center=true);
 			}
 			// attachment
-			for(xsgn=[-1,1]) {
-				translate([xsgn*(gantry_sz_x-rod_bearing_d)/2, -gantry_sz_y/2, -(gantry_sz_z-attach_sz_z)/2]) {
-					difference() {
-						union() {
-							cube([attach_sz_x, attach_sz_y, attach_sz_z], center=true);
-							translate([0, (-gantry_sz_z+attach_sz_z)/4, attach_sz_z/2]) {
-								rotate([0, 90, 0]) {
-									cylinder(r=gantry_sz_z-attach_sz_z, h=attach_sz_x, center=true);
-								}
-							}
-						}
-						translate([0, -attach_sz_y/4, -attach_sz_z/2]) {
-							for(zpos=[10, 25, 40, 55]) {
-								translate([0, 0, zpos]) {
+			difference() {
+				translate([0, -gantry_sz_y/2, -(gantry_sz_z-attach_sz_z)/2]) {
+					for(xsgn=[-1,1]) {
+						translate([xsgn*(gantry_sz_x-rod_bearing_d)/2, 0, 0]) {
+							union() {
+								cube([attach_sz_x, attach_sz_y, attach_sz_z], center=true);
+								translate([0, (-gantry_sz_z+attach_sz_z)/4, attach_sz_z/2]) {
 									rotate([0, 90, 0]) {
-										cylinder(d=hole_d_through, h=attach_sz_x*2, center=true);
+										cylinder(r=gantry_sz_z-attach_sz_z, h=attach_sz_x, center=true);
 									}
 								}
 							}
 						}
 					}
 				}
+				attachment_holes(d=hole_d_through);
 			}
 			// holes for rod bearings
 			vert_rod_holes(d=rod_bearing_d+2*wall, h=gantry_sz_z);
@@ -73,4 +81,13 @@ module gantry_z() {
 	}
 }
 
+module gantry_z_attachment() {
+	cube([gantry_sz_x-rod_bearing_d, attach_sz_y, attach_sz_z], center=true);
+}
+
+
 gantry_z();
+translate([0, -(gantry_sz_y+attach_sz_y)/2, -(gantry_sz_z-attach_sz_z)/2]) {
+	color("blue")
+		gantry_z_attachment();
+}
