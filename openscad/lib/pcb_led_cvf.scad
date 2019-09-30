@@ -47,12 +47,13 @@ module tab() {
 	difference(){
 		union() {
 			translate([-tab_outer_radius,-tab_outer_radius,0])
-			cube([tab_outer_radius,2*tab_outer_radius,wall_width]);
+			cube([tab_outer_radius,2*tab_outer_radius,wall_width_thick+1]);
 			translate([-tab_outer_radius,0,0])
-				cylinder(r=tab_outer_radius, h = wall_width);
+				cylinder(r=tab_outer_radius, h = wall_width_thick+1);
 		}
-		translate([-tab_outer_radius,0,0])
-		 cylinder(r= tab_hole_radius, h = wall_width+3,center=true);
+		translate([-tab_outer_radius,0,0]) {
+			cylinder(r= tab_hole_radius, h = wall_width_thick+5,center=true);
+		}
 	}
 
 }
