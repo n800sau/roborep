@@ -100,6 +100,16 @@ void loop()
 	delay(1000);
 }
 
+#define DIVIDER "#----------#"
+
+void output_jpeg(uint8_t *buf, size_t size)
+{
+	Serial.println(DIVIDER);
+	Serial.write(buf, size);
+	Serial.println();
+	Serial.println(DIVIDER);
+}
+
 void print_jpg()
 {
 	size_t _jpg_buf_len = 0;
@@ -115,11 +125,13 @@ void print_jpg()
 		if(fb->format == PIXFORMAT_JPEG){
 			Serial.print("Captured jpeg size ");
 			Serial.println(fb->len);
+			output_jpeg(fb->buf, fb->len);
 		} else {
 			bool jpeg_converted = frame2jpg(fb, 80, &_jpg_buf, &_jpg_buf_len);
 			if(jpeg_converted) {
 				Serial.print("Captured converted to jpeg size ");
 				Serial.println(_jpg_buf_len);
+				output_jpeg(_jpg_buf, _jpg_buf_len);
 				free(_jpg_buf);
 			} else {
 				Serial.println("fmt2jpg failed");
