@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import time
+import time, os
 from serial import Serial
 
 execfile(os.path.join(os.path.dirname(__file__), "vars.sh"))
