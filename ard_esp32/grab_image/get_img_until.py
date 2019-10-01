@@ -13,19 +13,19 @@ ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5)
 
 time.sleep(1)
 
-DIVIDER = '#----------#'
+DIVIDER = '#----------#\r'
 
 i = 0
 while True:
 	bytes = ser.read_until(DIVIDER)
-	if bytes.endsWith(DIVIDER):
+	if bytes.endswith(DIVIDER):
 		jpg = ser.read_until(DIVIDER)
-		if jpg.endsWith(DIVIDER):
+		if jpg.endswith(DIVIDER):
 			ofname = 'out_%04d.jpg' % i
 			open(ofname, 'wb').write(jpg[:-len(DIVIDER)])
 			i += 1
-			print(fname + ' written')
-			break
+			print(ofname + ' written')
+			#break
 		else:
 			time.sleep(0.01)
 	else:
