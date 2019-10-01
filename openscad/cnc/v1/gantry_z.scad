@@ -12,13 +12,11 @@ module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 }
 
 module attachment_holes(d=hole_d) {
-	translate([0, -gantry_sz_y/2, -(gantry_sz_z-attach_sz_z)/2]) {
-		translate([0, -attach_sz_y/4, -attach_sz_z/2]) {
-			for(zpos=[10, 25, 40, 55]) {
-				translate([0, 0, zpos]) {
-					rotate([0, 90, 0]) {
-						cylinder(d=hole_d_through, h=attach_sz_x*2, center=true);
-					}
+	translate([0, -gantry_sz_y/2-attach_sz_y/4, -(gantry_sz_z-attach_sz_z)/2-attach_sz_z/2]) {
+		for(zpos=[10, 25, 40, 55]) {
+			translate([0, 0, zpos]) {
+				rotate([0, 90, 0]) {
+					cylinder(d=hole_d_through, h=gantry_sz_x*2, center=true);
 				}
 			}
 		}
@@ -82,12 +80,15 @@ module gantry_z() {
 }
 
 module gantry_z_attachment() {
-	cube([gantry_sz_x-rod_bearing_d, attach_sz_y, attach_sz_z], center=true);
+	union() {
+		translate([0, -(gantry_sz_y+attach_sz_y)/2, 0]) {
+			cube([gantry_sz_x-rod_bearing_d, attach_sz_y, attach_sz_z], center=true);
+		}
+		attachment_holes(d=hole_d);
+	}
 }
 
 
 gantry_z();
-translate([0, -(gantry_sz_y+attach_sz_y)/2, -(gantry_sz_z-attach_sz_z)/2]) {
-	color("blue")
-		gantry_z_attachment();
-}
+color("blue")
+	gantry_z_attachment();
