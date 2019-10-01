@@ -82,7 +82,7 @@ module gantry_z() {
 module gantry_z_attachment() {
 	union() {
 		translate([0, -(gantry_sz_y+attach_sz_y)/2, 0]) {
-			cube([gantry_sz_x-rod_bearing_d, attach_sz_y, attach_sz_z], center=true);
+			cube([gantry_sz_x-rod_bearing_d-attach_sz_x-1, attach_sz_y, attach_sz_z], center=true);
 		}
 		attachment_holes(d=hole_d);
 	}
