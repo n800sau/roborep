@@ -32,9 +32,11 @@ module pen_holder() {
 					}
 				}
 			}
-			translate([0, -holder_sz_y/4, pen_holder_z/2]) {
+			translate([0, -holder_sz_y/4, (pen_holder_z)/2]) {
 				cylinder(d=pen_d, h=pen_holder_z*2, center=true);
-				cube([pen_d+2*pen_wall+20, 2, pen_holder_z*2], center=true);
+        translate([0, 0, holder_sz_z]) {
+          cube([pen_d+2*pen_wall+20, 2, pen_holder_z], center=true);
+        }
 			}
 		}
 	}
