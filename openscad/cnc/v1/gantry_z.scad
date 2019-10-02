@@ -16,7 +16,7 @@ module attachment_holes(d=hole_d) {
 		for(zpos=[10, 25, 40, 55]) {
 			translate([0, 0, zpos]) {
 				rotate([0, 90, 0]) {
-					cylinder(d=hole_d_through, h=gantry_sz_x*2, center=true);
+					cylinder(d=d, h=gantry_sz_x*2, center=true);
 				}
 			}
 		}
@@ -79,10 +79,10 @@ module gantry_z() {
 	}
 }
 
-module gantry_z_attachment() {
-	union() {
-		translate([0, -(gantry_sz_y+attach_sz_y)/2, 0]) {
-			cube([gantry_sz_x-rod_bearing_d-attach_sz_x-1, attach_sz_y, attach_sz_z], center=true);
+module gantry_z_attachment(extra_sz_y=0) {
+	difference() {
+		translate([0, -(gantry_sz_y+attach_sz_y+extra_sz_y)/2-attach_side_gap, 0]) {
+			cube([gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap, attach_sz_y+extra_sz_y, attach_sz_z], center=true);
 		}
 		attachment_holes(d=hole_d);
 	}
