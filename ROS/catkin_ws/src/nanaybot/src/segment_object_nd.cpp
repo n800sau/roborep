@@ -34,7 +34,7 @@ namespace segment_object_nd
 				image_transport::SubscriberStatusCallback connect_cb = boost::bind(&SegmentObjectNd::connectCb, this);
 				// Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
-				img_pub	 = it->advertise("/nanaybot/segment_object_nd",  1, connect_cb, connect_cb);
+				img_pub	 = it->advertise("/oculus2wd/segment_object_nd",  1, connect_cb, connect_cb);
 			}
 
 			// Handles (un)subscribing when clients (un)subscribe

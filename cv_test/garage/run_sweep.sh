@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-source ~/.virtualenvs/gurus/bin/activate
+#source ~/.virtualenvs/gurus/bin/activate
 
 cd ~/work/roborep/cv_test/garage
 
@@ -13,12 +13,13 @@ if [ -z "$RUNNING" ]
 then
 
 
+echo `date --rfc-3339=seconds`'###Start sweeping###'|tee -a ${cur_dir}/run_sweep.log
 
 /usr/bin/env python "${cur_dir}/run_sweep.py" &>> ${cur_dir}/run_sweep.log
 echo $?
 
 else
 
-echo '###Found already running###'|tee -a ${cur_dir}/run_sweep.log
+echo `date --rfc-3339=seconds`'###Found already running###'|tee -a ${cur_dir}/run_sweep.log
 
 fi

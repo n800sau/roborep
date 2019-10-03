@@ -1,0 +1,10 @@
+{
+	"jsonrpc" : "2.0",
+	"method": "ir_send",
+	"id" : 1,
+	"params" : {
+		"type": "sony",
+		"code" : "0xA90",
+		"bits": 12
+	}
+}

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 
-<script type="text/javascript" src="http://cdn.robotwebtools.org/threejs/current/three.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
+<script type="text/javascript" src="js/three.js"></script>
+<script type="text/javascript" src="js/easeljs.min.js"></script>
+<script type="text/javascript" src="js/eventemitter2.js"></script>
+<script type="text/javascript" src="js/roslib.min.js"></script>
+<script type="text/javascript" src="js/ros2d.min.js"></script>
 <!-- 
 <script type="text/javascript" src="http://cdn.robotwebtools.org/ros3djs/current/ros3d.js"></script>
 -->
@@ -98,7 +98,7 @@
 		// Setup the map client.
 		var gridClient = new ROS2D.OccupancyGridClient({
 			ros : ros,
-			topic : '/rtabmap/grid_map',
+			topic: '/grid_map',
 			rootObject : viewer2d.scene
 		});
 

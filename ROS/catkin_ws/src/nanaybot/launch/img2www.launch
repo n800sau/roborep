@@ -1,10 +1,10 @@
 <launch>
-	<node name="img2www" pkg="nanaybot" type="img2www" args="
+	<node name="img2www" pkg="oculus2wd" type="img2www" args="
 		image:=/camera/rgb/image_raw
 		disparity:=/camera/depth_registered/disparity
-		image_motion:=/nanaybot/image_motion_nd
-		image_motion1:=/nanaybot/image_motion1_nd
-		image_segment_object:=/nanaybot/segment_object_nd
+		image_motion:=/oculus2wd/image_motion_nd
+		image_motion1:=/oculus2wd/image_motion1_nd
+		image_segment_object:=/oculus2wd/segment_object_nd
 		_filename_raw:=/var/www/rgbframe/frame.jpg
 		_filename_color:=/var/www/rgbframe/frame_color.jpg
 		_filename_skin:=/var/www/rgbframe/frame_skin.jpg

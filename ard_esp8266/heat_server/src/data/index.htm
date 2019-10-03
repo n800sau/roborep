@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<title>Sliders</title>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<!-- Angular Material style sheet -->
+	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css"/>
+	<link rel="stylesheet" href="app.css"/>
+</head>
+<body ng-app="myApp">
+
+	<div ng-controller="AppCtrl" ng-cloak>
+		<md-content style="margin: 16px; padding:16px">
+			<div layout="row">
+				<div>
+					<table>
+						<tr>
+							<td colspan="3">
+								{{message}}
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label>{{templist[templist.length-1]|number:0}}</label>
+							</td>
+							<td>
+								<span ng-if="temp2set_confirmed !== undefined">
+									...
+								</span>
+							</td>
+							<td style="white-space: nowrap">
+								<span ng-if="temp2set_confirmed !== undefined">
+									{{temp2set_confirmed}}
+									<span ng-if="heating">&uparrow;</span>
+									<span ng-if="cooling">&downarrow;</span>
+								</span>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<div layout="row">
+				<div>
+<!-- <br/>{{templist}}<br/>{{min_temp()}}<br/>{{max_temp()}}<br/> -->
+
+					<div class="chart" style="width:{{plot_width}}px; height:{{plot_height}}px;">
+
+						<!-- Labels -->
+						<div class="y" style="width:{{height}}px;">{{yAxis}}</div>
+						<div class="x">{{xAxis}}</div>
+
+						<div ng-repeat="dot in y_scale() track by $index" class="dot" style="bottom:{{(dot-min_temp()) / (max_temp()-min_temp()) * plot_height}}px; left:0px;">
+							<span class="y-label">{{dot}}</span>
+						</div>
+
+						<div ng-repeat="dot in x_scale().slice(-20) track by $index" class="dot" style="bottom:0; left:{{(dot + 0.5 - x_scale().slice(-20)[0]) / get_templist().length * plot_width}}px;">
+						</div>
+
+
+						<!-- Data -->
+						<svg style="width:{{plot_width}}px; height:{{plot_height}}px;" ng-if="templist.length > 2">
+
+							<line ng-repeat="line in get_templist().slice(0, -1) track by $index"
+										x1="{{$index / get_templist().length * plot_width }}"
+										y1="{{(line-min_temp()) / (max_temp()-min_temp()) * plot_height}}"
+										x2="{{($index + 1) / get_templist().length * plot_width}}"
+										y2="{{(get_templist()[$index + 1]-min_temp()) / (max_temp()-min_temp()) * plot_height}}">
+							</line>
+
+						</svg>
+
+					</div>
+
+				</div>
+			</div>
+			<div layout="row" class="temp-2-set">
+				<table>
+					<tr>
+						<td>
+							<input type="number" class="temp2set-input" ng-model="temp2set" min="20" max="100" ng-disabled="running"></input>
+						</td>
+						<td>
+							<md-button ng-click="apply(temp2set)" ng-disabled="running">
+								Apply
+							</md-button>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<table>
+				<tr>
+					<th>
+						Pos
+					</th>
+					<th>
+						Rep
+					</th>
+					<th>
+						<div class="clickable" ng-click="add_group()" ng-if="!running">
+							+
+						</div>
+					</th>
+				</tr>
+				<tr ng-repeat-start="grp in settings track by $index" ng-class-odd="odd" ng-class-odd="even" ng-init="group_index=$index">
+					<td>
+						G-{{group_index+1}}
+					</td>
+					<td>
+						<div ng-if="editing == grp">
+							<input type="number" ng-model="grp.repeat"/>
+						</div>
+						<div ng-if="editing != grp">
+							<span ng-if="running && server_state.group_index==group_index">{{server_state.repeat+1}}/</span>{{grp.repeat}}
+						</div>
+					</td>
+					<td class="clickable" ng-click="on_edit_click(grp)" ng-if="!running">
+						{{editing == grp ? 'W' : 'E'}}
+					</td>
+					<td class="clickable" ng-click="settings.splice($index, 1)" ng-if="!running">
+						X
+					</td>
+					<td>
+						<div class="clickable" ng-click="add_group_item(grp)" ng-if="!running">
+							+
+						</div>
+					</td>
+				</tr>
+				<tr ng-repeat-end>
+					<td colspan="3">
+						<table class="group-item">
+							<colgroup>
+								<col class="col-stage"/>
+								<col class="col-NN"/>
+								<col class="col-T"/>
+								<col class="col-D"/>
+								<col class="col-E"/>
+								<col class="col-X"/>
+							</colgroup>
+							<tr>
+								<th>
+								</th>
+								<th>
+								</th>
+								<th>
+								</th>
+								<th>
+									T
+								</th>
+								<th>
+									D
+								</th>
+								<th>
+								</th>
+							</tr>
+							<tr ng-repeat="s in grp.items track by $index" ng-drop="grp.items.includes(temp.dragged_item)" ng-drop-success="onDropComplete(grp.items, $index, $data)">
+								<td>
+									<span ng-if="running ? server_state.stage_index == $index && server_state.group_index == group_index: false">*</span>
+								</td>
+								<td>
+									{{$index+1}}
+								</td>
+								<td>
+									<div ng-class="{handle: !running}" ng-drag-handle ng-drag="!running" ng-drag-data="s"
+											ng-drag-start="temp.dragged_item=s" ng-center-anchor="false" ng-drag-stop="temp.dragged_item=undefined">
+										<span ng-if="temp.dragged_item==s" class="draggable-preview">{{temp.dragged_item.temp}}/{{temp.dragged_item.duration}}</span>
+									</div>
+								</td>
+								<td>
+									<div ng-if="editing == s">
+										<input type="number" ng-model="s.temp"/>
+									</div>
+									<div ng-if="editing != s">
+										{{s.temp}}
+									</div>
+								</td>
+								<td>
+									<div ng-if="editing == s">
+										<input type="number" ng-model="s.duration"/>
+									</div>
+									<div ng-if="editing != s">
+										{{s.duration}}
+									</div>
+								</td>
+								<td colspan="2" ng-if="running">
+									<div ng-if="server_state.stage_index == $index && server_state.group_index ==  group_index" class="text-right">
+										{{server_state.secs_remaining}}
+									</div>
+								</td>
+								<td class="clickable" ng-click="on_edit_click(s)" ng-if="!running">
+									{{editing == s ? 'W' : 'E'}}
+								</td>
+								<td class="clickable" ng-click="grp.items.splice($index, 1)" ng-if="!running">
+									X
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+			<md-button ng-click="run()" ng-if="!running" ng-disable="editing">
+				Run
+			</md-button>
+			<md-button ng-click="abort()" ng-if="running">
+				Abort
+			</md-button>
+		</md-content>
+	</div>
+
+	<!-- Angular Material requires Angular.js Libraries -->
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-animate.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-aria.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-messages.min.js"></script>
+
+	<!-- Angular Material Library -->
+	<script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.js"></script>
+
+	<!-- Your application bootstrap	-->
+	<script type="text/javascript" src="ngDraggable.js"></script>
+	<script type="text/javascript" src="app.js"></script>
+
+</body>
+</html>
+
+
+

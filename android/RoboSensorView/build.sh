@@ -4,4 +4,5 @@ echo $?
 #ant debug && adb install -r bin/RoboSensorView-debug.apk
 
 #ant release
+#ant install
 

@@ -1,0 +1,4 @@
+Bootloader version 22
+Chip id: 0x410 (STM32F10x Medium-density)
+Device UID: FF51-066A-53508749-87185251
+Flash size: 64 KiB

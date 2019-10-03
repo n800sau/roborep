@@ -15,7 +15,7 @@
 #rosrun image_view image_saver image:=/camera/depth/cloud_image
 #rosrun image_view image_saver image:=/oculus2wd/processed_points
 #rosrun image_view image_saver image:=/oculus2wd/processed_points_image
-rosrun image_view image_saver image:=/dn_object_detect/debug_view
+#rosrun image_view image_saver image:=/dn_object_detect/debug_view
 #rosrun image_view image_view image:=/camera/depth_registered/hw_registered/image_rect_raw
 
 #rosrun image_view image_view image:=$1
@@ -41,9 +41,5 @@ rosrun image_view image_saver image:=/dn_object_detect/debug_view
 #rosrun image_view image_view image:=/oculus2wd/signal_image_nd
 
 #rosrun image_view image_view image:=/camera/rgb/image_raw
+rosrun image_view image_view image:=/ot/camera/image_raw _image_transport:=compressed
 
-DISPLAY=:5 rosrun image_view image_view image:=/motion/image_raw
-
-#rosrun image_view extract_images image:=/motion/image_raw
-#rosrun image_view image_view image:=/labrob/camera/image_raw
-#rosrun image_view image_view image:=/dn_object_detect/debug_view

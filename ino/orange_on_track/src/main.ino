@@ -1,6 +1,7 @@
 //#define USE_SHARP
 
 #include <voltage.h>
+#include "crc.h"
 #include "SerialProtocol.h"
 #include "commands.h"
 

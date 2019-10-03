@@ -1,0 +1,1 @@
+avrdude -v -p atmega2560 -C /home/n800s/.platformio/packages/tool-avrdude/avrdude.conf -c wiring -b 115200 -P "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0" -D -U flash:w:.pioenvs/arduino_uno/firmware.hex:i

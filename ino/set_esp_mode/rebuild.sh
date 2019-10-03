@@ -1,1 +1,0 @@
-ino clean && ./build.sh

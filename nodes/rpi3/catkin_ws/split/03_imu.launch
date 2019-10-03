@@ -1,0 +1,10 @@
+<launch>
+
+	<![CDATA[ imu include	]]>
+	<include file="$(find rpi3_top)/launch/rpi3_top.launch">
+	</include>
+
+</launch>
+
+
+

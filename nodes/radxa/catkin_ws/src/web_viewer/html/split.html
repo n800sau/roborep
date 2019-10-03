@@ -3,14 +3,23 @@
 <head>
 <meta charset="utf-8" />
 
-<script type="text/javascript" src="http://cdn.robotwebtools.org/threejs/current/three.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
+<script type="text/javascript" src="js/three.min.js"></script>
+<script type="text/javascript" src="js/easeljs.min.js"></script>
+<script type="text/javascript" src="js/eventemitter2.js"></script>
+<script type="text/javascript" src="js/roslib.js"></script>
+<script type="text/javascript" src="js/ros2d.js"></script>
 <!-- 
 <script type="text/javascript" src="http://cdn.robotwebtools.org/ros3djs/current/ros3d.js"></script>
 -->
+
+<style>
+a[disabled], a[disabled]:hover {
+  pointer-events: none;
+  color: #e1e1e1;
+  text-decoration: none;
+}
+</style>
+
 
 <script type="text/javascript" type="text/javascript">
 	// Connecting to ROS
@@ -34,57 +43,102 @@
 			console.log('Connection to websocket server closed.');
 		});
 
-		// Subscribing to a Topic
-		// ----------------------
+		var cmdVel = new ROSLIB.Topic({
+			ros : ros,
+			latch: true,
+//			name : '/opcplus/cmd_vel',
+			name : '/rpi3/cmd_vel',
+			messageType : 'geometry_msgs/Twist'
+		});
 
+		var cmdVel_listener = new ROSLIB.Topic({
+			ros : ros,
+//			name : '/opcplus/cmd_vel',
+			name : '/rpi3/cmd_vel',
+			messageType : 'geometry_msgs/Twist'
+		});
+
+		var LWheelPwr_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/opcplus/lwheel_pwr',
+			messageType : 'std_msgs/Int16'
+		});
+
+		var RWheelPwr_listener = new ROSLIB.Topic({
+			ros : ros,
+			name : '/opcplus/rwheel_pwr',
+			messageType : 'std_msgs/Int16'
+		});
+
+// 1
 		var op_listener = new ROSLIB.Topic({
 			ros : ros,
-//			name : '/camera/depth/points',
-			name : '/camera/ir/image/compressed',
+			throttle_rate: 1000,
+//			name : '/rpi3/camera/depth/points',
+//			name : '/rpi3/camera/ir/image/compressed',
+//			name : '/rpi3/camera/rgb/image_raw/compressed',
 // not compressed does not work
 //			messageType : 'sensor_msgs/Image'
 //			name : '/opcplus/image_raw/compressed',
+			name : '/ow/camera/image_raw/compressed',
 			messageType : 'sensor_msgs/CompressedImage'
 //			messageType : 'sensor_msgs/PointCloud2'
 		});
 
+// 2
 		var ow_listener = new ROSLIB.Topic({
 			ros : ros,
-			name : '/camera/rgb/image_raw/compressed',
-//			name : '/ow_camera/image_raw/compressed',
+			throttle_rate: 1000,
+			name : '/rpi3/camera/rgb/image_raw/compressed',
+//			name : '/opcplus/camera/rgb/image_raw/compressed',
+//			name : '/ot/camera/image_raw/compressed',
 //			messageType : 'sensor_msgs/Image'
 			messageType : 'sensor_msgs/CompressedImage'
 		});
 
+// 3
 		var dn_listener = new ROSLIB.Topic({
 			ros : ros,
+			throttle_rate: 1000,
+//			name: '/rpi3/rtabmap/cloud_map',
 //			name: '/camera/depth_registered/hw_registered/image_rect_raw/compressed',
-			name: '/camera/depth_registered/image_raw/compressed',
+//			name: '/rpi3/camera/depth/image_raw/compressed',
+//			name: '/opcplus/camera/depth/image_raw/compressed',
 //			name : '/dn_object_detect/debug_view/compressed',
 			messageType : 'sensor_msgs/CompressedImage'
+//			messageType : 'sensor_msgs/PointCloud2'
 		});
 
+// 4
 		var sm_listener = new ROSLIB.Topic({
 			ros : ros,
-			name : '/camera/depth/image_raw/compressed',
+			throttle_rate: 1000,
+//			name : '/rpi3/camera/depth_registered/image_raw',
+//			name : '/rpi3/camera/depth_registered/image/theora',
+//			name : '/rpi3/camera/depth_registered/points/image_raw/compressed',
+//			name : '/rpi3/obstacles/image_raw/compressed',
+//			name : '/rpi3/camera/depth_registered/image_raw/compressed',
 //			messageType : 'sensor_msgs/Image'
 //			name : '/disparity',
 //			messageType : 'stereo_msgs/DisparityImage'
 //			name : '/phase_corr/image/compressed',
 			messageType : 'sensor_msgs/CompressedImage'
+//			messageType : 'theora_image_transport/Packet'
+//			messageType : 'sensor_msgs/PointCloud2'
 		});
 
 		var pos_listener = new ROSLIB.Topic({
 			ros : ros,
-			name : '/robot_pose',
+			throttle_rate: 100,
+			name : '/rpi3/robot_pose',
 			messageType : 'geometry_msgs/Pose'
 		});
 
 		// Create the main viewer.
 		var viewer2d = new ROS2D.Viewer({
 			divID : 'map',
-			width : 100,
-			height : 100
+			width : 160,
+			height : 160
 		});
 
 		// Setup Kinect DepthCloud stream
@@ -108,7 +162,7 @@
 			angularThres : 0.01,
 			transThres : 0.01,
 			rate : 3.0,
-			fixedFrame : '/camera_link'
+			fixedFrame : '/base_link'
 		});
 
 		// Create Kinect scene node
@@ -122,13 +176,16 @@
 		// Setup the map client.
 		var gridClient = new ROS2D.OccupancyGridClient({
 			ros : ros,
-			topic : '/rtabmap/grid_map',
+			topic : '/rpi3/map',
+//			topic : '/rpi3/projected_map',
+//			topic : '/opcplus/map',
 			rootObject : viewer2d.scene
 		});
 
 		// Scale the canvas to fit to the map
 		gridClient.on('change', function(){
 			viewer2d.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
+			viewer2d.shift(gridClient.currentGrid.pose.position.x, gridClient.currentGrid.pose.position.y);
 		});
 
 		var go_on = false;
@@ -158,25 +215,91 @@
 			cnt.innerHTML = Math.round(message.position.x * 100) + ':' + Math.round(message.position.y * 100) + ', ' + Math.round(message.orientation.z * 100);
 		}
 
-		var start = function() {
+		var speed = 0.0;
+		var turn = 0.0;
+
+		var on_cmdVel_msg = function(listener, message) {
+			var cnt = document.getElementById('cmdVel');
+			speed = message.linear.x;
+			turn = message.angular.z;
+			cnt.innerHTML = (Math.round(speed * 10) / 10.) + ':' + (Math.round(turn * 10) / 10.);
+		}
+
+		var on_LWheelPwr_msg = function(listener, message) {
+			var cnt = document.getElementById('l-wheel');
+			cnt.innerHTML = message.data;
+		}
+
+		var on_RWheelPwr_msg = function(listener, message) {
+			var cnt = document.getElementById('r-wheel');
+			cnt.innerHTML = message.data;
+		}
+
+		start = function() {
 			go_on = true;
-			document.getElementById('stop_btn').disabled = false;
-			document.getElementById('start_btn').disabled = true;
+			document.getElementById('stop_btn').removeAttribute("disabled");
+			document.getElementById('start_btn').setAttribute("disabled", "disabled");
 			subscribe(op_listener, 'op_');
 			subscribe(ow_listener, 'ow_');
 			subscribe(sm_listener, 'sm_');
 			subscribe(dn_listener, 'dn_');
 			pos_listener.subscribe(on_pos_msg.bind(this, pos_listener))
+			cmdVel_listener.subscribe(on_cmdVel_msg.bind(this, cmdVel))
+//			LWheelPwr_listener.subscribe(on_RWheelPwr_msg.bind(this))
+//			RWheelPwr_listener.subscribe(on_RWheelPwr_msg.bind(this))
 		}
 
-		var stop = function() {
+		stop = function() {
 			go_on = false;
-			document.getElementById('stop_btn').disabled = true;
-			document.getElementById('start_btn').disabled = false;
+			document.getElementById('stop_btn').setAttribute("disabled", "disabled");
+			document.getElementById('start_btn').removeAttribute("disabled");
+			cmdVel_listener.unsubscribe()
+//			LWheelPwr_listener.unsubscribe()
+//			RWheelPwr_listener.unsubscribe()
+			pos_listener.unsubscribe();
 			op_listener.unsubscribe();
 			ow_listener.unsubscribe();
 			sm_listener.unsubscribe();
 			dn_listener.unsubscribe();
+		}
+
+		var twist = function(fwd, turn) {
+			return new ROSLIB.Message({
+				linear : {
+					x : fwd || 0.0,
+					y : 0.0,
+					z : 0.0
+				},
+				angular : {
+					x : 0.0,
+					y : 0.0,
+					z : turn || 0.0
+				}
+			});
+		}
+
+		move_stop = function() {
+			cmdVel.publish(twist());
+		}
+
+		move_back = function() {
+//			cmdVel.publish(twist(speed-0.5));
+			cmdVel.publish(twist(speed-0.1));
+		}
+
+		move_fwd = function() {
+//			cmdVel.publish(twist(speed+0.5));
+			cmdVel.publish(twist(speed+0.1));
+		}
+
+		turn_left = function() {
+//			cmdVel.publish(twist(0, turn+1.5));
+			cmdVel.publish(twist(0, turn+0.2));
+		}
+
+		turn_right = function() {
+//			cmdVel.publish(twist(0, turn-1.5));
+			cmdVel.publish(twist(0, turn-0.2));
 		}
 
 		var subscribe = function(listener, prefix) {
@@ -190,12 +313,31 @@
 
 <body onload="on_load()">
 	<div id="position"></div>
-	<button onclick="location.reload()">&orarr;</button>
+	<div>
+		<span id="cmdVel"></span>
+		<span id="l-wheel"></span>
+		<span id="r-wheel"></span>
+	</div>
+	<a href="javascript:location.reload()">&orarr;</a>
+	<a id="start_btn" href="javascript:start()" disabled="disabled">&vrtri;</a>
+	<a id="stop_btn" href="javascript:stop()">&squf;</a>
 	<br/>
 
-	<button id="start_btn" onclick="start()">&vrtri;</button>
-	<button id="stop_btn" onclick="stop()" disabled="disabled">&squf;</button>
-	<br/>
+	<table>
+	<tr>
+	<td><a href="javascript:turn_left();">&larr;</a></td>
+	<td><a href="javascript:move_fwd();">&uarr;</a></td>
+	<td><a href="javascript:move_stop();">&squf;</a></td>
+	<td><a href="javascript:move_back();">&darr;</a></td>
+	<td><a href="javascript:turn_right();">&rarr;</a></td>
+	</tr>
+	</table>
+
+	<br>
+	<a href="frames.pdf" target="_blank">Frames</a>
+	</br>
+
+	<div id="map"></div>
 
 	<canvas id="op_Canvas" width="160" height="120" style="border:1px solid #000000;">
 	</canvas>
@@ -217,8 +359,9 @@
 	<div id="sm_timestamp"></div>
 	<br/>
 
-	<div id="map"></div>
 	<div id="3Dviewer"></div>
+
+	<a href="frames.pdf" target="_blank"></a>
 
 </body>
 </html>

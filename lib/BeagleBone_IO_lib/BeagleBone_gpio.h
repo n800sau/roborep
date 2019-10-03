@@ -9,6 +9,7 @@
 #include <time.h>
 
 //The following #defines make it easier for the user to add differnt pins
+
 #define P8_3  0
 #define P8_4  1
 #define P8_5  2
@@ -21,7 +22,13 @@
 #define P8_20 9
 #define P8_21 10
 #define P9_12 11
- 
+
+#define P8_8  12
+#define P8_10 13
+#define P8_13 14
+#define P9_14 15
+
+
 #define DEBUG_GPIO 0
 
 /** @brief Contains all elements which we need to pass into the beagleboard 

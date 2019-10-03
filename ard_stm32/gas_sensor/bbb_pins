@@ -1,0 +1,16 @@
+P9   NRF24
+27 - CE
+28 - CS
+29 - MISO
+30 - MOSI
+31 - SCL
+
+P8
+7 - IRQ
+
+
+"P9_27": { "name": "GPIO3_19", "gpio": gpio3+19, "mux": "mcasp0_fsr", "eeprom": 64 },
+"P9_28": { "name": "SPI1_CS0", "gpio": gpio3+17, "mux": "mcasp0_ahclkr", "eeprom": 63 },
+"P9_29": { "name": "SPI1_D0", "gpio": gpio3+15, "mux": "mcasp0_fsx", "eeprom": 61 },
+"P9_30": { "name": "SPI1_D1", "gpio": gpio3+16, "mux": "mcasp0_axr0", "eeprom": 62 },
+"P9_31": { "name": "SPI1_SCLK", "gpio": gpio3+14, "mux": "mcasp0_aclkx", "eeprom": 65 },

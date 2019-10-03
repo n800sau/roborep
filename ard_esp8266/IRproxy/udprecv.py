@@ -93,7 +93,8 @@ if __name__ == '__main__':
 							#cmdlst = ['espeak', '-s', '150', text, '--stdout']
 							#cmd = '%s | sox -t wav - -r 44100 -t wav - | aplay -v' % subprocess.list2cmdline(cmdlst)
 							cmdlst = ['echo', text]
-							cmd = '%s | text2wave -f 44100 |aplay -v' % subprocess.list2cmdline(cmdlst)
+#							cmd = '%s | text2wave -f 44100 |aplay -v' % subprocess.list2cmdline(cmdlst)
+							cmd = '%s | festival --tts --pipe' % subprocess.list2cmdline(cmdlst)
 							dbprint(cmd)
 							p = subprocess.Popen(cmd, shell=True)
 				else:

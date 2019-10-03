@@ -1,1 +1,1 @@
-roslaunch nanaybot display.launch model:=nanaybot.urdf
+roslaunch oculus2wd display.launch model:=oculus2wd.urdf

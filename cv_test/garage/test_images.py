@@ -12,8 +12,8 @@ from sklearn.cluster import KMeans
 from skimage import feature
 
 img_paths = [
-	os.path.join(os.path.expanduser('traindata/car_inside'), '*.jpg'),
-	os.path.join(os.path.expanduser('traindata/nocar'), '*.jpg'),
+	os.path.join(os.path.expanduser('traindata/inside_close'), '*.jpg'),
+	os.path.join(os.path.expanduser('traindata/inside_open'), '*.jpg'),
 ]
 out_path = os.path.join(os.path.dirname(__file__), 'output')
 
