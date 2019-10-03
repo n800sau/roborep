@@ -61,3 +61,5 @@ extract_sz_z = gantry_sz_z - 15;
 
 rod_dist_x = 67.4 - rod_bearing_d;
 
+attach_side_gap = 0.5;
+
