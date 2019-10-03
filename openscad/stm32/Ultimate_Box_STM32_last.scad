@@ -157,9 +157,9 @@ TShell = 0; // [0:No, 1:Yes]
 // - Bottom shell
 BShell = 1; // [0:No, 1:Yes]
 // - Front panel
-FPanL = 1; // [0:No, 1:Yes]
+FPanL = 0; // [0:No, 1:Yes]
 // - Back panel
-BPanL = 1; // [0:No, 1:Yes]
+BPanL = 0; // [0:No, 1:Yes]
 // - Panel holes and text
 PanelFeatures = 1; // [0:No, 1:Yes]
 
@@ -584,7 +584,7 @@ module PCB() {
 
     Produces a single foot for PCB mounting.
 */
-module foot() {
+module foot(top=0) {
     color(Couleur1) {
         rotate_extrude($fn=100) {
             difference() {
