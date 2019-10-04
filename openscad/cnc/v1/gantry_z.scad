@@ -79,10 +79,16 @@ module gantry_z() {
 	}
 }
 
-module gantry_z_attachment(extra_sz_y=0) {
+connector_base_sz_y = 12;
+
+
+module gantry_z_attachment(extra_sz_y=40) {
 	difference() {
-		translate([0, -(gantry_sz_y+attach_sz_y+extra_sz_y)/2-attach_side_gap, 0]) {
-			cube([gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap, attach_sz_y+extra_sz_y, attach_sz_z], center=true);
+		translate([0, -(gantry_sz_y+connector_base_sz_y)/2-attach_side_gap, 0]) {
+			cube([gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap, connector_base_sz_y, attach_sz_z], center=true);
+			translate([0, -(connector_base_sz_y+extra_sx_y)/2, 0]) {
+				cube([30, extra_sz_y, attach_sz_z], center=true);
+			}
 		}
 		attachment_holes(d=hole_d);
 	}
