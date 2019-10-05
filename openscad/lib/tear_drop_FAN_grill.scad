@@ -134,7 +134,7 @@ module tear_drop_fan_grill() {
     }
   }
   
-  module tear_drop_ring(od=10,t=1,ht=2,sm=true,so=false){
+  module tear_drop_ring(od=10,t=1,h=2,sm=true,so=false){
     difference(){
       tear_drop(r=od/2,h=h,s=sm);
       if(so){
