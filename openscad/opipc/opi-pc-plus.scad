@@ -401,8 +401,8 @@ module case_top() {
 
     }
       // cable cutout
-      translate([outer_wall_size + cable_cut_off_x, outer_wall_size + opi_width - cable_cut_off_y - cable_cut_depth, -top_standoff_height]) {
-        cube([cable_cut_width, cable_cut_depth+10, bottom_top_size + top_standoff_height]);
+      translate([outer_wall_size + cable_cut_off_x, outer_wall_size + opi_width - cable_cut_off_y - cable_cut_depth, -top_standoff_height-1]) {
+        cube([cable_cut_width, cable_cut_depth+10, 1+bottom_top_size + top_standoff_height]);
       }
 
       // standoffs extraction
