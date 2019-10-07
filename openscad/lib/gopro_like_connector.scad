@@ -1,8 +1,8 @@
 $fn = 40;
 
-module connector(wall=2) {
-  translate([7, 5.5, 7.5]) {
-    cube([19, 15, wall]);
+module connector(wall=2, sz_x=19, sz_y=15) {
+  translate([7+(19-sz_x)/2, 5.5+(15-sz_y)/2, 7.5]) {
+    cube([sz_x, sz_y, wall]);
   }
   translate([26.5, 5.4, 7.4]) {
     rotate([0, 90, 90]) {

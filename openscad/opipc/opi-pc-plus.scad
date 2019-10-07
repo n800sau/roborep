@@ -8,22 +8,24 @@ opi_holes = 2.8;
 opi_hole_dist = 3.0;
 opi_pcb_height = 1.6;
 
-opi_power_width = 9.2;
+off_y = -2;
+
+opi_power_width = 10;
 opi_power_height = 6.2;
 opi_power_depth = 12.7;
-opi_power_off_x = 7;
-opi_power_off_y = -2.0;
+opi_power_off_x = 6.6;
+opi_power_off_y = off_y;
 
 opi_hdmi_width = 16.2;
-opi_hdmi_height = 5.7;
+opi_hdmi_height = 6.4;
 opi_hdmi_depth = 11.6;
-opi_hdmi_off_x = opi_power_off_x + opi_power_width + 14;
-opi_hdmi_off_y = opi_power_off_y;
+opi_hdmi_off_x = 28.4;
+opi_hdmi_off_y = off_y;
 
-opi_audio_diameter = 6.1;
+opi_audio_diameter = 7;
 opi_audio_depth = 13.0;
-opi_audio_off_x = opi_hdmi_off_x + opi_hdmi_width + 17;
-opi_audio_off_y = opi_hdmi_off_y;
+opi_audio_off_x = 60;
+opi_audio_off_y = off_y;
 
 opi_sd_width = 14.8;
 opi_sd_height = 2.0;
@@ -36,16 +38,16 @@ opi_reset_off_y = 8.5;
 opi_reset_off_x = -0.8;
 opi_reset_off_z = 1.1;
 
-opi_cam_width = 16.5;
+opi_cam_width = 17;
 opi_cam_depth = 5.0;
-opi_cam_height = 6.0;
-opi_cam_off_y = 15.5;
+opi_cam_height = 26.0;
+opi_cam_off_y = 14;
 opi_cam_off_x = 1.0;
 
 opi_micro_usb_width = 8.9;
 opi_micro_usb_height = 3;
 opi_micro_usb_depth = 5.8;
-opi_micro_usb_off_y = opi_cam_off_y + opi_cam_width + 4;
+opi_micro_usb_off_y = 35;
 opi_micro_usb_off_x = -0.8;
 
 opi_ir_width = 6.0;
