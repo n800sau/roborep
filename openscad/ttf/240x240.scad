@@ -25,8 +25,8 @@ hole_d = 2.9;
 hole_d_through = 3.6;
 
 ear_hole_d = hole_d_through;
-ear_sz_x = 2;
-ear_sz_y = ear_hole_d + 2 * wall;
+ear_sz_x = ear_hole_d + 2 * wall;
+ear_sz_y = 2;
 ear_sz_z = wall+border_sz_z+5;
 
 pins_hole_sz_x = 5;
@@ -38,16 +38,16 @@ border_butt_sz_z = ear_sz_z-wall-border_sz_z;
 module ears(hole_mode=false) {
   // ears
   translate([0, 0, ear_sz_z/2]) {
-    for(x=[-1,1]) {
-      translate([x*(ttf_pcb_sz_x+ear_sz_x+2*wall)/2, 0, 0]) {
+    for(y=[-1,1]) {
+      translate([0, y*(ttf_pcb_sz_y+ear_sz_y+2*wall)/2, 0]) {
         if(!hole_mode) {
-          translate([0, 0, -ear_sz_y/4]) {
-            cube([ear_sz_x, ear_sz_y, ear_sz_z+wall-ear_sz_y/2], center=true);
+          translate([0, 0, -ear_sz_x/4]) {
+            cube([ear_sz_x, ear_sz_y, ear_sz_z+wall-ear_sz_x/2], center=true);
           }
         }
-        translate([0, 0, (ear_sz_z-ear_sz_y+wall)/2]) {
-          rotate([0, 90, 0]) {
-            cylinder(d=hole_mode ? ear_hole_d : ear_sz_y, h=ear_sz_x+(hole_mode ? 1 : 0), center=true);
+        translate([0, 0, (ear_sz_z-ear_sz_x+wall)/2]) {
+          rotate([90, 0, 0]) {
+            cylinder(d=hole_mode ? ear_hole_d : ear_sz_x, h=ear_sz_y+(hole_mode ? 1 : 0), center=true);
           }
         }
       }
@@ -101,10 +101,10 @@ module ttf_butt_part() {
       cube([ttf_pcb_sz_x, ttf_pcb_sz_y, wall+border_butt_sz_z], true);
     }
     // ears holes
-    translate([0, 0, ear_sz_y/4]) {
-      for(x=[-1,1]) {
-        translate([x*(ttf_pcb_sz_x+2*wall)/2, 0, 0]) {
-            rotate([0, 90, 0]) {
+    translate([0, 0, ear_sz_x/4]) {
+      for(y=[-1,1]) {
+        translate([0, y*(ttf_pcb_sz_y+2*wall)/2, 0]) {
+            rotate([90, 0, 0]) {
               cylinder(d=hole_d, h=20, center=true);
             }
         }
@@ -137,10 +137,10 @@ module pole_attachment() {
 
 
 translate([0, 0, border_sz_z+wall]) {
-  pole_attachment();
+  //pole_attachment();
 }
 
-ttf_face_part();
+//ttf_face_part();
 translate([0, 0, border_sz_z+wall]) {
-//  ttf_butt_part();
+  ttf_butt_part();
 }
