@@ -1,4 +1,3 @@
-use <MCAD/boxes.scad>
 use <../lib/gopro_like_connector.scad>
 
 $fn = 40;
@@ -61,10 +60,10 @@ module ttf_face_part() {
     union() {
       difference() {
         translate([0, 0, border_sz_z/2]) {
-          roundedBox([ttf_pcb_sz_x+2*wall, ttf_pcb_sz_y+2*wall, wall+border_sz_z], 2, true);
+          cube([ttf_pcb_sz_x+2*wall, ttf_pcb_sz_y+2*wall, wall+border_sz_z], true);
         }
         translate([0, 0, (border_sz_z)/2+wall]) {
-          roundedBox([ttf_pcb_sz_x, ttf_pcb_sz_y, wall+border_sz_z], 2, true);
+          cube([ttf_pcb_sz_x, ttf_pcb_sz_y, wall+border_sz_z], true);
         }
       }
       for(x=[-1,1]) {
@@ -96,10 +95,10 @@ module ttf_face_part() {
 module ttf_butt_part() {
   difference() {
     translate([0, 0, border_butt_sz_z/2]) {
-      roundedBox([ttf_pcb_sz_x+2*wall, ttf_pcb_sz_y+2*wall, wall+border_butt_sz_z], 2, true);
+      cube([ttf_pcb_sz_x+2*wall, ttf_pcb_sz_y+2*wall, wall+border_butt_sz_z], true);
     }
     translate([0, 0, (border_butt_sz_z-wall)/2]) {
-      roundedBox([ttf_pcb_sz_x, ttf_pcb_sz_y, wall+border_butt_sz_z], 2, true);
+      cube([ttf_pcb_sz_x, ttf_pcb_sz_y, wall+border_butt_sz_z], true);
     }
     // ears holes
     translate([0, 0, ear_sz_y/4]) {
@@ -138,10 +137,10 @@ module pole_attachment() {
 
 
 translate([0, 0, border_sz_z+wall]) {
-//  pole_attachment();
+  pole_attachment();
 }
 
-//ttf_face_part();
+ttf_face_part();
 translate([0, 0, border_sz_z+wall]) {
-  ttf_butt_part();
+//  ttf_butt_part();
 }
