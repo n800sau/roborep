@@ -11,8 +11,8 @@
 double Setpoint, Input, Output;
 
 // tuning parameters
-double hKp=150, hKi=1, hKd=100;
-double cKp=250, cKi=0, cKd=100;
+double hKp=100, hKi=1, hKd=100;
+double cKp=200, cKi=1, cKd=100;
 PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
@@ -25,10 +25,17 @@ const uint8_t iline[] = {PA3, PA4, PA5};
 readKey keylib = readKey();
 
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 
-#define OLED_ADDRESS 0x3c
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
+// ST7789 TFT module connections
+#define TFT_CS     PA4
+#define TFT_RST    PA2
+#define TFT_DC     PA3
+#define TFT_SCLK   PA5
+#define TFT_MOSI   PA7
+
+// Initialize Adafruit ST7789 TFT library
+Adafruit_ST7789 display = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 int heater_pwm = 0;
 const int MIN_PWM = -400, MAX_PWM = 400;
@@ -56,7 +63,7 @@ double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, control_temp = UNKNOWN_TEMP
 const uint32_t max_temp = 100, min_temp = 0;
 double v, r;
 
-#define TEMP_HISTORY_SIZE 128
+#define TEMP_HISTORY_SIZE 240
 int8_t temp_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
 uint32_t plot_max_temp = UNKNOWN_TEMP;
@@ -75,7 +82,8 @@ const unsigned long Rs = 470000L;
 
 void display_status()
 {
-	display.clearDisplay();
+	display.enableTearing(false);
+	display.fillScreen(ST77XX_BLACK);
 	if(temp != UNKNOWN_TEMP) {
 		display.setCursor(30, 0);
 		display.print(F("="));
@@ -105,12 +113,12 @@ void display_status()
 	if(heater_pwm < 0) {
 		display.setCursor(3, 14);
 		display.print(map(abs(heater_pwm), 0, abs(MAX_PWM), 0, 100));
-		display.fillTriangle(2, 12, 12, 2, 22, 12, WHITE);
+		display.fillTriangle(2, 12, 12, 2, 22, 12, ST77XX_WHITE);
 	}
 	if(heater_pwm > 0) {
 		display.setCursor(3, 1);
 		display.print(map(abs(heater_pwm), 0, abs(MIN_PWM), 0, 100));
-		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, WHITE);
+		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, ST77XX_WHITE);
 	}
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
 //		Serial.print(F("history size:"));
@@ -120,11 +128,11 @@ void display_status()
 //		Serial.print(F("max temp:"));
 //		Serial.println(plot_max_temp);
 		for(int i=1; i<temp_history_count; i++) {
-			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 63, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), WHITE);
-//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), WHITE);
+			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 63, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), ST77XX_WHITE);
+//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), ST77XX_WHITE);
 		}
 	}
-	display.display();
+	display.enableTearing(true);
 }
 
 int tempAnalogRead(int temp_pin)
@@ -286,18 +294,17 @@ void process_proc()
 		heater_pwm = MIN_PWM;
 	}
 #endif // USE_PID
-	Motor1.setSpeed(heater_pwm); // motor full-speed "backward"
-	if(heater_pwm > MAX_PWM/2) {
-		digitalWrite(FAN_PIN, LOW);
-	} else if(heater_pwm < 0) {
-		digitalWrite(FAN_PIN, HIGH);
-	}
+	Motor1.setSpeed(heater_pwm);
+//	if(heater_pwm > MAX_PWM/2) {
+//		digitalWrite(FAN_PIN, LOW);
+//	} else if(heater_pwm < 0) {
+//		digitalWrite(FAN_PIN, HIGH);
+//	}
 }
 
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 
-//void serialEvent()
 void process_serial()
 {
 	while (Serial.available()) {
@@ -350,22 +357,17 @@ void setup()
 
 	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
 
-	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
-		Serial.println(F("SSD1306 allocation failed"));
-	}
-//	display.display();
-//	delay(1000);
+	display.init(240, 240, SPI_MODE2);    // Init ST7789 display 240x240 pixel
+	display.setRotation(2);
+
 
 	// Show image buffer on the display hardware.
 	// Since the buffer is intialized with an Adafruit splashscreen
 	// internally, this will display the splashscreen.
-	display.clearDisplay();
-	display.display();
+	display.fillScreen(ST77XX_BLACK);
 	// text display tests
 	display.setTextSize(1);
-	display.setTextColor(WHITE);
-	display.display();
+	display.setTextColor(ST77XX_GREEN);
 
 	temp_history_timer.start();
 	status_timer.start();
