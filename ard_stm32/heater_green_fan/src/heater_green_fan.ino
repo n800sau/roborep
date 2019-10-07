@@ -20,8 +20,8 @@ PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 #include <Ticker.h>
 
 #include <keylib.h>
-const uint8_t oline[] = {PA0, PA1, PA2};
-const uint8_t iline[] = {PA3, PA4, PA5};
+const uint8_t oline[] = {PA15, PB3, PB4};
+const uint8_t iline[] = {PB5, PB6, PB7};
 readKey keylib = readKey();
 
 #include <Adafruit_GFX.h>
