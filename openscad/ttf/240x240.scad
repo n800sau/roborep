@@ -137,10 +137,10 @@ module pole_attachment() {
 
 
 translate([0, 0, border_sz_z+wall]) {
-  //pole_attachment();
+  pole_attachment();
 }
 
 //ttf_face_part();
 translate([0, 0, border_sz_z+wall]) {
-  ttf_butt_part();
+  //ttf_butt_part();
 }

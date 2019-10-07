@@ -27,4 +27,14 @@ module connector(wall=2, sz_x=19, sz_y=15) {
   }
 }
 
-connector();
+
+difference() {
+    connector(sz_y=36, sz_x =9);
+    translate([17, 13, 7]) {
+        for(y=[-1,1]) {
+            translate([0, y*12, 0]) {
+                cylinder(d=3.6, h=10, center=true);
+            }
+        }
+    }
+}

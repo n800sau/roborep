@@ -2,7 +2,7 @@
 /* [Main] */
 
 // First head kind ("example" show them all but is not printable)
-gopro_primary="example"; // [example,triple,double]
+gopro_primary="triple"; // [example,triple,double]
 // The other head kind (only for the triple or double primary kind)
 gopro_secondary_what="triple"; // [double,triple,rod,clamp,none]
 // If ever you rotate the seconday head you will probably need to enable support to print it

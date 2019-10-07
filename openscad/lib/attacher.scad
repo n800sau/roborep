@@ -17,3 +17,5 @@ module attacher(length, width=10, wall=2, hole_d=3.6) {
     }
   }
 }
+
+attacher(60);
