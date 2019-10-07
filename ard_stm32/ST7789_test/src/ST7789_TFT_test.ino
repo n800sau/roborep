@@ -33,9 +33,12 @@
 #include <SPI.h>             // Arduino SPI library
  
 // ST7789 TFT module connections
-#define TFT_CS    PA10  // define chip select pin
-#define TFT_DC     PA9  // define data/command pin
-#define TFT_RST    PA8  // define reset pin, or set to -1 and connect to Arduino RESET pin
+#define TFT_CS     PA4
+#define TFT_RST    PA2
+#define TFT_DC     PA3
+#define TFT_SCLK   PA5
+#define TFT_MOSI   PA7
+
  
 // Initialize Adafruit ST7789 TFT library
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
@@ -43,9 +46,12 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 float p = 3.1415926;
  
 void setup(void) {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.print(F("Hello! ST77xx TFT Test"));
+
+//  SPI.begin(); //Initialize the SPI_1 port.
  
+
   // if the display has CS pin try with SPI_MODE0
   tft.init(240, 240, SPI_MODE2);    // Init ST7789 display 240x240 pixel
  
