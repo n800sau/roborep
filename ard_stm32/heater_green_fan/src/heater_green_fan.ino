@@ -82,8 +82,9 @@ const unsigned long Rs = 470000L;
 
 void display_status()
 {
-	display.enableTearing(false);
+	display.enableDisplay(false);
 	display.fillScreen(ST77XX_BLACK);
+//	display.fillRect(0, 0, 240, 24, ST77XX_BLACK);
 	if(temp != UNKNOWN_TEMP) {
 		display.setCursor(30, 0);
 		display.print(F("="));
@@ -128,11 +129,11 @@ void display_status()
 //		Serial.print(F("max temp:"));
 //		Serial.println(plot_max_temp);
 		for(int i=1; i<temp_history_count; i++) {
-			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 63, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), ST77XX_WHITE);
-//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 63, 24), ST77XX_WHITE);
+			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 239, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 239, 24), ST77XX_WHITE);
+//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 239, 24), ST77XX_WHITE);
 		}
 	}
-	display.enableTearing(true);
+	display.enableDisplay(true);
 }
 
 int tempAnalogRead(int temp_pin)
