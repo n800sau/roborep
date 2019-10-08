@@ -11,8 +11,8 @@
 double Setpoint, Input, Output;
 
 // tuning parameters
-double hKp=100, hKi=1, hKd=100;
-double cKp=200, cKi=1, cKd=100;
+double hKp=100, hKi=0, hKd=0;
+double cKp=200, cKi=0, cKd=0;
 PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
@@ -50,9 +50,14 @@ VNH3SP30 Motor1;    // define control object for 1 motor
 #define M1_DIAG PB14   // diagnose pins (combined DIAGA/ENA and DIAGB/ENB)
 #define M1_CS PB13    // current sense pin
 
+#define PLOT_TOP 24
+#define PLOT_BOTTOM 239
+
 // NTC
 const int TEMP_PIN = PB1;
 const int CONTROL_TEMP_PIN = PA6;
+// 2.5v ref
+const int REF_PIN = PB0;
 
 // Fan
 const int FAN_PIN = PB12;
@@ -72,7 +77,8 @@ uint32_t plot_min_temp = UNKNOWN_TEMP;
 //Thermistor thermistor;
 
 float Vcc = 3.3;
-float Vref = Vcc;
+// ref from LM336-2.5
+float Vref = 2.5;
 const float T_0 = 273.15;
 const float T_25 = T_0 + 25;
 // 100k NTC
@@ -83,9 +89,9 @@ const unsigned long Rs = 470000L;
 void display_status()
 {
 //	display.enableDisplay(false);
-	display.startWrite();
-	display.fillScreen(ST77XX_BLACK);
-//	display.fillRect(0, 0, 240, 24, ST77XX_BLACK);
+//	display.startWrite();
+//	display.fillScreen(ST77XX_BLACK);
+	display.fillRect(0, 0, 239, 24, ST77XX_BLACK);
 	if(temp != UNKNOWN_TEMP) {
 		display.setCursor(30, 0);
 		display.print(F("="));
@@ -130,12 +136,13 @@ void display_status()
 //		Serial.print(F("max temp:"));
 //		Serial.println(plot_max_temp);
 		for(int i=1; i<temp_history_count; i++) {
-			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, 239, 24), i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 239, 24), ST77XX_WHITE);
-//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 239, 24), ST77XX_WHITE);
+			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), i,
+					map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_WHITE);
+//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_WHITE);
 		}
 	}
 //	display.enableDisplay(true);
-	display.endWrite();
+//	display.endWrite();
 }
 
 int tempAnalogRead(int temp_pin)
