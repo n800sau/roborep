@@ -82,7 +82,8 @@ const unsigned long Rs = 470000L;
 
 void display_status()
 {
-	display.enableDisplay(false);
+//	display.enableDisplay(false);
+	display.startWrite();
 	display.fillScreen(ST77XX_BLACK);
 //	display.fillRect(0, 0, 240, 24, ST77XX_BLACK);
 	if(temp != UNKNOWN_TEMP) {
@@ -133,7 +134,8 @@ void display_status()
 //			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, 239, 24), ST77XX_WHITE);
 		}
 	}
-	display.enableDisplay(true);
+//	display.enableDisplay(true);
+	display.endWrite();
 }
 
 int tempAnalogRead(int temp_pin)
