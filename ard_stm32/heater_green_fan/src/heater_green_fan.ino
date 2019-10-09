@@ -37,6 +37,7 @@ readKey keylib = readKey();
 // Initialize Adafruit ST7789 TFT library
 Adafruit_ST7789 display = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
+
 int heater_pwm = 0;
 const int MIN_PWM = -400, MAX_PWM = 400;
 
@@ -53,6 +54,8 @@ VNH3SP30 Motor1;    // define control object for 1 motor
 #define PLOT_TOP 24
 #define PLOT_BOTTOM 239
 
+GFXcanvas1 dbuf(PLOT_BOTTOM+1, PLOT_TOP);
+
 // NTC
 const int TEMP_PIN = PB1;
 const int CONTROL_TEMP_PIN = PA6;
@@ -62,14 +65,16 @@ const int REF_PIN = PB0;
 // Fan
 const int FAN_PIN = PB12;
 
-#define UNKNOWN_TEMP -1000
+// unknown temp marker
+const int UNKNOWN_TEMP = -1000;
 
 double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, control_temp = UNKNOWN_TEMP;
-const uint32_t max_temp = 100, min_temp = 0;
+const int32_t max_temp = 100, min_temp = 0;
 double v, r;
 
 #define TEMP_HISTORY_SIZE 240
 int8_t temp_history[TEMP_HISTORY_SIZE];
+int8_t temp_req_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
 uint32_t plot_max_temp = UNKNOWN_TEMP;
 uint32_t plot_min_temp = UNKNOWN_TEMP;
@@ -91,43 +96,46 @@ void display_status()
 //	display.enableDisplay(false);
 //	display.startWrite();
 //	display.fillScreen(ST77XX_BLACK);
-	display.fillRect(0, 0, 239, 24, ST77XX_BLACK);
+//	display.fillRect(0, 0, 239, 24, ST77XX_BLACK);
+	dbuf.fillScreen(0);
 	if(temp != UNKNOWN_TEMP) {
-		display.setCursor(30, 0);
-		display.print(F("="));
-		display.print(temp);
-		display.print(F("C"));
+		dbuf.setCursor(30, 0);
+		dbuf.print(F("="));
+		dbuf.print(temp);
+		dbuf.print(F("C"));
 		Serial.print(F("T "));
 		Serial.println(temp);
 	}
 	if(control_temp != UNKNOWN_TEMP) {
-		display.setCursor(80, 0);
-		display.print(F("="));
-		display.print(control_temp);
-		display.print(F("C"));
+		dbuf.setCursor(80, 0);
+		dbuf.print(F("="));
+		dbuf.print(control_temp);
+		dbuf.print(F("C"));
 		Serial.print(F("Control temp:"));
 		Serial.println(control_temp);
 	}
 	if(temp2set != UNKNOWN_TEMP) {
-		display.setCursor(30, 12);
-		display.print(F(">"));
-		display.print(temp2set);
-		display.print(F("C"));
+		dbuf.setCursor(30, 12);
+		dbuf.print(F(">"));
+		dbuf.print(temp2set);
+		dbuf.print(F("C"));
 		Serial.print(F("> "));
 		Serial.println(temp2set);
 	}
 	Serial.print(F("PWM:"));
 	Serial.println(heater_pwm);
 	if(heater_pwm < 0) {
-		display.setCursor(3, 14);
-		display.print(map(abs(heater_pwm), 0, abs(MAX_PWM), 0, 100));
-		display.fillTriangle(2, 12, 12, 2, 22, 12, ST77XX_WHITE);
+		dbuf.setCursor(3, 14);
+		dbuf.print(map(abs(heater_pwm), 0, abs(MAX_PWM), 0, 100));
+		dbuf.fillTriangle(2, 12, 12, 2, 22, 12, 1);
 	}
 	if(heater_pwm > 0) {
-		display.setCursor(3, 1);
-		display.print(map(abs(heater_pwm), 0, abs(MIN_PWM), 0, 100));
-		display.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, ST77XX_WHITE);
+		dbuf.setCursor(3, 1);
+		dbuf.print(map(abs(heater_pwm), 0, abs(MIN_PWM), 0, 100));
+		dbuf.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, 1);
 	}
+	// copy buffer to screen
+	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
 	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
 //		Serial.print(F("history size:"));
 //		Serial.println(temp_history_count);
@@ -135,31 +143,45 @@ void display_status()
 //		Serial.println(plot_min_temp);
 //		Serial.print(F("max temp:"));
 //		Serial.println(plot_max_temp);
+		display.drawLine(0, PLOT_TOP, 0, PLOT_BOTTOM, ST77XX_BLACK);
 		for(int i=1; i<temp_history_count; i++) {
+			// fill line black
+			display.drawLine(i, PLOT_TOP, i, PLOT_BOTTOM, ST77XX_BLACK);
 			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), i,
-					map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_WHITE);
-//			display.writePixel(i, map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_WHITE);
+					map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
+			display.drawLine(i-1, map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), i,
+					map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
 		}
 	}
 //	display.enableDisplay(true);
 //	display.endWrite();
 }
 
-int tempAnalogRead(int temp_pin)
+double tempAnalogRead(int temp_pin)
 {
-	int val = 0;
+	double val = 0;
+	double ref = 0;
 	for(int i = 0; i < 20; i++) {
 		val += analogRead(temp_pin);
+		ref += analogRead(REF_PIN);
 		delay(1);
 	}
-	val = val / 20;
-	return val;
+//	Serial.print(F("val:"));
+//	Serial.print(val);
+//	Serial.print(F(", ref:"));
+//	Serial.print(ref);
+//	Serial.print(F(", ref V:"));
+//	Serial.print(ref/4096/20*Vcc);
+//	Serial.print(F(", NCC V:"));
+//	Serial.println(val/4096/20*Vcc);
+	return Vref * val / ref;
 }
 
 double read_temp(int temp_pin)
 {
-	v = Vref*tempAnalogRead(temp_pin)/4096.;
+	v = tempAnalogRead(temp_pin);
 	r = v/((Vcc-v)/Rs);
+//	r = v/((Vref-v)/Rs);
 //	Serial.print(F("R:"));
 //	Serial.println(r);
 //	Serial.print(F("V:"));
@@ -171,9 +193,9 @@ double read_temp(int temp_pin)
 void update_temp()
 {
 	temp = read_temp(TEMP_PIN);
-	control_temp = read_temp(CONTROL_TEMP_PIN);
-//	Serial.print(F("Temp:"));
-//	Serial.println(temp);
+//	control_temp = read_temp(CONTROL_TEMP_PIN);
+	Serial.print(F("Temp:"));
+	Serial.println(temp);
 	if(temp2set == UNKNOWN_TEMP) {
 		temp2set = min(max(temp, min_temp), max_temp);
 		Serial.println(F("Ready"));
@@ -198,9 +220,11 @@ void update_history_proc()
 		if(temp_history_count >= TEMP_HISTORY_SIZE) {
 			for(int i=1; i<TEMP_HISTORY_SIZE; i++) {
 				temp_history[i-1] = temp_history[i];
+				temp_req_history[i-1] = temp_req_history[i];
 			}
 			temp_history_count--;
 		}
+		temp_req_history[temp_history_count] = temp2set;
 		temp_history[temp_history_count++] = temp;
 	}
 }
@@ -360,24 +384,22 @@ void setup()
 {
 	Serial.begin(115200);
 	keylib.begin(sizeof(oline), sizeof(iline), oline, iline);
+	pinMode(TEMP_PIN, INPUT);
+	pinMode(CONTROL_TEMP_PIN, INPUT);
+	pinMode(REF_PIN, INPUT);
 	pinMode(FAN_PIN, OUTPUT);
 	digitalWrite(FAN_PIN, LOW);
 	digitalWrite(FAN_PIN, HIGH);
-//	analogReference(INTERNAL);
 
 	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
 
 	display.init(240, 240, SPI_MODE2);    // Init ST7789 display 240x240 pixel
 	display.setRotation(2);
 
-
-	// Show image buffer on the display hardware.
-	// Since the buffer is intialized with an Adafruit splashscreen
-	// internally, this will display the splashscreen.
 	display.fillScreen(ST77XX_BLACK);
-	// text display tests
-	display.setTextSize(1);
-	display.setTextColor(ST77XX_GREEN);
+
+	dbuf.setTextSize(1);
+	dbuf.setTextColor(1);
 
 	temp_history_timer.start();
 	status_timer.start();
