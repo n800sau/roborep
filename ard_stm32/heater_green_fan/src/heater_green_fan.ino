@@ -83,7 +83,7 @@ uint32_t plot_min_temp = UNKNOWN_TEMP;
 
 float Vcc = 3.3;
 // ref from LM336-2.5
-float Vref = 2.5;
+float Vref = 2.45;
 const float T_0 = 273.15;
 const float T_25 = T_0 + 25;
 // 100k NTC
@@ -180,8 +180,8 @@ double tempAnalogRead(int temp_pin)
 double read_temp(int temp_pin)
 {
 	v = tempAnalogRead(temp_pin);
-	r = v/((Vcc-v)/Rs);
-//	r = v/((Vref-v)/Rs);
+//	r = v/((Vcc-v)/Rs);
+	r = v/((Vref-v)/Rs);
 //	Serial.print(F("R:"));
 //	Serial.println(r);
 //	Serial.print(F("V:"));
@@ -194,8 +194,8 @@ void update_temp()
 {
 	temp = read_temp(TEMP_PIN);
 //	control_temp = read_temp(CONTROL_TEMP_PIN);
-	Serial.print(F("Temp:"));
-	Serial.println(temp);
+//	Serial.print(F("Temp:"));
+//	Serial.println(temp);
 	if(temp2set == UNKNOWN_TEMP) {
 		temp2set = min(max(temp, min_temp), max_temp);
 		Serial.println(F("Ready"));
