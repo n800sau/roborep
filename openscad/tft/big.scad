@@ -36,7 +36,7 @@ controller_pcb_above_sz_z = 10;
 
 
 module top_cover() {
-	union() {
+	difference() {
 		union() {
 			// first lever - face
 			cube([border_sz + tft_field_sz_left, tft_module_sz_y+2*border_sz, wall]);
@@ -44,7 +44,7 @@ module top_cover() {
 				cube([tft_field_sz_right + border_sz, tft_module_sz_y+2*border_sz, wall]);
 			}
 			cube([tft_module_sz_x+2*border_sz, border_sz + tft_field_sz_top, wall]);
-			translate([0, border_sz + tft_module_sz_y - tft_field_sz_bottom, 0, 0]) {
+			translate([0, border_sz + tft_module_sz_y - tft_field_sz_bottom, 0]) {
 				cube([tft_module_sz_x+2*border_sz, tft_field_sz_bottom + border_sz, wall]);
 			}
 			// next lever - border around
@@ -70,7 +70,8 @@ module top_cover() {
 		// border holes along x
 		for(x=[0, 0.5, 1]) {
 			for(y=[0, 1]) {
-				translate([x_hole_offset+x*(tft_module_sz_x+2*border_sz-2*x_hole_offset), border_sz/2+y*(tft_module_sz_y+border_sz), -25]) {
+				translate([x_hole_offset+x*(tft_module_sz_x+2*border_sz-2*x_hole_offset), 
+							border_sz/2+y*(tft_module_sz_y+border_sz), 0]) {
 					cylinder(d=hole_d_through, h=50, center=true);
 				}
 			}
@@ -78,7 +79,8 @@ module top_cover() {
 		// border holes along y
 		for(y=[0, 1]) {
 			for(x=[0, 1]) {
-				translate([border_sz/2+x*(tft_module_sz_x+border_sz), y_hole_offset+y*(tft_module_sz_y+2*border_sz-2*y_hole_offset), -25]) {
+				translate([border_sz/2+x*(tft_module_sz_x+border_sz),
+						y_hole_offset+y*(tft_module_sz_y+2*border_sz-2*y_hole_offset), 0]) {
 					cylinder(d=hole_d_through, h=50, center=true);
 				}
 			}
@@ -87,13 +89,14 @@ module top_cover() {
 }
 
 module controller_holder() {
-	translate([border_sz+tft_module_sz_x/2-controller_pcb_sz_x/2-1.5, border_sz+tft_module_sz_y/2-controller_pcb_sz_y/2-1.5, 0]) {
+	translate([border_sz+tft_module_sz_x/2-controller_pcb_sz_x/2-1.5,
+				border_sz+tft_module_sz_y/2-controller_pcb_sz_y/2-1.5, 0]) {
 		pcb_led_cvf(
 			pcb_length=controller_pcb_sz_x,
 			pcb_width=controller_pcb_sz_y,
 			pcb_height=controller_pcb_sz_z,
-			pcb_bottom_margin=controller_pcb_under_sz_z,
-			add_table=false
+			pcb_bottom_margin=controller_pcb_below_sz_z,
+			add_tabs=false
 		);
 	}
 	for(x=[0, 0.5, 1]) {
@@ -102,14 +105,14 @@ module controller_holder() {
 		}
 	}
 	for(y=[0, 1]) {
-		translate([0, y_hole_offset+y*(tft_module_sz_y+2*border_sz-2*y_hole_offset)-5, 0, 0]) {
+		translate([0, y_hole_offset+y*(tft_module_sz_y+2*border_sz-2*y_hole_offset)-5, 0]) {
 			cube([tft_module_sz_x, 10, wall]);
 		}
 	}
 }
 
-//top_cover();
+top_cover();
 translate([0, 0, 10]) {
-	controller_holder();
+	//controller_holder();
 }
 
