@@ -54,7 +54,7 @@ VNH3SP30 Motor1;    // define control object for 1 motor
 #define PLOT_TOP 24
 #define PLOT_BOTTOM 239
 
-GFXcanvas1 dbuf(PLOT_BOTTOM+1, PLOT_TOP);
+GFXcanvas1 dbuf(240, PLOT_TOP);
 
 // NTC
 const int TEMP_PIN = PB1;
@@ -67,8 +67,9 @@ const int FAN_PIN = PB12;
 
 // unknown temp marker
 const int UNKNOWN_TEMP = -1000;
+const int INITIAL_TEMP2SET = 25;
 
-double temp = UNKNOWN_TEMP, temp2set = UNKNOWN_TEMP, control_temp = UNKNOWN_TEMP;
+double temp = UNKNOWN_TEMP, temp2set = INITIAL_TEMP2SET, control_temp = UNKNOWN_TEMP;
 const int32_t max_temp = 100, min_temp = 0;
 double v, r;
 
@@ -76,8 +77,8 @@ double v, r;
 int8_t temp_history[TEMP_HISTORY_SIZE];
 int8_t temp_req_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
-uint32_t plot_max_temp = UNKNOWN_TEMP;
-uint32_t plot_min_temp = UNKNOWN_TEMP;
+int32_t plot_max_temp = UNKNOWN_TEMP;
+int32_t plot_min_temp = UNKNOWN_TEMP;
 
 //Thermistor thermistor;
 
@@ -90,6 +91,66 @@ const float T_25 = T_0 + 25;
 const float beta = 3950;
 const float R_25 = 100000L; // 100k ohm
 const unsigned long Rs = 470000L;
+// ************************************************
+
+const int MAX_ITEM_PER_CYCLE = 5;
+const int MAX_CYCLES = 10;
+
+typedef struct S_CYCLE_ITEM {
+	unsigned secs;
+	byte temp;
+	S_CYCLE_ITEM() {
+		secs = 30;
+		temp = 25;
+	}
+} t_cycle_item;
+
+typedef struct S_CYCLE {
+	t_cycle_item items[MAX_ITEM_PER_CYCLE];
+	byte item_count;
+	unsigned repeats;
+	byte current_item;
+	unsigned current_repeat;
+	S_CYCLE() {
+		current_repeat = 0;
+		current_item = 0;
+		item_count = 1;
+		repeats = 1;
+		for(int i=0; i<item_count; i++) {
+			items[i] = t_cycle_item();
+		}
+	}
+} t_cycle;
+
+typedef struct S_PROGRAM {
+	t_cycle cycles[MAX_CYCLES];
+	byte cycle_count;
+	bool running, finished;
+	byte current_cycle;
+	unsigned long switch_millis;
+	S_PROGRAM()
+	{
+		switch_millis = 0;
+		cycle_count = 3;
+		for(int i=0; i<cycle_count; i++) {
+			cycles[i] = t_cycle();
+		}
+		cycles[0].items[0].temp = 92;
+		cycles[1].item_count = 3;
+		cycles[1].items[0].temp = 92;
+		cycles[1].items[1].temp = 72;
+		cycles[1].items[2].temp = 54;
+		cycles[1].repeats = 10;
+		cycles[2].items[0].temp = 25;
+		current_cycle = 0;
+		running = false;
+		finished = false;
+	}
+} t_program;
+
+t_program program;
+
+// ************************************************
 
 void display_status()
 {
@@ -133,6 +194,14 @@ void display_status()
 		dbuf.setCursor(3, 1);
 		dbuf.print(map(abs(heater_pwm), 0, abs(MIN_PWM), 0, 100));
 		dbuf.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, 1);
+	}
+	dbuf.setCursor(130, 0);
+	dbuf.print(program.running ? "Running" : (program.finished ? "Finished" : "Stopped"));
+	if(program.running) {
+		dbuf.setCursor(130, 12);
+		dbuf.print(program.current_cycle);
+		dbuf.print(":");
+		dbuf.print(program.cycles[program.current_cycle].current_item);
 	}
 	// copy buffer to screen
 	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
@@ -196,10 +265,7 @@ void update_temp()
 //	control_temp = read_temp(CONTROL_TEMP_PIN);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
-	if(temp2set == UNKNOWN_TEMP) {
-		temp2set = min(max(temp, min_temp), max_temp);
-		Serial.println(F("Ready"));
-	}
+	Serial.println(F("Ready"));
 	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
 		plot_min_temp = temp;
 	}
@@ -296,6 +362,15 @@ void parse_command_proc()
 					Serial.print(F("temp2set:"));
 					Serial.println(temp2set);
 				}
+			} else if(command == "R") {
+				// reset program
+				program = t_program();
+			} else if(command == "G") {
+				// start program
+				program.running = true;
+			} else if(command == "P") {
+				// pause program
+				program.running = false;
 			} else {
 				command_error = "Unknown command line:" + inputString;
 			}
@@ -336,8 +411,46 @@ void process_proc()
 //	}
 }
 
+void program_proc()
+{
+	if(program.running) {
+		if(program.switch_millis == 0) {
+			program.switch_millis = millis();
+		}
+		t_cycle *cy = &(program.cycles[program.current_cycle]);
+		t_cycle_item *it = &(cy->items[cy->current_item]);
+		unsigned long m = millis();
+		if(m > program.switch_millis + it->secs * 1000UL) {
+			program.switch_millis = m;
+			cy->current_item++;
+			if(cy->current_item >= cy->item_count) {
+				cy->current_item = 0;
+				cy->current_repeat++;
+				if(cy->current_repeat >= cy->repeats) {
+					cy->current_repeat = 0;
+					program.current_cycle++;
+					if(program.current_cycle >= program.cycle_count) {
+						program.current_cycle = 0;
+						program.running = false;
+						program.finished = true;
+						temp2set = INITIAL_TEMP2SET;
+					}
+				}
+			}
+		}
+		if(program.running) {
+			// refine current item again
+			cy = &(program.cycles[program.current_cycle]);
+			it = &(cy->items[cy->current_item]);
+			// and set desired temp
+			temp2set = cy->items[cy->current_item].temp;
+		}
+	}
+}
+
 Ticker status_timer(display_status, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
+Ticker program_timer(program_proc, 1000, 0, MILLIS);
 
 void process_serial()
 {
