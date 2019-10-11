@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+import time
 from heater_lib import *
 
-send_cmd(init_serial(reset=False), b'G')
+ser = init_serial(reset=False)
+time.sleep(1)
+send_cmd(ser, b'G')
+read_print_all(ser)
