@@ -53,6 +53,9 @@ VNH3SP30 Motor1;    // define control object for 1 motor
 
 #define PLOT_TOP 24
 #define PLOT_BOTTOM 239
+#define PLOT_LEFT 24
+#define PLOT_HEIGHT (PLOT_BOTTOM - PLOT_TOP)
+#define PIXELS_PER_STEP 12
 
 GFXcanvas1 dbuf(240, PLOT_TOP);
 
@@ -70,15 +73,17 @@ const int UNKNOWN_TEMP = -1000;
 const int INITIAL_TEMP2SET = 25;
 
 double temp = UNKNOWN_TEMP, temp2set = INITIAL_TEMP2SET, control_temp = UNKNOWN_TEMP;
-const int32_t max_temp = 100, min_temp = 0;
+const int32_t max_temp = 100, min_temp = 10;
 double v, r;
 
-#define TEMP_HISTORY_SIZE 240
+#define TEMP_HISTORY_SIZE (240-PLOT_LEFT)
 int8_t temp_history[TEMP_HISTORY_SIZE];
 int8_t temp_req_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
-int32_t plot_max_temp = UNKNOWN_TEMP;
-int32_t plot_min_temp = UNKNOWN_TEMP;
+//int32_t plot_max_temp = UNKNOWN_TEMP;
+//int32_t plot_min_temp = UNKNOWN_TEMP;
+int32_t plot_max_temp = max_temp;
+int32_t plot_min_temp = min_temp;
 
 //Thermistor thermistor;
 
@@ -152,6 +157,18 @@ t_program program;
 
 // ************************************************
 
+void draw_plot_scale()
+{
+	int temp = plot_min_temp;
+	int step = (plot_max_temp - plot_min_temp) / (PLOT_HEIGHT / PIXELS_PER_STEP) / 10 * 10;
+	while(temp < plot_max_temp) {
+		temp += step;
+		int y = PLOT_HEIGHT * (plot_max_temp - plot_min_temp) / (temp - plot_min_temp);
+		dbuf.setCursor(0, y);
+		dbuf.print(temp);
+	}
+}
+
 void display_status()
 {
 //	display.enableDisplay(false);
@@ -215,11 +232,11 @@ void display_status()
 		display.drawLine(0, PLOT_TOP, 0, PLOT_BOTTOM, ST77XX_BLACK);
 		for(int i=1; i<temp_history_count; i++) {
 			// fill line black
-			display.drawLine(i, PLOT_TOP, i, PLOT_BOTTOM, ST77XX_BLACK);
-			display.drawLine(i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), i,
-					map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
-			display.drawLine(i-1, map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), i,
-					map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
+			display.drawLine(PLOT_LEFT+i, PLOT_TOP, PLOT_LEFT+i, PLOT_BOTTOM, ST77XX_BLACK);
+			display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
+					PLOT_LEFT+map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
+			display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
+					PLOT_LEFT+map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
 		}
 	}
 //	display.enableDisplay(true);
@@ -513,6 +530,8 @@ void setup()
 
 	dbuf.setTextSize(1);
 	dbuf.setTextColor(1);
+
+	draw_plot_scale();
 
 	temp_history_timer.start();
 	status_timer.start();
