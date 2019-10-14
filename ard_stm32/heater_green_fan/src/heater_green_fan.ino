@@ -1,5 +1,6 @@
 //#include "thermistor.h"
 #include <VNH3SP30.h>
+#include <RTClock.h>
 
 #define USE_PID
 
@@ -101,8 +102,10 @@ const unsigned long Rs = 470000L;
 const int MAX_ITEM_PER_CYCLE = 5;
 const int MAX_CYCLES = 10;
 
+RTClock rtclock (RTCSEL_LSE); // initialise
+
 typedef struct S_CYCLE_ITEM {
-	unsigned secs;
+	time_t secs;
 	byte temp;
 	S_CYCLE_ITEM() {
 		secs = 30;
@@ -132,10 +135,12 @@ typedef struct S_PROGRAM {
 	byte cycle_count;
 	bool running, finished;
 	byte current_cycle;
-	unsigned long switch_millis;
+	time_t last_switch_time;
+	time_t time_left;
 	S_PROGRAM()
 	{
-		switch_millis = 0;
+		last_switch_time = 0;
+		time_left = 0;
 		cycle_count = 3;
 		for(int i=0; i<cycle_count; i++) {
 			cycles[i] = t_cycle();
@@ -217,8 +222,14 @@ void display_status()
 	if(program.running) {
 		dbuf.setCursor(130, 12);
 		dbuf.print(program.current_cycle);
-		dbuf.print(":");
+		dbuf.print("-");
+		dbuf.print(program.cycles[program.current_cycle].current_repeat);
+		dbuf.print("-");
 		dbuf.print(program.cycles[program.current_cycle].current_item);
+		dbuf.print("-");
+		dbuf.print(program.time_left);
+//		Serial.print("Time left:");
+//		Serial.println(program.time_left);
 	}
 	// copy buffer to screen
 	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
@@ -282,7 +293,9 @@ void update_temp()
 //	control_temp = read_temp(CONTROL_TEMP_PIN);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
-	Serial.println(F("Ready"));
+	if(plot_min_temp == UNKNOWN_TEMP) {
+		Serial.println(F("Ready"));
+	}
 	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
 		plot_min_temp = temp;
 	}
@@ -325,8 +338,11 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 		int space_pos = 0;
 		while(space_pos >= 0 && args_count < max_arg_count) {
 			space_pos = line.indexOf(' ');
-//			Serial.print("space_pos: ");
-//			Serial.println(space_pos);
+			if(space_pos<0) {
+				space_pos = line.length();
+			}
+			//Serial.print("space_pos: ");
+			//Serial.println(space_pos);
 			if(command == "") {
 				command = line.substring(0, space_pos);
 				command.toUpperCase();
@@ -431,14 +447,15 @@ void process_proc()
 void program_proc()
 {
 	if(program.running) {
-		if(program.switch_millis == 0) {
-			program.switch_millis = millis();
+		if(program.last_switch_time == 0) {
+			program.last_switch_time = rtclock.now();
 		}
 		t_cycle *cy = &(program.cycles[program.current_cycle]);
 		t_cycle_item *it = &(cy->items[cy->current_item]);
-		unsigned long m = millis();
-		if(m > program.switch_millis + it->secs * 1000UL) {
-			program.switch_millis = m;
+		time_t m = rtclock.now();
+		program.time_left = max(0, program.last_switch_time + it->secs - m);
+		if(program.time_left == 0) {
+			program.last_switch_time = m;
 			cy->current_item++;
 			if(cy->current_item >= cy->item_count) {
 				cy->current_item = 0;
@@ -535,6 +552,7 @@ void setup()
 
 	temp_history_timer.start();
 	status_timer.start();
+	program_timer.start();
 	inputString.reserve(30);
 
 #ifdef USE_PID
@@ -554,5 +572,6 @@ void loop()
 	process_keys();
 	process_proc();
 	temp_history_timer.update();
+	program_timer.update();
 	status_timer.update();
 }

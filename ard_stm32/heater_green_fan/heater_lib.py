@@ -37,6 +37,12 @@ def ts():
 
 def send_cmd(ser, cmd):
 	ser.flush()
-	ser.write(cmd)
+	ser.write(cmd + b'\n')
 	ser.flush()
 	print(ts(), 'Sent:', cmd)
+
+def read_print_all(ser):
+	while True:
+		line = ser.readline().strip()
+		if line:
+			print(line)
