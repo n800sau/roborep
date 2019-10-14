@@ -117,6 +117,7 @@ typedef struct S_CYCLE {
 	t_cycle_item items[MAX_ITEM_PER_CYCLE];
 	byte item_count;
 	unsigned repeats;
+	// dynamics
 	byte current_item;
 	unsigned current_repeat;
 	S_CYCLE() {
@@ -133,6 +134,7 @@ typedef struct S_CYCLE {
 typedef struct S_PROGRAM {
 	t_cycle cycles[MAX_CYCLES];
 	byte cycle_count;
+	// dynamics
 	bool running, finished;
 	byte current_cycle;
 	time_t last_switch_time;
@@ -368,7 +370,7 @@ void set_temp2set(int temp)
 	temp2set = temp;
 }
 
-#define MAX_ARGS_COUNT 2
+#define MAX_ARGS_COUNT 5
 String command;
 String args[MAX_ARGS_COUNT];
 int args_count;
@@ -394,6 +396,67 @@ void parse_command_proc()
 					set_temp2set(max(min_temp, args[0].toInt()));
 					Serial.print(F("temp2set:"));
 					Serial.println(temp2set);
+				}
+			} else if(command == "Z") {
+				// set program params
+				// usage: Z <cycle count>
+				if(args_count != 1) {
+					command_error = F("usage: Z <cycle count>");
+				} else {
+					program.cycle_count = min(MAX_CYCLES, max(1, args[0].toInt()));
+				}
+			} else if(command == "X") {
+				// set cycle params
+				// usage: X <cycle index> <item_count> <repeats>
+				if(args_count != 3) {
+					command_error = F("usage: X <cycle index> <item_count> <repeats>");
+				} else {
+					int cycle_index = args[0].toInt();
+					if(cycle_index < 0 || cycle_index >= program.cycle_count) {
+						command_error = F("Cycle index out of range");
+					} else {
+						int item_count = args[1].toInt();
+						if(item_count < 1 || item_count >= MAX_ITEM_PER_CYCLE) {
+							command_error = F("item_count out of range");
+						} else {
+							int repeats = args[2].toInt();
+							if(repeats < 1) {
+								command_error = F("repeats out of range");
+							} else {
+								program.cycles[cycle_index].item_count = item_count;
+								program.cycles[cycle_index].repeats = repeats;
+							}
+						}
+					}
+				}
+			} else if(command == "V") {
+				// set cycle item params
+				// usage: V <cycle> <item> <temp> <secs>
+				if(args_count != 4) {
+					command_error = F("usage: V <cycle index> <item index> <temp> <secs>");
+				} else {
+					int cycle_index = args[0].toInt();
+					if(cycle_index < 0 || cycle_index >= program.cycle_count) {
+						command_error = F("Cycle index out of range");
+					} else {
+						int item_index = args[1].toInt();
+						if(item_index < 0 || item_index >= program.cycles[cycle_index].item_count) {
+							command_error = F("item_index out of range");
+						} else {
+							int temp = args[2].toInt();
+							if(temp < min_temp || temp > max_temp) {
+								command_error = F("temp out of range");
+							} else {
+								int secs = args[3].toInt();
+								if(secs < 5 || secs > 3600) {
+									command_error = F("secs out of range (5..3600)");
+								} else {
+									program.cycles[cycle_index].items[item_index].temp = temp;
+									program.cycles[cycle_index].items[item_index].secs = secs;
+								}
+							}
+						}
+					}
 				}
 			} else if(command == "R") {
 				// reset program
