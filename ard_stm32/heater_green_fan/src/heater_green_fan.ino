@@ -166,13 +166,17 @@ t_program program;
 
 void draw_plot_scale()
 {
-	int temp = plot_min_temp;
-	int step = (plot_max_temp - plot_min_temp) / (PLOT_HEIGHT / PIXELS_PER_STEP) / 10 * 10;
-	while(temp < plot_max_temp) {
-		temp += step;
-		int y = PLOT_HEIGHT * (plot_max_temp - plot_min_temp) / (temp - plot_min_temp);
-		dbuf.setCursor(0, y);
-		dbuf.print(temp);
+	int ptemp = plot_min_temp;
+	//PLOT_HEIGHT
+	int pstep = 20;
+	while(ptemp < plot_max_temp) {
+		ptemp += pstep;
+//		Serial.println(ptemp);
+		if(ptemp != plot_min_temp) {
+			int y = PLOT_HEIGHT * (plot_max_temp - plot_min_temp) / (ptemp - plot_min_temp);
+			dbuf.setCursor(0, y);
+			dbuf.print(ptemp);
+		}
 	}
 }
 
