@@ -104,6 +104,11 @@ const int MAX_CYCLES = 10;
 
 RTClock rtclock (RTCSEL_LSE); // initialise
 
+enum DISPLAY_MODE_T {DISPLAY_NONE, DISPLAY_STATUS, DISPLAY_SETUP};
+
+DISPLAY_MODE_T display_mode = DISPLAY_STATUS;
+DISPLAY_MODE_T display_mode_env = DISPLAY_NONE;
+
 typedef struct S_CYCLE_ITEM {
 	time_t secs;
 	byte temp;
@@ -182,10 +187,13 @@ void draw_plot_scale()
 
 void display_status()
 {
-//	display.enableDisplay(false);
-//	display.startWrite();
-//	display.fillScreen(ST77XX_BLACK);
-//	display.fillRect(0, 0, 239, 24, ST77XX_BLACK);
+	if(display_mode_env != display_mode) {
+		display.fillScreen(ST77XX_BLACK);
+		dbuf.setTextSize(1);
+		dbuf.setTextColor(1);
+		draw_plot_scale();
+		display_mode_env = display_mode;
+	}
 	dbuf.fillScreen(0);
 	if(temp != UNKNOWN_TEMP) {
 		dbuf.setCursor(30, 0);
@@ -256,8 +264,53 @@ void display_status()
 					PLOT_LEFT+map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
 		}
 	}
-//	display.enableDisplay(true);
-//	display.endWrite();
+}
+
+void display_setup() {
+	if(display_mode_env != display_mode) {
+		display.fillScreen(ST77XX_BLACK);
+		dbuf.setTextSize(2);
+		dbuf.setTextColor(1);
+		display.setTextSize(2);
+		display.setTextColor(ST77XX_GREEN);
+		display.setCursor(0, 0);
+		display.print(F("Program:"));
+		display_mode_env = display_mode;
+	}
+	int y = 12;
+	for(int i=0; i<program.cycle_count; i++) {
+		t_cycle *c = &program.cycles[i];
+		display.setCursor(10, y);
+		dbuf.fillScreen(0);
+		dbuf.setCursor(10, 0);
+		dbuf.print(F("Repeats:"));
+		dbuf.print(c->repeats);
+		display.drawBitmap(0, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_YELLOW, ST77XX_BLACK);
+		y += 12;
+		for(int j=0; j<c->item_count; j++) {
+			t_cycle_item *ci = &c->items[j];
+			dbuf.fillScreen(0);
+			dbuf.setCursor(20, 0);
+			dbuf.print(F("secs:"));
+			dbuf.print(ci->secs);
+			dbuf.print(F(", temp:"));
+			dbuf.print(ci->temp);
+			display.drawBitmap(0, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_GREEN, ST77XX_BLACK);
+			y += 12;
+		}
+	}
+}
+
+void update_display()
+{
+	switch(display_mode) {
+		case DISPLAY_SETUP:
+			display_setup();
+			break;
+		default:
+			display_status();
+			break;
+	}
 }
 
 double tempAnalogRead(int temp_pin)
@@ -549,7 +602,7 @@ void program_proc()
 	}
 }
 
-Ticker status_timer(display_status, 1000, 0, MILLIS);
+Ticker status_timer(update_display, 1000, 0, MILLIS);
 Ticker temp_history_timer(update_history_proc, 1000, 0, MILLIS);
 Ticker program_timer(program_proc, 1000, 0, MILLIS);
 
@@ -587,6 +640,12 @@ void process_keys()
 				case 0x13:
 					temp2set--;
 					break;
+				case 0x11:
+					display_mode = DISPLAY_SETUP;
+					break;
+				case 0x12:
+					display_mode = DISPLAY_STATUS;
+					break;
 			}
 		}
 		Serial.println(key, HEX);
@@ -609,13 +668,6 @@ void setup()
 
 	display.init(240, 240, SPI_MODE2);    // Init ST7789 display 240x240 pixel
 	display.setRotation(2);
-
-	display.fillScreen(ST77XX_BLACK);
-
-	dbuf.setTextSize(1);
-	dbuf.setTextColor(1);
-
-	draw_plot_scale();
 
 	temp_history_timer.start();
 	status_timer.start();
