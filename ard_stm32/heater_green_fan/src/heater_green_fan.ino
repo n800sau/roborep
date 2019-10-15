@@ -109,6 +109,8 @@ enum DISPLAY_MODE_T {DISPLAY_NONE, DISPLAY_STATUS, DISPLAY_SETUP};
 DISPLAY_MODE_T display_mode = DISPLAY_STATUS;
 DISPLAY_MODE_T display_mode_env = DISPLAY_NONE;
 
+int setup_edit_pos = 0;
+
 typedef struct S_CYCLE_ITEM {
 	time_t secs;
 	byte temp;
@@ -168,6 +170,16 @@ typedef struct S_PROGRAM {
 t_program program;
 
 // ************************************************
+
+int setup_edit_pos_count()
+{
+	int rs = 1;
+	for(int i=0; i<program.cycle_count; i++) {
+		rs += 1;
+		rs += program.cycles[i].item_count * 2;
+	}
+	return rs;
+}
 
 void draw_plot_scale()
 {
@@ -645,6 +657,18 @@ void process_keys()
 					break;
 				case 0x12:
 					display_mode = DISPLAY_STATUS;
+					break;
+				case 0x21: // up
+					setup_edit_pos++;
+					if(setup_edit_pos >= setup_edit_pos_count()) {
+						setup_edit_pos = setup_edit_pos_count();
+					}
+					break;
+				case 0x22: // down
+					setup_edit_pos--;
+					if(setup_edit_pos < 0) {
+						setup_edit_pos = 0;
+					}
 					break;
 			}
 		}
