@@ -223,14 +223,12 @@ void display_status()
 		Serial.print(F("Control temp:"));
 		Serial.println(control_temp);
 	}
-	if(temp2set != UNKNOWN_TEMP) {
-		dbuf.setCursor(30, 12);
-		dbuf.print(F(">"));
-		dbuf.print(temp2set);
-		dbuf.print(F("C"));
-		Serial.print(F("> "));
-		Serial.println(temp2set);
-	}
+	dbuf.setCursor(30, 12);
+	dbuf.print(F(">"));
+	dbuf.print(temp2set);
+	dbuf.print(F("C"));
+	Serial.print(F("> "));
+	Serial.println(temp2set);
 	Serial.print(F("PWM:"));
 	Serial.println(heater_pwm);
 	if(heater_pwm < 0) {
@@ -644,33 +642,31 @@ void process_keys()
 	static byte last_key = 0;
 	byte key = keylib.read_key_debounce();
 	if(last_key != key) {
-		if(temp2set != UNKNOWN_TEMP) {
-			switch(key) {
-				case 0x23:
-					temp2set++;
-					break;
-				case 0x13:
-					temp2set--;
-					break;
-				case 0x11:
-					display_mode = DISPLAY_SETUP;
-					break;
-				case 0x12:
-					display_mode = DISPLAY_STATUS;
-					break;
-				case 0x21: // up
-					setup_edit_pos++;
-					if(setup_edit_pos >= setup_edit_pos_count()) {
-						setup_edit_pos = setup_edit_pos_count();
-					}
-					break;
-				case 0x22: // down
-					setup_edit_pos--;
-					if(setup_edit_pos < 0) {
-						setup_edit_pos = 0;
-					}
-					break;
-			}
+		switch(key) {
+			case 0x23:
+				temp2set++;
+				break;
+			case 0x13:
+				temp2set--;
+				break;
+			case 0x11:
+				display_mode = DISPLAY_SETUP;
+				break;
+			case 0x12:
+				display_mode = DISPLAY_STATUS;
+				break;
+			case 0x21: // up
+				setup_edit_pos++;
+				if(setup_edit_pos >= setup_edit_pos_count()) {
+					setup_edit_pos = setup_edit_pos_count();
+				}
+				break;
+			case 0x22: // down
+				setup_edit_pos--;
+				if(setup_edit_pos < 0) {
+					setup_edit_pos = 0;
+				}
+				break;
 		}
 		Serial.println(key, HEX);
 		last_key = key;
