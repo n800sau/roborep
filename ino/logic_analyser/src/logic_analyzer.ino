@@ -177,7 +177,7 @@ void captureInline2mhz(void);
 #define DEBUG_OFF PORTD = B00000000
 #endif /* USE_PORTD */
 
-//#define DEBUG_MENU
+#define DEBUG_MENU
 //#define DEBUG
 
 #ifdef DEBUG

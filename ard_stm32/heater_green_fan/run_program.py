@@ -35,6 +35,7 @@ if ser:
 
 	def run_item(item):
 		print(ts(), 'Run:', json.dumps(item))
+		send_cmd(ser, b'G\n')
 		send_cmd(ser, b'T %d\n' % item['t'])
 		current_start_ts = time.time()
 		temp_reached = False
