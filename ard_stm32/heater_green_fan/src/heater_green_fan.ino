@@ -18,6 +18,25 @@ PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
 
+#include <Thermistor.h>
+#include <NTC_Thermistor.h>
+
+#define SENSOR_PIN             PB1
+#define REFERENCE_RESISTANCE   330000
+#define NOMINAL_RESISTANCE     100000
+#define NOMINAL_TEMPERATURE    25
+#define B_VALUE                3950
+#define STM32_ANALOG_RESOLUTION 4095
+
+NTC_Thermistor thermistor(
+    SENSOR_PIN,
+    REFERENCE_RESISTANCE,
+    NOMINAL_RESISTANCE,
+    NOMINAL_TEMPERATURE,
+    B_VALUE,
+    STM32_ANALOG_RESOLUTION // <- for a thermistor calibration
+);
+
 #include <Ticker.h>
 
 #include <keylib.h>
@@ -38,6 +57,7 @@ readKey keylib = readKey();
 // Initialize Adafruit ST7789 TFT library
 Adafruit_ST7789 display = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
+bool starting = true;
 
 int heater_pwm = 0;
 const int MIN_PWM = -400, MAX_PWM = 400;
@@ -96,7 +116,8 @@ const float T_25 = T_0 + 25;
 // 100k NTC
 const float beta = 3950;
 const float R_25 = 100000L; // 100k ohm
-const unsigned long Rs = 470000L;
+const unsigned long Rs = 330000L;
+//const unsigned long Rs = 470000L;
 // ************************************************
 
 const int MAX_ITEM_PER_CYCLE = 5;
@@ -340,14 +361,15 @@ double tempAnalogRead(int temp_pin)
 //	Serial.print(ref/4096/20*Vcc);
 //	Serial.print(F(", NCC V:"));
 //	Serial.println(val/4096/20*Vcc);
-	return Vref * val / ref;
+//	return Vref * val / ref;
+	return val / 20;
 }
 
 double read_temp(int temp_pin)
 {
-	v = tempAnalogRead(temp_pin);
-//	r = v/((Vcc-v)/Rs);
-	r = v/((Vref-v)/Rs);
+	v = Vcc*tempAnalogRead(temp_pin)/4095;
+	r = v/((Vcc-v)/Rs);
+//	r = v/((Vref-v)/Rs);
 //	Serial.print(F("R:"));
 //	Serial.println(r);
 //	Serial.print(F("V:"));
@@ -358,11 +380,14 @@ double read_temp(int temp_pin)
 
 void update_temp()
 {
-	temp = read_temp(TEMP_PIN);
+	//temp = read_temp(TEMP_PIN);
+	temp = thermistor.readCelsius();
+
 //	control_temp = read_temp(CONTROL_TEMP_PIN);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
-	if(plot_min_temp == UNKNOWN_TEMP) {
+	if(starting) {
+		starting = false;
 		Serial.println(F("Ready"));
 	}
 	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
