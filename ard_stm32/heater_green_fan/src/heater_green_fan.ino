@@ -81,8 +81,6 @@ double v, r;
 int8_t temp_history[TEMP_HISTORY_SIZE];
 int8_t temp_req_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
-//int32_t plot_max_temp = UNKNOWN_TEMP;
-//int32_t plot_min_temp = UNKNOWN_TEMP;
 int32_t plot_max_temp = max_temp;
 int32_t plot_min_temp = min_temp;
 
@@ -257,22 +255,20 @@ void display_status()
 	}
 	// copy buffer to screen
 	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
-	if(plot_min_temp != UNKNOWN_TEMP && plot_max_temp != UNKNOWN_TEMP) {
-//		Serial.print(F("history size:"));
-//		Serial.println(temp_history_count);
-//		Serial.print(F("min temp:"));
-//		Serial.println(plot_min_temp);
-//		Serial.print(F("max temp:"));
-//		Serial.println(plot_max_temp);
-		display.drawLine(0, PLOT_TOP, 0, PLOT_BOTTOM, ST77XX_BLACK);
-		for(int i=1; i<temp_history_count; i++) {
-			// fill line black
-			display.drawLine(PLOT_LEFT+i, PLOT_TOP, PLOT_LEFT+i, PLOT_BOTTOM, ST77XX_BLACK);
-			display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
-					PLOT_LEFT+map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
-			display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
-					PLOT_LEFT+map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
-		}
+//	Serial.print(F("history size:"));
+//	Serial.println(temp_history_count);
+//	Serial.print(F("min temp:"));
+//	Serial.println(plot_min_temp);
+//	Serial.print(F("max temp:"));
+//	Serial.println(plot_max_temp);
+	display.drawLine(0, PLOT_TOP, 0, PLOT_BOTTOM, ST77XX_BLACK);
+	for(int i=1; i<temp_history_count; i++) {
+		// fill line black
+		display.drawLine(PLOT_LEFT+i, PLOT_TOP, PLOT_LEFT+i, PLOT_BOTTOM, ST77XX_BLACK);
+		display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
+				PLOT_LEFT+map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
+		display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
+				PLOT_LEFT+map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
 	}
 }
 
@@ -358,25 +354,13 @@ double read_temp(int temp_pin)
 
 void update_temp()
 {
+	if(temp == UNKNOWN_TEMP) {
+		Serial.println("Ready");
+	}
 	temp = read_temp(TEMP_PIN);
 //	control_temp = read_temp(CONTROL_TEMP_PIN);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
-	if(plot_min_temp == UNKNOWN_TEMP) {
-		Serial.println(F("Ready"));
-	}
-	if(plot_min_temp == UNKNOWN_TEMP || plot_min_temp > temp) {
-		plot_min_temp = temp;
-	}
-	if(plot_max_temp == UNKNOWN_TEMP || plot_max_temp < temp) {
-		plot_max_temp = temp;
-	}
-	if(plot_min_temp > temp2set) {
-		plot_min_temp = temp2set;
-	}
-	if(plot_max_temp < temp2set) {
-		plot_max_temp = temp2set;
-	}
 }
 
 void update_history_proc()
