@@ -93,7 +93,6 @@ const int INITIAL_TEMP2SET = 25;
 
 double temp = UNKNOWN_TEMP, temp2set = INITIAL_TEMP2SET, control_temp = UNKNOWN_TEMP;
 const int32_t max_temp = 100, min_temp = 10;
-double v, r;
 
 #define TEMP_HISTORY_SIZE (240-PLOT_LEFT)
 int8_t temp_history[TEMP_HISTORY_SIZE];
@@ -338,7 +337,9 @@ void update_display()
 	}
 }
 
-double tempAnalogRead(int temp_pin)
+// NTC scheme
+// GND - NTC - measure - Rs - Vref
+double ntcVoltageRead(int temp_pin)
 {
 	double val = 0;
 	double ref = 0;
@@ -355,21 +356,27 @@ double tempAnalogRead(int temp_pin)
 //	Serial.print(ref/4096/20*Vcc);
 //	Serial.print(F(", NCC V:"));
 //	Serial.println(val/4096/20*Vcc);
-//	return Vref * val / ref;
-	return val / 20;
+	// Voltage on NTC
+	return Vref * val / ref;
 }
 
 double read_temp(int temp_pin)
 {
-	v = Vcc*tempAnalogRead(temp_pin)/4095;
-	r = v/((Vcc-v)/Rs);
-//	r = v/((Vref-v)/Rs);
+	double v = ntcVoltageRead(temp_pin);
+	// voltage on Rs
+	double rV = Vref-v;
+	// current
+	double current = rV / Rs;
+	// resistance of NTC
+	double r = v / current;
+	// temp on NTC
+	double rs = 1 / ((log(r / R_25) / beta) + 1/T_25) - T_0;
 //	Serial.print(F("R:"));
 //	Serial.println(r);
 //	Serial.print(F("V:"));
 //	Serial.println(v);
 // R = R_25 * Math.exp(beta * ((1 / (T + T_0)) - (1 / T_25)));
-	return 1 / ((log(r / R_25) / beta) + 1/T_25) - T_0;
+	return rs;
 }
 
 void update_temp()
