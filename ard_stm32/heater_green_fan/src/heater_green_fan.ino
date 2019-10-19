@@ -12,14 +12,14 @@
 double Setpoint, Input, Output;
 
 // tuning parameters
-double hKp=100, hKi=0, hKd=0;
-double cKp=200, cKi=0, cKd=0;
+double hKp=100, hKi=50, hKd=50;
+double cKp=200, cKi=50, cKd=50;
 PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
 
-#include <Thermistor.h>
-#include <NTC_Thermistor.h>
+//#include <Thermistor.h>
+//#include <NTC_Thermistor.h>
 
 #define SENSOR_PIN             PB1
 #define REFERENCE_RESISTANCE   330000
@@ -28,14 +28,14 @@ PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 #define B_VALUE                3950
 #define STM32_ANALOG_RESOLUTION 4095
 
-NTC_Thermistor thermistor(
-    SENSOR_PIN,
-    REFERENCE_RESISTANCE,
-    NOMINAL_RESISTANCE,
-    NOMINAL_TEMPERATURE,
-    B_VALUE,
-    STM32_ANALOG_RESOLUTION // <- for a thermistor calibration
-);
+//NTC_Thermistor thermistor(
+//    SENSOR_PIN,
+//    REFERENCE_RESISTANCE,
+//    NOMINAL_RESISTANCE,
+//    NOMINAL_TEMPERATURE,
+//    B_VALUE,
+//    STM32_ANALOG_RESOLUTION // <- for a thermistor calibration
+//);
 
 #include <Ticker.h>
 
@@ -80,7 +80,7 @@ GFXcanvas1 dbuf(240, PLOT_TOP);
 
 // NTC
 const int TEMP_PIN = PB1;
-const int CONTROL_TEMP_PIN = PA6;
+const int TEMP_CONTROL_PIN = PA6;
 // 2.5v ref
 const int REF_PIN = PB0;
 
@@ -91,17 +91,16 @@ const int FAN_PIN = PB12;
 const int UNKNOWN_TEMP = -1000;
 const int INITIAL_TEMP2SET = 25;
 
-double temp = UNKNOWN_TEMP, temp2set = INITIAL_TEMP2SET, control_temp = UNKNOWN_TEMP;
+double temp = UNKNOWN_TEMP, temp2set = INITIAL_TEMP2SET, temp_control = UNKNOWN_TEMP;
 const int32_t max_temp = 100, min_temp = 10;
 
 #define TEMP_HISTORY_SIZE (240-PLOT_LEFT)
+int8_t temp_control_history[TEMP_HISTORY_SIZE];
 int8_t temp_history[TEMP_HISTORY_SIZE];
 int8_t temp_req_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
 int32_t plot_max_temp = max_temp;
 int32_t plot_min_temp = min_temp;
-
-//Thermistor thermistor;
 
 float Vcc = 3.3;
 // ref from LM336-2.5
@@ -111,7 +110,9 @@ const float T_25 = T_0 + 25;
 // 100k NTC
 const float beta = 3950;
 const float R_25 = 100000L; // 100k ohm
-const unsigned long Rs = 330000L;
+//const unsigned long Rs = 10000L;
+const unsigned long Rs = 150000L;
+//const unsigned long Rs = 330000L;
 //const unsigned long Rs = 470000L;
 // ************************************************
 
@@ -204,11 +205,13 @@ void draw_plot_scale()
 	int pstep = 20;
 	while(ptemp < plot_max_temp) {
 		ptemp += pstep;
-//		Serial.println(ptemp);
 		if(ptemp != plot_min_temp) {
-			int y = PLOT_HEIGHT * (plot_max_temp - plot_min_temp) / (ptemp - plot_min_temp);
-			dbuf.setCursor(0, y);
-			dbuf.print(ptemp);
+			int y = map(ptemp, plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP);
+			Serial.print(ptemp);
+			Serial.print(" at ");
+			Serial.println(y);
+			display.setCursor(0, y);
+			display.print(ptemp);
 		}
 	}
 }
@@ -217,8 +220,8 @@ void display_status()
 {
 	if(display_mode_env != display_mode) {
 		display.fillScreen(ST77XX_BLACK);
-		dbuf.setTextSize(1);
-		dbuf.setTextColor(1);
+		display.setTextSize(1);
+		display.setTextColor(ST77XX_WHITE);
 		draw_plot_scale();
 		display_mode_env = display_mode;
 	}
@@ -231,13 +234,13 @@ void display_status()
 		Serial.print(F("T "));
 		Serial.println(temp);
 	}
-	if(control_temp != UNKNOWN_TEMP) {
+	if(temp_control != UNKNOWN_TEMP) {
 		dbuf.setCursor(80, 0);
 		dbuf.print(F("="));
-		dbuf.print(control_temp);
+		dbuf.print(temp_control);
 		dbuf.print(F("C"));
 		Serial.print(F("Control temp:"));
-		Serial.println(control_temp);
+		Serial.println(temp_control);
 	}
 	dbuf.setCursor(30, 12);
 	dbuf.print(F(">"));
@@ -279,14 +282,16 @@ void display_status()
 //	Serial.println(plot_min_temp);
 //	Serial.print(F("max temp:"));
 //	Serial.println(plot_max_temp);
-	display.drawLine(0, PLOT_TOP, 0, PLOT_BOTTOM, ST77XX_BLACK);
+	display.drawLine(PLOT_LEFT, PLOT_TOP, PLOT_LEFT, PLOT_BOTTOM, ST77XX_BLACK);
 	for(int i=1; i<temp_history_count; i++) {
 		// fill line black
 		display.drawLine(PLOT_LEFT+i, PLOT_TOP, PLOT_LEFT+i, PLOT_BOTTOM, ST77XX_BLACK);
-		display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
-				PLOT_LEFT+map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
-		display.drawLine(PLOT_LEFT+i-1, PLOT_LEFT+map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
-				PLOT_LEFT+map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
+		display.drawLine(PLOT_LEFT+i-1, map(temp_control_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
+				map(temp_control_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_YELLOW);
+		display.drawLine(PLOT_LEFT+i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
+				map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
+		display.drawLine(PLOT_LEFT+i-1, map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
+				map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
 	}
 }
 
@@ -384,10 +389,10 @@ void update_temp()
 	if(temp == UNKNOWN_TEMP) {
 		Serial.println("Ready");
 	}
-	//temp = read_temp(TEMP_PIN);
-	temp = thermistor.readCelsius();
+	temp = read_temp(TEMP_PIN);
+	//temp = thermistor.readCelsius();
 
-//	control_temp = read_temp(CONTROL_TEMP_PIN);
+	temp_control = read_temp(TEMP_CONTROL_PIN);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
 }
@@ -398,12 +403,15 @@ void update_history_proc()
 		if(temp_history_count >= TEMP_HISTORY_SIZE) {
 			for(int i=1; i<TEMP_HISTORY_SIZE; i++) {
 				temp_history[i-1] = temp_history[i];
+				temp_control_history[i-1] = temp_control_history[i];
 				temp_req_history[i-1] = temp_req_history[i];
 			}
 			temp_history_count--;
 		}
 		temp_req_history[temp_history_count] = temp2set;
-		temp_history[temp_history_count++] = temp;
+		temp_history[temp_history_count] = temp;
+		temp_control_history[temp_history_count] = temp_control;
+		temp_history_count++;
 	}
 }
 
@@ -691,7 +699,7 @@ void setup()
 	Serial.begin(115200);
 	keylib.begin(sizeof(oline), sizeof(iline), oline, iline);
 	pinMode(TEMP_PIN, INPUT);
-	pinMode(CONTROL_TEMP_PIN, INPUT);
+	pinMode(TEMP_CONTROL_PIN, INPUT);
 	pinMode(REF_PIN, INPUT);
 	pinMode(FAN_PIN, OUTPUT);
 	digitalWrite(FAN_PIN, LOW);
