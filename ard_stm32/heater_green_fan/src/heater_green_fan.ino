@@ -423,16 +423,20 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 	command = "";
 	args_count = 0;
 	line.trim();
+//	Serial.println("parsing...");
 	if(line.length() > 0) {
 		args_count = 0;
 		int space_pos = 0;
-		while(space_pos >= 0 && args_count < max_arg_count) {
+		while(space_pos >= 0 && args_count < max_arg_count && line.length() > 0) {
+//			Serial.print("'");
+//			Serial.print(line);
+//			Serial.print("':");
 			space_pos = line.indexOf(' ');
 			if(space_pos<0) {
 				space_pos = line.length();
 			}
-			//Serial.print("space_pos: ");
-			//Serial.println(space_pos);
+//			Serial.print("space_pos: ");
+//			Serial.println(space_pos);
 			if(command == "") {
 				command = line.substring(0, space_pos);
 				command.toUpperCase();
@@ -440,7 +444,8 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 				args[args_count++] = line.substring(0, space_pos);
 			}
 			if(space_pos >= 0) {
-				line = line.substring(space_pos+1);
+				line = line.substring(space_pos);
+				line.trim();
 			}
 		}
 	}
