@@ -63,3 +63,27 @@ rod_dist_x = 67.4 - rod_bearing_d;
 
 attach_side_gap = 0.5;
 
+//////////////////////// duratech drill maket
+top_d = 23;
+top_sz_z = 37;
+above_widest_level_d = 36;
+above_widest_level_sz_z = 50;
+widest_level_d = 37;
+widest_level_sz_z = 7.8;
+
+above_bottom_box_sz_x = 17;
+above_bottom_box_sz_y = 11;
+above_bottom_box_sz_z = 14;
+
+above_bottom_d = 29;
+above_bottom_sz_z = 9.5;
+bottom_d = 22.5;
+bottom_sz_z = 7.5;
+
+metal_thing_d  = 10.2;
+metal_thing_sz_z = 11;
+metal_cone_bottom_d = 7.4;
+metal_cone_bottom_sz_z = 3;
+
+//////////////////////////
+
