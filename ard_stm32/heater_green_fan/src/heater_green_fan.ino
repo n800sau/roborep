@@ -61,7 +61,8 @@ int heater_pwm = 0;
 const int MIN_PWM = -400, MAX_PWM = 400;
 
 // peltier
-VNH3SP30 Motor1;    // define control object for 1 motor
+VNH3SP30 Peltier;    // define control object for 1 motor
+const int heat_direction = -1;
 
 // motor pins
 #define M1_PWM PA8    // pwm pin motor
@@ -207,9 +208,9 @@ void draw_plot_scale()
 		ptemp += pstep;
 		if(ptemp != plot_min_temp) {
 			int y = map(ptemp, plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP);
-			Serial.print(ptemp);
-			Serial.print(" at ");
-			Serial.println(y);
+//			Serial.print(ptemp);
+//			Serial.print(" at ");
+//			Serial.println(y);
 			display.setCursor(0, y);
 			display.print(ptemp);
 		}
@@ -592,7 +593,7 @@ void process_proc()
 		heater_pwm = MIN_PWM;
 	}
 #endif // USE_PID
-	Motor1.setSpeed(heater_pwm);
+	Peltier.setSpeed(heater_pwm * heat_direction);
 //	if(heater_pwm > MAX_PWM/2) {
 //		digitalWrite(FAN_PIN, LOW);
 //	} else if(heater_pwm < 0) {
@@ -710,7 +711,7 @@ void setup()
 	digitalWrite(FAN_PIN, LOW);
 	digitalWrite(FAN_PIN, HIGH);
 
-	Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
+	Peltier.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
 
 	display.init(240, 240, SPI_MODE2);    // Init ST7789 display 240x240 pixel
 	display.setRotation(2);
