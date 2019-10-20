@@ -63,6 +63,10 @@ rod_dist_x = 67.4 - rod_bearing_d;
 
 attach_side_gap = 0.5;
 
+connector_base_sz_y = 12;
+
+connector_to_work_surface_sz_z = 56;
+
 //////////////////////// duratech drill maket
 top_d = 23;
 top_sz_z = 37;
