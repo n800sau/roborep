@@ -77,13 +77,14 @@ module gantry_z() {
 		// holes for rod bearings
 		vert_rod_holes(d=rod_bearing_d, h=gantry_sz_z);
 	}
+	// pointer to the work surface
+	translate([0, 0, -(gantry_sz_z+gantry_z_to_work_surface_sz_z)/2]) {
+		%cube([5, 5, gantry_z_to_work_surface_sz_z], center=true);
+	}
 }
 
 
-connector_base_sz_x = gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
-connector_connector_sz_x = 5;
-
-module gantry_z_attachment(extra_sz_y=15) {
+module gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y) {
 	difference() {
 		translate([0, -(gantry_sz_y+connector_base_sz_y)/2-attach_side_gap, 0]) {
 			cube([connector_base_sz_x, connector_base_sz_y, attach_sz_z], center=true);

@@ -2,6 +2,9 @@ include <cnc_params.scad>
 $fn = 40;
 
 module duratech_maket() {
+	translate([0, 0, -drill_bit_sz_z/2]) {
+		cylinder(d=drill_bit_d, h=drill_bit_sz_z, center=true);
+	}
 	translate([0, 0, metal_cone_bottom_sz_z/2]) {
 		cylinder(d1=metal_cone_bottom_d, d2=metal_thing_d, h=metal_cone_bottom_sz_z, center=true);
 	}

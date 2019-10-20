@@ -9,7 +9,7 @@ holder_sz_x = gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
 holder_sz_y = 50;
 holder_sz_z = 5;
 
-holder_off_z = -30;
+holder_off_z = -32;
 
 drill_center_off_y = -16;
 drill_gap = 0.5;
@@ -19,20 +19,23 @@ module duratech_holder() {
 		difference() {
 //		union() {
 			union() {
-				for(x=[-1,1]) {
-					translate([x*(holder_sz_x+wall+1)/2, -5, -(-attach_sz_z+holder_sz_z/2)/2]) {
-						difference() {
-							cube([wall, holder_sz_y/2+10, abs(holder_off_z)+attach_sz_z/2], center=true);
-							translate([0, -(holder_sz_y/2+10)/2, abs(holder_off_z)]) {
-								cube([20, holder_sz_y/2+10, abs(holder_off_z)+attach_sz_z/2], center=true);
+				translate([0, drill_center_off_y, bottom_sz_z/2+above_bottom_sz_z/2+widest_level_sz_z/2]) {
+					for(x=[-1,1]) {
+						translate([x*(holder_sz_x+wall+1)/2, -drill_center_off_y-5, attach_sz_z/4]) {
+							difference() {
+								at_h = holder_sz_z+bottom_sz_z+above_bottom_sz_z+widest_level_sz_z+attach_sz_z/2;
+								cube([wall, holder_sz_y/2+10, at_h], center=true);
+								translate([0, -(holder_sz_y/2+10)/2, at_h/2]) {
+									cube([20, holder_sz_y/2+10, at_h], center=true);
+								}
 							}
 						}
 					}
-				}
-				translate([0, drill_center_off_y, bottom_sz_z/2+above_bottom_sz_z/2+widest_level_sz_z/2-0.5]) {
-					cylinder(d=widest_level_d+2*wall, h=holder_sz_z+bottom_sz_z+above_bottom_sz_z+widest_level_sz_z-1, center=true);
-					translate([0, 4, 0]) {
-						cube([holder_sz_x+2*wall+1, 20, holder_sz_z+bottom_sz_z+above_bottom_sz_z+widest_level_sz_z-1], center=true);
+					translate([0, 0, -0.5]) {
+						cylinder(d=widest_level_d+2*wall, h=holder_sz_z+bottom_sz_z+above_bottom_sz_z+widest_level_sz_z-1, center=true);
+						translate([0, 4, 0]) {
+							cube([holder_sz_x+2*wall+1, 20, holder_sz_z+bottom_sz_z+above_bottom_sz_z+widest_level_sz_z-1], center=true);
+						}
 					}
 				}
 			}
