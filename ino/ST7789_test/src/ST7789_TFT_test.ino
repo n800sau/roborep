@@ -43,7 +43,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 float p = 3.1415926;
  
 void setup(void) {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.print(F("Hello! ST77xx TFT Test"));
  
   // if the display has CS pin try with SPI_MODE0
