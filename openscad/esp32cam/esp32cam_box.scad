@@ -1,5 +1,5 @@
-show_camside = false;
-show_pinside = true;
+show_camside = true;
+show_pinside = false;
 
 use <../lib/vent.scad>
 use <../lib/gopro_like_connector.scad>
@@ -19,11 +19,11 @@ pcb_sz_z = 1.5;
 
 pcb_cam_hole_d = 8.4;
 pcb_cam_hole_off_x = 14;
-pcb_cam_hole_off_y = 31;
+pcb_cam_hole_off_y = 32;
 
 led_hole_sz_x = 4;
 led_hole_sz_y = led_hole_sz_x;
-led_hole_off_x = 23;
+led_hole_off_x = 23.6;
 led_hole_off_y = 8;
 
 top_y_stand_sz_z = 5;
@@ -41,6 +41,9 @@ sdcard_hole_sz_x = 16;
 sdcard_hole_sz_z = 4 + pcb_sz_z;
 
 pinside_wall_sz_z = 20;
+reset_hole_d = 5;
+reset_off_x = 21;
+reset_off_y = 36;
 
 // micro usb pcb connector at zero
 usb_pcb_sz_x = 14.4;
@@ -134,10 +137,10 @@ module esp32cam_camside() {
         }
       }
     }
-    // sd card hole
-    translate([wall+sdcard_hole_off_x, pcb_sz_y+2*bolt_stand_d+wall, 0]) {
-      cube([sdcard_hole_sz_x, wall, sdcard_hole_sz_z]);
-    }
+    // sd card hole (useless hole, sd too far from wall)
+//    translate([wall+sdcard_hole_off_x, pcb_sz_y+2*bolt_stand_d+wall, 0]) {
+//      cube([sdcard_hole_sz_x, wall, sdcard_hole_sz_z]);
+//    }
   }
 }
 
@@ -211,10 +214,14 @@ module esp32cam_pinside() {
       }
     }
     // hole for wires or ventilation
-    translate([6, 48, 0]) {
+    translate([6, 37, 0]) {
       rotate([90, 0, 0]) {
-        vent(x_size=20, x_count=3, z_size=30, z_count=4, center=false, negate=true);
+        vent(x_size=20, x_count=3, z_size=20, z_count=3, center=false, negate=true);
       }
+    }
+    // reset hole
+    translate([wall+reset_off_x, wall+bolt_stand_d+reset_off_y, -25]) {
+      cylinder(d=reset_hole_d, h=50);
     }
   }
 }
