@@ -1,5 +1,5 @@
 show_camside = true;
-show_pinside = false;
+show_pinside = true;
 
 use <../lib/vent.scad>
 use <../lib/gopro_like_connector.scad>
@@ -32,7 +32,7 @@ top_y_wall_sz_z = top_y_stand_sz_z + pcb_sz_z;
 bottom_y_wall_sz_z = bottom_y_stand_sz_z + pcb_sz_z;
 bottom_part_sz_y = 18;
 
-hole_d = 2.9;
+hole_d = 3;
 hole_d_through = 3.6;
 bolt_stand_d = hole_d_through + 1.5 * wall;
 
@@ -46,9 +46,9 @@ reset_off_x = 21;
 reset_off_y = 36;
 
 // micro usb pcb connector at zero
-usb_pcb_sz_x = 14.4;
+usb_pcb_sz_x = 15;
 usb_pcb_sz_y = 18;
-usb_pcb_sz_z = 1.8;
+usb_pcb_sz_z = 2;
 usb_pcb_hole_d = 3;
 
 usb_pcb_hole_off_x = 2.5;
@@ -260,7 +260,7 @@ color("green") {
 
 
 if(show_camside) {
-	translate([0, 0, 30]) {
+	translate([0, 0, 24]) {
 		esp32cam_camside();
 	}
 }
