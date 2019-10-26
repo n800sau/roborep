@@ -1,5 +1,6 @@
-show_camside = true;
-show_pinside = true;
+show_camside = false;
+show_pinside = false;
+show_usb_padding=true;
 
 use <../lib/vent.scad>
 use <../lib/gopro_like_connector.scad>
@@ -242,11 +243,25 @@ module micro_usb_connector() {
   }
 }
 
+module micro_usb_connector_padding() {
+  difference() {
+    cube([usb_pcb_sz_x, usb_pcb_sz_y-5, wall]);
+    for(x=[usb_pcb_hole_off_x, usb_pcb_hole_off_x+usb_pcb_hole_dist_x]) {
+      translate([x, usb_pcb_hole_off_y, 0]) {
+        cylinder(d=hole_d_through, h=20);
+      }
+    }
+  }
+}
 
-color("blue")
 translate([(usb_pcb_sz_x+pcb_sz_x+2*wall)/2, wall+micro_usb_under_sz_z, 0]) {
   rotate([90, 0, 180]) {
-//    micro_usb_connector();
+    translate([0, 0, -usb_pcb_sz_z]) {
+      if(show_usb_padding) {
+        micro_usb_connector_padding();
+      }
+    }
+    %micro_usb_connector();
   }
 }
 
