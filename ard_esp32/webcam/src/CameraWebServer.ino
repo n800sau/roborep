@@ -1,5 +1,9 @@
 #include "esp_camera.h"
 #include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+#include <WiFiMulti.h>
 
 //
 // WARNING!!! Make sure that you have either selected ESP32 Wrover Module,
@@ -19,6 +23,11 @@
 
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
+
+const char* ssid_1 = WIFI_SSID_1;
+const char* password_1 = WIFI_PASSWORD_1;
+
+WiFiMulti wifiMulti;
 
 void startCameraServer();
 
@@ -86,16 +95,50 @@ void setup() {
   s->set_hmirror(s, 1);
 #endif
 
-  WiFi.begin(ssid, password);
+  wifiMulti.addAP(ssid, password);
+  wifiMulti.addAP(ssid_1, password_1);
 
-  while (WiFi.status() != WL_CONNECTED) {
+  Serial.println("Connecting Wifi...");
+  if(wifiMulti.run() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
+
   Serial.println("");
   Serial.println("WiFi connected");
 
   startCameraServer();
+
+  ArduinoOTA.setPort(3232);
+  ArduinoOTA.setHostname("esp32cam");
+
+  ArduinoOTA
+    .onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = "sketch";
+      else // U_SPIFFS
+        type = "filesystem";
+
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+      Serial.println("Start updating " + type);
+    })
+    .onEnd([]() {
+      Serial.println("\nEnd");
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    })
+    .onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
+
+  ArduinoOTA.begin();
 
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.localIP());
@@ -103,6 +146,9 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  delay(10000);
+  if(wifiMulti.run() != WL_CONNECTED) {
+    Serial.println("WiFi not connected!");
+    delay(1000);
+  }
+  ArduinoOTA.handle();
 }
