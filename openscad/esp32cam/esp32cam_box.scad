@@ -1,6 +1,5 @@
 show_camside = false;
-show_pinside = false;
-show_usb_padding=true;
+show_pinside = true;
 
 use <../lib/vent.scad>
 use <../lib/gopro_like_connector.scad>
@@ -145,8 +144,6 @@ module esp32cam_camside() {
   }
 }
 
-pinside_wall_sz_z = 20;
-
 module esp32cam_pinside() {
   difference() { 
     union() {
@@ -243,27 +240,6 @@ module micro_usb_connector() {
   }
 }
 
-module micro_usb_connector_padding() {
-  difference() {
-    cube([usb_pcb_sz_x, usb_pcb_sz_y-5, wall]);
-    for(x=[usb_pcb_hole_off_x, usb_pcb_hole_off_x+usb_pcb_hole_dist_x]) {
-      translate([x, usb_pcb_hole_off_y, 0]) {
-        cylinder(d=hole_d_through, h=20);
-      }
-    }
-  }
-}
-
-translate([(usb_pcb_sz_x+pcb_sz_x+2*wall)/2, wall+micro_usb_under_sz_z, 0]) {
-  rotate([90, 0, 180]) {
-    translate([0, 0, -usb_pcb_sz_z]) {
-      if(show_usb_padding) {
-        micro_usb_connector_padding();
-      }
-    }
-    %micro_usb_connector();
-  }
-}
 
 color("green") {
   translate([30, 51.5, 30])  {
@@ -275,12 +251,25 @@ color("green") {
 
 
 if(show_camside) {
-	translate([0, 0, 24]) {
-		esp32cam_camside();
+	if(show_pinside) {
+		translate([0, 0, 24]) {
+			esp32cam_camside();
+		}
+	} else {
+		translate([0, 0, top_y_wall_sz_z+wall]) {
+			rotate([0, 180, 0]) {
+				esp32cam_camside();
+			}
+		}
 	}
 }
 
 if(show_pinside) {
 	esp32cam_pinside();
+	translate([(usb_pcb_sz_x+pcb_sz_x+2*wall)/2, wall+micro_usb_under_sz_z, 0]) {
+		rotate([90, 0, 180]) {
+			%micro_usb_connector();
+	  	}
+	}
 }
 
