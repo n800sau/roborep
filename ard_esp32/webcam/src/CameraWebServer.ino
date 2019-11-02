@@ -104,8 +104,9 @@ void setup() {
     Serial.print(".");
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
+  Serial.println();
+  Serial.print("WiFi connected to ");
+  Serial.println(WiFi.SSID().c_str());
 
   startCameraServer();
 

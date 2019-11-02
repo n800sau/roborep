@@ -1,4 +1,4 @@
-show_camside = false;
+show_camside = true;
 show_pinside = true;
 
 use <../lib/vent.scad>
@@ -43,7 +43,7 @@ sdcard_hole_sz_z = 4 + pcb_sz_z;
 pinside_wall_sz_z = 20;
 reset_hole_d = 5;
 reset_off_x = 21;
-reset_off_y = 36;
+reset_off_y = 4.4;
 
 // micro usb pcb connector at zero
 usb_pcb_sz_x = 15;
@@ -188,7 +188,12 @@ module esp32cam_pinside() {
           connector(wall=wall, sz_x=10, sz_y=0);
         }
       }
+      // micro usb pcb padding fill
+      translate([0, wall, 0]) {
+        cube([pcb_sz_x+2*wall, micro_usb_under_sz_z, usb_pcb_sz_y-6]);
+      }
     }
+// HOLES
     // bolt stand holes
     for(x=[wall+bolt_stand_d/2, wall+pcb_sz_x-bolt_stand_d/2]) {
       for(y=[wall+bolt_stand_d/2, wall+bolt_stand_d+pcb_sz_y+bolt_stand_d/2]) {
@@ -212,9 +217,19 @@ module esp32cam_pinside() {
       }
     }
     // hole for wires or ventilation
-    translate([6, 37, 0]) {
+    translate([6, 42, 0]) {
       rotate([90, 0, 0]) {
-        vent(x_size=20, x_count=3, z_size=20, z_count=3, center=false, negate=true);
+        vent(x_size=20, x_count=3, z_size=26, z_count=3, center=false, negate=true);
+      }
+    }
+    translate([wall+(pcb_sz_x-usb_pcb_sz_x)/2, 0, pinside_wall_sz_z-6]) {
+      vent(x_size=usb_pcb_sz_x, x_count=2, z_size=6, z_count=0, center=false, negate=true);
+    }
+    for(x=[wall, pcb_sz_x+2*wall]) {
+      translate([x, wall+bolt_stand_d, wall+2]) {
+        rotate([0, 0, 90]) {
+          vent(x_size=pcb_sz_y, x_count=6, z_size=pinside_wall_sz_z-wall-4, y_size=wall, z_count=1, center=false, negate=true);
+        }
       }
     }
     // reset hole
