@@ -23,7 +23,7 @@ print 'h_step', h_step
 zpos = -depth
 for d in range(min_d_1000, max_d_1000, d_step_1000):
 	d /= 1000.
-	g.move(z=zpos, F=500)
+	g.move(z=zpos, F=60)
 	g.arc(x=0, y=0, radius=d/2)
 	zpos += h_step
 g.move(z=10, F=500)
