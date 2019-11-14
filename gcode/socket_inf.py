@@ -10,7 +10,12 @@ tn.write("\n")
 print 'Waiting...'
 print tn.read_until('\r')
 
-tn.write("M4\n")
+while True:
+	line = sys.stdin.readline()
+	if not line.strip():
+		break
+	print line
+	tn.write(line)
+	print tn.read_until('\r')
 
-print tn.read_until('\r')
-print tn.read_all()
+print 'Finished'
