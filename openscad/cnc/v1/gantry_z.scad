@@ -11,10 +11,11 @@ module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 	}
 }
 
-module attachment_holes(d=hole_d) {
+module attachment_holes(d=hole_d, hole_count=4) {
+	z_step = 15;
 	translate([0, -gantry_sz_y/2-attach_sz_y/4, -(gantry_sz_z-attach_sz_z)/2-attach_sz_z/2]) {
-		for(zpos=[10, 25, 40, 55]) {
-			translate([0, 0, zpos]) {
+		for(zi=[0:1:hole_count-1]) {
+			translate([0, 0, 10+zi*z_step]) {
 				rotate([0, 90, 0]) {
 					cylinder(d=d, h=gantry_sz_x*2, center=true);
 				}
@@ -84,21 +85,28 @@ module gantry_z() {
 }
 
 
-module gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y) {
+module gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=0) {
 	difference() {
-		translate([0, -(gantry_sz_y+connector_base_sz_y)/2-attach_side_gap, 0]) {
-			cube([connector_base_sz_x, connector_base_sz_y, attach_sz_z], center=true);
-			translate([0, -(connector_base_sz_y+extra_sz_y)/2, 0]) {
-				difference() {
-					cube([connector_base_sz_x, extra_sz_y, attach_sz_z], center=true);
-					cube([connector_base_sz_x-2*connector_connector_sz_x, extra_sz_y, attach_sz_z], center=true);
+		translate([0, -(gantry_sz_y+connector_base_sz_y)/2-attach_side_gap, extra_sz_z/2]) {
+			difference() {
+				union() {
+					cube([connector_base_sz_x, connector_base_sz_y, attach_sz_z+extra_sz_z], center=true);
+					translate([0, -(connector_base_sz_y+extra_sz_y)/2, 0]) {
+						difference() {
+							cube([connector_base_sz_x, extra_sz_y, attach_sz_z+extra_sz_z], center=true);
+							cube([connector_base_sz_x-2*connector_connector_sz_x, extra_sz_y, attach_sz_z+extra_sz_z], center=true);
+						}
+					}
+				}
+				translate([0, 0, attach_sz_z/2])  {
+					cube([connector_base_sz_x-4*connector_connector_sz_x, connector_base_sz_y, extra_sz_z], center=true);
 				}
 			}
 		}
-		attachment_holes(d=hole_d);
+		attachment_holes(d=hole_d, hole_count=20);
 		if(extra_sz_y >= 10) {
 			translate([0, -extra_sz_y, 0]) {
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through, hole_count=20);
 			}
 		}
 	}
@@ -107,5 +115,5 @@ module gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y) {
 
 //gantry_z();
 color("blue") {
-	gantry_z_attachment();
+	gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10);
 }
