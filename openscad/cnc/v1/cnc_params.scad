@@ -70,6 +70,8 @@ default_attach_extra_sz_y = 15;
 
 gantry_z_to_work_surface_sz_z = 56;
 
+nuts_sz_z = 2;
+
 //////////////////////// duratech drill mockup
 top_d = 23;
 top_sz_z = 37;
