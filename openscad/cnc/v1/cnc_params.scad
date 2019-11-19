@@ -27,7 +27,7 @@ base_sz_z = rod_sz+wall*2;
 echo("base x: ", base_sz_x, ", base y:", base_sz_y);
 
 hole_d = 3.8;
-hole_d_through = 4.8;
+hole_d_through = 4.4;
 mounting_hole_offset = 5;
 
 motor_sz = 43;
