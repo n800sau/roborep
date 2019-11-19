@@ -70,7 +70,9 @@ default_attach_extra_sz_y = 15;
 
 gantry_z_to_work_surface_sz_z = 56;
 
-//////////////////////// duratech drill maket
+nuts_sz_z = 2;
+
+//////////////////////// duratech drill mockup
 top_d = 23;
 top_sz_z = 37;
 above_widest_level_d = 36;
@@ -96,4 +98,11 @@ drill_bit_sz_z = 20;
 drill_bit_d = 2;
 //////////////////////////
 
+
+//////////////////////// dragonlab pipette mockup
+pipette_wall = 2;
+pipette_bottom_holder_sz_x = 32;
+pipette_bottom_holder_sz_y = 24;
+pipette_bottom_holder_sz_z = 15;
+//////////////////////////
 

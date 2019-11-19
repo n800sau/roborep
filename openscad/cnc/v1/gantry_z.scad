@@ -1,4 +1,5 @@
 include <cnc_params.scad>
+include <MCAD/nuts_and_bolts.scad>
 
 $fn = 50;
 
@@ -11,12 +12,26 @@ module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 	}
 }
 
-module attachment_holes(d=hole_d) {
+module nutHoleM4(extra_h=0) {
+	hull() {
+		translate([0, 0, extra_h/2]) nutHole(4, units=MM);
+		translate([0, 0, -extra_h/2]) nutHole(4, units=MM);
+	}
+}
+
+module attachment_holes(d=hole_d, hole_count=4, nut_hole_sz=0) {
+	z_step = 15;
 	translate([0, -gantry_sz_y/2-attach_sz_y/4, -(gantry_sz_z-attach_sz_z)/2-attach_sz_z/2]) {
-		for(zpos=[10, 25, 40, 55]) {
-			translate([0, 0, zpos]) {
+		for(zi=[0:1:hole_count-1]) {
+			translate([0, 0, 10+zi*z_step]) {
 				rotate([0, 90, 0]) {
-					cylinder(d=d, h=gantry_sz_x*2, center=true);
+					h = gantry_sz_x*2;
+					cylinder(d=d, h=h, center=true);
+					if(nut_hole_sz > 0) {
+						translate([0, 0, -METRIC_NUT_THICKNESS[4]/2]) {
+							nutHoleM4(extra_h=nut_hole_sz);
+						}
+					}
 				}
 			}
 		}
@@ -91,21 +106,42 @@ module gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y) {
 			translate([0, -(connector_base_sz_y+extra_sz_y)/2, 0]) {
 				difference() {
 					cube([connector_base_sz_x, extra_sz_y, attach_sz_z], center=true);
-					cube([connector_base_sz_x-2*connector_connector_sz_x, extra_sz_y, attach_sz_z], center=true);
+					cube([connector_base_sz_x-2*connector_connector_sz_x-2*nuts_sz_z, extra_sz_y, attach_sz_z], center=true);
 				}
 			}
 		}
-		attachment_holes(d=hole_d);
+		attachment_holes(d=hole_d, hole_count=20);
 		if(extra_sz_y >= 10) {
 			translate([0, -extra_sz_y, 0]) {
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through, hole_count=20);
 			}
 		}
 	}
 }
 
+module gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=0) {
+	difference() {
+		for(xside=[-1,1]) {
+			translate([xside*(connector_base_sz_x-connector_connector_sz_x-nuts_sz_z)/2, -(gantry_sz_y+connector_base_sz_y)/2-attach_side_gap, 0]) {
+				cube([connector_connector_sz_x+nuts_sz_z, connector_base_sz_y, attach_sz_z], center=true);
+				translate([0, -(connector_base_sz_y+extra_sz_y)/2, extra_sz_z/2]) {
+					cube([connector_connector_sz_x+nuts_sz_z, extra_sz_y, attach_sz_z+extra_sz_z], center=true);
+				}
+			}
+		}
+		nut_hole_sz = connector_base_sz_x-2*connector_connector_sz_x-nuts_sz_z;
+		attachment_holes(d=hole_d, hole_count=20, nut_hole_sz=nut_hole_sz);
+		if(extra_sz_y >= 10) {
+			translate([0, -extra_sz_y, 0]) {
+				attachment_holes(d=hole_d_through, hole_count=20, nut_hole_sz=nut_hole_sz);
+			}
+		}
+	}
+}
 
 //gantry_z();
-color("blue") {
-	gantry_z_attachment();
-}
+//color("blue") {
+	//gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y);
+	gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10);
+//}
+

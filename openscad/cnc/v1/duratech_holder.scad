@@ -1,5 +1,5 @@
 include <cnc_params.scad>
-use <duratech_maket.scad>
+use <duratech_mockup.scad>
 use <gantry_z.scad>
 use <MCAD/nuts_and_bolts.scad>
 
@@ -117,12 +117,12 @@ module duratech_holder_top() {
 
 //gantry_z();
 duratech_holder_top();
-//duratech_holder();
+duratech_holder();
 //color("blue") {
 //	gantry_z_attachment();
 //}
 translate([0, -58, -36+holder_off_z]) {
 	rotate([0, 0, -90]) {
-		%duratech_maket();
+		%duratech_mockup();
 	}
 }
