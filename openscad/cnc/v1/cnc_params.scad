@@ -104,5 +104,9 @@ pipette_wall = 2;
 pipette_bottom_holder_sz_x = 32;
 pipette_bottom_holder_sz_y = 24;
 pipette_bottom_holder_sz_z = 15;
+
+pipette_top_holder_sz_x = pipette_bottom_holder_sz_x;
+pipette_top_holder_sz_y = pipette_bottom_holder_sz_y;
+pipette_top_holder_sz_z = 15;
 //////////////////////////
 
