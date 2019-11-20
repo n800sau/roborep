@@ -64,22 +64,17 @@ module pipette_top_holder() {
 				translate([0, pipette_center_off_y, 0]) {
 					for(x=[-1,1]) {
 						translate([x*(holder_sz_x+wall+1)/2, -pipette_center_off_y, full_sz_z]) {
-							difference() {
-								cube([wall, holder_sz_y/2, full_sz_z], center=true);
-							}
+							cube([wall, holder_sz_y/2, full_sz_z], center=true);
 						}
 						translate([0, 0, full_sz_z-pipette_top_holder_sz_z/2+full_sz_z/2]) {
 							difference() {
 								cube([holder_sz_x+2*wall+1, pipette_top_holder_sz_y+2*wall, pipette_top_holder_sz_z], center=true);
 								hull() {
-									translate([0, 0, wall]) {
-										cube([pipette_top_holder_sz_x, pipette_top_holder_sz_y, pipette_top_holder_sz_z], center=true);
-									}
-									translate([0, 0, wall+pipette_top_holder_sz_z/2]) {
+									translate([0, 0, pipette_top_holder_sz_z/2]) {
 										cube([pipette_top_holder_sz_x+0.8, pipette_top_holder_sz_y+0.8, pipette_top_holder_sz_z], center=true);
 									}
 								}
-								cube([pipette_top_holder_sz_x-2*pipette_wall, pipette_top_holder_sz_y-2*pipette_wall, pipette_top_holder_sz_z], center=true);
+//								cube([pipette_top_holder_sz_x-2*pipette_wall, pipette_top_holder_sz_y-2*pipette_wall, pipette_top_holder_sz_z], center=true);
 							}
 						}
 					}
