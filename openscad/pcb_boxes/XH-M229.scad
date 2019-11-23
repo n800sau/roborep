@@ -4,12 +4,12 @@ wall = 2.5;
 pcb_sz_x = 128.4;
 pcb_sz_y = 48;
 pcb_under_sz_z = 8;
-bar_sz_x = 150;
+bar_sz_x = 153;
 bar_sz_y = 7.4;
 bar_dist_y = pcb_sz_y - 2 * bar_sz_y;
 
-hole_dist_y = 41;
-hole_dist_x = 121.4;
+hole_dist_y = 42;
+hole_dist_x = 122.2;
 
 attach_down_hole_dist_z = 11;
 
@@ -21,9 +21,11 @@ difference() {
 			if(yp==0) {
 				for(xp=[0, 1]) {
 					translate([xp*bar_sz_x-wall, 0, 0]) {
-						cube([wall, 2*bar_sz_y+bar_dist_y, pcb_under_sz_z]);
-						translate([0, 0, -20]) {
-							cube([wall, bar_sz_y, 20+pcb_under_sz_z]);
+						hull() {
+							cube([wall, 2*bar_sz_y+bar_dist_y, pcb_under_sz_z]);
+							translate([-1+xp*1, 0, -16]) {
+								cube([wall+1, bar_sz_y, 16+pcb_under_sz_z]);
+							}
 						}
 					}
 				}
@@ -42,7 +44,7 @@ difference() {
 		}
 		translate([-bar_sz_x/2, 0, -attach_down_hole_dist_z]) {
 			rotate([0, 90, 0]) {
-				cylinder(d=3.4, h=bar_sz_x*2);
+				cylinder(d=3.6, h=bar_sz_x*2);
 			}
 		}
 	}
