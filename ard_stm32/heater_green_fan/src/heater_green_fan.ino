@@ -108,7 +108,7 @@ float Vcc = 3.3;
 float Vref = 2.45;
 const float T_0 = 273.15;
 const float T_25 = T_0 + 25;
-// 100k NTC
+// 100k NTC 110C ~ 5kom, 0C ~ 327.24kom
 const float beta = 3950;
 const float R_25 = 100000L; // 100k ohm
 //const unsigned long Rs = 10000L;
