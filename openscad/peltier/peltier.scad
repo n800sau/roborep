@@ -169,7 +169,7 @@ translate([0, 0, -fan_bracket_sz_z/2-10]) {
     for(ysgn=[-1,1]) {
       translate([xsgn*hole_dist/2-ysgn*xsgn*fan_bracket_move/2-((ysgn>0) ? ((xsgn<0) ? fan_bracket_move : -fan_bracket_move): 0), ysgn*hole_dist/2-fan_bracket_move/2+((ysgn>0) ? fan_bracket_move: 0), 0]) {
         rotate([0, 0, -45*ysgn*xsgn+((ysgn>0) ? 180 : 0)]) {
-!          fan_bracket();
+          fan_bracket();
         }
       }
     }

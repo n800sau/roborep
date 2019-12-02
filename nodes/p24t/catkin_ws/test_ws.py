@@ -3,6 +3,10 @@
 
 #URI = "ws://echo.websocket.org/"
 URI = 'ws://localhost:9090'
+URI = 'ws://n800s.ddns.net:33290'
+
+# 9089
+#URI = 'ws://n800s.ddns.net:33289'
 
 import websocket
 try:

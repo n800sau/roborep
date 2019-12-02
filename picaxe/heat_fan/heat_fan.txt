@@ -3,3 +3,13 @@ D8 - B.6 serin
 D9 - C.0 serout
 
 led to mark heating?
+
+mosfets:
+
+1. all 4 heaters
+2. peltier
+3. fan
+
+or 
+
+h-bridge for peltier to heat and cool

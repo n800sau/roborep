@@ -59,7 +59,7 @@ void Motor2quickQEI()
 {
 	//a fast(ish) QEI function
 	int state = 0;
-	int microTime;
+	unsigned long int microTime;
 	state = digitalRead(motor2QeiAPin) << 1;
 	state = state|digitalRead(motor2QeiBPin);
 	switch (state)

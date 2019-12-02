@@ -10,7 +10,7 @@
 	edit the page by going to http://webservos.local/edit
 */
 
-#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
 
@@ -27,11 +27,14 @@ class FSWifiWebServerApp {
 
 	protected:
 		String host;
-		ESP8266WebServer webserver;
+		String username;
+		String password;
 
 	public:
 
-		FSWifiWebServerApp(String host, int port=80);
+		ESPAsyncWebServer webserver;
+
+		FSWifiWebServerApp(String host, String username, String password, int port=80);
 		String formatBytes(size_t bytes);
 		String getContentType(String filename);
 		bool handleFileRead(String path);
@@ -39,6 +42,7 @@ class FSWifiWebServerApp {
 		void handleFileDelete();
 		void handleFileCreate();
 		void handleFileList();
+		virtual bool is_allowed();
 		virtual void setup();
 		virtual void update_process();
 		virtual void loop();

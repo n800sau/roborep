@@ -1,0 +1,17 @@
+
+
+
+// peltier H-bridge pins
+#define M1_PWM     PA8     3    // pwm pin
+#define M1_INA     PA12    4    // control pin INA
+#define M1_INB     PA11    5    // control pin INB
+#define M1_DIAG    PB14    6   // diagnose pins (combined DIAGA/ENA and DIAGB/ENB)
+#define M1_CS      PB13    A0    // current sense pin
+
+
+// NTC
+const int TEMP_PIN           PB1  A2
+const int CONTROL_TEMP_PIN   PA6  ?
+
+// Fan
+const int FAN_PIN            PB12  7

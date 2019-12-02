@@ -16,6 +16,9 @@
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 
+#include <DNSServer.h>
+#include <WiFiManager.h>
+
 #define EEPROM_MARKER 0x4A
 
 #define PIN_YAW 4
@@ -265,18 +268,36 @@ void setup(void)
 		settings_from_ROM();
 	}
 
+	WiFiManager wifiManager;
+
+	//reset saved settings
+	//wifiManager.resetSettings();
+
 	//WIFI INIT
-	DBG_OUTPUT_PORT.printf("Connecting to %s\n", ssid);
-	if (String(WiFi.SSID()) != String(ssid)) {
-		WiFi.mode(WIFI_STA);
-		WiFi.begin(ssid, password);
+//	DBG_OUTPUT_PORT.printf("Connecting to %s\n", ssid);
+//	if (String(WiFi.SSID()) != String(ssid)) {
+//		WiFi.mode(WIFI_STA);
+//		WiFi.begin(ssid, password);
+//	}
+
+	//set custom ip for portal
+	//wifiManager.setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
+
+	//fetches ssid and pass from eeprom and tries to connect
+	//if it does not connect it starts an access point with the specified name
+	if (!wifiManager.autoConnect(host)) {
+		Serial.println("failed to connect and hit timeout");
+		delay(3000);
+		//reset and try again, or maybe put it to deep sleep
+		ESP.reset();
+		delay(5000);
 	}
 
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
-		DBG_OUTPUT_PORT.print(".");
-	}
-	DBG_OUTPUT_PORT.println("");
+//	while (WiFi.status() != WL_CONNECTED) {
+//		delay(500);
+//		DBG_OUTPUT_PORT.print(".");
+//	}
+	DBG_OUTPUT_PORT.println();
 	DBG_OUTPUT_PORT.print("Connected! IP address: ");
 	DBG_OUTPUT_PORT.println(WiFi.localIP());
 

@@ -1,0 +1,7 @@
++5
+GND
+En - 6
+CS - A0
+inA - 4
+inB - 5
+PWM - 3

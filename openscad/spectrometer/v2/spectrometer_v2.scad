@@ -429,12 +429,107 @@ module oval_washer(ext_d, d, h, dist) {
 }
 
 
+module raspi_wall() {
+  h = 60-gap;
+  l = 58-gap;
+  translate([-20+gap/2, tube_sz/2+53, wall+gap]) {
+    difference() {
+      union() {
+        cube([l, wall, h]);
+        for(xsgn=[0, 1]) {
+          translate([xsgn*(l-wall-1), -10, 0]) {
+            cube([wall+1, 10, h-15]);
+          }
+        }
+        translate([15, -10, zsgn*(h-wall-1)]) {
+          cube([25, 10, 7]);
+        }
+        translate([15, -60, 6]) {
+            cube([25, 60, wall]);
+        }
+        // raspi attachment poles
+        for(zpos=[15, 25]) {
+          translate([36, -3, zpos]) {
+            rotate([90, 0, 0]) {
+              cylinder(d=hole_d+5, h=10, center=true);
+            }
+          }
+        }
+      }
+      translate([l/2-1, -4, h/2]) {
+        cylinder(d=hole_d, h=h*2, center=true);
+      }
+      for(xsgn=[0, 1]) {
+        translate([xsgn*(l-wall-1), -4+xsgn*wall, h/2]) {
+          rotate([0, 90, 0]) {
+            cylinder(d=hole_d, h=20, center=true);
+          }
+        }
+      }
+      translate([l/2-1, -52, 0]) {
+        hull() {
+          cylinder(d=hole_d_through, h=20, center=true);
+          translate([0, 30, 0]) {
+            cylinder(d=hole_d_through, h=20, center=true);
+          }
+        }
+      }
+      translate([10, 0, 30]) {
+        cube([1.5, 20, cam_wire_sz_y]);
+      }
+      // raspi attachment holes
+      for(zpos=[15, 25]) {
+        translate([36, 0, zpos]) {
+          rotate([90, 0, 0]) {
+            cylinder(d=hole_d, h=20, center=true);
+          }
+        }
+      }
+    }
+  }
+}
+
+module raspi_holder() {
+  translate([23, 85, 13]) {
+    difference() {
+      union() {
+        cube([4, 75, 20]);
+        translate([-12, 0, 0]) {
+          cube([12, 3, 20]);
+        }
+      }
+      // wall attachment holes
+      for(zpos=[4.5, 14.5]) {
+        translate([-6.5, 0, zpos]) {
+          rotate([90, 0, 0]) {
+            cylinder(d=hole_d_through, h=10, center=true);
+          }
+        }
+      }
+      // raspi attachment holes
+      for(ypos=[70-58, 70]) {
+        translate([0, ypos, 5]) {
+          rotate([0, 90, 0]) {
+            cylinder(d=hole_d_through, h=20, center=true);
+          }
+        }
+      }
+    }
+  }  
+}
+
+module raspi_box_subst() {
+  translate([-3, 90, 10]) {
+    %cube([26, 94, 63]);
+  }
+}
+
 // -----------------------------------------------------
 
 translate([-tube_len/2, 0, 0]) {
-	color("green")	tube_block();
+//	color("green")	tube_block();
 	//slit_plate();
-	tube_block_top();
+//	tube_block_top();
 }
 
 translate([cam_block_tube_len, 0, 0]) {
@@ -452,6 +547,9 @@ translate([cam_block_tube_len, 0, 0]) {
 //				oval_washer(ext_d=25, d=4, h=wall, dist=10);
 			}
 		}
+    //raspi_wall();
+    raspi_holder();
+    raspi_box_subst();
 	}
 
 	translate([31, 40, 24]) {
@@ -463,9 +561,9 @@ translate([cam_block_tube_len, 0, 0]) {
 				}
 			}
 			// set center in slot center
-			translate([0, -10, 0]) {
+			translate([0, -10, 7.5]) {
 				rotate([90, 0, 180]) {
-//			color("blue") cam_holder();
+			//color("blue") cam_holder();
 				}
 			}
 		}

@@ -9,8 +9,8 @@
 
 #include "config.h"
 
-FSWifiWebServerApp::FSWifiWebServerApp(String host, int port):
-	host(host), webserver(port)
+FSWifiWebServerApp::FSWifiWebServerApp(String host, String username, String password, int port):
+	host(host), username(username), password(password), webserver(port)
 {
 }
 
@@ -63,121 +63,140 @@ String FSWifiWebServerApp::getContentType(String filename)
 
 bool FSWifiWebServerApp::handleFileRead(String path)
 {
-	DBG_OUTPUT_PORT.println("handleFileRead: " + path);
-	if (path.endsWith("/")) {
-		path += "index.html";
-	}
-	String contentType = getContentType(path);
-	String pathWithGz = path + ".gz";
-	if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
-		if (SPIFFS.exists(pathWithGz)) {
-			path += ".gz";
+	if(is_allowed()) {
+		DBG_OUTPUT_PORT.println("handleFileRead: " + path);
+		if (path.endsWith("/")) {
+			path += "index.html";
 		}
-		File file = SPIFFS.open(path, "r");
-		webserver.streamFile(file, contentType);
-		file.close();
-		return true;
+		String contentType = getContentType(path);
+		String pathWithGz = path + ".gz";
+		if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
+			if (SPIFFS.exists(pathWithGz)) {
+				path += ".gz";
+			}
+			File file = SPIFFS.open(path, "r");
+			webserver.streamFile(file, contentType);
+			file.close();
+			return true;
+		}
 	}
 	return false;
 }
 
 void FSWifiWebServerApp::handleFileUpload()
 {
-	if (webserver.uri() != "/edit") {
-		return;
-	}
-	HTTPUpload& upload = webserver.upload();
-	if (upload.status == UPLOAD_FILE_START) {
-		String filename = upload.filename;
-		if (!filename.startsWith("/")) {
-			filename = "/" + filename;
+	if(is_allowed()) {
+		if (webserver.uri() != "/edit") {
+			return;
 		}
-		DBG_OUTPUT_PORT.print("handleFileUpload Name: "); DBG_OUTPUT_PORT.println(filename);
-		fsUploadFile = SPIFFS.open(filename, "w");
-		filename = String();
-	} else if (upload.status == UPLOAD_FILE_WRITE) {
-		//DBG_OUTPUT_PORT.print("handleFileUpload Data: "); DBG_OUTPUT_PORT.println(upload.currentSize);
-		if (fsUploadFile) {
-			fsUploadFile.write(upload.buf, upload.currentSize);
+		HTTPUpload& upload = webserver.upload();
+		if (upload.status == UPLOAD_FILE_START) {
+			String filename = upload.filename;
+			if (!filename.startsWith("/")) {
+				filename = "/" + filename;
+			}
+			DBG_OUTPUT_PORT.print("handleFileUpload Name: "); DBG_OUTPUT_PORT.println(filename);
+			fsUploadFile = SPIFFS.open(filename, "w");
+			filename = String();
+		} else if (upload.status == UPLOAD_FILE_WRITE) {
+			//DBG_OUTPUT_PORT.print("handleFileUpload Data: "); DBG_OUTPUT_PORT.println(upload.currentSize);
+			if (fsUploadFile) {
+				fsUploadFile.write(upload.buf, upload.currentSize);
+			}
+		} else if (upload.status == UPLOAD_FILE_END) {
+			if (fsUploadFile) {
+				fsUploadFile.close();
+			}
+			DBG_OUTPUT_PORT.print("handleFileUpload Size: "); DBG_OUTPUT_PORT.println(upload.totalSize);
 		}
-	} else if (upload.status == UPLOAD_FILE_END) {
-		if (fsUploadFile) {
-			fsUploadFile.close();
-		}
-		DBG_OUTPUT_PORT.print("handleFileUpload Size: "); DBG_OUTPUT_PORT.println(upload.totalSize);
 	}
 }
 
 void FSWifiWebServerApp::handleFileDelete()
 {
-	if (webserver.args() == 0) {
-		return webserver.send(500, "text/plain", "BAD ARGS");
+	if(is_allowed()) {
+		if (webserver.args() == 0) {
+			return webserver.send(500, "text/plain", "BAD ARGS");
+		}
+		String path = webserver.arg(0);
+		DBG_OUTPUT_PORT.println("handleFileDelete: " + path);
+		if (path == "/") {
+			return webserver.send(500, "text/plain", "BAD PATH");
+		}
+		if (!SPIFFS.exists(path)) {
+			return webserver.send(404, "text/plain", "FileNotFound");
+		}
+		SPIFFS.remove(path);
+		webserver.send(200, "text/plain", "");
+		path = String();
 	}
-	String path = webserver.arg(0);
-	DBG_OUTPUT_PORT.println("handleFileDelete: " + path);
-	if (path == "/") {
-		return webserver.send(500, "text/plain", "BAD PATH");
-	}
-	if (!SPIFFS.exists(path)) {
-		return webserver.send(404, "text/plain", "FileNotFound");
-	}
-	SPIFFS.remove(path);
-	webserver.send(200, "text/plain", "");
-	path = String();
 }
 
 void FSWifiWebServerApp::handleFileCreate()
 {
-	if (webserver.args() == 0) {
-		return webserver.send(500, "text/plain", "BAD ARGS");
+	if(is_allowed()) {
+		if (webserver.args() == 0) {
+			return webserver.send(500, "text/plain", "BAD ARGS");
+		}
+		String path = webserver.arg(0);
+		DBG_OUTPUT_PORT.println("handleFileCreate: " + path);
+		if (path == "/") {
+			return webserver.send(500, "text/plain", "BAD PATH");
+		}
+		if (SPIFFS.exists(path)) {
+			return webserver.send(500, "text/plain", "FILE EXISTS");
+		}
+		File file = SPIFFS.open(path, "w");
+		if (file) {
+			file.close();
+		} else {
+			return webserver.send(500, "text/plain", "CREATE FAILED");
+		}
+		webserver.send(200, "text/plain", "");
+		path = String();
 	}
-	String path = webserver.arg(0);
-	DBG_OUTPUT_PORT.println("handleFileCreate: " + path);
-	if (path == "/") {
-		return webserver.send(500, "text/plain", "BAD PATH");
-	}
-	if (SPIFFS.exists(path)) {
-		return webserver.send(500, "text/plain", "FILE EXISTS");
-	}
-	File file = SPIFFS.open(path, "w");
-	if (file) {
-		file.close();
-	} else {
-		return webserver.send(500, "text/plain", "CREATE FAILED");
-	}
-	webserver.send(200, "text/plain", "");
-	path = String();
 }
 
 void FSWifiWebServerApp::handleFileList()
 {
-	if (!webserver.hasArg("dir")) {
-		webserver.send(500, "text/plain", "BAD ARGS");
-		return;
-	}
-
-	String path = webserver.arg("dir");
-	DBG_OUTPUT_PORT.println("handleFileList: " + path);
-	Dir dir = SPIFFS.openDir(path);
-	path = String();
-
-	String output = "[";
-	while (dir.next()) {
-		File entry = dir.openFile("r");
-		if (output != "[") {
-			output += ',';
+	if(is_allowed()) {
+		if (!webserver.hasArg("dir")) {
+			webserver.send(500, "text/plain", "BAD ARGS");
+			return;
 		}
-		bool isDir = false;
-		output += "{\"type\":\"";
-		output += (isDir) ? "dir" : "file";
-		output += "\",\"name\":\"";
-		output += String(entry.name()).substring(1);
-		output += "\"}";
-		entry.close();
-	}
 
-	output += "]";
-	webserver.send(200, "text/json", output);
+		String path = webserver.arg("dir");
+		DBG_OUTPUT_PORT.println("handleFileList: " + path);
+		Dir dir = SPIFFS.openDir(path);
+		path = String();
+
+		String output = "[";
+		while (dir.next()) {
+			File entry = dir.openFile("r");
+			if (output != "[") {
+				output += ',';
+			}
+			bool isDir = false;
+			output += "{\"type\":\"";
+				output += (isDir) ? "dir" : "file";
+			output += "\",\"name\":\"";
+			output += String(entry.name()).substring(1);
+				output += "\"}";
+			entry.close();
+		}
+
+		output += "]";
+		webserver.send(200, "text/json", output);
+	}
+}
+
+bool FSWifiWebServerApp::is_allowed()
+{
+	bool rs = webserver.authenticate(username.c_str(), password.c_str());
+	if(!rs) {
+		webserver.requestAuthentication();
+	}
+	return rs;
 }
 
 void FSWifiWebServerApp::setup()
@@ -230,14 +249,22 @@ void FSWifiWebServerApp::setup()
 
 
 	//SERVER INIT
+	webserver.on("/", [this]() {
+		if(is_allowed()) {
+			webserver.sendHeader("Location", "/index.html");
+			webserver.sendHeader("Cache-Control", "no-cache");
+			webserver.send(302);
+		}
+	});
 	//list directory
 	webserver.on("/list", HTTP_GET, std::bind(&FSWifiWebServerApp::handleFileList, this));
 	//load editor
-	webserver.on("/edit", HTTP_GET, [this]() {
-		if (!handleFileRead("/edit.htm")) {
-			webserver.send(404, "text/plain", "FileNotFound");
-		}
-	});
+	webserver.on("/edit", HTTP_GET, std::bind(&FSWifiWebServerApp::handleFileList, this));
+//	webserver.on("/edit", HTTP_GET, [this]() {
+//		if (!handleFileRead("/edit.htm")) {
+//			webserver.send(404, "text/plain", "FileNotFound");
+//		}
+//	});
 	//create file
 	webserver.on("/edit", HTTP_PUT, std::bind(&FSWifiWebServerApp::handleFileCreate, this));
 	//delete file
@@ -245,7 +272,9 @@ void FSWifiWebServerApp::setup()
 	//first callback is called after the request has ended with all parsed arguments
 	//second callback handles file uploads at that location
 	webserver.on("/edit", HTTP_POST, [this]() {
-		webserver.send(200, "text/plain", "");
+		if(is_allowed()) {
+			webserver.send(200, "text/plain", "");
+		}
 	}, std::bind(&FSWifiWebServerApp::handleFileUpload, this));
 
 	//called when the url is not defined here
@@ -262,6 +291,8 @@ void FSWifiWebServerApp::setup()
 		json += "\"heap\":" + String(ESP.getFreeHeap());
 		json += ", \"analog\":" + String(analogRead(A0));
 		json += ", \"gpio\":" + String((uint32_t)(((GPI | GPO) & 0xFFFF) | ((GP16I & 0x01) << 16)));
+		json += ", \"HTTP_X_FORWARDED_PREFIX\":" + webserver.header("HTTP_X_FORWARDED_PREFIX");
+
 		json += "}";
 		webserver.send(200, "text/json", json);
 		json = String();

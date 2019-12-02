@@ -44,12 +44,12 @@ void loop()
 	// Read in the ADC and convert it to a voltage:
 	int v = analogRead(QRE1113_PIN);
 //	Serial.println(v);
-	if(v < 300) {
+	if(v < 890) {
 		if(on) {
 			on = false;
 			counter++;
 		}
-	} else if(v > 600) {
+	} else if(v > 930) {
 		if(!on) {
 			on = true;
 		}
@@ -63,7 +63,7 @@ void loop()
 		lcd.print(counter * counter * COEF);
 		lcd.print("   ");
 #ifdef DEBUG
-		Serial.println(counter);
+		Serial.println(counter*60);
 #endif
 		led_pin_on = !led_pin_on;
 		digitalWrite(LED_PIN, led_pin_on ? HIGH : LOW);

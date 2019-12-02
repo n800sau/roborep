@@ -247,5 +247,5 @@ translate([middle_wall_offset, 0, 0]) {
 translate([0, 0, 0]) {
   cam_holder();
 }
-//grate_holder();
+grate_holder();
 

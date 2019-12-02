@@ -50,8 +50,8 @@
 */
 
 /* [Battery Type and Configuration] */
-cell = 0; //[0:AAA, 1:AA, 2:C, 3:D, 4:Li18650, 5:Li18650P, 6:CR123A, 7:Li26650]
-ParallelCells = 4; //[1:10]
+cell = 1; //[0:AAA, 1:AA, 2:C, 3:D, 4:Li18650, 5:Li18650P, 6:CR123A, 7:Li26650]
+ParallelCells = 1; //[1:10]
 SeriesCells = 1; //[1:3]
 AlternateSymbols = 0; //[0:False, 1:True]
 
@@ -204,8 +204,9 @@ Li26650 = [
 // array for customizer
 batteryTypes = [AAA, AA, C, D, Li18650, Li18650P, CR123A, Li26650];
 
+function batteryType(index) = batteryTypes[index];
 
-module battery(type = AA, n = 1, m = 1, alt = 1) {
+module battery(type = AA, n = 1, m = 1, alt = 1, spring_raise=0, make_bolt_holes=true) {
   // the search(["foo"], array, num_returns_per_match = 1) returns an array containing
   // the index of the element in array that contains "foo". Element 0 is the match
   l = type[search(["len"], type, num_returns_per_match = 1)[0]][1];
@@ -235,6 +236,8 @@ module battery(type = AA, n = 1, m = 1, alt = 1) {
     df = df==undef ? 1 : df,                // relative deepening radius
     lcorr = lcorr==undef ? 0 : lcorr,       // length correction for multicell compartments
     alt = alt,                              // alternate the battery symbols
+    spring_raise = spring_raise,
+	make_bolt_holes = make_bolt_holes,
     $fn = 24
   );
 }
@@ -244,7 +247,7 @@ module customizer(cell=cell, n = ParallelCells, m = SeriesCells, alt = Alternate
   battery(type = batteryTypes[cell], n=n, m=m, alt=alt);
 }
 
-customizer();
+//customizer();
 
 //battery(type = AA, n = 5, m = 1, alt = true);
 //flexbatter1xAAx3();
@@ -334,8 +337,12 @@ module flexbatter(
   df=1,            // relative deepening radius
   lcorr=0,         // length correction for multicell compartments
   alt = true,      // alternate the symbols
-  $fn=24
+  $fn=24,
+  spring_raise = 0, // sprint raise above bottom
+  make_bolt_holes=true
   ){
+
+echo("##############", spring_raise);
 
   w = (m>1?6:4)*ew;  // case wall thickness
   wz = 2;            // bottom wall thickness
@@ -371,10 +378,13 @@ module flexbatter(
             // plastic spring for minus pole
             for(sy=[-1,1])scale([1,sy,1]) { //assign(D=d+2*w-2*ws-0.7){
                D = d + 2 * w - 2 * ws - 0.7;
-               translate([ch,d/2+w-ws/2,0])rotate(-90)
+               translate([ch,d/2+w-ws/2,spring_raise]) {
+                rotate(-90) {
 		  //sline([90,0,120,90,120,90,0],[d/8+2,d/6,d/8-1,d/8,-d/8,d/8,d/2],0,ws,hf*d+w);
-		  sline([0,180,0,180,0,-180,0,90,0],[r+ch+el,D/4,el,D/12,el/2,D/12,1+el/2,D/5,D/3],0,ws,hf*d+wz);
-
+                  sline([0,180,0,180,0,-180,0,90,0],[r+ch+el,D/4,el,D/12,el/2,
+                    D/12,1+el/2,D/5,D/3],0,ws,hf*d+wz-spring_raise);
+                }
+              }
 
             }
          }
@@ -402,12 +412,14 @@ module flexbatter(
 	          if(i==n-1)translate([0,0,d+2*w-ch])cylinder(r2=df*l+adeepen*d+ch,r1=df*l+adeepen*d,h=ch+0.02,$fn=72);
 
                }
+		if(make_bolt_holes) {
          // conical screw holes in corners
          for(x=[7+shd,L-2*shd])for(y=[-d/2+shd,d/2-shd])
              translate([x,y,-1]){
                 cylinder(r=shd/2,h=wz+2);
                 translate([0,0,wz-shd/2+1])cylinder(r1=shd/2,r2=shd,h=shd/2+0.01);
              }
+		}
 
          // holes for wires passing inside
          for(sy=[-1,1])scale([1,sy,1]){
