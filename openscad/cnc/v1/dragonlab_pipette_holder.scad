@@ -249,17 +249,21 @@ module push_servo_holder() {
 	}	
 }
 
-//gantry_z();
-//pipette_top_holder();
-push_servo_holder();
-push_servo_holder_plate();
+gantry_z();
+translate([0, 0, 30]) {
+  pipette_top_holder();
+}
+//push_servo_holder();
+translate([0, 0, 30]) {
+  //push_servo_holder_plate();
+}
 translate([-33.5, -90, 174]) {
 	%servo_1501MG_mockup();
 }
-//pipette_bottom_holder();
+pipette_bottom_holder();
 //color("blue") {
 //gantry_z_attachment(extra_sz_z=attach_sz_z+10);
-//%gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10);
+%gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
 //}
 
 translate([-16, -70, -86]) {
