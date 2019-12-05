@@ -11,10 +11,10 @@ dc_motor_bottom_holes_dist = 29;
 dc_motor_bottom_hole_d = 3.3;
 
 module dc_motor_mockup() {
-	cylinder(d=bottom_d, h=dc_motor_body_sz_z);
-	translate([0, 0, dc_motor_bearing_sz_z]) {
+	cylinder(d=dc_motor_bottom_d, h=dc_motor_body_sz_z);
+	translate([0, 0, -dc_motor_bearing_sz_z]) {
 		cylinder(d=dc_motor_bearing_d, h=dc_motor_bearing_sz_z);
-		translate([0, 0, dc_motor_shaft_sz_z]) {
+		translate([0, 0, -dc_motor_shaft_sz_z]) {
 			cylinder(d=dc_motor_shaft_d, h=dc_motor_shaft_sz_z);
 		}
 	}
