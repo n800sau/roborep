@@ -21,7 +21,22 @@ module dc_motor_mockup() {
 }
 
 module dc_motor_holder() {
-
+	translate([0, drill_center_off_y, 0]) {
+		difference() {
+			cylinder(d=bottom_d+2*wall, h=10);
+			translate([0, 0, 4]) {
+				cylinder(d=bottom_d, h=4);
+			}
+			translate([0, 0, -10]) {
+				cylinder(d=dc_motor_bearing_d, h=20);
+			}
+			for(x=[-1,1]) {
+				translate([x*dc_motor_bottom_holes_dist/2, 0, -10]) {
+					cylinder(d=dc_motor_bottom_hole_d, h=20);
+				}
+			}
+		}
+	}
 }
 
 dc_motor_holder();
