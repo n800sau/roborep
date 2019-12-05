@@ -41,7 +41,7 @@ module dc_motor_holder() {
 			for(x=[-1,1]) {
 				translate([x*dc_motor_bottom_holes_dist/2, 0, -4]) {
 					cylinder(d=dc_motor_bottom_hole_d, h=20);
-					cylinder(d2=dc_motor_bottom_hole_d, d1=8, h=3);
+					//cylinder(d2=dc_motor_bottom_hole_d, d1=8, h=3);
 				}
 			}
 		}

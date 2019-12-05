@@ -151,7 +151,7 @@ module sides_bracket(extra_sz_y=default_attach_extra_sz_y) {
 	//	union() {
 			union() {
 				for(x=[-1,1]) {
-					translate([x*(connector_base_sz_x/2-(connector_connector_sz_x+nuts_sz_z)*1.4), wall, 0]) {
+					translate([x*(connector_base_sz_x/2-connector_connector_sz_x-connector_connector_sz_x/2-nuts_sz_z), wall, 0]) {
 						cube([connector_connector_sz_x, connector_base_sz_y+2, 12], center=true);
 					}
 				}
@@ -169,9 +169,10 @@ module sides_bracket(extra_sz_y=default_attach_extra_sz_y) {
 //gantry_z();
 //color("blue") {
 	//gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y);
-	gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
-	translate([0, 20,0]) {
-	//	sides_bracket();
+//	gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
+	color("blue")
+	translate([0, 10,0]) {
+		sides_bracket();
 	}
 //}
 
