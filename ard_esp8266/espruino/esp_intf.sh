@@ -1,3 +1,4 @@
 source esp_port.sh
-espruino -t -p $PORT --board $BOARD -o out.js -e "save();" script.js &>esp_intf.log
+SCRIPT=script.js
+espruino -t -p $PORT --board $BOARD -o out.js "$SCRIPT" --config SAVE_ON_SEND=1 &>esp_intf.log
 echo $?

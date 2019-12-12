@@ -1,13 +1,13 @@
-const int RED_PIN = 12;
-const int GREEN_PIN = 5;
-const int YELLOW_PIN = 14;
+const RED_PIN = 12;
+const GREEN_PIN = 5;
+const YELLOW_PIN = 14;
 
-const int IROUT_PIN = 15;
+const IROUT_PIN = 15;
 
-const int IRIN_PIN = 13; //an IR detector/demodulator is connected to GPIO pin 13
+const IRIN_PIN = 13; //an IR detector/demodulator is connected to GPIO pin 13
 
-var RECV_PIN = 2;
-var LED_NETWORK_ERROR_PIN = 4;
+var RECV_PIN = IRIN_PIN;
+var LED_NETWORK_ERROR_PIN = RED_PIN;
 var pinValue = "?", pingValue = "?";
 
 setInterval(function() {
@@ -24,9 +24,10 @@ function onInit()
 {
 	s = require("http");
 	s.createServer(pageRequest).listen(80);
-	p = require("Ping");
-	p.ping({ address: '192.168.1.50' }, function(err, data) {
-		pingValue = data.avg;
+	p = require("Wifi");
+	p.ping('192.168.1.50', function(time) {
+//console.log('time=', time);
+		pingValue = time.respTime;
 	});
 }
 onInit();
