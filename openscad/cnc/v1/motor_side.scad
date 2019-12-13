@@ -100,22 +100,19 @@ module motor_side() {
 }
 
 wire_holder_stand_sz_x = 10;
-wire_holder_stand_sz_z = 120;
-wire_holder_sz_x = 15;
-wire_holder_sz_y = 3;
-wire_holder_sz_z = 50;
+wire_holder_stand_sz_y = 10;
+wire_holder_stand_sz_z = 50;
+wire_holder_hole_d = 20;
 top_mounting_holes_dist = 15;
+flaw_sz_z = 1.2;
 
 module wire_holder() {
   difference() {
     union() {
-      cube([wire_holder_stand_sz_x, wire_holder_sz_y, wire_holder_stand_sz_z], center=true);
-      translate([0, 0, (wire_holder_stand_sz_z-wire_holder_sz_z)/2]) {
-        cube([wire_holder_sz_x, wire_holder_sz_y, wire_holder_sz_z], center=true);
-        translate([0, 0, -24]) {
-          rotate([90, 0, 0]) {
-            cylinder(d=wire_holder_sz_x, h=wire_holder_sz_y, center=true);
-          }
+      cube([wire_holder_stand_sz_x, wall, wire_holder_stand_sz_z], center=true);
+      translate([0, 0, (wire_holder_stand_sz_z-wire_holder_hole_d/2-wall)/2]) {
+        rotate([90, 0, 0]) {
+          cylinder(d=wire_holder_hole_d+2*wall, h=wall, center=true);
         }
       }
     }
@@ -126,16 +123,12 @@ module wire_holder() {
         }
       }
     }
-    translate([0, 0, 2]) {
-      scale([0.75, 1, 1]) {
-        translate([0, 0, (wire_holder_stand_sz_z-wire_holder_sz_z)/2]) {
-          cube([wire_holder_sz_x, wire_holder_sz_y, wire_holder_sz_z], center=true);
-          translate([0, 0, -24]) {
-            rotate([90, 0, 0]) {
-              cylinder(d=wire_holder_sz_x, h=wire_holder_sz_y, center=true);
-            }
-          }
-        }
+    translate([0, 0, (wire_holder_stand_sz_z-wire_holder_hole_d/2-wall)/2]) {
+      translate([-wire_holder_hole_d/2, 0, 0]) {
+        cube([wire_holder_hole_d, wall*2, flaw_sz_z], center=true);
+      }
+      rotate([90, 0, 0]) {
+        cylinder(d=wire_holder_hole_d, h=wall*2, center=true);
       }
     }
   }

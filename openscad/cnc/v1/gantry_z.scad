@@ -19,20 +19,24 @@ module nutHoleM4(extra_h=0) {
 	}
 }
 
+module attachment_hole(d=hole_d, nut_hole_sz=0, size=gantry_sz_x) {
+	rotate([0, 90, 0]) {
+		h = size*2;
+		cylinder(d=d, h=h, center=true);
+		if(nut_hole_sz > 0) {
+			translate([0, 0, -METRIC_NUT_THICKNESS[4]/2]) {
+				nutHoleM4(extra_h=nut_hole_sz);
+			}
+		}
+	}
+}
+
 module attachment_holes(d=hole_d, hole_count=4, nut_hole_sz=0) {
 	z_step = 15;
 	translate([0, -gantry_sz_y/2-attach_sz_y/4, -(gantry_sz_z-attach_sz_z)/2-attach_sz_z/2]) {
 		for(zi=[0:1:hole_count-1]) {
 			translate([0, 0, 10+zi*z_step]) {
-				rotate([0, 90, 0]) {
-					h = gantry_sz_x*2;
-					cylinder(d=d, h=h, center=true);
-					if(nut_hole_sz > 0) {
-						translate([0, 0, -METRIC_NUT_THICKNESS[4]/2]) {
-							nutHoleM4(extra_h=nut_hole_sz);
-						}
-					}
-				}
+				attachment_hole(d=d, nut_hole_sz=nut_hole_sz);
 			}
 		}
 	}
@@ -119,18 +123,20 @@ module gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y) {
 	}
 }
 
+nut_hole_sz = connector_base_sz_x-2*connector_connector_sz_x-nuts_sz_z;
+
 module gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=0) {
+	attach_ext_sz_z = attach_sz_z + 6;
 	difference() {
 		for(xside=[-1,1]) {
 			translate([xside*(connector_base_sz_x-connector_connector_sz_x-nuts_sz_z)/2, -(gantry_sz_y+connector_base_sz_y)/2-attach_side_gap, 0]) {
-				cube([connector_connector_sz_x+nuts_sz_z, connector_base_sz_y, attach_sz_z], center=true);
+				cube([connector_connector_sz_x+nuts_sz_z, connector_base_sz_y, attach_ext_sz_z], center=true);
 				translate([0, -(connector_base_sz_y+extra_sz_y)/2, extra_sz_z/2]) {
-					cube([connector_connector_sz_x+nuts_sz_z, extra_sz_y, attach_sz_z+extra_sz_z], center=true);
+					cube([connector_connector_sz_x+nuts_sz_z, extra_sz_y, attach_ext_sz_z+extra_sz_z], center=true);
 				}
 			}
 		}
-		nut_hole_sz = connector_base_sz_x-2*connector_connector_sz_x-nuts_sz_z;
-		attachment_holes(d=hole_d, hole_count=20, nut_hole_sz=nut_hole_sz);
+		attachment_holes(d=hole_d_through, hole_count=20, nut_hole_sz=nut_hole_sz);
 		if(extra_sz_y >= 10) {
 			translate([0, -extra_sz_y, 0]) {
 				attachment_holes(d=hole_d_through, hole_count=20, nut_hole_sz=nut_hole_sz);
@@ -139,9 +145,34 @@ module gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_
 	}
 }
 
+module sides_bracket(extra_sz_y=default_attach_extra_sz_y) {
+	translate([0, -gantry_sz_y-10, 83]) {  
+		difference() {
+	//	union() {
+			union() {
+				for(x=[-1,1]) {
+					translate([x*(connector_base_sz_x/2-connector_connector_sz_x-connector_connector_sz_x/2-nuts_sz_z), wall, 0]) {
+						cube([connector_connector_sz_x, connector_base_sz_y+2, 12], center=true);
+					}
+				}
+				translate([0, (connector_base_sz_y+wall+2)/2, 0]) {
+					cube([connector_base_sz_x/2-connector_connector_sz_x+1, wall, 12], center=true);
+				}
+			}
+			translate([0, 2, 0]) {
+				attachment_hole(d=hole_d_through, nut_hole_sz=nut_hole_sz-6-(connector_connector_sz_x+nuts_sz_z));
+			}
+		}
+	}
+}
+
 //gantry_z();
 //color("blue") {
 	//gantry_z_attachment(extra_sz_y=default_attach_extra_sz_y);
-	gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10);
+//	gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
+	color("blue")
+	translate([0, 10,0]) {
+		sides_bracket();
+	}
 //}
 

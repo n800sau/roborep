@@ -6,16 +6,6 @@ use <MCAD/nuts_and_bolts.scad>
 $fn = 50;
 
 wall = 3;
-holder_sz_x = gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
-holder_sz_y = 50;
-holder_sz_z = 5;
-
-holder_top_sz_z = 10;
-
-holder_off_z = -32;
-
-drill_center_off_y = -16;
-drill_gap = 0.5;
 
 module duratech_holder() {
 	translate([0, drill_center_off_y-attach_sz_y/2-gantry_sz_y/2, -attach_sz_z/2+holder_sz_z/2+holder_off_z]) {
@@ -84,7 +74,8 @@ module duratech_holder_top() {
 						}
 					}
 					translate([0, 0, 0]) {
-						cylinder(d=widest_level_d+2*wall, h=holder_top_sz_z, center=true);
+// 1 extra thickness
+						cylinder(d=widest_level_d+2*wall+1, h=holder_top_sz_z, center=true);
 						translate([0, 4, 0]) {
 							cube([holder_sz_x+2*wall+1, 20, holder_top_sz_z], center=true);
 						}
@@ -116,13 +107,13 @@ module duratech_holder_top() {
 }
 
 //gantry_z();
-duratech_holder_top();
+//duratech_holder_top();
 duratech_holder();
 //color("blue") {
 //	gantry_z_attachment();
 //}
 translate([0, -58, -36+holder_off_z]) {
 	rotate([0, 0, -90]) {
-		%duratech_mockup();
+	//	%duratech_mockup();
 	}
 }
