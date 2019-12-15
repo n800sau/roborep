@@ -1,12 +1,12 @@
 include <cnc_params.scad>
 use <dragonlab_pipette_mockup.scad>
-use <gantry_z.scad>
+use <z_sliding_block.scad>
 use <MCAD/nuts_and_bolts.scad>
 
 $fn = 50;
 
 wall = 3;
-holder_sz_x = gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
+holder_sz_x = slider_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
 holder_sz_y = 50;
 holder_sz_z = 5;
 
@@ -18,7 +18,7 @@ pipette_center_off_y = -16;
 pipette_gap = 0.5;
 
 module pipette_bottom_holder() {
-	translate([0, pipette_center_off_y-attach_sz_y/2-gantry_sz_y/2, -attach_sz_z/2+holder_sz_z/2+holder_off_z]) {
+	translate([0, pipette_center_off_y-attach_sz_y/2-slider_sz_y/2, -attach_sz_z/2+holder_sz_z/2+holder_off_z]) {
 		difference() {
 //		union() {
 			union() {
@@ -49,7 +49,7 @@ module pipette_bottom_holder() {
 					}
 				}
 			}
-			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-gantry_sz_y/2), -(-attach_sz_z/2+holder_sz_z/2+holder_off_z)]) {
+			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), -(-attach_sz_z/2+holder_sz_z/2+holder_off_z)]) {
 				attachment_holes(d=hole_d_through, hole_count=20);
 			}
 		}
@@ -57,7 +57,7 @@ module pipette_bottom_holder() {
 }
 
 module pipette_top_holder() {
-	translate([0, pipette_center_off_y-attach_sz_y/2-gantry_sz_y/2, 39]) {
+	translate([0, pipette_center_off_y-attach_sz_y/2-slider_sz_y/2, 39]) {
 		full_sz_z = attach_sz_z/2 + 9;
 		difference() {
 			union() {
@@ -102,7 +102,72 @@ module pipette_top_holder() {
 //					cube([16, 20, pipette_top_holder_sz_z], center=true);
 				}
 			}
-			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-gantry_sz_y/2), full_sz_z]) {
+			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), full_sz_z]) {
+				attachment_holes(d=hole_d_through);
+			}
+			translate([0, pipette_center_off_y, 0]) {
+				cylinder(d=widest_level_d+2*pipette_gap, h=pipette_top_holder_sz_z, center=true);
+			}
+			translate([0, -widest_level_d/2-20, 0]) {
+//				cube([6, 20, pipette_top_holder_sz_z], center=true);
+				translate([0, -5, 0]) {
+					rotate([0, 90, 0]) {
+						cylinder(d=hole_d_through, h=40, center=true);
+						translate([0, 0, -16/2]) {
+							nutHole(4);
+						}
+					}
+				}
+			}
+		}
+	} 
+}
+
+module pipette_top_servo_holder() {
+	translate([0, pipette_center_off_y-attach_sz_y/2-slider_sz_y/2, 39]) {
+		full_sz_z = attach_sz_z/2 + 9;
+		difference() {
+			union() {
+				translate([0, pipette_center_off_y, 0]) {
+					for(x=[-1,1]) {
+						translate([x*(holder_sz_x+wall+1)/2, -pipette_center_off_y, full_sz_z]) {
+							cube([wall, holder_sz_y/2, full_sz_z], center=true);
+						}
+						translate([0, 0, full_sz_z-pipette_top_holder_sz_z/2+full_sz_z/2]) {
+							difference() {
+								cube([holder_sz_x+2*wall+1, pipette_top_holder_sz_y+2*wall, pipette_top_holder_sz_z], center=true);
+								hull() {
+									translate([0, 0, 0]) {
+										cube([pipette_top_holder_sz_x+0.8, pipette_top_holder_sz_y+0.8, pipette_top_holder_sz_z], center=true);
+									}
+								}
+								cube([pipette_top_holder_sz_x-2*pipette_wall, pipette_top_holder_sz_y-2*pipette_wall, pipette_top_holder_sz_z], center=true);
+							}
+						}
+					}
+				}
+
+				translate([0, pipette_center_off_y, 0]) {
+					at_h = full_sz_z;
+					for(x=[-1,1]) {
+						translate([x*(holder_sz_x+wall+1)/2, -pipette_center_off_y-5, at_h/2-pipette_top_holder_sz_z/2]) {
+							difference() {
+//								cube([wall, holder_sz_y/2+10, at_h], center=true);
+							}
+						}
+					}
+					translate([0, 0, 0]) {
+//						cylinder(d=widest_level_d+2*wall, h=pipette_top_holder_sz_z, center=true);
+						translate([0, 4, 0]) {
+//							cube([holder_sz_x+2*wall+1, 20, pipette_top_holder_sz_z], center=true);
+						}
+					}
+				}
+				translate([0, -widest_level_d/2-20, 0]) {
+//					cube([16, 20, pipette_top_holder_sz_z], center=true);
+				}
+			}
+			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), full_sz_z]) {
 				attachment_holes(d=hole_d_through);
 			}
 			translate([0, pipette_center_off_y, 0]) {
@@ -173,7 +238,7 @@ servo_hold_panel_hole_step_count = 5;
 servo_hold_panel_hole_step_sz = (servo_hold_panel_z-12)/servo_hold_panel_hole_step_count;
 
 module push_servo_holder_plate() {
-	translate([-wall, pipette_center_off_y-attach_sz_y/2-gantry_sz_y/2, 39]) {
+	translate([-wall, pipette_center_off_y-attach_sz_y/2-slider_sz_y/2, 39]) {
 		full_sz_z = attach_sz_z/2 + 9;
 		difference() {
 			union() {
@@ -187,7 +252,7 @@ module push_servo_holder_plate() {
 							translate([0, -servo_holder_off_y/2, full_sz_z/2-pipette_top_holder_sz_z/2]) {
 								for(z=[0, 25]) {
 									translate([0, 0, z]) {
-										cube([wall, pipette_top_holder_sz_y+servo_holder_off_y, pipette_top_holder_sz_z], center=true);
+	//									cube([wall, pipette_top_holder_sz_y+servo_holder_off_y, pipette_top_holder_sz_z], center=true);
 									}
 								}
 								hull() {
@@ -215,7 +280,7 @@ module push_servo_holder_plate() {
 					}
 				}
 			}
-			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-gantry_sz_y/2), full_sz_z]) {
+			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), full_sz_z]) {
 				attachment_holes(d=hole_d_through, hole_count=10);
 			}
 		}
@@ -249,9 +314,9 @@ module push_servo_holder() {
 	}	
 }
 
-gantry_z();
+//slider_z();
 translate([0, 0, 30]) {
-  pipette_top_holder();
+  pipette_top_servo_holder();
 }
 //push_servo_holder();
 translate([0, 0, 30]) {
@@ -260,10 +325,10 @@ translate([0, 0, 30]) {
 translate([-33.5, -90, 174]) {
 	%servo_1501MG_mockup();
 }
-pipette_bottom_holder();
+//pipette_bottom_holder();
 //color("blue") {
-//gantry_z_attachment(extra_sz_z=attach_sz_z+10);
-%gantry_z_attachment_sides(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
+//slider_z_attachment(extra_sz_z=attach_sz_z+10);
+%slider_z_adapter(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
 //}
 
 translate([-16, -70, -86]) {
