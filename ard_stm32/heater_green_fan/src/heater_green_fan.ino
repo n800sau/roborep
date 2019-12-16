@@ -12,8 +12,8 @@
 double Setpoint, Input, Output;
 
 // tuning parameters
-double hKp=100, hKi=50, hKd=50;
-double cKp=200, cKi=50, cKd=50;
+double hKp=100, hKi=0, hKd=0;
+double cKp=100, cKi=0, cKd=0;
 PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
@@ -112,7 +112,7 @@ const float T_25 = T_0 + 25;
 const float beta = 3950;
 const float R_25 = 100000L; // 100k ohm
 //const unsigned long Rs = 10000L;
-const unsigned long Rs = 150000L;
+const unsigned long Rs = 100000L;
 //const unsigned long Rs = 330000L;
 //const unsigned long Rs = 470000L;
 // ************************************************
