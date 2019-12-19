@@ -33,6 +33,9 @@ ESP8266WebServer server(80);
 //holds the current upload
 File fsUploadFile;
 
+const int IROUT_PIN = 15;
+IRsend irsend(IROUT_PIN);
+
 //format bytes
 String formatBytes(size_t bytes) {
 	if (bytes < 1024) {
@@ -347,6 +350,13 @@ void setup(void)
 	server.begin();
 	DBG_OUTPUT_PORT.println("HTTP server started");
 
+	irsend.begin();
+
+	server.on("/tv_off", HTTP_GET, []() {
+		int bits = 12;
+		int ir_code = 0xA90;
+		irsend.sendSony(ir_code, (bits > 0) ? bits : 12);
+	});
 }
 
 void loop(void)
