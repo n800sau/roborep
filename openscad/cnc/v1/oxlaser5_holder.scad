@@ -14,7 +14,7 @@ oxlaser5_lens_sz_z = 10;
 
 oxlaser5_pcb_sz_x = 41;
 oxlaser5_pcb_sz_y = 32;
-oxlaser5_pcb_sz_z = 55.5;
+oxlaser5_pcb_sz_z = 50;
 
 oxlaser5_pcb_dist = 5;
 
@@ -33,10 +33,10 @@ module oxlaser5_holder() {
 				}
 			}
 		}
-		translate([0, 28, -40]) {
+		translate([0, 28, -37]) {
 			attachment_holes(d=hole_d_through, hole_count=10);
 		}
-		translate([0, 0, -30]) {
+		translate([0, 0, -27]) {
 			oxlaser5_mockup(holes_only=true);
 		}
 	}
@@ -49,7 +49,7 @@ module oxlaser5_mockup(holes_only=false) {
 		if(!holes_only) {
 			cube([oxlaser5_sz_x, oxlaser5_sz_y, oxlaser5_sz_z], center=true);
 		}
-		for(z=[8, 16, 35, 53]) {
+		for(z=[8, 16, 35, 48]) {
 			translate([0, oxlaser5_sz_y/2, -oxlaser5_sz_z/2+z]) {
 				rotate([90, 0, 0]) {
 					cylinder(d=oxlaser5_hole_d_through, h=40, center=true);
@@ -68,7 +68,7 @@ module oxlaser5_mockup(holes_only=false) {
 			if(!holes_only) {
 				cube([oxlaser5_pcb_sz_x, oxlaser5_pcb_sz_y, oxlaser5_pcb_sz_z], center=true);
 			}
-			for(z=[14, oxlaser5_pcb_sz_z-14]) {
+			for(z=[9, oxlaser5_pcb_sz_z-9]) {
 				translate([0, oxlaser5_sz_y/2, -oxlaser5_pcb_sz_z/2+z]) {
 					rotate([90, 0, 0]) {
 						cylinder(d=oxlaser5_hole_d_through, h=40, center=true);
@@ -80,7 +80,7 @@ module oxlaser5_mockup(holes_only=false) {
 }
 
 
-translate([0, -43, 40]) {
+translate([0, -43, 37]) {
   oxlaser5_holder();
 }
 //color("blue") {
