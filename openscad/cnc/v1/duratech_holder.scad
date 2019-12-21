@@ -1,6 +1,9 @@
+show_upper_part = 1;
+show_lower_part = 1;
+
 include <cnc_params.scad>
 use <duratech_mockup.scad>
-use <gantry_z.scad>
+use <z_sliding_block.scad>
 use <MCAD/nuts_and_bolts.scad>
 
 $fn = 50;
@@ -8,7 +11,7 @@ $fn = 50;
 wall = 3;
 
 module duratech_holder() {
-	translate([0, drill_center_off_y-attach_sz_y/2-gantry_sz_y/2, -attach_sz_z/2+holder_sz_z/2+holder_off_z]) {
+	translate([0, drill_center_off_y-attach_sz_y/2-slider_sz_y/2, -attach_sz_z/2+holder_sz_z/2+holder_off_z]) {
 		difference() {
 //		union() {
 			union() {
@@ -32,7 +35,7 @@ module duratech_holder() {
 					}
 				}
 			}
-			translate([0, -default_attach_extra_sz_y-(drill_center_off_y-attach_sz_y/2-gantry_sz_y/2), -(-attach_sz_z/2+holder_sz_z/2+holder_off_z)]) {
+			translate([0, -default_attach_extra_sz_y-(drill_center_off_y-attach_sz_y/2-slider_sz_y/2), -(-attach_sz_z/2+holder_sz_z/2+holder_off_z)]) {
 				attachment_holes(d=hole_d_through);
 			}
 			translate([0, drill_center_off_y, 0]) {
@@ -57,7 +60,7 @@ module duratech_holder() {
 }
 
 module duratech_holder_top() {
-	translate([0, drill_center_off_y-attach_sz_y/2-gantry_sz_y/2, holder_top_sz_z/2]) {
+	translate([0, drill_center_off_y-attach_sz_y/2-slider_sz_y/2, holder_top_sz_z/2]) {
 		difference() {
 //		union() {
 			union() {
@@ -85,7 +88,7 @@ module duratech_holder_top() {
 					cube([16, 20, holder_top_sz_z], center=true);
 				}
 			}
-			translate([0, -default_attach_extra_sz_y-(drill_center_off_y-attach_sz_y/2-gantry_sz_y/2), -holder_top_sz_z/2]) {
+			translate([0, -default_attach_extra_sz_y-(drill_center_off_y-attach_sz_y/2-slider_sz_y/2), -holder_top_sz_z/2]) {
 				attachment_holes(d=hole_d_through);
 			}
 			translate([0, drill_center_off_y, 0]) {
@@ -106,11 +109,15 @@ module duratech_holder_top() {
 	} 
 }
 
-//gantry_z();
-//duratech_holder_top();
-duratech_holder();
+//slider_z();
+if(show_upper_part) {
+	duratech_holder_top();
+}
+if(show_lower_part) {
+	duratech_holder();
+}
 //color("blue") {
-//	gantry_z_attachment();
+//	slider_z_attachment();
 //}
 translate([0, -58, -36+holder_off_z]) {
 	rotate([0, 0, -90]) {

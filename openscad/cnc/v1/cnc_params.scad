@@ -47,28 +47,28 @@ bottom_block_sz_z = lead_screw_bearing_sz + wall;
 
 // ganztry_z params
 
-gantry_sz_x = base_sz_x;
-gantry_sz_y = rod_bearing_d + 2 * wall;
-gantry_sz_z = rod_bearing_sz * 2 + 4;
+slider_sz_x = base_sz_x;
+slider_sz_y = rod_bearing_d + 2 * wall;
+slider_sz_z = rod_bearing_sz * 2 + 4;
 
 attach_sz_x = 4;
 attach_sz_y = 25;
-attach_sz_z = gantry_sz_z-10;
+attach_sz_z = slider_sz_z-10;
 
 extract_sz_x = lead_screw_nut_attach_plate_d + 2 * wall;
 extract_sz_y = extract_sz_x;
-extract_sz_z = gantry_sz_z - 15;
+extract_sz_z = slider_sz_z - 15;
 
 rod_dist_x = 67.4 - rod_bearing_d;
 
 attach_side_gap = 0.5;
 
-connector_base_sz_x = gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
+connector_base_sz_x = slider_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
 connector_base_sz_y = 12;
 connector_connector_sz_x = 5;
 default_attach_extra_sz_y = 15;
 
-gantry_z_to_work_surface_sz_z = 56;
+slider_z_to_work_surface_sz_z = 56;
 
 nuts_sz_z = 2;
 
@@ -113,7 +113,7 @@ pipette_top_holder_sz_z = 15;
 // for duratech holder
 drill_center_off_y = -16;
 drill_gap = 0.5;
-holder_sz_x = gantry_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
+holder_sz_x = slider_sz_x-rod_bearing_d-attach_sz_x-2*attach_side_gap;
 holder_sz_y = 50;
 holder_sz_z = 5;
 

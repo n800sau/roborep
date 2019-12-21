@@ -1,6 +1,6 @@
 include <cnc_params.scad>
-use <gantry_x.scad>
-use <gantry_z.scad>
+use <x_sliding_block.scad>
+use <z_sliding_block.scad>
 use <MCAD/triangles.scad>
 
 triangle_sz_y = 20;

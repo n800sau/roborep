@@ -1,6 +1,10 @@
+show_part1 = 1;
+show_part2 = 1;
+show_part3 = 1;
+
 include <cnc_params.scad>
-use <gantry_x.scad>
-use <gantry_z.scad>
+use <x_sliding_block.scad>
+use <z_sliding_block.scad>
 use <MCAD/boxes.scad>
 use <MCAD/triangles.scad>
 
@@ -135,8 +139,14 @@ module wire_holder() {
 }
 
 
-translate([0, 44, 40]) {
-  wire_holder();
+if(show_part1) {
+	translate([0, 44, 5]) {
+		wire_holder();
+	}
 }
-//motor_raise();
-//motor_side();
+if(show_part2) {
+	motor_raise();
+}
+if(show_part3) {
+	motor_side();
+}

@@ -41,7 +41,7 @@ module holes_just_in_case(d=hole_d, cone=false) {
 	}
 }
 
-module gantry_x() {
+module slider_x() {
 
 	difference() {
 
@@ -83,9 +83,9 @@ module gantry_x() {
 }
 
 rotate([0, 0, 90]) {
-	gantry_x();
+	slider_x();
 }
 
 //translate([4.5, -200, -140]) {
-//	import("/home/n800s/work/roborep/openscad/cnc/v1/spindle_carriage.stl", convexity = 5);
+//	import("spindle_carriage.stl", convexity = 5);
 //}

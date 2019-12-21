@@ -1,5 +1,5 @@
 include <cnc_params.scad>
-use <gantry_z.scad>
+use <z_sliding_block.scad>
 
 $fn = 80;
 
@@ -71,9 +71,9 @@ module dc_motor_holder() {
 	}
 }
 
-color("blue") {                                                                                                                                                                            
-//	gantry_z_attachment();                                                                                                                                                                   
-}                                                                                                                                                                                          
+color("blue") {
+//	slider_z_attachment();
+}
 translate([0, 0, 0]) {
 	dc_motor_holder();
 }
