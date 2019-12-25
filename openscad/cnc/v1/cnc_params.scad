@@ -26,8 +26,11 @@ base_sz_z = rod_sz+wall*2;
 //28 65
 echo("base x: ", base_sz_x, ", base y:", base_sz_y);
 
-hole_d = 3.8;
-hole_d_through = 4.4;
+hole_d_m4 = 3.8;
+hole_d_through_m4 = 4.4;
+hole_d_m3 = 3;
+hole_d_through_m3 = 3.8;
+
 mounting_hole_offset = 5;
 
 motor_sz = 43;
@@ -120,5 +123,25 @@ holder_sz_z = 5;
 holder_top_sz_z = 10;
 
 holder_off_z = -32;
+
+/////////////////////// stepper pusher
+pusher_dist = 22;
+pusher_move = 20;
+remover_move = 15;
+//pusher_height = pusher_move + remover_move + 20;
+pusher_height = 10;
+pusher_width = 6;
+gear_d = 13.5;
+
+stepper_hole_dist = 49.5;
+stepper_body_d = 42;
+bar_width = 8;
+bar_side_width = 20;
+bar_thick = 4.2;
+
+bar_length = 2*bar_side_width+30;
+bar_side_length = bar_width+stepper_hole_dist;
+bar_side_side_width = bar_side_width-11.4;
+bar_side_side_thick = bar_thick + pusher_height;
 
 ////////////////////////

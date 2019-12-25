@@ -87,10 +87,10 @@ module motor_side() {
 		translate([0, (top_block_sz_y-base_sz_y)/2-wall, 0]) {
 			cube([base_sz_x+wall, base_sz_y+1, top_block_sz_z+extra_border_sz_z*2], center=true);
 			translate([0, 0, top_block_sz_z/2-mounting_hole_offset]) {
-				mounting_holes(d=hole_d_through, cone=true);
+				mounting_holes(d=hole_d_through_m4, cone=true);
 			}
 			translate([0, 0, -1]) {
-				holes_just_in_case(d=hole_d_through, cone=true);
+				holes_just_in_case(d=hole_d_through_m4, cone=true);
 			}
 		}
 		translate([0, -(top_block_sz_y-motor_sz)/2+wall, top_block_sz_z/4]) {
@@ -123,7 +123,7 @@ module wire_holder() {
     translate([0, 0, -wire_holder_stand_sz_z/2+top_block_sz_z/2]) {
       for(z=[0, 1]) {
         translate([0, -15, z*top_mounting_holes_dist]) {
-          mounting_holes(d=hole_d_through, cone=true);
+          mounting_holes(d=hole_d_through_m4, cone=true);
         }
       }
     }

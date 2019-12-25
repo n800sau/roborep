@@ -1,27 +1,8 @@
+include <cnc_params.scad>
 use <MCAD/regular_shapes.scad>
 use <../../lib/Getriebe.scad>
 
 $fn = 50;
-pusher_dist = 22;
-pusher_move = 20;
-remover_move = 15;
-//pusher_height = pusher_move + remover_move + 20;
-pusher_height = 10;
-pusher_width = 6;
-gear_d = 13.5;
-
-stepper_hole_dist = 49.5;
-stepper_body_d = 42;
-hole_d = 3;
-hole_d_through = 3.8;
-bar_width = 8;
-bar_side_width = 20;
-bar_thick = 4.2;
-
-bar_length = 2*bar_side_width+30;
-bar_side_length = bar_width+stepper_hole_dist;
-bar_side_side_width = bar_side_width-11.4;
-bar_side_side_thick = bar_thick + pusher_height;
 
 module pusher_frame() {
 	f_size = bar_side_length;
@@ -55,7 +36,7 @@ module pusher() {
 			}
 		}
 		translate([16.4+5, bar_thick+pusher_height/2, -p_size/2-5]) {
-			cylinder(d=hole_d, h=p_size+10);
+			cylinder(d=hole_d_m3, h=p_size+10);
 		}
 	}
 }
@@ -89,7 +70,7 @@ module stepper_frame() {
 			for(z=[0,1]) {
 				translate([0, 0, z*stepper_hole_dist]) {
 					rotate([90, 0, 0]) {
-						cylinder(d=hole_d_through, h=100);
+						cylinder(d=hole_d_through_m3, h=100);
 					}
 				}
 			}
@@ -106,7 +87,7 @@ module side_holes() {
 				for(z=[0:1:n_holes]) {
 					translate([bar_side_side_width/2, 50, z*h_step]) {
 						rotate([90, 0, 0]) {
-							cylinder(d=hole_d_through, h=100);
+							cylinder(d=hole_d_through_m3, h=100);
 						}
 					}
 				}

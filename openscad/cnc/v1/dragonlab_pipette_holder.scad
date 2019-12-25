@@ -50,7 +50,7 @@ module pipette_bottom_holder() {
 				}
 			}
 			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), -(-attach_sz_z/2+holder_sz_z/2+holder_off_z)]) {
-				attachment_holes(d=hole_d_through, hole_count=20);
+				attachment_holes(d=hole_d_through_m4, hole_count=20);
 			}
 		}
 	} 
@@ -103,7 +103,7 @@ module pipette_top_holder() {
 				}
 			}
 			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), full_sz_z]) {
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through_m4);
 			}
 			translate([0, pipette_center_off_y, 0]) {
 				cylinder(d=widest_level_d+2*pipette_gap, h=pipette_top_holder_sz_z, center=true);
@@ -112,7 +112,7 @@ module pipette_top_holder() {
 //				cube([6, 20, pipette_top_holder_sz_z], center=true);
 				translate([0, -5, 0]) {
 					rotate([0, 90, 0]) {
-						cylinder(d=hole_d_through, h=40, center=true);
+						cylinder(d=hole_d_through_m4, h=40, center=true);
 						translate([0, 0, -16/2]) {
 							nutHole(4);
 						}
@@ -168,7 +168,7 @@ module pipette_top_servo_holder() {
 				}
 			}
 			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), full_sz_z]) {
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through_m4);
 			}
 			translate([0, pipette_center_off_y, 0]) {
 				cylinder(d=widest_level_d+2*pipette_gap, h=pipette_top_holder_sz_z, center=true);
@@ -177,7 +177,7 @@ module pipette_top_servo_holder() {
 //				cube([6, 20, pipette_top_holder_sz_z], center=true);
 				translate([0, -5, 0]) {
 					rotate([0, 90, 0]) {
-						cylinder(d=hole_d_through, h=40, center=true);
+						cylinder(d=hole_d_through_m4, h=40, center=true);
 						translate([0, 0, -16/2]) {
 							nutHole(4);
 						}
@@ -200,14 +200,14 @@ servo_rolor_d = 10;
 servo_rolor_sz_y = 7;
 servo_hole_dist_x = 9.5;
 servo_hole_dist_z = 50;
-servo_hole_d_through = 3.6;
+servo_hole_d_through_m4 = 3.6;
 
 module servo_1501MG_attach_holes() {
 	for(z=[-1,1]) {
 		for(x=[-1,1]) {
 			translate([x*servo_hole_dist_x/2, 10, z*servo_hole_dist_z/2]) {
 				rotate([90, 0, 0]) {
-					cylinder(d=servo_hole_d_through, h=20, center=true);
+					cylinder(d=servo_hole_d_through_m4, h=20, center=true);
 				}
 			}
 		}
@@ -269,7 +269,7 @@ module push_servo_holder_plate() {
 										for(z=[1:1:servo_hold_panel_hole_step_count]) {
 											translate([0, 0, 5-servo_hold_panel_z/2+z*servo_hold_panel_hole_step_sz]) {
 												rotate([90, 0, 0]) {
-													cylinder(d=hole_d, h=20, center=true);
+													cylinder(d=hole_d_m4, h=20, center=true);
 												}
 											}
 										}
@@ -281,7 +281,7 @@ module push_servo_holder_plate() {
 				}
 			}
 			translate([0, -default_attach_extra_sz_y-(pipette_center_off_y-attach_sz_y/2-slider_sz_y/2), full_sz_z]) {
-				attachment_holes(d=hole_d_through, hole_count=10);
+				attachment_holes(d=hole_d_through_m4, hole_count=10);
 			}
 		}
 	}
@@ -299,7 +299,7 @@ module push_servo_holder() {
 						for(x=[-1,1]) {
 							translate([x*3, 0, 0]) {
 								rotate([90, 0, 0]) {
-									cylinder(d=hole_d, h=20, center=true);
+									cylinder(d=hole_d_m4, h=20, center=true);
 								}
 							}
 						}

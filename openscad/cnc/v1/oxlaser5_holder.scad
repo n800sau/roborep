@@ -34,7 +34,7 @@ module oxlaser5_holder() {
 			}
 		}
 		translate([0, 28, -37]) {
-			attachment_holes(d=hole_d_through, hole_count=10);
+			attachment_holes(d=hole_d_through_m4, hole_count=10);
 		}
 		translate([0, 0, -27]) {
 			oxlaser5_mockup(holes_only=true);

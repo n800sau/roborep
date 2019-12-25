@@ -24,7 +24,7 @@ module nutHoleM4(extra_h=0) {
 	}
 }
 
-module attachment_hole(d=hole_d, nut_hole_sz=0, size=slider_sz_x) {
+module attachment_hole(d=hole_d_m4, nut_hole_sz=0, size=slider_sz_x) {
 	rotate([0, 90, 0]) {
 		h = size*2;
 		cylinder(d=d, h=h, center=true);
@@ -36,7 +36,7 @@ module attachment_hole(d=hole_d, nut_hole_sz=0, size=slider_sz_x) {
 	}
 }
 
-module attachment_holes(d=hole_d, hole_count=4, nut_hole_sz=0) {
+module attachment_holes(d=hole_d_m4, hole_count=4, nut_hole_sz=0) {
 	z_step = 15;
 	translate([0, -slider_sz_y/2-attach_sz_y/4, -(slider_sz_z-attach_sz_z)/2-attach_sz_z/2]) {
 		for(zi=[0:1:hole_count-1]) {
@@ -70,7 +70,7 @@ module slider_z() {
 						}
 					}
 				}
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through_m4);
 			}
 			// holes for rod bearings
 			vert_rod_holes(d=rod_bearing_d+2*wall, h=slider_sz_z);
@@ -119,10 +119,10 @@ module slider_z_attachment(extra_sz_y=default_attach_extra_sz_y) {
 				}
 			}
 		}
-		attachment_holes(d=hole_d, hole_count=20);
+		attachment_holes(d=hole_d_m4, hole_count=20);
 		if(extra_sz_y >= 10) {
 			translate([0, -extra_sz_y, 0]) {
-				attachment_holes(d=hole_d_through, hole_count=20);
+				attachment_holes(d=hole_d_through_m4, hole_count=20);
 			}
 		}
 	}
@@ -146,10 +146,10 @@ module slider_z_adapter(side="all", extra_sz_y=default_attach_extra_sz_y, extra_
 				}
 			}
 		}
-		attachment_holes(d=hole_d_through, hole_count=20, nut_hole_sz=nut_hole_sz);
+		attachment_holes(d=hole_d_through_m4, hole_count=20, nut_hole_sz=nut_hole_sz);
 		if(extra_sz_y >= 10) {
 			translate([0, -extra_sz_y, 0]) {
-				attachment_holes(d=hole_d_through, hole_count=20, nut_hole_sz=nut_hole_sz);
+				attachment_holes(d=hole_d_through_m4, hole_count=20, nut_hole_sz=nut_hole_sz);
 			}
 		}
 	}
@@ -170,7 +170,7 @@ module adapter_bracket(extra_sz_y=default_attach_extra_sz_y) {
 				}
 			}
 			translate([0, 2, 0]) {
-				attachment_hole(d=hole_d_through, nut_hole_sz=nut_hole_sz-6-(connector_connector_sz_x+nuts_sz_z));
+				attachment_hole(d=hole_d_through_m4, nut_hole_sz=nut_hole_sz-6-(connector_connector_sz_x+nuts_sz_z));
 			}
 		}
 	}

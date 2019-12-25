@@ -36,7 +36,7 @@ module duratech_holder() {
 				}
 			}
 			translate([0, -default_attach_extra_sz_y-(drill_center_off_y-attach_sz_y/2-slider_sz_y/2), -(-attach_sz_z/2+holder_sz_z/2+holder_off_z)]) {
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through_m4);
 			}
 			translate([0, drill_center_off_y, 0]) {
 				cylinder(d=metal_thing_d+2, h=20, center=true);
@@ -89,7 +89,7 @@ module duratech_holder_top() {
 				}
 			}
 			translate([0, -default_attach_extra_sz_y-(drill_center_off_y-attach_sz_y/2-slider_sz_y/2), -holder_top_sz_z/2]) {
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through_m4);
 			}
 			translate([0, drill_center_off_y, 0]) {
 				cylinder(d=widest_level_d+2*drill_gap, h=holder_top_sz_z, center=true);
@@ -98,7 +98,7 @@ module duratech_holder_top() {
 				cube([6, 20, holder_top_sz_z], center=true);
 				translate([0, -5, 0]) {
 					rotate([0, 90, 0]) {
-						cylinder(d=hole_d_through, h=40, center=true);
+						cylinder(d=hole_d_through_m4, h=40, center=true);
 						translate([0, 0, -16/2]) {
 							nutHole(4);
 						}

@@ -65,7 +65,7 @@ module dc_motor_holder() {
 				}
 			}
 			translate([0, 58, 23]) {
-				attachment_holes(d=hole_d_through);
+				attachment_holes(d=hole_d_through_m4);
 			}
 		}
 	}

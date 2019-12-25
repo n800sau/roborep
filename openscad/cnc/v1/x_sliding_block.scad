@@ -1,8 +1,8 @@
 include <cnc_params.scad>
 
-module mounting_holes(d=hole_d, cone=false) {
+module mounting_holes(d=hole_d_m4, cone=false) {
 	for(ypos=[-1, 1]) {
-		translate([0, ypos * (hole_d+2), 0]) {
+		translate([0, ypos * (hole_d_m4+2), 0]) {
 			rotate([0, 90, 0]) {
 				cylinder(d=d, h=base_sz_x+2*wall+10, center=true);
 				if(cone) {
@@ -33,7 +33,7 @@ module mounting_holes(d=hole_d, cone=false) {
 	}
 }
 
-module holes_just_in_case(d=hole_d, cone=false) {
+module holes_just_in_case(d=hole_d_m4, cone=false) {
 	for(zoff=[20, 30, 40, 50, 93, 119]) {
 		translate([0, 0, base_sz_z/2-zoff]) {
 			mounting_holes(d=d, cone=cone);

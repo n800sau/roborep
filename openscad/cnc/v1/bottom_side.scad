@@ -31,10 +31,10 @@ module bottom_side() {
 		translate([0, (bottom_block_sz_y-base_sz_y)/2-wall, 0]) {
 			cube([hole_sz_x, hole_sz_y, bottom_block_sz_z+extra_border_sz_z*2], center=true);
 			translate([0, 0, (-bottom_block_sz_z/2)+mounting_hole_offset]) {
-				mounting_holes(d=hole_d_through, cone=true);
+				mounting_holes(d=hole_d_through_m4, cone=true);
 			}
 			translate([0, 0, base_sz_z/2-bottom_block_sz_z/2]) {
-				holes_just_in_case(d=hole_d_through, cone=true);
+				holes_just_in_case(d=hole_d_through_m4, cone=true);
 			}
 		}
 		translate([0, -(top_block_sz_y-bottom_block_sz_y)/2-(top_block_sz_y-motor_sz)/2+wall, bottom_block_sz_z/2]) {
