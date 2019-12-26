@@ -1,6 +1,7 @@
 include <cnc_params.scad>
 use <MCAD/regular_shapes.scad>
 use <../../lib/Getriebe.scad>
+use <servo_pusher.scad>
 
 $fn = 50;
 
@@ -37,6 +38,46 @@ module pusher() {
 		}
 		translate([16.4+5, bar_thick+pusher_height/2, -p_size/2-5]) {
 			cylinder(d=hole_d_m3, h=p_size+10);
+		}
+	}
+}
+
+module tube_remover() {
+	c_d = 15;
+	c_z = 18;
+	translate([-21.5, 9.5, -63]) {
+		difference() {
+//		union() {
+			cylinder(d=c_d, h=c_z, center=true);
+			cylinder(d=hole_d_through_m3, h=50, center=true);
+			translate([0, 0, -2]) {
+				cylinder(d=c_d-4, h=c_z-2, center=true);
+			}
+		}
+	}
+}
+
+module pipette_toucher() {
+	c_d = 18.6;
+	c_z = 3;
+	translate([13, 9, -55]) {
+		difference() {
+			union() {
+				cube([33, 10, 3], center=true);
+				translate([-10, 0, 1.5]) {
+					rotate([180, 0, 90]) {
+						pipette_pusher(do_holes=false);
+					}
+				}
+			}
+			translate([13, 0, 0]) {
+				hull() {
+					cylinder(d=hole_d_through_m3, h=50, center=true);
+					translate([-8, 0, 0]) {
+						cylinder(d=hole_d_through_m3, h=50, center=true);
+					}
+				}
+			}
 		}
 	}
 }
@@ -105,7 +146,7 @@ module stepper_mockup() {
 	}
 }
 
-pusher_frame();
+%pusher_frame();
 rotate([0, 180, 0]) {
 	%pusher_frame();
 }
@@ -118,3 +159,6 @@ rotate([0, 180, 0]) {
 
 %stepper_frame();
 %stepper_mockup();
+
+tube_remover();
+pipette_toucher();

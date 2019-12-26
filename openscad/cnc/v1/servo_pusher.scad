@@ -1,5 +1,7 @@
-show_part_1 = 0;
-show_part_2 = 0;
+include <cnc_params.scad>
+
+show_part_1 = 1;
+show_part_2 = 1;
 show_part_3 = 1;
 
 
@@ -12,7 +14,7 @@ wall = 2;
 
 
 top_d = 19.5;
-sensor_d = 79;
+sensor_d = 7.9;
 sensor_tail_width = 7;
 sensor_tail_height = 0.4;
 bolt_d = 3;
@@ -36,14 +38,16 @@ servo_hole_d = 5.2;
 servo_hole_sz = 3;
 servo_bolt_d = 3.6;
 
-module pipette_pusher() {
+module pipette_pusher(do_holes=true) {
 	difference() {
 		cylinder(d=top_d+2*circle_wall, h=top_wall+circle_hole_h);
-		for(yp=[0, 6]) {
-			translate([0, yp, 0]) {
-				cylinder(d=bolt_d_through, h=top_wall);
-				translate([0, 0, top_wall-bolt_head_h]) {
-					cylinder(d=bolt_head_d, h=top_wall+2);
+		if(do_holes) {
+			for(yp=[0, 6]) {
+				translate([0, yp, 0]) {
+					cylinder(d=bolt_d_through, h=top_wall);
+					translate([0, 0, top_wall-bolt_head_h]) {
+						cylinder(d=bolt_head_d, h=top_wall+2);
+					}
 				}
 			}
 		}
@@ -108,7 +112,11 @@ module servo_handle() {
 			rotate([0, 90, 0]) {
 				cylinder(d=bolt_d_through, h=30);
 			}
-		}
+		}				cylinder(d=hole_d_through_m3, h=50, center=true);
+				translate([-4, 0, 0]) {
+					cylinder(d=hole_d_through_m3, h=50, center=true);
+				}
+
 		// servo hole
 		translate([0, servo_handle_len-servo_handle_h, servo_handle_h/2]) {
 			rotate([0, 90, 0]) {
