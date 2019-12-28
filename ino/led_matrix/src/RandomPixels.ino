@@ -1,6 +1,6 @@
-#include <avr/sleep.h>
 #include <SparkFun_LED_8x7.h>
 #include <Chaplex.h>
+#include "LowPower.h"
 
 #define Output Serial
 #define N_ROWS 7
@@ -17,18 +17,16 @@ bool running = false;
 
 void wakeUp()
 {
-	sleep_disable();
-	detachInterrupt(0);
-	digitalWrite(LED_BUILTIN, HIGH);
 	running = true;
 }
 
 void gotoSleep()
 {
-	sleep_enable();
-	attachInterrupt(0, wakeUp, LOW);
 	digitalWrite(LED_BUILTIN, LOW);
-	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+	attachInterrupt(digitalPinToInterrupt(BTN_PIN), wakeUp, LOW);
+	LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF); 
+	detachInterrupt(digitalPinToInterrupt(BTN_PIN));
+	digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void setup()
