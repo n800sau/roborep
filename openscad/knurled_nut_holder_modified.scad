@@ -8,6 +8,8 @@ totd=20;
 height=6;
 // Nut diameter (point to point not flat to flat)
 nutd=9;
+// Gap
+gap = 0.2;
 // Number of knurls
 knurls=12;
 // M?
@@ -17,12 +19,12 @@ bottom_h = 2;
 
 difference() {
     cylinder(h=height, d=totd, $fn=25);
-    cylinder(h=height, d=nutd, $fn=6);
+    cylinder(h=height, d=nutd+2*gap, $fn=6);
     for (r=[0:360/knurls:360]) {
         rotate([0,0,r]) translate([totd/1.8,0,0]) cylinder(h=height,r=(totd/5)/2,$fn=15);
     }
 }
 difference() {
-	cylinder(h=bottom_h, d=nutd+(totd-nutd)/2, $fn=50);
+	cylinder(h=bottom_h, d=nutd+gap+(totd-nutd)/2, $fn=50);
 	cylinder(h=bottom_h, d=bolt_d+0.6, $fn=50);
 }

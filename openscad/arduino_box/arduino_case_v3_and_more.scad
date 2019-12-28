@@ -5,7 +5,7 @@
 //CUSTOMIZER VARIABLES
 
 //arduino type
-arduino_type = "NanoExt"; //[Uno,Mega,NanoExt]
+arduino_type = "Uno"; //[Uno,Mega,NanoExt]
 
 //thickness of side walls and bottom (mm)
 thick = 1.6;

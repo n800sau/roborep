@@ -755,4 +755,4 @@ module flexbatter2xCx2(){ // AUTO_MAKE_STL
 //translate([0,40,0])flexbatter2xAA();
 //translate([0,80,0])flexbatter2xAAx2();
 
-battery(type = AA, n = 1, m = 3, alt = 1, spring_raise=0, make_bolt_holes=true);
+battery(type = AA, n = 1, m = 1, alt = 1, spring_raise=0, make_bolt_holes=true);

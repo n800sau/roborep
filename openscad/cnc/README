@@ -15,3 +15,16 @@ workspace size (some space spared at ends):
 X - 255
 Y - 300 (drill) , 350
 Z - ?
+
+
+relay connection
+
+VCC - +5v
+IN1 - SIG 5v
+IN2
+GND
+
+GND
+VCC - same as VCC above
+JD-VCC - 12v for relay
+

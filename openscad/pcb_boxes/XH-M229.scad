@@ -29,6 +29,9 @@ difference() {
 						}
 					}
 				}
+				translate([bar_sz_x/2-wall, 0, 0]) {
+					cube([wall, 2*bar_sz_y+bar_dist_y, pcb_under_sz_z]);
+				}
 			}
 		}
 	}
