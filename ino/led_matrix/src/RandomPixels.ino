@@ -9,7 +9,7 @@
 #define BTN_PIN 2
 
 // Global variables
-byte led_pins[] = {4, 5, 6, 7, 8, 9, 10, 11}; // Pins for LEDs
+byte led_pins[] = {5, 6, 7, 8, 9, 10, 11, 12}; // Pins for LEDs
 
 const int led_pin_count = sizeof(led_pins)/sizeof(led_pins[0]);
 
