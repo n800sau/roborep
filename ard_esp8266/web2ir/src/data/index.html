@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+		<title>Buttons</title>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<!-- Angular Material style sheet -->
+		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css"/>
+</head>
+<body ng-app="myApp">
+
+<div>
+Sent <span id="output"/>
+</div>
+...
+<div id="info"></div>
+
+		<div ng-controller="AppCtrl" ng-cloak>
+				<md-content style="margin: 16px; padding:16px">
+
+					<md-button ng-click="button_click()">Button</md-button>
+					<md-button ng-click="off_click()">Off</md-button>
+
+				</md-content>
+		</div>
+
+		<!-- Angular Material requires Angular.js Libraries -->
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-animate.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-aria.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-messages.min.js"></script>
+
+		<!-- Angular Material Library -->
+		<script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.js"></script>
+
+		<!-- Your application bootstrap -->
+		<script type="module" src="app.js"></script>
+
+</body>
+</html>

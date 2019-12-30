@@ -103,6 +103,9 @@ volatile int motor1QeiCounts = 0, motor2QeiCounts = 0;
 // counter with sign
 volatile int motor1Counter = 0, motor2Counter = 0;
 
+volatile unsigned long int motor1ElapsedTime = 0, motor2ElapsedTime = 0;
+volatile unsigned long int motor1OldElapsedTime = 0, motor2OldElapsedTime = 0;
+
 void dprint(String str)
 {
 	Serial.print(str);
@@ -118,6 +121,7 @@ void Motor1quickQEI()
 {
 	//a fast(ish) QEI function
 	int state = 0;
+	unsigned long int microTime;
 	state = digitalRead(motor1QeiAPin) << 1;
 	state = state|digitalRead(motor1QeiBPin);
 	switch (state)
@@ -136,12 +140,17 @@ void Motor1quickQEI()
 	    break;
 	}
 	motor1Counter = motor1QeiCounts * motor1CounterSign;
+
+	microTime = micros();
+	motor1ElapsedTime = microTime-motor1OldElapsedTime;
+	motor1OldElapsedTime = microTime;
 }
 
 void Motor2quickQEI()
 {
 	//a fast(ish) QEI function
 	int state = 0;
+	unsigned long int microTime;
 	state = digitalRead(motor2QeiAPin) << 1;
 	state = state|digitalRead(motor2QeiBPin);
 	switch (state)
@@ -160,6 +169,10 @@ void Motor2quickQEI()
 	    break;
 	}
 	motor2Counter = motor2QeiCounts * motor2CounterSign;
+
+	microTime = micros();
+	motor2ElapsedTime = microTime-motor2OldElapsedTime;
+	motor2OldElapsedTime = microTime;
 }
 
 bool stop_mode = true, last_stop_mode = true;
@@ -249,6 +262,9 @@ void setup()
 
 	attachInterrupt(motor1QeiAPin, Motor1quickQEI, CHANGE);
 	attachInterrupt(motor2QeiAPin, Motor2quickQEI, CHANGE);
+	//start the wheels
+	motor1ElapsedTime = micros();
+	motor2ElapsedTime = micros();
 
 	cmdInit(&Serial);
 	cmdAdd("set", set_param);
@@ -299,13 +315,16 @@ void loop()
 		unsigned long ts_diff = ts - last_ts;
 		if(ts_diff > 0) {
 			// m/s
-			m1_curvel = double(motor1Counter - last_motor1Counter) * WL_Step / ts_diff * 1000;
-			m2_curvel = double(motor2Counter - last_motor2Counter) * WL_Step / ts_diff * 1000;
+			m1_curvel = 1000000./ motor1ElapsedTime * WL_Step;
+			m2_curvel = 1000000./ motor2ElapsedTime * WL_Step;
 
-//Serial.print("m1_curvel:");
-//Serial.print(m1_curvel, 8);
-//Serial.print(",m2_curvel:");
-//Serial.println(m2_curvel, 8);
+//			m1_curvel = double(motor1Counter - last_motor1Counter) * WL_Step / ts_diff * 1000;
+//			m2_curvel = double(motor2Counter - last_motor2Counter) * WL_Step / ts_diff * 1000;
+
+Serial.print("m1_curvel:");
+Serial.print(m1_curvel, 8);
+Serial.print(",m2_curvel:");
+Serial.println(m2_curvel, 8);
 
 //			if(ts_diff > 100) {
 

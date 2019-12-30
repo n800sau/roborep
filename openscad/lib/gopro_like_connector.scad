@@ -1,9 +1,8 @@
 $fn = 40;
 
-module connector(wall=2) {
-  translate
-([7, 5.5, 7.5]) {
-    cube([19, 15, wall]);
+module connector(wall=2, sz_x=19, sz_y=15) {
+  translate([7+(19-sz_x)/2, 5.5+(15-sz_y)/2, 7.5]) {
+    cube([sz_x, sz_y, wall]);
   }
   translate([26.5, 5.4, 7.4]) {
     rotate([0, 90, 90]) {
@@ -28,4 +27,14 @@ module connector(wall=2) {
   }
 }
 
-connector();
+
+difference() {
+    connector(sz_y=36, sz_x =9);
+    translate([17, 13, 7]) {
+        for(y=[-1,1]) {
+            translate([0, y*12, 0]) {
+                cylinder(d=3.6, h=10, center=true);
+            }
+        }
+    }
+}

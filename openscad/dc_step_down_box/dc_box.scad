@@ -154,4 +154,4 @@ module box() {
 translate([0, 0, 0]) {
   lid();
 }
-//box();
+box();

@@ -77,8 +77,8 @@ $fn = 50;
 
 module plastic_spring(
   h = 20, // height
-  d=18, // ?
-  w = 6,  // case wall thickness
+  d=20, // ?
+  w = 2,  // case wall thickness
   ws = 2, // spring wall thickness
   el = 6, // ?
   l = 14, // len
@@ -93,15 +93,15 @@ module plastic_spring(
     scale([1,sy,1]) {
       translate([0,d/2+w-ws/2,0]) {
         rotate(-90) {
-          sline([0,180,0,180,0,-180,0,90,0],[r,D/4,el,D/12,el/2,
-            D/12,1+el/2,D/5,D/3],0,ws, h);
+          sline([0,180,0,180,0,-180,0,90,0],
+            [r, D/4, el, D/12, el/2, D/12, 1+el/2, D/5, D/3],0,ws, h);
         }
       }
     }
   }
 }
 
-plastic_spring(l=11, h=3);
+plastic_spring(h=3);
 translate([0, -15, 0]) {
   cube([2, 30, 6]);
 }

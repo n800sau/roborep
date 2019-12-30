@@ -16,14 +16,25 @@ model = VGG16(weights='imagenet', include_top=False)
 model.summary()
 
 result = {}
-for fname in glob.glob(os.path.join(TESTDIR, '*_pics', '*.jpg')):
-	img = image.load_img(fname, target_size=(224, 224))
-	img_data = image.img_to_array(img)
-	img_data = np.expand_dims(img_data, axis=0)
-	img_data = preprocess_input(img_data)
-	vgg16_feature = model.predict(img_data)
-	labels = clt.predict(np.array([vgg16_feature.flatten()]))
-	result[os.path.basename(fname)] = labels[0]
+i = 1
+last_ts = None
+for fname in sorted(glob.glob(os.path.join(TESTDIR, '*_pics', '*.jpg'))):
+	f_id = os.path.basename(fname).split('-')[0]
+	fts = datetime.datetime.strptime(f_id, '%Y%m%d%H%M%S')
+	if last_ts is None or fts - last_ts > datetime.timedelta(seconds = 1):
+		last_ts = fts
+		img = image.load_img(fname, target_size=(224, 224))
+		img_data = image.img_to_array(img)
+		img_data = np.expand_dims(img_data, axis=0)
+		img_data = preprocess_input(img_data)
+		t = time.time()
+		vgg16_feature = model.predict(img_data)
+		labels = clt.predict(np.array([vgg16_feature.flatten()]))
+		result[os.path.basename(fname)] = labels[0]
+		print('%d: Processed file %s for %d secs: %d' % (i, fname, time.time()-t, result[os.path.basename(fname)]))
+	i += 1
+
+print('Collecting plot data...')
 
 plotdata = {}
 for k,v in result.items():
@@ -37,4 +48,6 @@ for k,v in result.items():
 		'v': v,
 	})
 
-pickle.dump(plotdata, open(os.path.join(PLOTDIR, 'plotdata.pickle'), 'wb'), pickle.HIGHEST_PROTOCOL)
+print('Dumping plot data...')
+pickle.dump(plotdata, open(os.path.join(TESTDIR, 'plotdata.pickle'), 'wb'), pickle.HIGHEST_PROTOCOL)
+print('Finished')

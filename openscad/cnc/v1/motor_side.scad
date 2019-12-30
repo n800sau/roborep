@@ -1,6 +1,10 @@
+show_part1 = 1;
+show_part2 = 1;
+show_part3 = 1;
+
 include <cnc_params.scad>
-use <gantry_base.scad>
-use <gantry.scad>
+use <x_sliding_block.scad>
+use <z_sliding_block.scad>
 use <MCAD/boxes.scad>
 use <MCAD/triangles.scad>
 
@@ -66,7 +70,7 @@ module motor_side() {
 				for(x=[-1,1]) {
 					translate([x*(top_block_sz_x-wall)/2+wall/2, (triangle_sz_y-wall)/2, wall]) {
 						rotate([0, 90, 180]) {
-							triangle(triangle_sz_y, extra_border_sz_z, wall);
+							triangle(triangle_sz_y-5, extra_border_sz_z, wall);
 						}
 					}
 				}
@@ -83,10 +87,10 @@ module motor_side() {
 		translate([0, (top_block_sz_y-base_sz_y)/2-wall, 0]) {
 			cube([base_sz_x+wall, base_sz_y+1, top_block_sz_z+extra_border_sz_z*2], center=true);
 			translate([0, 0, top_block_sz_z/2-mounting_hole_offset]) {
-				mounting_holes(d=hole_d_through, cone=true);
+				mounting_holes(d=hole_d_through_m4, cone=true);
 			}
 			translate([0, 0, -1]) {
-				holes_just_in_case(d=hole_d_through, cone=true);
+				holes_just_in_case(d=hole_d_through_m4, cone=true);
 			}
 		}
 		translate([0, -(top_block_sz_y-motor_sz)/2+wall, top_block_sz_z/4]) {
@@ -99,5 +103,50 @@ module motor_side() {
 	}
 }
 
-motor_raise();
-motor_side();
+wire_holder_stand_sz_x = 10;
+wire_holder_stand_sz_y = 10;
+wire_holder_stand_sz_z = 50;
+wire_holder_hole_d = 20;
+top_mounting_holes_dist = 15;
+flaw_sz_z = 1.2;
+
+module wire_holder() {
+  difference() {
+    union() {
+      cube([wire_holder_stand_sz_x, wall, wire_holder_stand_sz_z], center=true);
+      translate([0, 0, (wire_holder_stand_sz_z-wire_holder_hole_d/2-wall)/2]) {
+        rotate([90, 0, 0]) {
+          cylinder(d=wire_holder_hole_d+2*wall, h=wall, center=true);
+        }
+      }
+    }
+    translate([0, 0, -wire_holder_stand_sz_z/2+top_block_sz_z/2]) {
+      for(z=[0, 1]) {
+        translate([0, -15, z*top_mounting_holes_dist]) {
+          mounting_holes(d=hole_d_through_m4, cone=true);
+        }
+      }
+    }
+    translate([0, 0, (wire_holder_stand_sz_z-wire_holder_hole_d/2-wall)/2]) {
+      translate([-wire_holder_hole_d/2, 0, 0]) {
+        cube([wire_holder_hole_d, wall*2, flaw_sz_z], center=true);
+      }
+      rotate([90, 0, 0]) {
+        cylinder(d=wire_holder_hole_d, h=wall*2, center=true);
+      }
+    }
+  }
+}
+
+
+if(show_part1) {
+	translate([0, 44, 5]) {
+		wire_holder();
+	}
+}
+if(show_part2) {
+	motor_raise();
+}
+if(show_part3) {
+	motor_side();
+}

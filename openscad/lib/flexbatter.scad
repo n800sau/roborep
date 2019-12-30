@@ -408,7 +408,8 @@ echo("##############", spring_raise);
             translate([j*lc+lc/2-0.5,-d/2-w-0.01,wz+d+df*l])
 	       rotate([-90,0,0])
 	          cylinder(r=df*l+adeepen*d,h=d+2*w+2*ws+2,$fn=72);
-	          if(i==0)cylinder(r1=df*l+adeepen*d+ch,r2=df*l+adeepen*d,h=ch+0.02,$fn=72);
+    // do not need this
+	//          if(i==0)cylinder(r1=df*l+adeepen*d+ch,r2=df*l+adeepen*d,h=ch+0.02,$fn=72);
 	          if(i==n-1)translate([0,0,d+2*w-ch])cylinder(r2=df*l+adeepen*d+ch,r1=df*l+adeepen*d,h=ch+0.02,$fn=72);
 
                }
@@ -505,7 +506,6 @@ echo("##############", spring_raise);
 
 // everything below this point is depricated in favor of the battery() module
 
-/*
 module flexbatter18650(n=1,m=1,deepen=0,df=1,oh=0){
    flexbatter(n=n,m=m,deepen=deepen,df=df,oh=oh,l=65.2,lcorr=0.3,d=18.4,hf=0.75,shd=3,eps=0.28);
 }  
@@ -688,7 +688,7 @@ module flexbatter1xAAx2(){ // AUTO_MAKE_STL
 }
 
 module flexbatter1xAAx3(){ // AUTO_MAKE_STL
-  flexbatterAA(n=3,m=1,deepen=0.70,df=0.25,oh=ew);
+  flexbatterAA(n=3,m=1);
 }
 
 module flexbatter1xAAx4(){ // AUTO_MAKE_STL
@@ -738,8 +738,6 @@ module flexbatter3xC(){ // AUTO_MAKE_STL
 module flexbatter2xCx2(){ // AUTO_MAKE_STL
   flexbatterC(n=2,m=2,deepen=0.67,df=0.07,oh=ew);
 }
-*/
-// uncomment as needed:
 
 //flexbatterCR123A(n=2);
 //rotate([0,0,0])translate([0,0,-9])flexbatter18650(n=1);
@@ -749,12 +747,12 @@ module flexbatter2xCx2(){ // AUTO_MAKE_STL
 //translate([0,33,0])flexbatter18650(n=2);
 //translate([0,90,0])flexbatter18650(n=3);
 //translate([-90,33,0])flexbatter18650(n=4);
-//translate([0,28,0])flexbatterAA(n=1);
+//translate([0,28,0])flexbatterAA(n=3);
 //translate([0,50,0])flexbatterAAA(n=1);
 //flexbatterC(n=1);
 //flexbatterD(n=1);
-//translate([-25,0,0])flexbatter3xAA();
+//flexbatter3xAA();
 //translate([0,40,0])flexbatter2xAA();
 //translate([0,80,0])flexbatter2xAAx2();
-//flexbatter2xAA();
 
+battery(type = AA, n = 1, m = 1, alt = 1, spring_raise=0, make_bolt_holes=true);

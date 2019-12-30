@@ -1,5 +1,5 @@
 // to show box set to true
-show_box = 0;
+show_box = 1;
 // to show box lid set to true
 show_lid = 0;
 // to show button holder set to true
@@ -7,7 +7,7 @@ show_bh = 0;
 // to show battery container
 show_batt = 0;
 // or to show power module
-show_power = 1;
+show_power = 0;
 
 use <ear.scad>
 use <../../lib/flexbatter.scad>

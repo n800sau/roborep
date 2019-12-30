@@ -166,79 +166,85 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: false
+        All Enabled: true
         base_link:
-          Value: false
+          Value: true
         cpu_block:
-          Value: false
+          Value: true
         green_plate:
-          Value: false
+          Value: true
         header:
-          Value: false
+          Value: true
         header_lever:
-          Value: false
+          Value: true
         header_mpu_sensor:
-          Value: false
+          Value: true
         header_pan_servo:
-          Value: false
+          Value: true
         header_tilt_servo:
           Value: true
         left_fwd_wheel:
-          Value: false
+          Value: true
         left_rear_wheel:
-          Value: false
+          Value: true
         left_stand:
-          Value: false
+          Value: true
+        map:
+          Value: true
         mpu_sensor:
-          Value: false
+          Value: true
+        odom:
+          Value: true
         pan_plate:
-          Value: false
+          Value: true
         right_fwd_wheel:
-          Value: false
+          Value: true
         right_rear_wheel:
-          Value: false
+          Value: true
         right_stand:
-          Value: false
+          Value: true
         ultrasonic_sensor:
-          Value: false
+          Value: true
         uv_sensor:
-          Value: false
+          Value: true
         white_plate:
-          Value: false
+          Value: true
       Marker Scale: 0.200000003
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        base_link:
-          green_plate:
-            white_plate:
-              header_pan_servo:
-                pan_plate:
-                  header_tilt_servo:
-                    header_lever:
-                      header:
-                        header_mpu_sensor:
-                          {}
-                        ultrasonic_sensor:
-                          {}
-                        uv_sensor:
-                          {}
-              left_stand:
-                {}
-              right_stand:
-                cpu_block:
-                  mpu_sensor:
+        map:
+          odom:
+            base_link:
+              green_plate:
+                white_plate:
+                  header_pan_servo:
+                    pan_plate:
+                      header_tilt_servo:
+                        header_lever:
+                          header:
+                            header_mpu_sensor:
+                              {}
+                            ultrasonic_sensor:
+                              {}
+                            uv_sensor:
+                              {}
+                  left_stand:
                     {}
-          left_fwd_wheel:
-            {}
-          left_rear_wheel:
-            {}
-          right_fwd_wheel:
-            {}
-          right_rear_wheel:
-            {}
+                  right_stand:
+                    cpu_block:
+                      mpu_sensor:
+                        {}
+              left_fwd_wheel:
+                {}
+              left_rear_wheel:
+                {}
+              right_fwd_wheel:
+                {}
+              right_rear_wheel:
+                {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -265,7 +271,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.761455715
+      Distance: 0.310642362
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -279,10 +285,10 @@ Visualization Manager:
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.929797053
+      Pitch: 0.874795794
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.38858974
+      Yaw: 0.358566076
     Saved: ~
 Window Geometry:
   Displays:
@@ -300,5 +306,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1366
-  X: -9
-  Y: -202
+  X: 0
+  Y: 32

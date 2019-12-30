@@ -1,0 +1,30 @@
+X 1620
+Y 1620
+Z 402
+
+$100=1600
+$101=1600
+$102=402
+
+invert Z
+                   ZYX
+invert mask = 00000100
+$3=4
+
+workspace size (some space spared at ends):
+X - 255
+Y - 300 (drill) , 350
+Z - ?
+
+
+relay connection
+
+VCC - +5v
+IN1 - SIG 5v
+IN2
+GND
+
+GND
+VCC - same as VCC above
+JD-VCC - 12v for relay
+

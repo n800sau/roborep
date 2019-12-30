@@ -1,0 +1,6 @@
+peltier 40x40x3.3
+
+circle hole dist - 75
+
+3d heater 
+20 x 18.5 x 12.1
