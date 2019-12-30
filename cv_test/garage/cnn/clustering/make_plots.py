@@ -8,13 +8,11 @@ import matplotlib.dates as mdates
 from sklearn.cluster import DBSCAN
 
 PLOTDIR = 'output/plots'
-TESTDIR = 'test_images'
 
 if not os.path.exists(PLOTDIR):
 	os.makedirs(PLOTDIR)
 
-#plotdata = pickle.load(open(os.path.join(PLOTDIR, 'plotdata.pickle'), 'rb'))
-plotdata = pickle.load(open(os.path.join(TESTDIR, 'plotdata.pickle'), 'rb'))
+plotdata = pickle.load(open(os.path.join(PLOTDIR, 'plotdata.pickle'), 'rb'))
 
 def get_median_filtered(signal, threshold=3):
 	signal = signal.copy()

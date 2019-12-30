@@ -9,6 +9,7 @@ from keras.applications.vgg16 import preprocess_input
 KFNAME = 'output/clustered/kmeans.pickle'
 
 TESTDIR = 'test_images'
+PLOTDIR = 'output/plots'
 
 clt = pickle.load(open(KFNAME, 'rb'))
 model = VGG16(weights='imagenet', include_top=False)
@@ -36,4 +37,4 @@ for k,v in result.items():
 		'v': v,
 	})
 
-pickle.dump(plotdata, open(os.path.join(TESTDIR, 'plotdata.pickle'), 'wb'), pickle.HIGHEST_PROTOCOL)
+pickle.dump(plotdata, open(os.path.join(PLOTDIR, 'plotdata.pickle'), 'wb'), pickle.HIGHEST_PROTOCOL)
