@@ -7,7 +7,7 @@
 #include <Arduino.h>
 
 //#define LED_PIN PC13
-#define LED_PIN PB12
+#define LED_PIN PA4
 
 void setup()
 {
@@ -20,7 +20,7 @@ int i = 0;
 
 void loop()
 {
-	Serial.println(i++ * 10);
+	Serial.println(i++ * 100);
   // turn the LED on (HIGH is the voltage level)
   digitalWrite(LED_PIN, HIGH);
   // wait for a second
