@@ -19,7 +19,7 @@
 #include <DNSServer.h>
 #include <WiFiManager.h>
 
-#define EEPROM_MARKER 0x4A
+#define EEPROM_MARKER 0x4B
 
 #define DBG_OUTPUT_PORT Serial
 
@@ -28,6 +28,8 @@
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 const char* host = "web2ir";
+
+WiFiManager wifiManager;
 
 ESP8266WebServer server(80);
 //holds the current upload
@@ -228,35 +230,34 @@ void setup(void)
 		settings_from_ROM();
 	}
 
-//	WiFiManager wifiManager;
 
 	//reset saved settings
 	//wifiManager.resetSettings();
 
+	WiFi.mode(WIFI_STA);
+
 	//WIFI INIT
-	DBG_OUTPUT_PORT.printf("Connecting to %s\n", ssid);
 	if (String(WiFi.SSID()) != String(ssid)) {
-		WiFi.mode(WIFI_STA);
+		DBG_OUTPUT_PORT.printf("Connecting to %s\n", ssid);
 		WiFi.begin(ssid, password);
-	}
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
-		DBG_OUTPUT_PORT.print(".");
+		while (WiFi.status() != WL_CONNECTED) {
+			delay(500);
+			DBG_OUTPUT_PORT.print(".");
+		}
 	}
 
 	//set custom ip for portal
-	//wifiManager.setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
+	wifiManager.setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
 
 	//fetches ssid and pass from eeprom and tries to connect
 	//if it does not connect it starts an access point with the specified name
-/*	if (!wifiManager.autoConnect(host)) {
+	if (!wifiManager.autoConnect(host)) {
 		Serial.println("failed to connect and hit timeout");
 		delay(3000);
 		//reset and try again, or maybe put it to deep sleep
 		ESP.reset();
 		delay(5000);
 	}
-*/
 
 	DBG_OUTPUT_PORT.println();
 	DBG_OUTPUT_PORT.print("Connected! IP address: ");
@@ -356,7 +357,14 @@ void setup(void)
 		int bits = 12;
 		int ir_code = 0xA90;
 		irsend.sendSony(ir_code, (bits > 0) ? bits : 12);
+		DBG_OUTPUT_PORT.println("tv_off code sent");
+		server.send(200, "application/json", "{\"result\":\"ok\"}");
 	});
+
+	server.on("/keypress", HTTP_GET, []() {
+		server.send(200, "application/json", "{\"key\":" + server.arg("key") + "}");
+	});
+
 }
 
 void loop(void)
