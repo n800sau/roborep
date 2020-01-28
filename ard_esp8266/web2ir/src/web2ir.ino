@@ -30,6 +30,8 @@ const char* password = WIFI_PASSWORD;
 const char* host = "web2ir";
 
 WiFiManager wifiManager;
+#define WM_TRIGGER_PIN 0
+bool WMportalRunning = false;
 
 ESP8266WebServer server(80);
 //holds the current upload
@@ -198,6 +200,7 @@ void handleFileList() {
 
 void settings_from_ROM() {
 	int addr = 1;
+// here somethingshould be placed
 }
 
 void settings_to_ROM() {
@@ -206,11 +209,37 @@ void settings_to_ROM() {
 	EEPROM.commit();
 }
 
+void checkWMButton(){
+	// is auto timeout portal running
+	if(WMportalRunning){
+		wifiManager.process();
+	}
+
+	// is configuration portal requested?
+	if(digitalRead(WM_TRIGGER_PIN) == LOW) {
+		delay(50);
+		if(digitalRead(WM_TRIGGER_PIN) == LOW) {
+			if(!WMportalRunning){
+				Serial.println("Button Pressed, Starting Portal");
+				wifiManager.startWebPortal();
+				WMportalRunning = true;
+			}
+			else{
+				Serial.println("Button Pressed, Stopping Portal");
+				wifiManager.startWebPortal();
+				WMportalRunning = false;
+			}
+		}
+	}
+}
+
+
 void setup(void)
 {
 	DBG_OUTPUT_PORT.begin(115200);
 	DBG_OUTPUT_PORT.print("\n");
 	DBG_OUTPUT_PORT.setDebugOutput(true);
+	pinMode(WM_TRIGGER_PIN, INPUT_PULLUP);
 	SPIFFS.begin();
 	{
 		Dir dir = SPIFFS.openDir("/");
@@ -370,5 +399,6 @@ void setup(void)
 void loop(void)
 {
 	MDNS.update();
+	checkWMButton();
 	server.handleClient();
 }
