@@ -6,7 +6,7 @@
 		#include <ESP8266WiFi.h>
 #endif
 #include <SD.h>
-#include "AudioFileSourceICYStream.h"
+#include "AudioFileSourceHTTPStream.h"
 #include "AudioFileSourceBuffer.h"
 #include "AudioGeneratorMP3.h"
 #include "AudioOutputI2SNoDAC.h"
@@ -20,10 +20,11 @@ const char *SSID = WIFI_SSID;
 const char *PASSWORD = WIFI_PASSWORD;
 
 // Randomly picked URL
-const char *URL="http://streaming.shoutcast.com/80sPlanet?lang=en-US";
+//const char *URL="http://streaming.shoutcast.com/80sPlanet?lang=en-US";
+const char *URL="http://p24t.local/~n800s/aud/pno-cs.mp3";
 
 AudioGeneratorMP3 *mp3;
-AudioFileSourceICYStream *file;
+AudioFileSourceHTTPStream *file;
 AudioFileSourceBuffer *buff;
 AudioOutputI2SNoDAC *out;
 
@@ -75,8 +76,9 @@ void setup()
 	Serial.println("\nConnected");
 
 	audioLogger = &Serial;
-	file = new AudioFileSourceICYStream(URL);
-	file->RegisterMetadataCB(MDCallback, (void*)"ICY");
+	file = new AudioFileSourceHTTPStream(URL);
+	file->RegisterMetadataCB(MDCallback, (void*)"HTTP");
+	file->RegisterStatusCB(StatusCallback, (void*)"HTTP");
 	buff = new AudioFileSourceBuffer(file, 2048);
 	buff->RegisterStatusCB(StatusCallback, (void*)"buffer");
 	out = new AudioOutputI2SNoDAC();
