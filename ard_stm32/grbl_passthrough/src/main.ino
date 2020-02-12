@@ -5,6 +5,8 @@
 #define SERIAL_LINE_SIZE 64
 #define CMD_START_CHAR 'N'
 
+#define LED_PIN PC13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
+
 // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define MOTOR_STEPS 200
 
@@ -34,6 +36,8 @@ void setup()
 	dstSerial.begin(115200);
 	stepper.begin(120, MICROSTEPS);
 //	stepper.setSpeedProfile(LINEAR_SPEED, 1000, 1000);
+	pinMode(LED_PIN, OUTPUT);
+	digitalWrite(LED_PIN, LOW);
 }
 
 char serial_buf[SERIAL_LINE_SIZE];
@@ -78,6 +82,11 @@ void processCmd()
 	}
 }
 
+void update_led()
+{
+	digitalWrite(LED_PIN, cmd_mode ? HIGH : LOW);
+}
+
 void loop()
 {
 	while(dstSerial.available() || pcSerial.available()) {
@@ -91,6 +100,7 @@ void loop()
 			} else {
 				if(char_count == 0 && inByte == CMD_START_CHAR) {
 					cmd_mode = true;
+					update_led();
 					add2cmd_buf(inByte);
 				} else {
 					dstSerial.write(inByte);
@@ -100,6 +110,7 @@ void loop()
 				if(cmd_mode) {
 					processCmd();
 					cmd_mode = false;
+					update_led();
 				}
 				char_count = 0;
 			} else {
