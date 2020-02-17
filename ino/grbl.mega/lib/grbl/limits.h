@@ -2,9 +2,9 @@
   limits.h - code pertaining to limit-switches and performing the homing cycle
   Part of Grbl
 
-  Copyright (c) 2012-2016 Sungeun K. Jeon for Gnea Research LLC
+  Copyright (c) 2012-2015 Sungeun K. Jeon  
   Copyright (c) 2009-2011 Simen Svale Skogsrud
-
+  
   Grbl is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,7 @@
 */
 
 #ifndef limits_h
-#define limits_h
+#define limits_h 
 
 
 // Initialize the limits module
@@ -37,5 +37,14 @@ void limits_go_home(uint8_t cycle_mask);
 
 // Check for soft limit violations
 void limits_soft_check(float *target);
+
+// Called when the limit interrupt method(s) are triggered
+void limits_interrupt_triggered();
+
+// Called when the limit interrupt method(s) are triggered, using a delay.
+void limits_interrupt_triggered_delayed();
+
+// Indicate hard limit critical event
+void hard_limit_critical_event();
 
 #endif
