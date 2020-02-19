@@ -2,7 +2,7 @@ source vars.sh
 
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/n800s/.platformio/packages/tool-stlink/lib
 
-# flasher working with usb-serial rts -> 10K -> BOOT0 <- 10K <- GND, and DTR -> RESET <- 3.3v
+# flasher working with usb-serial rts -> 10K -> BOOT0 <- 10K <- GND, and DTR -> RESET <- 10k <- 3.3v
 # pip install -U stm32loader
 
 platformio run &> upload.log && \
