@@ -93,6 +93,7 @@ const int UNKNOWN_TEMP = -1000;
 const int INITIAL_TEMP2SET = 25;
 
 double temp = UNKNOWN_TEMP, temp2set = INITIAL_TEMP2SET, temp_control = UNKNOWN_TEMP;
+// marker that required temp has been reached (set to false on item switch)
 const int32_t max_temp = 100, min_temp = 10;
 
 #define TEMP_HISTORY_SIZE (240-PLOT_LEFT)
@@ -161,12 +162,16 @@ typedef struct S_PROGRAM {
 	byte cycle_count;
 	// dynamics
 	bool running, finished;
+	bool temp_reached;
 	byte current_cycle;
 	time_t last_switch_time;
+	time_t last_reach_time;
 	time_t time_left;
 	S_PROGRAM()
 	{
 		last_switch_time = 0;
+		last_reach_time = 0;
+		temp_reached = false;
 		time_left = 0;
 		cycle_count = 3;
 		for(int i=0; i<cycle_count; i++) {
@@ -228,12 +233,14 @@ void display_status()
 	}
 	dbuf.fillScreen(0);
 	if(temp != UNKNOWN_TEMP) {
+		display.setTextColor(program.temp_reached ? ST77XX_WHITE : ST77XX_YELLOW);
 		dbuf.setCursor(30, 0);
 		dbuf.print(F("="));
 		dbuf.print(temp);
 		dbuf.print(F("C"));
 		Serial.print(F("T "));
 		Serial.println(temp);
+		display.setTextColor(ST77XX_WHITE);
 	}
 	if(temp_control != UNKNOWN_TEMP) {
 		dbuf.setCursor(80, 0);
@@ -610,9 +617,19 @@ void program_proc()
 		t_cycle *cy = &(program.cycles[program.current_cycle]);
 		t_cycle_item *it = &(cy->items[cy->current_item]);
 		time_t m = rtclock.now();
-		program.time_left = max(0, program.last_switch_time + it->secs - m);
+		if((!program.temp_reached) && temp >= cy->items[cy->current_item].temp) {
+			program.temp_reached = true;
+			program.last_reach_time = m;
+		}
+		if(program.temp_reached) {
+			program.time_left = max(0, program.last_reach_time + it->secs - m);
+		} else {
+			program.time_left = it->secs;
+		}
 		if(program.time_left == 0) {
+			// switch to another item
 			program.last_switch_time = m;
+			program.temp_reached = false;
 			cy->current_item++;
 			if(cy->current_item >= cy->item_count) {
 				cy->current_item = 0;
