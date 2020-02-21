@@ -12,8 +12,8 @@
 double Setpoint, Input, Output;
 
 // tuning parameters
-double hKp=100, hKi=0, hKd=0;
-double cKp=100, cKi=0, cKd=0;
+double hKp=100, hKi=15, hKd=5;
+double cKp=50, cKi=1, cKd=5;
 PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
@@ -162,6 +162,7 @@ typedef struct S_PROGRAM {
 	byte cycle_count;
 	// dynamics
 	bool running, finished;
+	byte heating_cycle;
 	bool temp_reached;
 	byte current_cycle;
 	time_t last_switch_time;
@@ -171,6 +172,7 @@ typedef struct S_PROGRAM {
 	{
 		last_switch_time = 0;
 		last_reach_time = 0;
+		heating_cycle = true;
 		temp_reached = false;
 		time_left = 0;
 		cycle_count = 3;
@@ -233,14 +235,12 @@ void display_status()
 	}
 	dbuf.fillScreen(0);
 	if(temp != UNKNOWN_TEMP) {
-		display.setTextColor(program.temp_reached ? ST77XX_WHITE : ST77XX_YELLOW);
 		dbuf.setCursor(30, 0);
 		dbuf.print(F("="));
 		dbuf.print(temp);
 		dbuf.print(F("C"));
 		Serial.print(F("T "));
 		Serial.println(temp);
-		display.setTextColor(ST77XX_WHITE);
 	}
 	if(temp_control != UNKNOWN_TEMP) {
 		dbuf.setCursor(80, 0);
@@ -283,7 +283,10 @@ void display_status()
 //		Serial.println(program.time_left);
 	}
 	// copy buffer to screen
-	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
+	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), program.temp_reached ? ST77XX_WHITE : ST77XX_YELLOW, ST77XX_BLACK);
+	Serial.print(F("Temp.reached:"));
+	Serial.print(program.temp_reached ? "Yes" : "No");
+	Serial.println(program.heating_cycle ? ", heating" : ", cooling");
 //	Serial.print(F("history size:"));
 //	Serial.println(temp_history_count);
 //	Serial.print(F("min temp:"));
@@ -461,14 +464,21 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 
 void set_temp2set(int temp)
 {
-	if(temp2set < temp) {
-		// K for cooling
-		heaterPID.SetTunings(cKp, cKi, cKd);
-	} else {
-		// K for heating
-		heaterPID.SetTunings(hKp, hKi, hKd);
+	if(temp != temp2set) {
+		Serial.print(temp2set);
+		Serial.print(" to ");
+		Serial.println(temp);
+		if(temp2set < temp) {
+			// K for cooling
+			heaterPID.SetTunings(cKp, cKi, cKd);
+		} else {
+			// K for heating
+			heaterPID.SetTunings(hKp, hKi, hKd);
+		}
+		program.temp_reached = false;
+		program.heating_cycle = temp > temp2set;
+		temp2set = temp;
 	}
-	temp2set = temp;
 }
 
 #define MAX_ARGS_COUNT 5
@@ -601,6 +611,7 @@ void process_proc()
 	}
 #endif // USE_PID
 	Peltier.setSpeed(heater_pwm * heat_direction);
+	digitalWrite(FAN_PIN, program.heating_cycle ? LOW : HIGH);
 //	if(heater_pwm > MAX_PWM/2) {
 //		digitalWrite(FAN_PIN, LOW);
 //	} else if(heater_pwm < 0) {
@@ -617,7 +628,7 @@ void program_proc()
 		t_cycle *cy = &(program.cycles[program.current_cycle]);
 		t_cycle_item *it = &(cy->items[cy->current_item]);
 		time_t m = rtclock.now();
-		if((!program.temp_reached) && temp >= cy->items[cy->current_item].temp) {
+		if((!program.temp_reached) && ((program.heating_cycle && temp >= cy->items[cy->current_item].temp) || (!program.heating_cycle && temp < cy->items[cy->current_item].temp))) {
 			program.temp_reached = true;
 			program.last_reach_time = m;
 		}
@@ -629,7 +640,6 @@ void program_proc()
 		if(program.time_left == 0) {
 			// switch to another item
 			program.last_switch_time = m;
-			program.temp_reached = false;
 			cy->current_item++;
 			if(cy->current_item >= cy->item_count) {
 				cy->current_item = 0;
@@ -641,7 +651,8 @@ void program_proc()
 						program.current_cycle = 0;
 						program.running = false;
 						program.finished = true;
-						temp2set = INITIAL_TEMP2SET;
+						program.heating_cycle = true;
+						set_temp2set(INITIAL_TEMP2SET);
 					}
 				}
 			}
@@ -651,7 +662,7 @@ void program_proc()
 			cy = &(program.cycles[program.current_cycle]);
 			it = &(cy->items[cy->current_item]);
 			// and set desired temp
-			temp2set = cy->items[cy->current_item].temp;
+			set_temp2set(cy->items[cy->current_item].temp);
 		}
 	}
 }
