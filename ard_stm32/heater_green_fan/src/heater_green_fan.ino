@@ -12,8 +12,8 @@
 double Setpoint, Input, Output;
 
 // tuning parameters
-double hKp=100, hKi=15, hKd=5;
-double cKp=50, cKi=1, cKd=5;
+double hKp=100, hKi=1, hKd=5;
+double cKp=100, cKi=1, cKd=5;
 PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 
 #endif //USE_PID
@@ -100,6 +100,7 @@ const int32_t max_temp = 100, min_temp = 10;
 int8_t temp_control_history[TEMP_HISTORY_SIZE];
 int8_t temp_history[TEMP_HISTORY_SIZE];
 int8_t temp_req_history[TEMP_HISTORY_SIZE];
+int8_t heating_history[TEMP_HISTORY_SIZE];
 uint16_t temp_history_count = 0;
 int32_t plot_max_temp = max_temp;
 int32_t plot_min_temp = min_temp;
@@ -300,7 +301,7 @@ void display_status()
 		display.drawLine(PLOT_LEFT+i-1, map(temp_control_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
 				map(temp_control_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_YELLOW);
 		display.drawLine(PLOT_LEFT+i-1, map(temp_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
-				map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_BLUE);
+				map(temp_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), heating_history[i] ? ST77XX_RED : ST77XX_BLUE);
 		display.drawLine(PLOT_LEFT+i-1, map(temp_req_history[i-1], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), PLOT_LEFT+i,
 				map(temp_req_history[i], plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP), ST77XX_GREEN);
 	}
@@ -416,12 +417,14 @@ void update_history_proc()
 				temp_history[i-1] = temp_history[i];
 				temp_control_history[i-1] = temp_control_history[i];
 				temp_req_history[i-1] = temp_req_history[i];
+				heating_history[i-1] = heating_history[i];
 			}
 			temp_history_count--;
 		}
 		temp_req_history[temp_history_count] = temp2set;
 		temp_history[temp_history_count] = temp;
 		temp_control_history[temp_history_count] = temp_control;
+		heating_history[temp_history_count] = heater_pwm < 0;
 		temp_history_count++;
 	}
 }
@@ -611,7 +614,7 @@ void process_proc()
 	}
 #endif // USE_PID
 	Peltier.setSpeed(heater_pwm * heat_direction);
-	digitalWrite(FAN_PIN, program.heating_cycle ? LOW : HIGH);
+//	digitalWrite(FAN_PIN, program.heating_cycle ? LOW : HIGH);
 //	if(heater_pwm > MAX_PWM/2) {
 //		digitalWrite(FAN_PIN, LOW);
 //	} else if(heater_pwm < 0) {
