@@ -121,6 +121,9 @@ const unsigned long Rs = 100000L;
 
 const int MAX_ITEM_PER_CYCLE = 5;
 const int MAX_CYCLES = 10;
+const int MAX_SWITCH_REACH_TIMEOUT = 60;
+
+char const *error_str=NULL;
 
 RTClock rtclock (RTCSEL_LSE); // initialise
 
@@ -225,6 +228,7 @@ void draw_plot_scale()
 	}
 }
 
+// show current process
 void display_status()
 {
 	if(display_mode_env != display_mode) {
@@ -270,7 +274,11 @@ void display_status()
 		dbuf.fillTriangle(2, 2+12, 12, 12+12, 22, 2+12, 1);
 	}
 	dbuf.setCursor(130, 0);
-	dbuf.print(program.running ? "Running" : (program.finished ? "Finished" : "Stopped"));
+	if(error_str) {
+		dbuf.print(error_str);
+	} else {
+		dbuf.print(program.running ? "Running" : (program.finished ? "Finished" : "Stopped"));
+	}
 	if(program.running) {
 		dbuf.setCursor(130, 12);
 		dbuf.print(program.current_cycle);
@@ -284,7 +292,7 @@ void display_status()
 //		Serial.println(program.time_left);
 	}
 	// copy buffer to screen
-	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), program.temp_reached ? ST77XX_WHITE : ST77XX_YELLOW, ST77XX_BLACK);
+	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), error_str ? ST77XX_RED : (program.temp_reached ? ST77XX_WHITE : ST77XX_YELLOW), ST77XX_BLACK);
 	Serial.print(F("Temp.reached:"));
 	Serial.print(program.temp_reached ? "Yes" : "No");
 	Serial.println(program.heating_cycle ? ", heating" : ", cooling");
@@ -307,6 +315,7 @@ void display_status()
 	}
 }
 
+// show setting screen
 void display_setup() {
 	if(display_mode_env != display_mode) {
 		display.fillScreen(ST77XX_BLACK);
@@ -490,6 +499,22 @@ String args[MAX_ARGS_COUNT];
 int args_count;
 String command_error;
 
+void program_start()
+{
+	error_str = NULL;
+	program.running = true;
+}
+
+void program_pause()
+{
+	program.running = false;
+}
+
+void program_stop()
+{
+	program = t_program();
+}
+
 void parse_command_proc()
 {
 	if(stringComplete) {
@@ -574,13 +599,13 @@ void parse_command_proc()
 				}
 			} else if(command == "R") {
 				// reset program
-				program = t_program();
+				program_stop();
 			} else if(command == "G") {
 				// start program
-				program.running = true;
+				program_start();
 			} else if(command == "P") {
 				// pause program
-				program.running = false;
+				program_pause();
 			} else {
 				command_error = "Unknown command line:" + inputString;
 			}
@@ -631,9 +656,15 @@ void program_proc()
 		t_cycle *cy = &(program.cycles[program.current_cycle]);
 		t_cycle_item *it = &(cy->items[cy->current_item]);
 		time_t m = rtclock.now();
-		if((!program.temp_reached) && ((program.heating_cycle && temp >= cy->items[cy->current_item].temp) || (!program.heating_cycle && temp < cy->items[cy->current_item].temp))) {
-			program.temp_reached = true;
-			program.last_reach_time = m;
+		if(!program.temp_reached) {
+			if((program.heating_cycle && temp >= cy->items[cy->current_item].temp) || (!program.heating_cycle && temp < cy->items[cy->current_item].temp)) {
+				program.temp_reached = true;
+				program.last_reach_time = m;
+			} else if((m - program.last_switch_time) > MAX_SWITCH_REACH_TIMEOUT) {
+				// it takes too long to heat/cool, set error
+				program_stop();
+				error_str = "Timeout heating/cooling";
+			}
 		}
 		if(program.temp_reached) {
 			program.time_left = max(0, program.last_reach_time + it->secs - m);
