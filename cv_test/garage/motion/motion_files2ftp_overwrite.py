@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os, sys, time, traceback, re, glob
 sys.path.append(os.path.expanduser('~n800s/private'))
 from datetime import datetime
@@ -13,13 +14,23 @@ SRCDPATH = '/var/lib/motion'
 reg = re.compile('([0-9]{14})-\d+(-\d+)?\.(jpg|avi)')
 BASE_DNAME = 'rus_hard/garage'
 
+def dbprint(text, nl=True):
+	print(time.strftime('[%Y-%m-%d %H:%M:%S]'), text, end='')
+	if nl:
+		print()
+
 pathlist = None
+attempt = 0
 while True:
 	try:
-		print 'Collecting files..'
+		if attempt > 0:
+			print('.', end='')
+		else:
+			dbprint('Collecting files ', nl=False)
 		flist =[fname for fname in glob.glob(os.path.join(SRCDPATH, '*.*')) if os.path.splitext(fname)[1] in ('.avi', '.jpg')]
-		print '%d found' % len(flist)
+		attempt += 1
 		if len(flist) > 0:
+			dbprint('\n%d found' % len(flist))
 			ftp_h = FTP()
 			ftp_h.connect('192.168.1.1', 21, 5)
 			try:
@@ -37,21 +48,21 @@ while True:
 								dname += '_vids'
 							else:
 								dname += '_pics'
-							print 'Current directory', ftp_h.pwd()
+							dbprint('Current directory: %s' % ftp_h.pwd())
 							try:
 								ftp_h.mkd(dname)
-								print 'Created directory', dname
+								dbprint('Created directory %s' % dname)
 							except:
 								pass
 							# to test successfully created or existing directory
 							ftp_h.cwd(dname)
 							ftp_h.cwd('..')
 							dfname = os.path.join(dname, bname)
-							print 'Sending', fname, ' to ', dfname, '...'
+							print('Sending %s to %s ...' % (fname, dfname))
 							f = open(fname, 'rb')
 							ftp_h.storbinary('STOR ' + dfname, f)
 							f.close()
-							print fname, 'sent'
+							print('%s sent' % fname)
 							os.unlink(fname)
 			finally:
 				ftp_h.quit()
