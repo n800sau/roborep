@@ -44,6 +44,20 @@ const uint8_t oline[] = {PA15, PB3, PB4};
 const uint8_t iline[] = {PB5, PB6, PB7};
 readKey keylib = readKey();
 
+// 13       12
+// 23    21 22 11
+// 33 31    32
+
+#define KEY_SW     0x31
+#define KEY_PLUS   0x13
+#define KEY_MINUS  0x33
+#define KEY_LEFT   0x21
+#define KEY_UP     0x12
+#define KEY_OK     0x22
+#define KEY_DOWN   0x32
+#define KEY_RIGHT  0x11
+
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 
@@ -132,7 +146,8 @@ enum DISPLAY_MODE_T {DISPLAY_NONE, DISPLAY_STATUS, DISPLAY_SETUP};
 DISPLAY_MODE_T display_mode = DISPLAY_STATUS;
 DISPLAY_MODE_T display_mode_env = DISPLAY_NONE;
 
-int setup_edit_pos = 0;
+int menu_pos_x = 0;
+int menu_pos_y = 0;
 
 typedef struct S_CYCLE_ITEM {
 	time_t secs;
@@ -198,16 +213,32 @@ typedef struct S_PROGRAM {
 
 t_program program;
 
+const int MARKER_W=10, MARKET_H=10;
+enum MENU_LINE_FUNC {MLF_ENBL};
+
 // ************************************************
 
-int setup_edit_pos_count()
+void menu_pos_change(int x, int y)
 {
-	int rs = 1;
-	for(int i=0; i<program.cycle_count; i++) {
-		rs += 1;
-		rs += program.cycles[i].item_count * 2;
+	menu_pos_y += y;
+	if(menu_pos_y < 0) {
+		menu_pos_y = 0;
+	} else {
+		int max_y = 1;
+		for(int i=0; i<program.cycle_count; i++) {
+			max_y += 1;
+			max_y += program.cycles[i].item_count;
+		}
+		if(y >= max_y) {
+			y = max_y - 1;
+		}
 	}
-	return rs;
+	menu_pos_x += x;
+	if(menu_pos_x < 0) {
+		menu_pos_x = 0;
+	} else if(menu_pos_x >= 2) {
+		menu_pos_x = 1;
+	}
 }
 
 void draw_plot_scale()
@@ -316,37 +347,38 @@ void display_status()
 }
 
 // show setting screen
-void display_setup() {
+void display_setup()
+{
+	const int line_step = 12 + MARKET_H;
 	if(display_mode_env != display_mode) {
 		display.fillScreen(ST77XX_BLACK);
-		dbuf.setTextSize(2);
+		dbuf.setTextSize(1);
 		dbuf.setTextColor(1);
-		display.setTextSize(2);
+		display.setTextSize(1);
 		display.setTextColor(ST77XX_GREEN);
 		display.setCursor(0, 0);
 		display.print(F("Program:"));
 		display_mode_env = display_mode;
 	}
-	int y = 12;
+	int y = line_step;
 	for(int i=0; i<program.cycle_count; i++) {
 		t_cycle *c = &program.cycles[i];
-		display.setCursor(10, y);
 		dbuf.fillScreen(0);
-		dbuf.setCursor(10, 0);
+		dbuf.setCursor(0, 0);
 		dbuf.print(F("Repeats:"));
 		dbuf.print(c->repeats);
-		display.drawBitmap(0, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_YELLOW, ST77XX_BLACK);
-		y += 12;
+		display.drawBitmap(MARKER_W, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_YELLOW, ST77XX_BLACK);
+		y += line_step;
 		for(int j=0; j<c->item_count; j++) {
 			t_cycle_item *ci = &c->items[j];
 			dbuf.fillScreen(0);
-			dbuf.setCursor(20, 0);
+			dbuf.setCursor(10, 0);
 			dbuf.print(F("secs:"));
 			dbuf.print(ci->secs);
 			dbuf.print(F(", temp:"));
 			dbuf.print(ci->temp);
-			display.drawBitmap(0, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_GREEN, ST77XX_BLACK);
-			y += 12;
+			display.drawBitmap(MARKER_W, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_GREEN, ST77XX_BLACK);
+			y += line_step;
 		}
 	}
 }
@@ -732,32 +764,32 @@ void process_keys()
 	byte key = keylib.read_key_debounce();
 	if(last_key != key) {
 		switch(key) {
-			case 0x23:
+			case KEY_PLUS:
 				temp2set++;
 				break;
-			case 0x13:
+			case KEY_MINUS:
 				temp2set--;
 				break;
-			case 0x11:
-				display_mode = DISPLAY_SETUP;
+			case KEY_SW:
+				display_mode = display_mode==DISPLAY_SETUP ? DISPLAY_STATUS : DISPLAY_SETUP;
 				break;
-			case 0x12:
-				display_mode = DISPLAY_STATUS;
+			case KEY_UP:
+				menu_pos_change(0, -1);
 				break;
-			case 0x21: // up
-				setup_edit_pos++;
-				if(setup_edit_pos >= setup_edit_pos_count()) {
-					setup_edit_pos = setup_edit_pos_count();
-				}
+			case KEY_DOWN:
+				menu_pos_change(0, 1);
 				break;
-			case 0x22: // down
-				setup_edit_pos--;
-				if(setup_edit_pos < 0) {
-					setup_edit_pos = 0;
-				}
+			case KEY_LEFT:
+				menu_pos_change(-1, 0);
+				break;
+			case KEY_RIGHT:
+				menu_pos_change(1, 0);
 				break;
 		}
-		Serial.println(key, HEX);
+		if(key) {
+			Serial.print("PRESSED: ");
+			Serial.println(key, HEX);
+		}
 		last_key = key;
 	}
 }
