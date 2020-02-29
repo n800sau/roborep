@@ -6,6 +6,7 @@ readKey keylib;
 
 void setup()
 {
+	Serial.begin(115200);
 	keylib.begin(sizeof(oline), sizeof(iline), oline, iline);
 }
 
