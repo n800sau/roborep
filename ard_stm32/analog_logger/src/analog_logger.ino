@@ -9,17 +9,19 @@
 
 #include <Ticker.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
+#include <Adafruit_ST7735.h> // Hardware-specific library
 
-// ST7789 TFT module connections
+// NTC
+const int TEMP_PIN = PB1;
+// 2.5v ref
+const int REF_PIN = PB0;
+
 #define TFT_CS     PA4
 #define TFT_RST    PA2
 #define TFT_DC     PA3
-#define TFT_SCLK   PA5
-#define TFT_MOSI   PA7
-
-// Initialize Adafruit ST7789 TFT library
-Adafruit_ST7789 display = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+#define TFT_SCLK   PA5   // set these to be whatever pins you like!
+#define TFT_MOSI   PA7   // set these to be whatever pins you like!
+Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 #define PLOT_TOP 24
 #define PLOT_BOTTOM 239
@@ -33,11 +35,6 @@ GFXcanvas1 dbuf(240, PLOT_TOP);
 const int UNKNOWN_TEMP = -1000;
 
 double temp = UNKNOWN_TEMP;
-
-// NTC
-const int TEMP_PIN = PB1;
-// 2.5v ref
-const int REF_PIN = PB0;
 
 #define TEMP_HISTORY_SIZE (240-PLOT_LEFT)
 int8_t temp_history[TEMP_HISTORY_SIZE];
@@ -190,9 +187,10 @@ void setup()
 	pinMode(TEMP_PIN, INPUT);
 	pinMode(REF_PIN, INPUT);
 
-	display.init(240, 240, SPI_MODE2);    // Init ST7789 display 240x240 pixel
-	display.setRotation(2);
-	display.fillScreen(ST77XX_BLACK);
+	display.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
+	display.setTextWrap(false); // Allow text to run off right edge
+	display.fillScreen(ST7735_BLACK);
+	display.setRotation(1);
 	display.setTextSize(1);
 	display.setTextColor(ST77XX_WHITE);
 	draw_plot_scale();
