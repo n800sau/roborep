@@ -1,5 +1,10 @@
-//#include "thermistor.h"
 #include <RTClock.h>
+#include <SdFat.h>
+
+// SD chip select pin.  Be sure to disable any other SPI devices such as Enet.
+#define chipSelect SS
+
+#define error(msg) sd.errorHalt(F(msg))
 
 #define REFERENCE_RESISTANCE   330000
 #define NOMINAL_RESISTANCE     100000
@@ -56,7 +61,24 @@ const unsigned long Rs = 100000L;
 //const unsigned long Rs = 470000L;
 // ************************************************
 
+// Log file base name.  Must be six characters or less.
+#define FILENAME "data.csv"
+
+// File system object.
+SdFat sd;
+// Log file.
+SdFile file;
+
 RTClock rtclock (RTCSEL_LSE); // initialise
+
+// Log a data record.
+void logData(double temp)
+{
+	file.print(rtclock.now());
+	file.print(",");
+	file.print(temp);
+	file.println();
+}
 
 void draw_plot_scale()
 {
@@ -158,8 +180,8 @@ void update_temp()
 		Serial.println("Ready");
 	}
 	temp = read_temp(TEMP_PIN);
-	//temp = thermistor.readCelsius();
 
+	logData(temp);
 //	Serial.print(F("Temp:"));
 //	Serial.println(temp);
 }
@@ -194,6 +216,15 @@ void setup()
 	display.setTextSize(1);
 	display.setTextColor(ST77XX_WHITE);
 	draw_plot_scale();
+
+	// Initialize at the highest speed supported by the board that is
+	// not over 50 MHz. Try a lower speed if SPI errors occur.
+	if(!sd.begin(chipSelect, SD_SCK_MHZ(50))) {
+		sd.initErrorHalt();
+	}
+	if(!file.open(FILENAME, O_WRONLY | O_APPEND | O_EXCL)) {
+		error("file.open");
+	}
 
 	temp_history_timer.start();
 	status_timer.start();
