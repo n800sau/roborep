@@ -21,7 +21,6 @@ PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 //#include <Thermistor.h>
 //#include <NTC_Thermistor.h>
 
-#define SENSOR_PIN             PB1
 #define REFERENCE_RESISTANCE   330000
 #define NOMINAL_RESISTANCE     100000
 #define NOMINAL_TEMPERATURE    25
@@ -29,7 +28,7 @@ PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 #define STM32_ANALOG_RESOLUTION 4095
 
 //NTC_Thermistor thermistor(
-//    SENSOR_PIN,
+//    TEMP_PIN,
 //    REFERENCE_RESISTANCE,
 //    NOMINAL_RESISTANCE,
 //    NOMINAL_TEMPERATURE,
