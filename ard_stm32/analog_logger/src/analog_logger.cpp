@@ -1,4 +1,3 @@
-#include <RTClock.h>
 #include <SdFat.h>
 
 // SD chip select pin.  Be sure to disable any other SPI devices such as Enet.
@@ -16,6 +15,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h> // Hardware-specific library
 
+#if defined(STM32F103xB)
+
 // NTC
 const int TEMP_PIN = PB1;
 // 2.5v ref
@@ -26,6 +27,25 @@ const int REF_PIN = PB0;
 #define TFT_DC     PA3
 #define TFT_SCLK   PA5   // set these to be whatever pins you like!
 #define TFT_MOSI   PA7   // set these to be whatever pins you like!
+
+#endif //STM32F1xx
+
+#if defined(STM32F030x6)
+
+// NTC
+const int TEMP_PIN = PB_1;
+// 2.5v ref
+const int REF_PIN = PB_0;
+
+#define TFT_CS     PA_4
+#define TFT_RST    PA_2
+#define TFT_DC     PA_3
+#define TFT_SCLK   PA_5   // set these to be whatever pins you like!
+#define TFT_MOSI   PA_7   // set these to be whatever pins you like!
+
+#endif //STM32F0xx
+
+
 Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 #define PLOT_TOP 24
@@ -69,12 +89,11 @@ SdFat sd;
 // Log file.
 SdFile file;
 
-RTClock rtclock (RTCSEL_LSE); // initialise
-
 // Log a data record.
 void logData(double temp)
 {
-	file.print(rtclock.now());
+	time_t t;
+	file.print(time(&t));
 	file.print(",");
 	file.print(temp);
 	file.println();
@@ -140,7 +159,9 @@ double ntcVoltageRead(int temp_pin)
 	double ref = 0;
 	for(int i = 0; i < 20; i++) {
 		val += analogRead(temp_pin);
+#if !defined(ESP8266)
 		ref += analogRead(REF_PIN);
+#endif //!ESP8266
 		delay(1);
 	}
 //	Serial.print(F("val:"));
@@ -152,7 +173,11 @@ double ntcVoltageRead(int temp_pin)
 //	Serial.print(F(", NCC V:"));
 //	Serial.println(val/4096/20*Vcc);
 	// Voltage on NTC
+#if defined(ESP8266)
+	return Vref * val;
+#else
 	return Vref * val / ref;
+#endif //!ESP8266
 }
 
 double read_temp(int temp_pin)
