@@ -213,12 +213,11 @@ typedef struct S_PROGRAM {
 
 t_program program;
 
-const int MARKER_W=10, MARKET_H=10;
-enum MENU_LINE_FUNC {MLF_ENBL};
+const int MARKER_W=10, MARKER_H=10;
 
 // ************************************************
 
-void menu_pos_change(int x, int y)
+int menu_pos_change(int x, int y)
 {
 	menu_pos_y += y;
 	if(menu_pos_y < 0) {
@@ -349,7 +348,7 @@ void display_status()
 // show setting screen
 void display_setup()
 {
-	const int line_step = 12 + MARKET_H;
+	const int line_step = 12 + MARKER_H;
 	if(display_mode_env != display_mode) {
 		display.fillScreen(ST77XX_BLACK);
 		dbuf.setTextSize(1);
@@ -361,16 +360,33 @@ void display_setup()
 		display_mode_env = display_mode;
 	}
 	int y = line_step;
+	int xp = menu_pos_x;
+	int yp = menu_pos_y;
 	for(int i=0; i<program.cycle_count; i++) {
 		t_cycle *c = &program.cycles[i];
 		dbuf.fillScreen(0);
-		dbuf.setCursor(0, 0);
+		if(yp-- == 0) {
+			dbuf.setCursor(0, 0);
+			dbuf.print(F("*"));
+		}
+		dbuf.setCursor(MARKER_W, 0);
 		dbuf.print(F("Repeats:"));
 		dbuf.print(c->repeats);
-		display.drawBitmap(MARKER_W, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_YELLOW, ST77XX_BLACK);
+		display.drawBitmap(0, y, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_YELLOW, ST77XX_BLACK);
 		y += line_step;
 		for(int j=0; j<c->item_count; j++) {
 			t_cycle_item *ci = &c->items[j];
+			if(yp-- == 0) {
+				dbuf.fillScreen(0);
+				if(xp == 0) {
+					dbuf.setCursor(30, 0);
+				}
+				if(xp == 1) {
+					dbuf.setCursor(60, 0);
+				}
+				dbuf.print(F("*"));
+				display.drawBitmap(0, y+line_step-MARKER_H, dbuf.getBuffer(), dbuf.width(), 12, ST77XX_GREEN, ST77XX_BLACK);
+			}
 			dbuf.fillScreen(0);
 			dbuf.setCursor(10, 0);
 			dbuf.print(F("secs:"));
