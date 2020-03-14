@@ -21,7 +21,6 @@ PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 //#include <Thermistor.h>
 //#include <NTC_Thermistor.h>
 
-#define SENSOR_PIN             PB1
 #define REFERENCE_RESISTANCE   330000
 #define NOMINAL_RESISTANCE     100000
 #define NOMINAL_TEMPERATURE    25
@@ -29,7 +28,7 @@ PID heaterPID(&Input, &Output, &Setpoint, hKp, hKi, hKd, REVERSE);
 #define STM32_ANALOG_RESOLUTION 4095
 
 //NTC_Thermistor thermistor(
-//    SENSOR_PIN,
+//    TEMP_PIN,
 //    REFERENCE_RESISTANCE,
 //    NOMINAL_RESISTANCE,
 //    NOMINAL_TEMPERATURE,
@@ -217,7 +216,7 @@ const int MARKER_W=10, MARKER_H=10;
 
 // ************************************************
 
-int menu_pos_change(int x, int y)
+void menu_change(int x, int y, int val=0)
 {
 	menu_pos_y += y;
 	if(menu_pos_y < 0) {
@@ -238,6 +237,29 @@ int menu_pos_change(int x, int y)
 	} else if(menu_pos_x >= 2) {
 		menu_pos_x = 1;
 	}
+	if(val) {
+		x = menu_pos_x;
+		y = menu_pos_y;
+		for(int i=0; i<program.cycle_count; i++) {
+			if(menu_pos_y-- == 0) {
+				program.cycles[i].repeats += val;
+				break;
+			}
+			for(int j=0; j<program.cycles[i].item_count; j++) {
+				if(menu_pos_y-- == 0) {
+					if(menu_pos_x == 0) {
+						program.cycles[i].items[j].secs += val;
+					} else if(menu_pos_x == 1) {
+						program.cycles[i].items[j].temp += val;
+					}
+					break;
+				}
+			}
+			if(menu_pos_y < 0) {
+				break;
+			}
+		}
+	}
 }
 
 void draw_plot_scale()
@@ -250,7 +272,7 @@ void draw_plot_scale()
 		if(ptemp != plot_min_temp) {
 			int y = map(ptemp, plot_min_temp-1, plot_max_temp+1, PLOT_BOTTOM, PLOT_TOP);
 //			Serial.print(ptemp);
-//			Serial.print(" at ");
+//			Serial.print(F(" at "));
 //			Serial.println(y);
 			display.setCursor(0, y);
 			display.print(ptemp);
@@ -318,7 +340,7 @@ void display_status()
 		dbuf.print(program.cycles[program.current_cycle].current_item);
 		dbuf.print("-");
 		dbuf.print(program.time_left);
-//		Serial.print("Time left:");
+//		Serial.print(F("Time left:"));
 //		Serial.println(program.time_left);
 	}
 	// copy buffer to screen
@@ -506,7 +528,7 @@ void parse_line(String line, String &command, String *args, int max_arg_count, i
 			if(space_pos<0) {
 				space_pos = line.length();
 			}
-//			Serial.print("space_pos: ");
+//			Serial.print(F("space_pos: "));
 //			Serial.println(space_pos);
 			if(command == "") {
 				command = line.substring(0, space_pos);
@@ -526,7 +548,7 @@ void set_temp2set(int temp)
 {
 	if(temp != temp2set) {
 		Serial.print(temp2set);
-		Serial.print(" to ");
+		Serial.print(F(" to "));
 		Serial.println(temp);
 		if(temp2set < temp) {
 			// K for cooling
@@ -675,7 +697,7 @@ void process_proc()
 #ifdef USE_PID
 	Input = temp;
 	Setpoint = temp2set;
-//	Serial.print("Error:");
+//	Serial.print(F("Error:"));
 //	Serial.println(temp2set-temp);
 	heaterPID.Compute();
 	heater_pwm = Output;
@@ -774,39 +796,63 @@ Serial.println(F("Complete"));
 	}
 }
 
+const unsigned long LAST_KEY_TIMEOUT = 1;
+byte last_key = 0;
+time_t last_key_ts = rtclock.now();
+
 void process_keys()
 {
-	static byte last_key = 0;
 	byte key = keylib.read_key_debounce();
+	if(last_key == key && last_key_ts + LAST_KEY_TIMEOUT < rtclock.now()) {
+		last_key = -1;
+	}
 	if(last_key != key) {
-		switch(key) {
-			case KEY_PLUS:
-				temp2set++;
+		switch(display_mode) {
+			case DISPLAY_SETUP:
+				switch(key) {
+					case KEY_PLUS:
+						menu_change(0, 0, 1);
+						break;
+					case KEY_MINUS:
+						menu_change(0, 0, -1);
+						break;
+					case KEY_SW:
+						display_mode = DISPLAY_STATUS;
+						break;
+					case KEY_UP:
+						menu_change(0, -1);
+						break;
+					case KEY_DOWN:
+						menu_change(0, 1);
+						break;
+					case KEY_LEFT:
+						menu_change(-1, 0);
+						break;
+					case KEY_RIGHT:
+						menu_change(1, 0);
+						break;
+				}
 				break;
-			case KEY_MINUS:
-				temp2set--;
-				break;
-			case KEY_SW:
-				display_mode = display_mode==DISPLAY_SETUP ? DISPLAY_STATUS : DISPLAY_SETUP;
-				break;
-			case KEY_UP:
-				menu_pos_change(0, -1);
-				break;
-			case KEY_DOWN:
-				menu_pos_change(0, 1);
-				break;
-			case KEY_LEFT:
-				menu_pos_change(-1, 0);
-				break;
-			case KEY_RIGHT:
-				menu_pos_change(1, 0);
+			default:
+				switch(key) {
+					case KEY_PLUS:
+						temp2set++;
+						break;
+					case KEY_MINUS:
+						temp2set--;
+						break;
+					case KEY_SW:
+						display_mode = DISPLAY_SETUP;
+						break;
+				}
 				break;
 		}
 		if(key) {
-			Serial.print("PRESSED: ");
+			Serial.print(F("PRESSED: "));
 			Serial.println(key, HEX);
 		}
 		last_key = key;
+		last_key_ts = rtclock.now();
 	}
 }
 
