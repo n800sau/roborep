@@ -12,7 +12,7 @@
 	{
 		foreach(glob($dname->getPathname() . '/*') as $fpath) {
 			$it = mime_content_type($fpath);
-			if($it == 'image/jpeg') {
+			if($it == 'image/jpeg' || $it == 'image/png') {
 				$itype = exif_imagetype($fpath);
 				if($itype) {
 					if($i >= $start) {
