@@ -7,9 +7,13 @@ import struct
 import json
 import time
 import traceback
+import redis
 
 MCAST_GRP = '239.0.0.57'
 MCAST_PORT = 8989
+
+REDIS_KEY = 'mq2_list'
+MAX_ITEMS = 100
 
 def dbprint(text):
     print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
@@ -41,12 +45,18 @@ if __name__ == '__main__':
 
 	sock = make_sock()
 
+	r = redis.Redis()
+
 	while True:
 		try:
 			dbprint('Waiting...')
 			data = sock.recv(1000)
 			try:
-				dbprint('%s' % data)
+				jdata = json.loads(data)
+				dbprint('%g at %s' % (jdata['voltage'], jdata['ts']))
+				r.rpush(REDIS_KEY, json.dumps(jdata))
+				while r.llen(REDIS_KEY) > MAX_ITEMS:
+					r.lpop(REDIS_KEY)
 			except ValueError, e:
 				dbprint('%s: %s' % (e, data))
 				continue

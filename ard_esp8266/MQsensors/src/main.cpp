@@ -3,6 +3,8 @@
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <EEPROM.h>
+#include <time.h>
 
 #include "config.h"
 
@@ -22,7 +24,56 @@ ESP8266WebServer server(80);
 boolean wifiConnected = false;
 boolean udpConnected = false;
 
-int data_send_period = 5000;
+typedef struct {
+	int32_t data_send_period;
+	int16_t checksum;
+} settings_t;
+
+settings_t settings = {.data_send_period = 5000};
+
+typedef struct {
+	time_t ts;
+	double voltage;
+} val_t;
+
+val_t cur_data = {0, 0};
+
+char datebuf[60];
+
+void load_settings()
+{
+	// Restore from EEPROM, check the checksum matches
+	settings_t s;
+	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
+	EEPROM.begin(sizeof(s));
+	int16_t sum = 0x1234;
+	for (size_t i=0; i<sizeof(s); i++) {
+		ptr[i] = EEPROM.read(i);
+		if(i<sizeof(s)-sizeof(s.checksum)) {
+			sum += ptr[i];
+		}
+	}
+	EEPROM.end();
+	if (s.checksum == sum) {
+		memcpy(&settings, &s, sizeof(settings));
+	}
+}
+
+void save_settings()
+{
+	// Store in "EEPROM" to restart automatically
+	settings_t s;
+	memcpy(&s, &settings, sizeof(s));
+	s.checksum = 0x1234;
+	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
+	for (size_t i=0; i<sizeof(s)-sizeof(s.checksum); i++) s.checksum += ptr[i];
+	EEPROM.begin(sizeof(s));
+	for (size_t i=0; i<sizeof(s); i++) {
+		EEPROM.write(i, ptr[i]);
+	}
+	EEPROM.commit();
+	EEPROM.end();
+}
 
 const String postForm = "<html>\
 	<head>\
@@ -81,6 +132,7 @@ void handleForm() {
 		}
 		server.send(200, "text/plain", message);
 	}
+	save_settings();
 	digitalWrite(LED_PIN, LOW);
 }
 
@@ -161,16 +213,17 @@ boolean connectUDP()
 
 void send_data()
 {
-	double voltage = readVoltage();
+	cur_data.voltage = readVoltage();
+	cur_data.ts = time(NULL);
 	Serial.print("V=");
-	Serial.println(voltage);
+	Serial.println(cur_data.voltage);
 	double R0 = calc_r0();
 	Serial.print("R0=");
 	Serial.println(R0);
 
 	// send no data message
 	Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
-	Udp.print("{ \"voltage\": " + String(voltage) + "}");
+	Udp.print("{\"ts\":" + String(cur_data.ts) + ",\"voltage\":" + String(cur_data.voltage) + "}");
 	Udp.endPacket();
 }
 
@@ -179,10 +232,15 @@ void setup()
 	Serial.begin(115200);
 	Serial.println();
 	WiFi.mode(WIFI_STA);
+	load_settings();
 
 	server.on("/", []() {
 		digitalWrite(LED_PIN, HIGH);
-		server.send(200, "text/plain", "No data");
+		struct tm tmstruct;
+		localtime_r(&cur_data.ts, &tmstruct);
+		snprintf(datebuf, sizeof(datebuf), "%g<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>%li", cur_data.voltage, (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
+			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
+		server.send(200, "text/plain", String(datebuf));
 		digitalWrite(LED_PIN, LOW);
 	});
 	server.on("/config", []() {
@@ -205,14 +263,14 @@ void loop()
 		if(udpConnected)
 		{
 			send_data();
-			delay(data_send_period);
+			delay(settings.data_send_period);
 		} else {
 			udpConnected = connectUDP();
 		}
 	} else {
 		wifiConnected = connectWifi();
 		if(wifiConnected) {
-			configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+			configTime(0, 0, "pool.ntp.org", "time.nist.gov");
 			if(MDNS.begin(HOSTNAME)) {
 				Serial.println("MDNS responder " HOSTNAME " started");
 				// Add service to MDNS-SD
