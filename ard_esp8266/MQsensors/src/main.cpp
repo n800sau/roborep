@@ -8,15 +8,15 @@
 
 #include "config.h"
 
-const char *ssid		 = WIFI_SSID;
+const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 #define HOSTNAME "mq"
 
-#define LED_PIN LED_BUILTIN
+#define LED_PIN 4
 
 // Multicast declarations
 IPAddress ipMulti(239, 0, 0, 57);
-unsigned int portMulti = 8989;			// local port to listen on
+unsigned int portMulti = 8989; // local port to listen on
 
 WiFiUDP Udp;
 ESP8266WebServer server(80);
@@ -229,6 +229,8 @@ void send_data()
 
 void setup()
 {
+	pinMode(LED_PIN, OUTPUT);
+	digitalWrite(LED_PIN, HIGH);
 	Serial.begin(115200);
 	Serial.println();
 	WiFi.mode(WIFI_STA);
@@ -251,6 +253,7 @@ void setup()
 	server.onNotFound(handleNotFound);
 	server.begin();
 	Serial.println("HTTP server started");
+	digitalWrite(LED_PIN, LOW);
 }
 
 void loop()
@@ -268,8 +271,10 @@ void loop()
 			udpConnected = connectUDP();
 		}
 	} else {
+		digitalWrite(LED_PIN, HIGH);
 		wifiConnected = connectWifi();
 		if(wifiConnected) {
+			digitalWrite(LED_PIN, LOW);
 			configTime(0, 0, "pool.ntp.org", "time.nist.gov");
 			if(MDNS.begin(HOSTNAME)) {
 				Serial.println("MDNS responder " HOSTNAME " started");
