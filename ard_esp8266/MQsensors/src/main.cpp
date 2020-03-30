@@ -231,8 +231,8 @@ void setup()
 	server.on("/", []() {
 		struct tm tmstruct;
 		localtime_r(&cur_data.ts, &tmstruct);
-		snprintf(datebuf, sizeof(datebuf), "%g<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>%li", cur_data.voltage, (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
-			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
+		snprintf(datebuf, sizeof(datebuf), "%g<br>%d-%02d-%02d %02d:%02d:%02d UTC\n%li\nVcc:%.2f", cur_data.voltage, (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
+			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts, ESP.getVcc());
 		server.send(200, "text/plain", String(datebuf));
 		blinker.blink(3);
 	});
