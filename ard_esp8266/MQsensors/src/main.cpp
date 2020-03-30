@@ -75,7 +75,7 @@ void save_settings()
 	EEPROM.end();
 }
 
-const String postForm = "<html>\
+const String postForm[] = {"<html>\
 	<head>\
 		<title>" HOSTNAME "</title>\
 		<style>\
@@ -83,18 +83,13 @@ const String postForm = "<html>\
 		</style>\
 	</head>\
 	<body>\
-		<h1>POST plain text to /postplain/</h1><br>\
-		<form method=\"post\" enctype=\"text/plain\" action=\"/postplain/\">\
-			<input type=\"text\" name=\"hello\" value=\"world\"><br>\
-			<input type=\"submit\" value=\"Submit\">\
-		</form>\
-		<h1>POST form data to /postform/</h1><br>\
-		<form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/postform/\">\
-			<input type=\"text\" name=\"hello\" value=\"world\"><br>\
-			<input type=\"submit\" value=\"Submit\">\
+		<h1>Settings</h1><br>\
+		<form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/write_settings/\">\
+			<label>Period(ms):</label><input type=\"number\" min=\"1000\" name=\"period\" value=\"", "\"></input><br>\
+			<input type=\"submit\" value=\"Submit\"></input>\
 		</form>\
 	</body>\
-</html>";
+</html>"};
 
 void handleNotFound(){
 	String message = "File Not Found\n\n";
@@ -111,28 +106,23 @@ void handleNotFound(){
 	server.send(404, "text/plain", message);
 }
 
-void handlePlain() {
-	digitalWrite(LED_PIN, HIGH);
-	if (server.method() != HTTP_POST) {
-		server.send(405, "text/plain", "Method Not Allowed");
-	} else {
-		server.send(200, "text/plain", "POST body was:\n" + server.arg("plain"));
-	}
-	digitalWrite(LED_PIN, LOW);
-}
-
 void handleForm() {
 	digitalWrite(LED_PIN, HIGH);
 	if (server.method() != HTTP_POST) {
 		server.send(405, "text/plain", "Method Not Allowed");
 	} else {
-		String message = "POST form was:\n";
-		for (uint8_t i = 0; i < server.args(); i++) {
-			message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+		int v = server.arg("period").toInt();
+		String message;
+		if(v > 1000) {
+			settings.data_send_period = v;
+			save_settings();
+			message = "Success\n";
+			server.send(200, "text/plain", message);
+		} else {
+			message = "Error in form\n";
 		}
 		server.send(200, "text/plain", message);
 	}
-	save_settings();
 	digitalWrite(LED_PIN, LOW);
 }
 
@@ -246,10 +236,9 @@ void setup()
 		digitalWrite(LED_PIN, LOW);
 	});
 	server.on("/config", []() {
-		server.send(200, "text/plain", postForm);
+		server.send(200, "text/plain", postForm[0] + settings.data_send_period + postForm[1]);
 	});
-	server.on("/postplain/", handlePlain);
-	server.on("/postform/", handleForm);
+	server.on("/write_settings/", handleForm);
 	server.onNotFound(handleNotFound);
 	server.begin();
 	Serial.println("HTTP server started");
