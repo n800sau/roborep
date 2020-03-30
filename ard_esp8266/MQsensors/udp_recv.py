@@ -50,10 +50,10 @@ if __name__ == '__main__':
 	while True:
 		try:
 			dbprint('Waiting...')
-			data = sock.recv(1000)
+			data,address = sock.recvfrom(1000)
 			try:
 				jdata = json.loads(data)
-				dbprint('%g at %s' % (jdata['voltage'], jdata['ts']))
+				dbprint('%g at %s from %s' % (jdata['voltage'], jdata['ts'], ':'.join([str(v) for v in address])))
 				r.rpush(REDIS_KEY, json.dumps(jdata))
 				while r.llen(REDIS_KEY) > MAX_ITEMS:
 					r.lpop(REDIS_KEY)

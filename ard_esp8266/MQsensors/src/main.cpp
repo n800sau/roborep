@@ -40,7 +40,7 @@ typedef struct {
 
 val_t cur_data = {0, 0};
 
-char datebuf[60];
+char htmlbuf[120];
 
 void load_settings()
 {
@@ -132,21 +132,22 @@ double sensorMinValue = -1, sensorMaxValue = -1;
 double readVoltage()
 {
 	double sensorValue = 0;
-	int minValue = -1, maxValue = -1;
+	sensorMinValue = -1;
+	sensorMaxValue = -1;
 	const double div_coef = 10. / (47 + 10);
 	for(int x = 0 ; x < 500 ; x++) //Start for loop 
 	{
 		int v = analogRead(A0);
 		sensorValue += v;
-		if(minValue < 0 || minValue > v) {
-			minValue = v;
+		if(sensorMinValue < 0 || sensorMinValue > v) {
+			sensorMinValue = v;
 		}
-		if(maxValue < 0 || maxValue < v) {
-			maxValue = v;
+		if(sensorMaxValue < 0 || sensorMaxValue < v) {
+			sensorMaxValue = v;
 		}
 	}
-	sensorMinValue = minValue / 500. / 1023 / div_coef;
-	sensorMaxValue = maxValue / 500. / 1023 / div_coef;
+	sensorMinValue = sensorMinValue / 1023 / div_coef;
+	sensorMaxValue = sensorMaxValue / 1023 / div_coef;
 	Serial.print("min:");
 	Serial.print(sensorMinValue);
 	Serial.print(", max:");
@@ -159,7 +160,6 @@ double calc_r0()
 	double RS_air; //Define variable for sensor resistance
 	double R0; //Define variable for R0
 	double sensorVoltage = readVoltage();
-Serial.println(sensorVoltage);
 	RS_air = (5/sensorVoltage)-1; //Calculate RS in fresh air
 	R0 = RS_air/4.4; //Calculate R0
 	return R0;
@@ -247,10 +247,10 @@ void setup()
 	server.on("/", []() {
 		struct tm tmstruct;
 		localtime_r(&cur_data.ts, &tmstruct);
-		snprintf(datebuf, sizeof(datebuf), "%.2f(%.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC\n%li\nVcc:%.2f", cur_data.voltage, sensorMinValue, sensorMaxValue,
+		snprintf(htmlbuf, sizeof(htmlbuf), "V: %.2f (range: %.2f..%.2f)\n%d-%02d-%02d %02d:%02d:%02d UTC\nts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
 			(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
-			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts, ESP.getVcc());
-		server.send(200, "text/plain", String(datebuf));
+			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
+		server.send(200, "text/plain", String(htmlbuf));
 		blinker.blink(3);
 	});
 	server.on("/config", []() {
