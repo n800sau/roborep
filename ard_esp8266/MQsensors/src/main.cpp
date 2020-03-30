@@ -127,14 +127,30 @@ void handleForm() {
 	blinker.blink(2);
 }
 
+double sensorMinValue = -1, sensorMaxValue = -1;
+
 double readVoltage()
 {
 	double sensorValue = 0;
+	int minValue = -1, maxValue = -1;
 	const double div_coef = 10. / (47 + 10);
 	for(int x = 0 ; x < 500 ; x++) //Start for loop 
 	{
-		sensorValue += analogRead(A0);
+		int v = analogRead(A0);
+		sensorValue += v;
+		if(minValue < 0 || minValue > v) {
+			minValue = v;
+		}
+		if(maxValue < 0 || maxValue < v) {
+			maxValue = v;
+		}
 	}
+	sensorMinValue = minValue / 500. / 1023 / div_coef;
+	sensorMaxValue = maxValue / 500. / 1023 / div_coef;
+	Serial.print("min:");
+	Serial.print(sensorMinValue);
+	Serial.print(", max:");
+	Serial.println(sensorMaxValue);
 	return sensorValue / 500 / 1023 / div_coef;
 }
 
@@ -231,7 +247,8 @@ void setup()
 	server.on("/", []() {
 		struct tm tmstruct;
 		localtime_r(&cur_data.ts, &tmstruct);
-		snprintf(datebuf, sizeof(datebuf), "%g<br>%d-%02d-%02d %02d:%02d:%02d UTC\n%li\nVcc:%.2f", cur_data.voltage, (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
+		snprintf(datebuf, sizeof(datebuf), "%.2f(%.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC\n%li\nVcc:%.2f", cur_data.voltage, sensorMinValue, sensorMaxValue,
+			(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
 			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts, ESP.getVcc());
 		server.send(200, "text/plain", String(datebuf));
 		blinker.blink(3);
