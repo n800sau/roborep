@@ -5,6 +5,7 @@
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
 #include <time.h>
+#include <blinker.h>
 
 #include "config.h"
 
@@ -13,6 +14,7 @@ const char *password = WIFI_PASSWORD;
 #define HOSTNAME "mq"
 
 #define LED_PIN 4
+Blinker blinker;
 
 // Multicast declarations
 IPAddress ipMulti(239, 0, 0, 57);
@@ -107,7 +109,6 @@ void handleNotFound(){
 }
 
 void handleForm() {
-	digitalWrite(LED_PIN, HIGH);
 	if (server.method() != HTTP_POST) {
 		server.send(405, "text/plain", "Method Not Allowed");
 	} else {
@@ -123,7 +124,7 @@ void handleForm() {
 		}
 		server.send(200, "text/plain", message);
 	}
-	digitalWrite(LED_PIN, LOW);
+	blinker.blink(2);
 }
 
 double readVoltage()
@@ -215,11 +216,12 @@ void send_data()
 	Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
 	Udp.print("{\"ts\":" + String(cur_data.ts) + ",\"voltage\":" + String(cur_data.voltage) + "}");
 	Udp.endPacket();
+	blinker.blink(3);
 }
 
 void setup()
 {
-	pinMode(LED_PIN, OUTPUT);
+	blinker.begin(LED_PIN);
 	digitalWrite(LED_PIN, HIGH);
 	Serial.begin(115200);
 	Serial.println();
@@ -227,13 +229,12 @@ void setup()
 	load_settings();
 
 	server.on("/", []() {
-		digitalWrite(LED_PIN, HIGH);
 		struct tm tmstruct;
 		localtime_r(&cur_data.ts, &tmstruct);
 		snprintf(datebuf, sizeof(datebuf), "%g<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>%li", cur_data.voltage, (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
 			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
 		server.send(200, "text/plain", String(datebuf));
-		digitalWrite(LED_PIN, LOW);
+		blinker.blink(3);
 	});
 	server.on("/config", []() {
 		server.send(200, "text/plain", postForm[0] + settings.data_send_period + postForm[1]);
@@ -260,6 +261,7 @@ void loop()
 			udpConnected = connectUDP();
 		}
 	} else {
+		blinker.stop();
 		digitalWrite(LED_PIN, HIGH);
 		wifiConnected = connectWifi();
 		if(wifiConnected) {
