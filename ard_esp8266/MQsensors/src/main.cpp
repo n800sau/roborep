@@ -2,6 +2,7 @@
 #include <WiFiUdp.h>
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
+#include <Ticker.h>
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
 #include <time.h>
@@ -15,6 +16,8 @@ const char *password = WIFI_PASSWORD;
 
 #define LED_PIN 4
 Blinker blinker;
+
+Ticker ticker;
 
 // Multicast declarations
 IPAddress ipMulti(239, 0, 0, 57);
@@ -77,6 +80,13 @@ void save_settings()
 	EEPROM.end();
 }
 
+const String rootPage[] = {"<html><head>"
+	"<title>" HOSTNAME "</title>"
+	"<script>setTimeout(function() { location.reload(true); }, 10000)</script>"
+	"</head>"
+	"<body>",
+	"</body></html"};
+
 const String postForm[] = {"<html>\
 	<head>\
 		<title>" HOSTNAME "</title>\
@@ -106,25 +116,6 @@ void handleNotFound(){
 		message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
 	}
 	server.send(404, "text/plain", message);
-}
-
-void handleForm() {
-	if (server.method() != HTTP_POST) {
-		server.send(405, "text/plain", "Method Not Allowed");
-	} else {
-		int v = server.arg("period").toInt();
-		String message;
-		if(v > 1000) {
-			settings.data_send_period = v;
-			save_settings();
-			message = "Success\n";
-			server.send(200, "text/plain", message);
-		} else {
-			message = "Error in form\n";
-		}
-		server.send(200, "text/plain", message);
-	}
-	blinker.blink(2);
 }
 
 double sensorMinValue = -1, sensorMaxValue = -1;
@@ -163,6 +154,52 @@ double calc_r0()
 	RS_air = (5/sensorVoltage)-1; //Calculate RS in fresh air
 	R0 = RS_air/4.4; //Calculate R0
 	return R0;
+}
+
+void send_data()
+{
+	if(wifiConnected && udpConnected) {
+		cur_data.voltage = readVoltage();
+		cur_data.ts = time(NULL);
+		Serial.print("V=");
+		Serial.println(cur_data.voltage);
+		double R0 = calc_r0();
+		Serial.print("R0=");
+		Serial.println(R0);
+
+		// send no data message
+		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
+		Udp.print("{\"ts\":" + String(cur_data.ts) + ",\"voltage\":" + String(cur_data.voltage) + "}");
+		Udp.endPacket();
+		blinker.blink(3);
+	}
+}
+
+void make_ticker()
+{
+	ticker.detach();
+	ticker.attach(settings.data_send_period, send_data);
+}
+
+void handleForm()
+{
+	if (server.method() != HTTP_POST) {
+		server.send(405, "text/plain", "Method Not Allowed");
+	} else {
+		int v = server.arg("period").toInt();
+		String message;
+		if(v > 1000) {
+			settings.data_send_period = v;
+			save_settings();
+			message = "Success\n";
+			server.send(200, "text/plain", message);
+			make_ticker();
+		} else {
+			message = "Error in form\n";
+		}
+		server.send(200, "text/plain", message);
+	}
+	blinker.blink(2);
 }
 
 // connect to wifi returns true if successful or false if not
@@ -218,23 +255,6 @@ boolean connectUDP()
 	return state;
 }
 
-void send_data()
-{
-	cur_data.voltage = readVoltage();
-	cur_data.ts = time(NULL);
-	Serial.print("V=");
-	Serial.println(cur_data.voltage);
-	double R0 = calc_r0();
-	Serial.print("R0=");
-	Serial.println(R0);
-
-	// send no data message
-	Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
-	Udp.print("{\"ts\":" + String(cur_data.ts) + ",\"voltage\":" + String(cur_data.voltage) + "}");
-	Udp.endPacket();
-	blinker.blink(3);
-}
-
 void setup()
 {
 	blinker.begin(LED_PIN);
@@ -247,10 +267,10 @@ void setup()
 	server.on("/", []() {
 		struct tm tmstruct;
 		localtime_r(&cur_data.ts, &tmstruct);
-		snprintf(htmlbuf, sizeof(htmlbuf), "V: %.2f (range: %.2f..%.2f)\n%d-%02d-%02d %02d:%02d:%02d UTC\nts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
+		snprintf(htmlbuf, sizeof(htmlbuf), "V: %.2f (range: %.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
 			(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
 			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
-		server.send(200, "text/plain", String(htmlbuf));
+		server.send(200, "text/plain", rootPage[0] + htmlbuf + rootPage[1]);
 		blinker.blink(3);
 	});
 	server.on("/config", []() {
@@ -260,6 +280,7 @@ void setup()
 	server.onNotFound(handleNotFound);
 	server.begin();
 	Serial.println("HTTP server started");
+	make_ticker();
 	digitalWrite(LED_PIN, LOW);
 }
 
@@ -270,11 +291,7 @@ void loop()
 	{
 		MDNS.update();
 		server.handleClient();
-		if(udpConnected)
-		{
-			send_data();
-			delay(settings.data_send_period);
-		} else {
+		if(!udpConnected) {
 			udpConnected = connectUDP();
 		}
 	} else {
