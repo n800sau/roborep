@@ -270,11 +270,11 @@ void setup()
 		snprintf(htmlbuf, sizeof(htmlbuf), "V: %.2f (range: %.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
 			(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
 			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
-		server.send(200, "text/plain", rootPage[0] + htmlbuf + rootPage[1]);
+		server.send(200, "text/html", rootPage[0] + htmlbuf + rootPage[1]);
 		blinker.blink(3);
 	});
 	server.on("/config", []() {
-		server.send(200, "text/plain", postForm[0] + settings.data_send_period + postForm[1]);
+		server.send(200, "text/html", postForm[0] + settings.data_send_period + postForm[1]);
 	});
 	server.on("/write_settings/", handleForm);
 	server.onNotFound(handleNotFound);
