@@ -78,6 +78,9 @@ void save_settings()
 	}
 	EEPROM.commit();
 	EEPROM.end();
+	Serial.print("EEPROM ");
+	Serial.print(settings.data_send_period);
+	Serial.println(" written");
 }
 
 const String rootPage[] = {"<html><head>"
@@ -178,7 +181,7 @@ void send_data()
 void make_ticker()
 {
 	ticker.detach();
-	ticker.attach(settings.data_send_period, send_data);
+	ticker.attach_ms(settings.data_send_period, send_data);
 }
 
 void handleForm()
@@ -300,6 +303,7 @@ void loop()
 		wifiConnected = connectWifi();
 		if(wifiConnected) {
 			digitalWrite(LED_PIN, LOW);
+			Serial.println("Config time");
 			configTime(0, 0, "pool.ntp.org", "time.nist.gov");
 			if(MDNS.begin(HOSTNAME)) {
 				Serial.println("MDNS responder " HOSTNAME " started");
