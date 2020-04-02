@@ -1,2 +1,2 @@
-RPATH=
-wget -O $RPATH.html http://mq.local/$RPATH
+RPATH=config
+wget -O $RPATH http://mq.local/$RPATH

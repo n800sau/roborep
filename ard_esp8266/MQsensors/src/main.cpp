@@ -29,9 +29,9 @@ ESP8266WebServer server(80);
 boolean wifiConnected = false;
 boolean udpConnected = false;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
 	int32_t data_send_period;
-	int16_t checksum;
+	uint16_t checksum;
 } settings_t;
 
 settings_t settings = {.data_send_period = 5000};
@@ -51,7 +51,7 @@ void load_settings()
 	settings_t s;
 	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
 	EEPROM.begin(sizeof(s));
-	int16_t sum = 0x1234;
+	uint16_t sum = 0x1234;
 	for (size_t i=0; i<sizeof(s); i++) {
 		ptr[i] = EEPROM.read(i);
 		if(i<sizeof(s)-sizeof(s.checksum)) {
@@ -59,8 +59,12 @@ void load_settings()
 		}
 	}
 	EEPROM.end();
-	if (s.checksum == sum) {
+	if(s.checksum == sum) {
 		memcpy(&settings, &s, sizeof(settings));
+		Serial.print("Settings loaded:");
+		Serial.println(settings.data_send_period);
+	} else {
+		Serial.print("Settings crc failed:");
 	}
 }
 
@@ -71,15 +75,17 @@ void save_settings()
 	memcpy(&s, &settings, sizeof(s));
 	s.checksum = 0x1234;
 	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
-	for (size_t i=0; i<sizeof(s)-sizeof(s.checksum); i++) s.checksum += ptr[i];
+	for(size_t i=0; i<(sizeof(s)-sizeof(s.checksum)); i++) {
+		s.checksum += ptr[i];
+	}
 	EEPROM.begin(sizeof(s));
-	for (size_t i=0; i<sizeof(s); i++) {
+	for(size_t i=0; i<sizeof(s); i++) {
 		EEPROM.write(i, ptr[i]);
 	}
 	EEPROM.commit();
 	EEPROM.end();
 	Serial.print("EEPROM ");
-	Serial.print(settings.data_send_period);
+	Serial.print(s.data_send_period);
 	Serial.println(" written");
 }
 
