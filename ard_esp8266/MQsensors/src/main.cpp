@@ -12,7 +12,7 @@
 
 const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
-#define HOSTNAME "mq"
+#define HOSTNAME "mq2"
 
 #define LED_PIN 4
 Blinker blinker;
@@ -200,13 +200,12 @@ void handleForm()
 		if(v > 1000) {
 			settings.data_send_period = v;
 			save_settings();
-			message = "Success\n";
-			server.send(200, "text/plain", message);
 			make_ticker();
+			message = "Success";
 		} else {
-			message = "Error in form\n";
+			message = "Error in form";
 		}
-		server.send(200, "text/plain", message);
+		server.send(200, "text/html", "<html><body>" + message + "<a href=\"/config/\">Config</a></body></html>");
 	}
 	blinker.blink(2);
 }
