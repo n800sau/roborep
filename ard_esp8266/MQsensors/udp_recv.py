@@ -53,7 +53,7 @@ if __name__ == '__main__':
 			data,address = sock.recvfrom(1000)
 			try:
 				jdata = json.loads(data)
-				dbprint('%g at %s from %s' % (jdata['voltage'], jdata['ts'], ':'.join([str(v) for v in address])))
+				dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
 				r.rpush(REDIS_KEY, json.dumps(jdata))
 				while r.llen(REDIS_KEY) > MAX_ITEMS:
 					r.lpop(REDIS_KEY)

@@ -19,6 +19,8 @@ Blinker blinker;
 
 Ticker ticker;
 
+String sensor_id = "MQ2";
+
 // Multicast declarations
 IPAddress ipMulti(239, 0, 0, 57);
 unsigned int portMulti = 8989; // local port to listen on
@@ -89,28 +91,25 @@ void save_settings()
 	Serial.println(" written");
 }
 
-const String rootPage[] = {"<html><head>"
-	"<title>" HOSTNAME "</title>"
-	"<script>setTimeout(function() { location.reload(true); }, 10000)</script>"
-	"</head>"
-	"<body>",
-	"</body></html"};
+const String home_link = "<a href=\"/\">Home</a>";
 
-const String postForm[] = {"<html>\
-	<head>\
-		<title>" HOSTNAME "</title>\
-		<style>\
-			body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
-		</style>\
-	</head>\
-	<body>\
-		<h1>Settings</h1><br>\
-		<form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/write_settings/\">\
-			<label>Period(ms):</label><input type=\"number\" min=\"1000\" name=\"period\" value=\"", "\"></input><br>\
-			<input type=\"submit\" value=\"Submit\"></input>\
-		</form>\
-	</body>\
-</html>"};
+String wrap_html(String body, String head="")
+{
+	return "<html><head>"
+		"<style>"
+		"body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }"
+		"</style>"
+		"<title>" HOSTNAME "</title>" + head + "</head><body>" + body + "</body></html";
+}
+
+const String reload_script = "<script>setTimeout(function() { location.reload(true); }, 10000)</script>";
+
+const String postForm[] = {
+		"<h1>Settings</h1><br>"
+		"<form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/write_settings.php\">"
+			"<label>Period(ms):</label><input type=\"number\" min=\"1000\" name=\"period\" value=\"", "\"></input><br>"
+			"<input type=\"submit\" value=\"Submit\"></input>"
+		"</form>"};
 
 void handleNotFound(){
 	String message = "File Not Found\n\n";
@@ -178,7 +177,7 @@ void send_data()
 
 		// send no data message
 		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
-		Udp.print("{\"ts\":" + String(cur_data.ts) + ",\"voltage\":" + String(cur_data.voltage) + "}");
+		Udp.print("{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) + ",\"rawval\":" + String(cur_data.voltage) + "}");
 		Udp.endPacket();
 		blinker.blink(3);
 	}
@@ -205,7 +204,7 @@ void handleForm()
 		} else {
 			message = "Error in form";
 		}
-		server.send(200, "text/html", "<html><body>" + message + "<a href=\"/config/\">Config</a></body></html>");
+		server.send(200, "text/html", wrap_html(home_link + "<br>" + message + "<br><a href=\"/config.html\">Config</a>"));
 	}
 	blinker.blink(2);
 }
@@ -278,13 +277,13 @@ void setup()
 		snprintf(htmlbuf, sizeof(htmlbuf), "V: %.2f (range: %.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
 			(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
 			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
-		server.send(200, "text/html", rootPage[0] + htmlbuf + rootPage[1]);
+		server.send(200, "text/html", wrap_html(htmlbuf, reload_script));
 		blinker.blink(3);
 	});
-	server.on("/config", []() {
-		server.send(200, "text/html", postForm[0] + settings.data_send_period + postForm[1]);
+	server.on("/config.html", []() {
+		server.send(200, "text/html", wrap_html(home_link + postForm[0] + settings.data_send_period + postForm[1]));
 	});
-	server.on("/write_settings/", handleForm);
+	server.on("/write_settings.php", handleForm);
 	server.onNotFound(handleNotFound);
 	server.begin();
 	Serial.println("HTTP server started");
