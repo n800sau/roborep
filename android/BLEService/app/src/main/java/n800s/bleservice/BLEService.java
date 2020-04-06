@@ -14,6 +14,15 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import java.io.Serializable;
+
+import hu.uw.pallergabor.ble.adparser.AdElement;
+import hu.uw.pallergabor.ble.adparser.AdParser;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * The Class BLEService.
@@ -24,6 +33,11 @@ public class BLEService extends Service {
     private BluetoothAdapter mBluetoothAdapter;
     private Handler mHandler;
     private boolean mScanning;
+
+	private ArrayList <DeviceDataHolder> devlist;
+	private HashMap devmap;
+
+	private int NOTIFICATION_ID = 1;
 
 	/** The ctx. */
 	public Context ctx = this;
@@ -54,6 +68,8 @@ public class BLEService extends Service {
 	@Override
 	public void onCreate() {
 		mHandler = new Handler();
+		devlist = new ArrayList<DeviceDataHolder>();
+		devmap = new HashMap();
 		// Display a notification about us starting. We put an icon in the
 		// status bar.
 		showNotification();
@@ -66,12 +82,12 @@ public class BLEService extends Service {
                 (BluetoothManager) getSystemService(this.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
 
-//		new Handler().postDelayed(new Runnable() {
-//			@Override
-//			public void run() {
-//				stopSelf();
-//			}
-//		}, 10000);
+		new Handler().postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				stopSelf();
+			}
+		}, 10000);
 	}
 
 	/**
@@ -95,6 +111,9 @@ public class BLEService extends Service {
 	@Override
 	public void onDestroy() {
 
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.cancel(NOTIFICATION_ID);
 		// Tell the user we stopped.
 //		Toast.makeText(this, "The Service has Stopped", Toast.LENGTH_SHORT).show();
 		sendMessage("The Service has Stopped");
@@ -121,8 +140,25 @@ public class BLEService extends Service {
 //		Toast.makeText(this, text.toString(), Toast.LENGTH_SHORT).show();
 		// This is the intent that is fired off after the user clicks the
 		// notification
-//		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-//				new Intent(this, StopServiceActivity.class), 0);
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
+
+Notification.Builder builder = new Notification.Builder(this)
+            .setContentIntent(contentIntent)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(text);
+    Notification notification = builder.build();
+
+
+//		Notification notification = new Notification(R.mipmap.ic_launcher, text, System.currentTimeMillis());
+		// This is the intent that is fired off after the user clicks the
+		// notification
+//		notification.setLatestEventInfo(this, text, "Click to stop the service...", contentIntent);
+        NotificationManager nNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+		nNM.notify(NOTIFICATION_ID, notification);
+
+
+
 		sendMessage(text.toString());
 
 	}
@@ -155,9 +191,7 @@ public class BLEService extends Service {
 		@Override
 		public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
 			String deviceName = device.getName();
-			if(!(deviceName == null)) {
-				sendMessage("Found " + deviceName);
-			}
+			sendMessage("Found " + deviceName, device, rssi, scanRecord);
 		}
 	};
 
@@ -170,6 +204,32 @@ public class BLEService extends Service {
     // You can also include some extra data.
     intent.putExtra("message", message);
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+  }
+
+  private void sendMessage(String message, BluetoothDevice device, int rssi, byte[] scanRecord) {
+    Log.d(TAG, message);
+	DeviceDataHolder dataHolder = new DeviceDataHolder();
+	dataHolder.deviceName = device.getName();
+	dataHolder.deviceAddress = device.getAddress();
+	ArrayList<AdElement> ads = AdParser.parseAdData(scanRecord);
+	StringBuffer sb = new StringBuffer();
+	for( int i = 0 ; i < ads.size() ; ++i ) {
+		AdElement e = ads.get(i);
+		if( i > 0 )
+			sb.append(" ; ");
+		sb.append(e.toString());
+	}
+	dataHolder.deviceAd = new String( sb );
+	dataHolder.deviceRssi = "rssi: "+Integer.toString(rssi);
+	devlist.add(dataHolder);
+	if(devmap.get(dataHolder.deviceName) == null) {
+		devmap.put(dataHolder.deviceName, dataHolder);
+	    Intent intent = new Intent("ble_message");
+	    // You can also include some extra data.
+	    intent.putExtra("message", message);
+		intent.putExtra("device", (Serializable)dataHolder);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+	}
   }
 
 }

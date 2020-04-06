@@ -1,0 +1,55 @@
+tft  128×160
+gpio2 - A0 (direction)
+reset - reset (low to reset)
+gpio13 - sda (mosi)
+gpio14 - sck
+gpio15 - cs (low to listen)
+
+gas sensor
+gpio4 - sda
+gpio5 - sck
+reset - reset
+gpio12 - wake
+
+i2c
+4 - sda
+5 - sck
+
+MTDI 	GPIO12 	MISO (DIN)
+MTCK 	GPIO13 	MOSI (DOUT)
+MTMS 	GPIO14 	CLOCK
+MTDO 	GPIO15 	 CS / SS
+
+
+
+RST - this is the TFT reset pin. Connect to ground to reset the TFT! Its best to have this pin controlled by the library so the display is reset cleanly, but you can also connect it to the Arduino Reset pin, which works for most cases.
+
+CS - this is the TFT SPI chip select pin
+
+D/C - this is the TFT SPI data or command selector pin
+
+DIN - this is the SPI Master Out Slave In pin (MOSI), it is used to send data from the microcontroller to the SD card and/or TFT
+
+SCLK - this is the SPI clock input pin
+
+Vcc - this is the power pin, connect to 5VDC - it has reverse polarity protection but try to wire it right!
+
+BL - this is the input for the backlight control. Connect to 5VDC to turn on the backlight.
+
+GND - this is the power and signal ground pin
+
+1.8 TFT Display 	Wiring to Arduino Uno
+LED 	3.3 V
+SCK 	13  SCK
+SDA 	11  MOSI 
+A0 or DC 	9
+RESET 	8
+CS 	10
+GND 	GND
+VCC 	5 V
+
+
+
+ttyUSB:
+RST - reset
+DTR - 2

@@ -1,0 +1,56 @@
+left
+2x5
+
+gnd gnd
+gnd gnd
++5 +5
+serout C.0 - D9
+serin B.6 - D8
+
+left
+1x3
+
+left 2 right
+
+26.8 to gnd
+na
+na
+
+left
+2x5
+
+B.5 B.5
+B.4 B.4
+B.3 B.3
+B.2 B.2
+B.1 B.1
+
+bottom left
+1x3
+picaxe program
+left 2 right
+serin
+serout
+gnd
+
+bottom center
+1x3 orange
+left 2 right
+gnd
+na
+input +12
+
+right
+top
+1x3 orange
++12
++12
++12
+
+1x3 blue
+mosfet (C.5)
+mosfet (C.3)
+mosfet (C.2)
+
+
+

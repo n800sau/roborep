@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<script>
+	function btn_click(ev) {
+		document.getElementById('output').innerText='click';
+	}
+</script>
+
+
+<input type="button" onclick="btn_click()" value="Button"></input>
+<br>
+<a href="keypress?key=1010">Click me</a>
+
+<div>
+Sent <span id="output"/>
+</div>
+...
+<div id="info"></div>
+
+
+<script>
+	document.addEventListener('keydown', function(ev) {
+		console.log(ev);
+		document.getElementById('output').innerText=ev.keyCode;
+		var xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+			document.getElementById("info").innerHTML = this.responseText;
+		};
+		xhttp.open("GET", "keypress?key=" + ev.keyCode, true);
+		xhttp.send();
+	});
+</script>
+</body>
+</html>

@@ -14,9 +14,9 @@
 const int stepsPerRevolution = 20;
 
 // Initialize steppers for X- and Y-axis using this Arduino pins for the L293D H-bridge
-A4988 myStepperX(stepsPerRevolution, 5, 4, A2);
+A4988 myStepperX(stepsPerRevolution, 9, 8, A0);
 A4988 myStepperY(stepsPerRevolution, 7, 6, A1);
-A4988 myStepperZ(stepsPerRevolution, 9, 8, A0);
+A4988 myStepperZ(stepsPerRevolution, 5, 4, A2);
 
 /* Structures, global variables    */
 struct point {
@@ -43,16 +43,16 @@ float StepsPerMillimeterZ = 6.0;
 
 // Drawing robot limits, in mm
 // OK to start with. Could go up to 50 mm if calibrated well.
-float Xmin = 0;
+float Xmin = -40;
 float Xmax = 40;
-float Ymin = 0;
+float Ymin = -40;
 float Ymax = 40;
-float Zmin = 0;
+float Zmin = -40;
 float Zmax = 40;
 
-float Xpos = Xmin;
-float Ypos = Ymin;
-float Zpos = Zmin;
+float Xpos = 0;
+float Ypos = 0;
+float Zpos = 0;
 
 // Set to true to get debug output.
 boolean verbose = false;

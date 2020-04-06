@@ -1,1 +1,1 @@
-rostopic echo -c /rpi3/cmd_vel
+rostopic echo /rpi3/cmd_vel

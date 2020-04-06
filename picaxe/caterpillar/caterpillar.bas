@@ -50,36 +50,36 @@ next b2
 
 
 main:{								
-goto noIR
+'goto noIR
 	sertxd("Waiting IR",13,10)
 	irin [200,noIR],IRinput,b2				'check for IR commands
 	sertxd("The value of b2 is ",#b2,13,10)
 
 	select case b2
 	
-	case 16							'if forward button is pressed, take a step forward
+	case 116							'if forward button is pressed, take a step forward
 		gosub move
 		goto main
-	case 17							'if reverse button is pressed take a step back
+	case 117							'if reverse button is pressed take a step back
 		gosub back
 		goto main
-	case 18							'if left button is pressed, turn left
+	case 51							'if left button is pressed, turn left
 		turn=25
 		gosub corner
 		goto main
-	case 19							'if right button is pressed, turn right
+	case 52							'if right button is pressed, turn right
 		turn=75
 		gosub corner
 		goto main
-	case 37							'if center button is pressed then change IR mode between semi and full control
+	case 101							'if center button is pressed then change IR mode between semi and full control
 		IRmode=IRmode xor 1
 		pause 2000
-	case 100
+	case 0
 		roll=127
 		getup=0
 		gosub recover2
 		goto main
-	case 23
+	case 1
 		roll=175
 		getup=0
 		gosub recover2

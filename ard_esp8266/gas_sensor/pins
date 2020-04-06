@@ -1,0 +1,14 @@
+tft
+gpio2 - A0
+gpio4 - reset
+gpio13 - sda
+gpio14 - sck
+gpio15 - cs
+
+gas sensor
+gpio13 - sda
+gpio14 - sck
+gpio5 - reset
+gpio12 - wak
+
+

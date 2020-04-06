@@ -1,0 +1,1 @@
+sudo bluetoothctl scan on

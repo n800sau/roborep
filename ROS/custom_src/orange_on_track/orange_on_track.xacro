@@ -328,7 +328,7 @@
 		<xacro:default_inertial mass="0.1"/>
 	</link>
 
-	<joint name="header_to_header_mpu_sensor" type="floating">
+	<joint name="header_to_header_mpu_sensor" type="fixed">
 		<parent link="header"/>
 		<child link="header_mpu_sensor"/>
 		<origin xyz="-0.012 0 ${-header_height/2-0.002}" rpy="${pi} 0 ${pi/2}"/>
