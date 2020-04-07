@@ -21,6 +21,187 @@ Ticker ticker;
 
 String sensor_id = "MQ2";
 
+/************************Hardware Related Macros************************************/
+#define         RL_VALUE_MQ2                 (47 + 10)     //define the load resistance on the board, in kilo ohms
+#define         RO_CLEAN_AIR_FACTOR_MQ2      (9.577)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/RO,
+                                                     //which is derived from the chart in datasheet
+
+/***********************Software Related Macros************************************/
+#define         CALIBARAION_SAMPLE_TIMES     (50)    //define how many samples you are going to take in the calibration phase
+#define         CALIBRATION_SAMPLE_INTERVAL  (500)   //define the time interal(in milisecond) between each samples in the
+                                                     //cablibration phase
+
+/**********************Application Related Macros**********************************/
+#define         GAS_HYDROGEN                  (0)
+#define         GAS_LPG                       (1)
+#define         GAS_METHANE                   (2)
+#define         GAS_CARBON_MONOXIDE           (3)
+#define         GAS_ALCOHOL                   (4)
+#define         GAS_SMOKE                     (5)
+#define         GAS_PROPANE                   (6)
+#define         accuracy                      (0)   //for linearcurves
+//#define         accuracy                    (1)   //for nonlinearcurves, un comment this line and comment the above line if calculations 
+                                                    //are to be done using non linear curve equations
+/*****************************Globals************************************************/
+double           Ro = 0;                            //Ro is initialized to 10 kilo ohms
+
+double sensorMinValue = -1, sensorMaxValue = -1;
+const double boardResistance = 10 + 47;
+
+double readVoltage()
+{
+	double sensorValue = 0;
+	sensorMinValue = -1;
+	sensorMaxValue = -1;
+	const double div_coef = 10 / boardResistance;
+	for(int x = 0 ; x < 500 ; x++) //Start for loop 
+	{
+		int v = analogRead(A0);
+		sensorValue += v;
+		if(sensorMinValue < 0 || sensorMinValue > v) {
+			sensorMinValue = v;
+		}
+		if(sensorMaxValue < 0 || sensorMaxValue < v) {
+			sensorMaxValue = v;
+		}
+	}
+	sensorMinValue = sensorMinValue / 1023 / div_coef;
+	sensorMaxValue = sensorMaxValue / 1023 / div_coef;
+//	Serial.print("min:");
+//	Serial.print(sensorMinValue);
+//	Serial.print(", max:");
+//	Serial.println(sensorMaxValue);
+	return sensorValue / 500 / 1023 / div_coef;
+}
+
+
+/****************** MQResistanceCalculation ****************************************
+Input:   raw_adc - raw value read from adc, which represents the voltage
+Output:  the calculated sensor resistance
+Remarks: The sensor and the load resistor forms a voltage divider. Given the voltage
+         across the load resistor and its resistance, the resistance of the sensor
+         could be derived.
+************************************************************************************/
+double MQResistanceCalculation()
+{
+	return RL_VALUE_MQ2 * (5 - readVoltage());
+}
+
+/***************************** MQCalibration ****************************************
+Output:  Ro of the sensor
+Remarks: This function assumes that the sensor is in clean air. It use
+	       MQResistanceCalculation to calculates the sensor resistance in clean air
+	       and then divides it with RO_CLEAN_AIR_FACTOR. RO_CLEAN_AIR_FACTOR is about
+	       10, which differs slightly between different sensors.
+************************************************************************************/
+double MQCalibration()
+{
+	int i;
+	double RS_AIR_val=0,r0;
+
+	for (i=0;i<CALIBARAION_SAMPLE_TIMES;i++) {                     //take multiple samples
+		RS_AIR_val += MQResistanceCalculation();
+		delay(CALIBRATION_SAMPLE_INTERVAL);
+	}
+	RS_AIR_val = RS_AIR_val/CALIBARAION_SAMPLE_TIMES;              //calculate the average value
+
+	r0 = RS_AIR_val/RO_CLEAN_AIR_FACTOR_MQ2;                      //RS_AIR_val divided by RO_CLEAN_AIR_FACTOR yields the Ro
+	                                                               //according to the chart in the datasheet
+
+	return r0;
+}
+
+/*****************************  MQRead *********************************************
+Output:  Rs of the sensor
+Remarks: This function use MQResistanceCalculation to caculate the sensor resistenc (Rs).
+       The Rs changes as the sensor is in the different consentration of the target
+       gas. The sample times and the time interval between samples could be configured
+       by changing the definition of the macros.
+************************************************************************************/
+double MQRead()
+{
+	return MQResistanceCalculation();
+}
+
+
+/*****************************  MQGetGasPercentage **********************************
+Input:   rs_ro_ratio - Rs divided by Ro
+       gas_id      - target gas type
+Output:  ppm of the target gas
+Remarks: This function uses different equations representing curves of each gas to
+       calculate the ppm (parts per million) of the target gas.
+************************************************************************************/
+int MQGetGasPercentage(double rs_ro_ratio, int gas_id)
+{
+	if ( accuracy == 0 ) {
+		if ( gas_id == GAS_HYDROGEN ) {
+			return (pow(10,((-2.109*(log10(rs_ro_ratio))) + 2.983)));
+		} else if ( gas_id == GAS_LPG ) {
+			return (pow(10,((-2.123*(log10(rs_ro_ratio))) + 2.758)));
+		} else if ( gas_id == GAS_METHANE ) {
+			return (pow(10,((-2.622*(log10(rs_ro_ratio))) + 3.635)));
+		} else if ( gas_id == GAS_CARBON_MONOXIDE ) {
+			return (pow(10,((-2.955*(log10(rs_ro_ratio))) + 4.457)));
+		} else if ( gas_id == GAS_ALCOHOL ) {
+			return (pow(10,((-2.692*(log10(rs_ro_ratio))) + 3.545)));
+		} else if ( gas_id == GAS_SMOKE ) {
+			return (pow(10,((-2.331*(log10(rs_ro_ratio))) + 3.596)));
+		} else if ( gas_id == GAS_PROPANE ) {
+			return (pow(10,((-2.174*(log10(rs_ro_ratio))) + 2.799)));
+		}		
+	} else if ( accuracy == 1 ) {
+		if ( gas_id == GAS_HYDROGEN ) {
+			return (pow(10,((-2.109*(log10(rs_ro_ratio))) + 2.983)));
+		} else if ( gas_id == GAS_LPG ) {
+			return (pow(10,((-2.123*(log10(rs_ro_ratio))) + 2.758)));
+		} else if ( gas_id == GAS_METHANE ) {
+			return (pow(10,((-2.622*(log10(rs_ro_ratio))) + 3.635)));
+		} else if ( gas_id == GAS_CARBON_MONOXIDE ) {
+			return (pow(10,((-2.955*(log10(rs_ro_ratio))) + 4.457)));
+		} else if ( gas_id == GAS_ALCOHOL ) {
+			return (pow(10,((-2.692*(log10(rs_ro_ratio))) + 3.545)));
+		} else if ( gas_id == GAS_SMOKE ) {
+			return (pow(10,(-0.976*pow((log10(rs_ro_ratio)), 2) - 2.018*(log10(rs_ro_ratio)) + 3.617)));
+		} else if ( gas_id == GAS_PROPANE ) {
+			return (pow(10,((-2.174*(log10(rs_ro_ratio))) + 2.799)));
+		}
+	}		
+	return 0;
+}
+
+void printVals()
+{
+	double val = MQRead()/Ro;
+	Serial.print("HYDROGEN:");
+	Serial.print(MQGetGasPercentage(val, GAS_HYDROGEN));
+	Serial.print( "ppm" );
+	Serial.print(" ");
+	Serial.print("LPG:");
+	Serial.print(MQGetGasPercentage(val, GAS_LPG));
+	Serial.print( "ppm" );
+	Serial.print(" ");
+	Serial.print("METHANE:");
+	Serial.print(MQGetGasPercentage(val, GAS_METHANE));
+	Serial.print( "ppm" );
+	Serial.print(" ");
+	Serial.print("CARBON_MONOXIDE:");
+	Serial.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
+	Serial.print( "ppm" );
+	Serial.print(" ");
+	Serial.print("ALCOHOL:");
+	Serial.print(MQGetGasPercentage(val, GAS_ALCOHOL));
+	Serial.print( "ppm" );
+	Serial.print(" ");
+	Serial.print("SMOKE:");
+	Serial.print(MQGetGasPercentage(val, GAS_SMOKE));
+	Serial.print( "ppm" );
+	Serial.print(" ");
+	Serial.print("PROPANE:");
+	Serial.print(MQGetGasPercentage(val, GAS_PROPANE));
+	Serial.print( "ppm" );
+	Serial.print("\n");
+}
+
 // Multicast declarations
 IPAddress ipMulti(239, 0, 0, 57);
 unsigned int portMulti = 8989; // local port to listen on
@@ -41,6 +222,8 @@ settings_t settings = {.data_send_period = 5000};
 typedef struct {
 	time_t ts;
 	double voltage;
+	double rs_air;
+	double r0;
 } val_t;
 
 val_t cur_data = {0, 0};
@@ -126,59 +309,46 @@ void handleNotFound(){
 	server.send(404, "text/plain", message);
 }
 
-double sensorMinValue = -1, sensorMaxValue = -1;
-
-double readVoltage()
-{
-	double sensorValue = 0;
-	sensorMinValue = -1;
-	sensorMaxValue = -1;
-	const double div_coef = 10. / (47 + 10);
-	for(int x = 0 ; x < 500 ; x++) //Start for loop 
-	{
-		int v = analogRead(A0);
-		sensorValue += v;
-		if(sensorMinValue < 0 || sensorMinValue > v) {
-			sensorMinValue = v;
-		}
-		if(sensorMaxValue < 0 || sensorMaxValue < v) {
-			sensorMaxValue = v;
-		}
-	}
-	sensorMinValue = sensorMinValue / 1023 / div_coef;
-	sensorMaxValue = sensorMaxValue / 1023 / div_coef;
-	Serial.print("min:");
-	Serial.print(sensorMinValue);
-	Serial.print(", max:");
-	Serial.println(sensorMaxValue);
-	return sensorValue / 500 / 1023 / div_coef;
-}
-
-double calc_r0()
+double calc_rs_air(double sensorVoltage)
 {
 	double RS_air; //Define variable for sensor resistance
-	double R0; //Define variable for R0
-	double sensorVoltage = readVoltage();
 	RS_air = (5/sensorVoltage)-1; //Calculate RS in fresh air
-	R0 = RS_air/4.4; //Calculate R0
-	return R0;
+	return RS_air;
+}
+
+void send_udp_string(String js)
+{
+	// send data message
+	Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
+	Udp.print(js);
+	Udp.endPacket();
 }
 
 void send_data()
 {
 	if(wifiConnected && udpConnected) {
 		cur_data.voltage = readVoltage();
+		cur_data.rs_air = calc_rs_air(cur_data.voltage);
+		cur_data.r0 = cur_data.rs_air/4.4;
 		cur_data.ts = time(NULL);
 		Serial.print("V=");
 		Serial.println(cur_data.voltage);
-		double R0 = calc_r0();
 		Serial.print("R0=");
-		Serial.println(R0);
-
-		// send no data message
-		Udp.beginPacketMulticast(ipMulti, portMulti, WiFi.localIP());
-		Udp.print("{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) + ",\"rawval\":" + String(cur_data.voltage) + "}");
-		Udp.endPacket();
+		Serial.println(cur_data.r0);
+		send_udp_string("{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
+			",\"rawval\":" + String(cur_data.voltage) + ", \"r0\":" + String(cur_data.r0) +
+			",\"rs_air\":" + String(cur_data.rs_air) + "}");
+		double val = MQRead()/Ro;
+		String js = "{";
+		js += "\"HYDROGEN\":" + String(MQGetGasPercentage(val, GAS_HYDROGEN));
+		js += ",\"LPG\":" + String(MQGetGasPercentage(val, GAS_LPG));
+		js += ",\"METHANE\":" + String(MQGetGasPercentage(val, GAS_METHANE));
+		js += ",\"CARBON_MONOXIDE\":" + String(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
+		js += ",\"ALCOHOL\":" + String(MQGetGasPercentage(val, GAS_ALCOHOL));
+		js += ",\"SMOKE\":" + String(MQGetGasPercentage(val, GAS_SMOKE));
+		js += ",\"PROPANE\":" + String(MQGetGasPercentage(val, GAS_PROPANE));
+		js += "}";
+		send_udp_string(js);
 		blinker.blink(3);
 	}
 }
@@ -289,6 +459,12 @@ void setup()
 	Serial.println("HTTP server started");
 	make_ticker();
 	digitalWrite(LED_PIN, LOW);
+	Ro = MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
+	Serial.print("Calibration is done...\n");
+	Serial.print("Ro=");
+	Serial.print(Ro);
+	Serial.print("kohm");
+	Serial.print("\n");
 }
 
 void loop()
