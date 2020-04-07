@@ -9,6 +9,39 @@ import time
 import traceback
 import redis
 
+import paho.mqtt.client as mqtt
+
+MQ_CLIENT_NAME = 'mqsensors'
+MQTT_BROKER_HOST = 'localhost'
+MQTT_BROKER_PORT = 1883
+
+#device setup
+j = """
+{
+	"deviceInfo": {
+		"status": "good",
+		"color": "#4D90FE",
+		"endPoints": {
+			"mq2": {
+				"units": "voltage",
+				"values": {
+					"value": 0
+				},
+				"card-type": "crouton-simple-text",
+				"title": "MQ2"
+			}
+		},
+		"description": "MQ devices"
+	}
+}
+
+"""
+
+device = json.loads(j)
+device["deviceInfo"]["name"] = MQ_CLIENT_NAME
+deviceJson = json.dumps(device)
+
+
 MCAST_GRP = '239.0.0.57'
 MCAST_PORT = 8989
 
@@ -16,7 +49,8 @@ REDIS_KEY = 'mq2_list'
 MAX_ITEMS = 100
 
 def dbprint(text):
-    print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
+#	print('[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text), file=sys.__stderr__)
+	print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
 
 def make_sock():
 
@@ -27,7 +61,7 @@ def make_sock():
 			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			sock.bind(('', MCAST_PORT))  # use MCAST_GRP instead of '' to listen only
-                             # to MCAST_GRP, not all groups on MCAST_PORT
+							 # to MCAST_GRP, not all groups on MCAST_PORT
 			mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
 
 			sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
@@ -41,26 +75,66 @@ def make_sock():
 
 	return sock
 
-if __name__ == '__main__':
+
+#callback when we recieve a connack
+def on_mqconnect(client, userdata, flags, rc):
+	print("Connected with result code " + str(rc))
+
+#callback when we receive a published message from the server
+def on_mqmessage(client, userdata, msg):
+	print(msg.topic + ": " + str(msg.payload))
+	box = msg.topic.split("/")[1]
+	name = msg.topic.split("/")[2]
+	address = msg.topic.split("/")[3]
+	if box == "inbox" and str(msg.payload) == "get" and address == "deviceInfo":
+		mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/deviceInfo", deviceJson) #for autoreconnect
+
+def on_mqdisconnect(client, userdata, rc):
+	if rc != 0:
+		print("Broker disconnection")
+	time.sleep(10)
+	mqclient.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
+
+def main():
 
 	sock = make_sock()
 
 	r = redis.Redis()
 
+	mqclient = mqtt.Client(MQ_CLIENT_NAME)
+	mqclient.on_connect = on_mqconnect
+	mqclient.on_message = on_mqmessage
+	mqclient.on_disconnect = on_mqdisconnect
+	mqclient.username_pw_set("","")
+	mqclient.will_set('/outbox/' + MQ_CLIENT_NAME + '/lwt', '{"message":"I am gone for good"}', 0, False)
+	mqclient.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
+	mqclient.subscribe("/inbox/" + MQ_CLIENT_NAME + "/deviceInfo")
+	mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/deviceInfo", deviceJson) #for autoreconnect
+	for key in device["deviceInfo"]["endPoints"]:
+		#print key
+		mqclient.subscribe("/inbox/" + MQ_CLIENT_NAME + "/"+str(key))
+
+	mqclient.loop_start()
 	while True:
 		try:
 			dbprint('Waiting...')
 			data,address = sock.recvfrom(1000)
 			try:
-				jdata = json.loads(data)
+				jdata = json.loads((data).decode())
 				dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
 				r.rpush(REDIS_KEY, json.dumps(jdata))
+				mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", '{"value":' + str(jdata['rawval']) + '}')
 				while r.llen(REDIS_KEY) > MAX_ITEMS:
 					r.lpop(REDIS_KEY)
-			except ValueError, e:
+			except ValueError as e:
 				dbprint('%s: %s' % (e, data))
 				continue
-		except Exception, e:
+		except Exception as e:
 			if isinstance(e, KeyboardInterrupt):
 				raise
 			traceback.print_exc()
+
+
+if __name__ == '__main__':
+
+	main()
