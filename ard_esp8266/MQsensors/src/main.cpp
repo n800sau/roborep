@@ -23,7 +23,7 @@ String sensor_id = "MQ2";
 
 /************************Hardware Related Macros************************************/
 #define         RL_VALUE_MQ2                 (47 + 10)     //define the load resistance on the board, in kilo ohms
-#define         RO_CLEAN_AIR_FACTOR_MQ2      (9.577)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/RO,
+#define         RO_CLEAN_AIR_FACTOR_MQ2      (9.577)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/R0,
                                                      //which is derived from the chart in datasheet
 
 /***********************Software Related Macros************************************/
@@ -43,7 +43,35 @@ String sensor_id = "MQ2";
 //#define         accuracy                    (1)   //for nonlinearcurves, un comment this line and comment the above line if calculations 
                                                     //are to be done using non linear curve equations
 /*****************************Globals************************************************/
-double           Ro = 0;                            //Ro is initialized to 10 kilo ohms
+
+// Multicast declarations
+IPAddress ipMulti(239, 0, 0, 57);
+unsigned int portMulti = 8989; // local port to listen on
+
+WiFiUDP Udp;
+ESP8266WebServer server(80);
+
+boolean wifiConnected = false;
+boolean udpConnected = false;
+
+typedef struct __attribute__((packed)) {
+	int32_t data_send_period;
+	uint16_t checksum;
+} settings_t;
+
+settings_t settings = {.data_send_period = 5000};
+
+typedef struct {
+	time_t ts;
+	double voltage;
+	double rs_air;
+	double r0;
+	double res;
+} val_t;
+
+val_t cur_data = {0, 0, 10, 0};
+
+char htmlbuf[120];
 
 double sensorMinValue = -1, sensorMaxValue = -1;
 const double boardResistance = 10 + 47;
@@ -75,57 +103,39 @@ double readVoltage()
 }
 
 
-/****************** MQResistanceCalculation ****************************************
+/****************** MQResistance ****************************************
 Input:   raw_adc - raw value read from adc, which represents the voltage
 Output:  the calculated sensor resistance
 Remarks: The sensor and the load resistor forms a voltage divider. Given the voltage
          across the load resistor and its resistance, the resistance of the sensor
          could be derived.
 ************************************************************************************/
-double MQResistanceCalculation()
+double MQResistance()
 {
 	return RL_VALUE_MQ2 * (5 - readVoltage());
 }
 
 /***************************** MQCalibration ****************************************
-Output:  Ro of the sensor
 Remarks: This function assumes that the sensor is in clean air. It use
-	       MQResistanceCalculation to calculates the sensor resistance in clean air
+	       MQResistance to calculates the sensor resistance in clean air
 	       and then divides it with RO_CLEAN_AIR_FACTOR. RO_CLEAN_AIR_FACTOR is about
 	       10, which differs slightly between different sensors.
 ************************************************************************************/
-double MQCalibration()
+void MQCalibration()
 {
 	int i;
-	double RS_AIR_val=0,r0;
-
+	cur_data.rs_air = 0;
 	for (i=0;i<CALIBARAION_SAMPLE_TIMES;i++) {                     //take multiple samples
-		RS_AIR_val += MQResistanceCalculation();
+		cur_data.rs_air += MQResistance();
 		delay(CALIBRATION_SAMPLE_INTERVAL);
 	}
-	RS_AIR_val = RS_AIR_val/CALIBARAION_SAMPLE_TIMES;              //calculate the average value
+	cur_data.rs_air = cur_data.rs_air/CALIBARAION_SAMPLE_TIMES;              //calculate the average value
 
-	r0 = RS_AIR_val/RO_CLEAN_AIR_FACTOR_MQ2;                      //RS_AIR_val divided by RO_CLEAN_AIR_FACTOR yields the Ro
-	                                                               //according to the chart in the datasheet
-
-	return r0;
+	cur_data.r0 = cur_data.rs_air/RO_CLEAN_AIR_FACTOR_MQ2;                      //RS_AIR_val divided by RO_CLEAN_AIR_FACTOR yields the R0
 }
-
-/*****************************  MQRead *********************************************
-Output:  Rs of the sensor
-Remarks: This function use MQResistanceCalculation to caculate the sensor resistenc (Rs).
-       The Rs changes as the sensor is in the different consentration of the target
-       gas. The sample times and the time interval between samples could be configured
-       by changing the definition of the macros.
-************************************************************************************/
-double MQRead()
-{
-	return MQResistanceCalculation();
-}
-
 
 /*****************************  MQGetGasPercentage **********************************
-Input:   rs_ro_ratio - Rs divided by Ro
+Input:   rs_ro_ratio - Rs divided by R0
        gas_id      - target gas type
 Output:  ppm of the target gas
 Remarks: This function uses different equations representing curves of each gas to
@@ -171,7 +181,7 @@ int MQGetGasPercentage(double rs_ro_ratio, int gas_id)
 
 void printVals()
 {
-	double val = MQRead()/Ro;
+	double val = MQResistance()/cur_data.r0;
 	Serial.print("HYDROGEN:");
 	Serial.print(MQGetGasPercentage(val, GAS_HYDROGEN));
 	Serial.print( "ppm" );
@@ -201,34 +211,6 @@ void printVals()
 	Serial.print( "ppm" );
 	Serial.print("\n");
 }
-
-// Multicast declarations
-IPAddress ipMulti(239, 0, 0, 57);
-unsigned int portMulti = 8989; // local port to listen on
-
-WiFiUDP Udp;
-ESP8266WebServer server(80);
-
-boolean wifiConnected = false;
-boolean udpConnected = false;
-
-typedef struct __attribute__((packed)) {
-	int32_t data_send_period;
-	uint16_t checksum;
-} settings_t;
-
-settings_t settings = {.data_send_period = 5000};
-
-typedef struct {
-	time_t ts;
-	double voltage;
-	double rs_air;
-	double r0;
-} val_t;
-
-val_t cur_data = {0, 0};
-
-char htmlbuf[120];
 
 void load_settings()
 {
@@ -309,13 +291,6 @@ void handleNotFound(){
 	server.send(404, "text/plain", message);
 }
 
-double calc_rs_air(double sensorVoltage)
-{
-	double RS_air; //Define variable for sensor resistance
-	RS_air = (5/sensorVoltage)-1; //Calculate RS in fresh air
-	return RS_air;
-}
-
 void send_udp_string(String js)
 {
 	// send data message
@@ -328,17 +303,14 @@ void send_data()
 {
 	if(wifiConnected && udpConnected) {
 		cur_data.voltage = readVoltage();
-		cur_data.rs_air = calc_rs_air(cur_data.voltage);
-		cur_data.r0 = cur_data.rs_air/4.4;
+		cur_data.res = MQResistance();
 		cur_data.ts = time(NULL);
 		Serial.print("V=");
 		Serial.println(cur_data.voltage);
-		Serial.print("R0=");
-		Serial.println(cur_data.r0);
 		send_udp_string("{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
 			",\"rawval\":" + String(cur_data.voltage) + ", \"r0\":" + String(cur_data.r0) +
-			",\"rs_air\":" + String(cur_data.rs_air) + "}");
-		double val = MQRead()/Ro;
+			",\"rs_air\":" + String(cur_data.rs_air) + ",\"res\":" + String(cur_data.res) + "}");
+		double val = MQResistance()/cur_data.r0;
 		String js = "{";
 		js += "\"HYDROGEN\":" + String(MQGetGasPercentage(val, GAS_HYDROGEN));
 		js += ",\"LPG\":" + String(MQGetGasPercentage(val, GAS_LPG));
@@ -459,10 +431,10 @@ void setup()
 	Serial.println("HTTP server started");
 	make_ticker();
 	digitalWrite(LED_PIN, LOW);
-	Ro = MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
+	MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
 	Serial.print("Calibration is done...\n");
 	Serial.print("Ro=");
-	Serial.print(Ro);
+	Serial.print(cur_data.r0);
 	Serial.print("kohm");
 	Serial.print("\n");
 }
