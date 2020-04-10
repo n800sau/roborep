@@ -12,11 +12,11 @@ void Blinker::blinking()
 {
 	if(blinking_times > 0) {
 		if(blinking_state) {
-			Serial.println("led off");
+//			Serial.println("led off");
 			digitalWrite(blink_pin, LOW);
 			blinking_times--;
 		} else {
-			Serial.println("led on");
+//			Serial.println("led on");
 			digitalWrite(blink_pin, HIGH);
 		}
 		blinking_state = !blinking_state;
