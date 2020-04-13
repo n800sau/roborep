@@ -323,14 +323,14 @@ translate([0, 0, 30]) {
   //push_servo_holder_plate();
 }
 translate([-33.5, -90, 174]) {
-	%servo_1501MG_mockup();
+//	%servo_1501MG_mockup();
 }
-//pipette_bottom_holder();
+pipette_bottom_holder();
 //color("blue") {
 //slider_z_attachment(extra_sz_z=attach_sz_z+10);
-%slider_z_adapter(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
+slider_z_adapter(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10+26);
 //}
 
 translate([-16, -70, -86]) {
-	%pipette_mockup();
+	pipette_mockup();
 }
