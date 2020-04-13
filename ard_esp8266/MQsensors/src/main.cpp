@@ -7,6 +7,7 @@
 #include <EEPROM.h>
 #include <time.h>
 #include <blinker.h>
+#include <StreamString.h>
 
 #include "config.h"
 
@@ -70,8 +71,6 @@ typedef struct {
 } val_t;
 
 val_t cur_data = {0, 0, 10, 0};
-
-char htmlbuf[120];
 
 double sensorMinValue = -1, sensorMaxValue = -1;
 const double boardResistance = 10 + 47;
@@ -179,37 +178,37 @@ int MQGetGasPercentage(double rs_ro_ratio, int gas_id)
 	return 0;
 }
 
-void printVals()
+void printVals(Print &p=Serial)
 {
 	double val = MQResistance()/cur_data.r0;
-	Serial.print("HYDROGEN:");
-	Serial.print(MQGetGasPercentage(val, GAS_HYDROGEN));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("LPG:");
-	Serial.print(MQGetGasPercentage(val, GAS_LPG));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("METHANE:");
-	Serial.print(MQGetGasPercentage(val, GAS_METHANE));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("CARBON_MONOXIDE:");
-	Serial.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("ALCOHOL:");
-	Serial.print(MQGetGasPercentage(val, GAS_ALCOHOL));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("SMOKE:");
-	Serial.print(MQGetGasPercentage(val, GAS_SMOKE));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("PROPANE:");
-	Serial.print(MQGetGasPercentage(val, GAS_PROPANE));
-	Serial.print( "ppm" );
-	Serial.print("\n");
+	p.print("HYDROGEN:");
+	p.print(MQGetGasPercentage(val, GAS_HYDROGEN));
+	p.print( "ppm" );
+	p.print(" ");
+	p.print("LPG:");
+	p.print(MQGetGasPercentage(val, GAS_LPG));
+	p.print( "ppm" );
+	p.print(" ");
+	p.print("METHANE:");
+	p.print(MQGetGasPercentage(val, GAS_METHANE));
+	p.print( "ppm" );
+	p.print(" ");
+	p.print("CARBON_MONOXIDE:");
+	p.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
+	p.print( "ppm" );
+	p.print(" ");
+	p.print("ALCOHOL:");
+	p.print(MQGetGasPercentage(val, GAS_ALCOHOL));
+	p.print( "ppm" );
+	p.print(" ");
+	p.print("SMOKE:");
+	p.print(MQGetGasPercentage(val, GAS_SMOKE));
+	p.print( "ppm" );
+	p.print(" ");
+	p.print("PROPANE:");
+	p.print(MQGetGasPercentage(val, GAS_PROPANE));
+	p.print( "ppm" );
+	p.print("\n");
 }
 
 void load_settings()
@@ -415,11 +414,13 @@ void setup()
 
 	server.on("/", []() {
 		struct tm tmstruct;
+		StreamString page;
 		localtime_r(&cur_data.ts, &tmstruct);
-		snprintf(htmlbuf, sizeof(htmlbuf), "V: %.2f (range: %.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
+		page.printf("V: %.2f (range: %.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
 			(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
 			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
-		server.send(200, "text/html", wrap_html(htmlbuf, reload_script));
+		printVals(page);
+		server.send(200, "text/html", wrap_html(page, reload_script));
 		blinker.blink(3);
 	});
 	server.on("/config.html", []() {
