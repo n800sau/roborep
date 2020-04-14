@@ -1,3 +1,7 @@
+manager = require("esp-wifi-manager.js");
+
+const BTN_PIN = 4;
+
 const RED_PIN = 12;
 const GREEN_PIN = 5;
 const YELLOW_PIN = 14;
@@ -29,5 +33,21 @@ function onInit()
 //console.log('time=', time);
 		pingValue = time.respTime;
 	});
+
+	let isOn = false;
+	const interval = 500; // 500 milliseconds = 0.5 seconds
+	let LED = YELLOW_PIN;
+	let BTN = BTN_PIN;
+
+	//use setupPin(PIN) if you want to setup a button for the Access Point management
+	manager.setupPin(BTN);
+	manager.init(LED, () => {
+		//this device is connected to Internet!
+		setInterval(() => {
+			isOn = !isOn; // Flips the state on or off
+			digitalWrite(LED, isOn); // D2 is the blue LED on the ESP8266 boards
+		}, interval);
+	})
+
 }
 onInit();
