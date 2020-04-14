@@ -23,4 +23,4 @@ module leg(head_d=8, bolt_d=4, head_space_h=3.5, cone_h=2.8, pad=0.5) {
 }
 
 //leg(bolt_d=4, head_d=8, head_space_h=3.5, cone_h=2.8);
-leg(bolt_d=3, head_d=5.2, head_space_h=3.5, cone_h=0, pad=0.2);
+leg(bolt_d=3, head_d=5.2, head_space_h=4, cone_h=0, pad=1.2);

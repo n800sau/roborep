@@ -115,14 +115,60 @@ double MQResistance()
 	return RL_VALUE_MQ2 * (5 - readVoltage());
 }
 
+void load_settings()
+{
+	// Restore from EEPROM, check the checksum matches
+	settings_t s;
+	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
+	EEPROM.begin(sizeof(s));
+	uint16_t sum = 0x1234;
+	for (size_t i=0; i<sizeof(s); i++) {
+		ptr[i] = EEPROM.read(i);
+		if(i<sizeof(s)-sizeof(s.checksum)) {
+			sum += ptr[i];
+		}
+	}
+	EEPROM.end();
+	if(s.checksum == sum) {
+		memcpy(&settings, &s, sizeof(settings));
+		Serial.print("Settings loaded:");
+		Serial.println(settings.data_send_period);
+	} else {
+		Serial.print("Settings crc failed:");
+	}
+}
+
+void save_settings()
+{
+	// Store in "EEPROM" to restart automatically
+	settings_t s;
+	memcpy(&s, &settings, sizeof(s));
+	s.checksum = 0x1234;
+	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
+	for(size_t i=0; i<(sizeof(s)-sizeof(s.checksum)); i++) {
+		s.checksum += ptr[i];
+	}
+	EEPROM.begin(sizeof(s));
+	for(size_t i=0; i<sizeof(s); i++) {
+		EEPROM.write(i, ptr[i]);
+	}
+	EEPROM.commit();
+	EEPROM.end();
+	Serial.print("EEPROM ");
+	Serial.print(s.data_send_period);
+	Serial.println(" written");
+}
+
 /***************************** MQCalibration ****************************************
 Remarks: This function assumes that the sensor is in clean air. It use
 	       MQResistance to calculates the sensor resistance in clean air
 	       and then divides it with RO_CLEAN_AIR_FACTOR. RO_CLEAN_AIR_FACTOR is about
 	       10, which differs slightly between different sensors.
 ************************************************************************************/
+// 25 sec
 void MQCalibration()
 {
+	Serial.println("Calibration started");
 	int i;
 	cur_data.rs_air = 0;
 	for (i=0;i<CALIBARAION_SAMPLE_TIMES;i++) {                     //take multiple samples
@@ -132,6 +178,9 @@ void MQCalibration()
 	cur_data.rs_air = cur_data.rs_air/CALIBARAION_SAMPLE_TIMES;              //calculate the average value
 
 	cur_data.r0 = cur_data.rs_air/RO_CLEAN_AIR_FACTOR_MQ2;                      //RS_AIR_val divided by RO_CLEAN_AIR_FACTOR yields the R0
+	save_settings();
+	load_settings();
+	Serial.println("Calibration finished");
 }
 
 /*****************************  MQGetGasPercentage **********************************
@@ -210,50 +259,6 @@ void printVals()
 	Serial.print(MQGetGasPercentage(val, GAS_PROPANE));
 	Serial.print( "ppm" );
 	Serial.print("\n");
-}
-
-void load_settings()
-{
-	// Restore from EEPROM, check the checksum matches
-	settings_t s;
-	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
-	EEPROM.begin(sizeof(s));
-	uint16_t sum = 0x1234;
-	for (size_t i=0; i<sizeof(s); i++) {
-		ptr[i] = EEPROM.read(i);
-		if(i<sizeof(s)-sizeof(s.checksum)) {
-			sum += ptr[i];
-		}
-	}
-	EEPROM.end();
-	if(s.checksum == sum) {
-		memcpy(&settings, &s, sizeof(settings));
-		Serial.print("Settings loaded:");
-		Serial.println(settings.data_send_period);
-	} else {
-		Serial.print("Settings crc failed:");
-	}
-}
-
-void save_settings()
-{
-	// Store in "EEPROM" to restart automatically
-	settings_t s;
-	memcpy(&s, &settings, sizeof(s));
-	s.checksum = 0x1234;
-	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
-	for(size_t i=0; i<(sizeof(s)-sizeof(s.checksum)); i++) {
-		s.checksum += ptr[i];
-	}
-	EEPROM.begin(sizeof(s));
-	for(size_t i=0; i<sizeof(s); i++) {
-		EEPROM.write(i, ptr[i]);
-	}
-	EEPROM.commit();
-	EEPROM.end();
-	Serial.print("EEPROM ");
-	Serial.print(s.data_send_period);
-	Serial.println(" written");
 }
 
 const String home_link = "<a href=\"/\">Home</a>";
@@ -431,8 +436,7 @@ void setup()
 	Serial.println("HTTP server started");
 	make_ticker();
 	digitalWrite(LED_PIN, LOW);
-	MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
-	Serial.print("Calibration is done...\n");
+//	MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
 	Serial.print("Ro=");
 	Serial.print(cur_data.r0);
 	Serial.print("kohm");
