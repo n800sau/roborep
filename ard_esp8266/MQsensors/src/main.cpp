@@ -277,31 +277,31 @@ void printVals(Print &p=Serial, String sep="\n")
 {
 	if(settings.rs_air) {
 		double val = MQResistance()/settings.r0;
-		p.print("HYDROGEN:");
+		p.print("hydrogen:");
 		p.print(MQGetGasPercentage(val, GAS_HYDROGEN));
 		p.print( "ppm" );
 		p.print(" ");
-		p.print("LPG:");
+		p.print("lpg:");
 		p.print(MQGetGasPercentage(val, GAS_LPG));
 		p.print( "ppm" );
 		p.print(" ");
-		p.print("METHANE:");
+		p.print("methane:");
 		p.print(MQGetGasPercentage(val, GAS_METHANE));
 		p.print( "ppm" );
 		p.print(" ");
-		p.print("CARBON_MONOXIDE:");
+		p.print("carbon monoxide:");
 		p.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
 		p.print( "ppm" );
 		p.print(" ");
-		p.print("ALCOHOL:");
+		p.print("alcohol:");
 		p.print(MQGetGasPercentage(val, GAS_ALCOHOL));
 		p.print( "ppm" );
 		p.print(" ");
-		p.print("SMOKE:");
+		p.print("smoke:");
 		p.print(MQGetGasPercentage(val, GAS_SMOKE));
 		p.print( "ppm" );
 		p.print(" ");
-		p.print("PROPANE:");
+		p.print("propane:");
 		p.print(MQGetGasPercentage(val, GAS_PROPANE));
 		p.print( "ppm" );
 		p.print(sep);
@@ -365,18 +365,17 @@ void send_data()
 		cur_data.ts = time(NULL);
 		Serial.print("V=");
 		Serial.println(cur_data.voltage);
-		send_udp_string("{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
+		double val = cur_data.res/settings.r0;
+		String js = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
 			",\"rawval\":" + String(cur_data.voltage) + ", \"r0\":" + String(settings.r0) +
-			",\"rs_air\":" + String(settings.rs_air) + ",\"res\":" + String(cur_data.res) + "}");
-		double val = MQResistance()/settings.r0;
-		String js = "{";
-		js += "\"HYDROGEN\":" + String(MQGetGasPercentage(val, GAS_HYDROGEN));
-		js += ",\"LPG\":" + String(MQGetGasPercentage(val, GAS_LPG));
-		js += ",\"METHANE\":" + String(MQGetGasPercentage(val, GAS_METHANE));
-		js += ",\"CARBON_MONOXIDE\":" + String(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
-		js += ",\"ALCOHOL\":" + String(MQGetGasPercentage(val, GAS_ALCOHOL));
-		js += ",\"SMOKE\":" + String(MQGetGasPercentage(val, GAS_SMOKE));
-		js += ",\"PROPANE\":" + String(MQGetGasPercentage(val, GAS_PROPANE));
+			",\"rs_air\":" + String(settings.rs_air) + ",\"res\":" + String(cur_data.res);
+		js += ",\"hydrogen\":" + String(MQGetGasPercentage(val, GAS_HYDROGEN));
+		js += ",\"lpg\":" + String(MQGetGasPercentage(val, GAS_LPG));
+		js += ",\"methane\":" + String(MQGetGasPercentage(val, GAS_METHANE));
+		js += ",\"carbon monoxide\":" + String(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
+		js += ",\"alcohol\":" + String(MQGetGasPercentage(val, GAS_ALCOHOL));
+		js += ",\"smoke\":" + String(MQGetGasPercentage(val, GAS_SMOKE));
+		js += ",\"propane\":" + String(MQGetGasPercentage(val, GAS_PROPANE));
 		js += "}";
 		send_udp_string(js);
 		blinker.blink(3);
