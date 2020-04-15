@@ -273,42 +273,44 @@ int MQGetGasPercentage(double rs_ro_ratio, int gas_id)
 	return 0;
 }
 
-void printVals(Print &p=Serial, String sep="\n")
+void printVals(Print &p=Serial, String sep=" ")
 {
 	if(settings.rs_air) {
 		double val = MQResistance()/settings.r0;
 		p.print("hydrogen:");
 		p.print(MQGetGasPercentage(val, GAS_HYDROGEN));
 		p.print( "ppm" );
-		p.print(" ");
+		p.print(sep);
 		p.print("lpg:");
 		p.print(MQGetGasPercentage(val, GAS_LPG));
 		p.print( "ppm" );
-		p.print(" ");
+		p.print(sep);
 		p.print("methane:");
 		p.print(MQGetGasPercentage(val, GAS_METHANE));
 		p.print( "ppm" );
-		p.print(" ");
+		p.print(sep);
 		p.print("carbon monoxide:");
 		p.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
 		p.print( "ppm" );
-		p.print(" ");
+		p.print(sep);
 		p.print("alcohol:");
 		p.print(MQGetGasPercentage(val, GAS_ALCOHOL));
 		p.print( "ppm" );
-		p.print(" ");
+		p.print(sep);
 		p.print("smoke:");
 		p.print(MQGetGasPercentage(val, GAS_SMOKE));
 		p.print( "ppm" );
-		p.print(" ");
+		p.print(sep);
 		p.print("propane:");
 		p.print(MQGetGasPercentage(val, GAS_PROPANE));
 		p.print( "ppm" );
 		p.print(sep);
 	}
+	p.println();
 	if(calibr.is_running()) {
 		p.printf("Calibrating...%d%%", calibr.percent());
 		p.print(sep);
+		p.println();
 	}
 }
 
@@ -329,9 +331,9 @@ const String postForm[] = {
 		"<h1>Settings</h1><br>"
 		"<form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/write_settings.php\">"
 			"<label>Period(ms):</label><input type=\"number\" min=\"1000\" name=\"period\" value=\"", "\"></input><br>"
-			"<input type=\"submit\" value=\"Submit\"></input>"
+			"<input type=\"submit\" name=\"submit\" value=\"submit\">Submit</input>"
 			"<br/>"
-			"<input type=\"submit\" value=\"Calibrate\"></input>"
+			"<input type=\"submit\" name=\"submit\" value=\"calibrate\">Calibrate</input>"
 		"</form>"};
 
 void handleNotFound(){
@@ -402,7 +404,7 @@ void handleForm()
 			message = "Success";
 			String submit_type = server.arg("submit");
 			Serial.printf("submit_type:%s\n", submit_type.c_str());
-			if(submit_type == "Calibrate") {
+			if(submit_type == "calibrate") {
 				MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
 			}
 		} else {
