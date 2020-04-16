@@ -23,21 +23,13 @@ j = """
 		"status": "good",
 		"color": "#4D90FE",
 		"endPoints": {
-			"mq2_voltage": {
+			"mq2": {
 				"units": "voltage",
 				"values": {
 					"value": 0
 				},
 				"card-type": "crouton-simple-text",
 				"title": "MQ2 V"
-			},
-			"mq2_rs": {
-				"units": "ohm",
-				"values": {
-					"value": 0
-				},
-				"card-type": "crouton-simple-text",
-				"title": "MQ2 RS"
 			}
 		},
 		"description": "MQ devices"
@@ -126,15 +118,15 @@ def main():
 	mqclient.loop_start()
 	while True:
 		try:
-			dbprint('Waiting...')
+#			dbprint('Waiting...')
 			data,address = sock.recvfrom(1000)
 			try:
 				jdata = json.loads((data).decode())
 				if 'sensor_id' in jdata:
-					dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
+#					dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
 					r.rpush(REDIS_KEY, json.dumps(jdata))
-					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2_voltage", '{"value":' + str(jdata['rawval']) + '}')
-					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2_rs", '{"value":' + str(jdata['rs_air']) + '}')
+#					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", json.dumps(jdata))
+					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", jdata['rawval'])
 					while r.llen(REDIS_KEY) > MAX_ITEMS:
 						r.lpop(REDIS_KEY)
 			except ValueError as e:
