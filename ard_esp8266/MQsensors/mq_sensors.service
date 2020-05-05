@@ -1,10 +1,12 @@
 [Unit]
 Description=MQ sensors
 After=network.target
+After=redis.service
+After=mosquitto.service
 
 [Service]
-ExecStart=/home/n800s/work/roborep/ard_esp8266/MQsensors/udp_recv.py
-WorkingDirectory=/home/n800s/work/roborep/ard_esp8266/MQsensors/
+ExecStart=/home/n800s/stuff/work/roborep/ard_esp8266/MQsensors/udp_recv.py
+WorkingDirectory=/home/n800s/stuff/work/roborep/ard_esp8266/MQsensors/
 User=n800s
 Group=n800s
 Restart=always

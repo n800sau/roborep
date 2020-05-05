@@ -123,10 +123,11 @@ def main():
 			try:
 				jdata = json.loads((data).decode())
 				if 'sensor_id' in jdata:
-#					dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
+					dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
 					r.rpush(REDIS_KEY, json.dumps(jdata))
 #					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", json.dumps(jdata))
-					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", jdata['rawval'])
+					mqclient.publish("/hass/sensor/mq2/state", json.dumps(jdata))
+#					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", jdata['rawval'])
 					while r.llen(REDIS_KEY) > MAX_ITEMS:
 						r.lpop(REDIS_KEY)
 			except ValueError as e:
