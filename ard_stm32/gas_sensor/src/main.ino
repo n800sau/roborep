@@ -25,7 +25,7 @@
 #define TFT_DC     PA3
 #define TFT_SCLK   PA5   // set these to be whatever pins you like!
 #define TFT_MOSI   PA7   // set these to be whatever pins you like!
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 SPIClass SPI_1(2);
 

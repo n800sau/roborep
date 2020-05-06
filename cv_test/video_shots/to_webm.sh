@@ -7,10 +7,12 @@ SCALE=360
 #flist=`find ~/work/licence_plate/output/*.${VEXT} | sort -R`
 #flist=`find ~/work/test_cv3/text-detection/output_vids/*.${VEXT} | sort -R`
 #flist=`find ~/work/keras-maskrcnn/output/video | sort -R`
-flist=`find ~/work/predict/keras_Realtime_Multi-Person_Pose_Estimation/videos/outputs/*.mp4`
+#flist=`find ~/work/predict/keras_Realtime_Multi-Person_Pose_Estimation/videos/outputs/*.mp4`
 #flist="`find  ~/work/roborep/openscad/*.mp4 | sort -R`"
 #flist="`find ~/work/roborep/cv_test/timelapse/ -type f -name '*.avi' | sort -R`"
 #flist="`find  ~/work/spectra/*.avi | sort -R`"
+flist="`find  ~/'panorama_jpg/Panorama-Stiching/videos/'*.mp4 | sort -R`"
+
 
 rm file.lst
 

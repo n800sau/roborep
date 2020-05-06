@@ -15,8 +15,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h> // Hardware-specific library
 
-#if defined(STM32F103xB)
-
 // NTC
 const int TEMP_PIN = PB1;
 // 2.5v ref
@@ -27,24 +25,6 @@ const int REF_PIN = PB0;
 #define TFT_DC     PA3
 #define TFT_SCLK   PA5   // set these to be whatever pins you like!
 #define TFT_MOSI   PA7   // set these to be whatever pins you like!
-
-#endif //STM32F1xx
-
-#if defined(STM32F030x6)
-
-// NTC
-const int TEMP_PIN = PB_1;
-// 2.5v ref
-const int REF_PIN = PB_0;
-
-#define TFT_CS     PA_4
-#define TFT_RST    PA_2
-#define TFT_DC     PA_3
-#define TFT_SCLK   PA_5   // set these to be whatever pins you like!
-#define TFT_MOSI   PA_7   // set these to be whatever pins you like!
-
-#endif //STM32F0xx
-
 
 Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 

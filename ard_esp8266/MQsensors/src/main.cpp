@@ -7,6 +7,7 @@
 #include <EEPROM.h>
 #include <time.h>
 #include <blinker.h>
+#include <StreamString.h>
 
 #include "config.h"
 
@@ -21,9 +22,11 @@ Ticker ticker;
 
 String sensor_id = "MQ2";
 
+#define SETTINGS_INIT_SUM 0x1234
+
 /************************Hardware Related Macros************************************/
 #define         RL_VALUE_MQ2                 (47 + 10)     //define the load resistance on the board, in kilo ohms
-#define         RO_CLEAN_AIR_FACTOR_MQ2      (9.577)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/RO,
+#define         RO_CLEAN_AIR_FACTOR_MQ2      (9.577)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/R0,
                                                      //which is derived from the chart in datasheet
 
 /***********************Software Related Macros************************************/
@@ -43,9 +46,36 @@ String sensor_id = "MQ2";
 //#define         accuracy                    (1)   //for nonlinearcurves, un comment this line and comment the above line if calculations 
                                                     //are to be done using non linear curve equations
 /*****************************Globals************************************************/
-double           Ro = 0;                            //Ro is initialized to 10 kilo ohms
+
+// Multicast declarations
+IPAddress ipMulti(239, 0, 0, 57);
+unsigned int portMulti = 8989; // local port to listen on
+
+WiFiUDP Udp;
+ESP8266WebServer server(80);
+
+boolean wifiConnected = false;
+boolean udpConnected = false;
+
+typedef struct __attribute__((packed)) {
+	int32_t data_send_period;
+	double rs_air;
+	double r0;
+	uint16_t checksum;
+} settings_t;
+
+settings_t settings = {.data_send_period = 5000, .rs_air = 0, .r0 = 10};
+
+typedef struct {
+	time_t ts;
+	double voltage;
+	double res;
+} val_t;
+
+val_t cur_data = {0, 0};
 
 double sensorMinValue = -1, sensorMaxValue = -1;
+// kOm between sensor pin and GND
 const double boardResistance = 10 + 47;
 
 double readVoltage()
@@ -75,57 +105,131 @@ double readVoltage()
 }
 
 
-/****************** MQResistanceCalculation ****************************************
-Input:   raw_adc - raw value read from adc, which represents the voltage
+/****************** MQResistance ****************************************
+Input:   voltage - calculated voltage adc
 Output:  the calculated sensor resistance
 Remarks: The sensor and the load resistor forms a voltage divider. Given the voltage
          across the load resistor and its resistance, the resistance of the sensor
          could be derived.
 ************************************************************************************/
-double MQResistanceCalculation()
+double MQResistance(double voltage=0)
 {
-	return RL_VALUE_MQ2 * (5 - readVoltage());
+//	if(!voltage) {
+		voltage = readVoltage();
+//	}
+	return RL_VALUE_MQ2 * (5 - voltage);
+}
+
+void load_settings()
+{
+	// Restore from EEPROM, check the checksum matches
+	settings_t s;
+	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
+	EEPROM.begin(sizeof(s));
+	uint16_t sum = SETTINGS_INIT_SUM;
+	for (size_t i=0; i<sizeof(s); i++) {
+		ptr[i] = EEPROM.read(i);
+		if(i<sizeof(s)-sizeof(s.checksum)) {
+			sum += ptr[i];
+		}
+	}
+	EEPROM.end();
+	if(s.checksum == sum) {
+		memcpy(&settings, &s, sizeof(settings));
+		Serial.print("Settings loaded:");
+		Serial.println(settings.data_send_period);
+	} else {
+		Serial.print("Settings crc failed:");
+	}
+}
+
+void save_settings()
+{
+	// Store in "EEPROM" to restart automatically
+	settings_t s;
+	memcpy(&s, &settings, sizeof(s));
+	s.checksum = SETTINGS_INIT_SUM;
+	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
+	for(size_t i=0; i<(sizeof(s)-sizeof(s.checksum)); i++) {
+		s.checksum += ptr[i];
+	}
+	EEPROM.begin(sizeof(s));
+	for(size_t i=0; i<sizeof(s); i++) {
+		EEPROM.write(i, ptr[i]);
+	}
+	EEPROM.commit();
+	EEPROM.end();
+	Serial.print("EEPROM ");
+	Serial.print(s.data_send_period);
+	Serial.println(" written");
 }
 
 /***************************** MQCalibration ****************************************
-Output:  Ro of the sensor
 Remarks: This function assumes that the sensor is in clean air. It use
-	       MQResistanceCalculation to calculates the sensor resistance in clean air
+	       MQResistance to calculates the sensor resistance in clean air
 	       and then divides it with RO_CLEAN_AIR_FACTOR. RO_CLEAN_AIR_FACTOR is about
 	       10, which differs slightly between different sensors.
 ************************************************************************************/
-double MQCalibration()
+class MQCalibrationClass {
+
+		int step;
+		double rs_air;
+		Ticker t;
+	public:
+
+		bool start()
+		{
+			bool rs = is_running();
+			if(rs) {
+				Serial.println("Calibration already running");
+			} else {
+				Serial.printf("Calibration started (it will takes %d secs)\n", (CALIBARAION_SAMPLE_TIMES*CALIBRATION_SAMPLE_INTERVAL)/1000);
+				rs_air = 0;
+				step = 0;
+				t.attach_ms(CALIBRATION_SAMPLE_INTERVAL, std::bind(&MQCalibrationClass::do_step, this));
+			}
+			return !rs;
+		}
+
+		void do_step()
+		{
+			rs_air += MQResistance();
+			if((++step) >= CALIBARAION_SAMPLE_TIMES)
+			{
+				stop();
+			}
+		}
+
+		void stop()
+		{
+			t.detach();
+			settings.rs_air = rs_air/CALIBARAION_SAMPLE_TIMES;              //calculate the average value
+			settings.r0 = settings.rs_air/RO_CLEAN_AIR_FACTOR_MQ2;                      //RS_AIR_val divided by RO_CLEAN_AIR_FACTOR yields the R0
+			save_settings();
+			Serial.printf("Calibration finished (rs_air:%.2f, r0:%.2f)", settings.rs_air, settings.r0);
+		}
+
+		bool is_running()
+		{
+			return t.active();
+		}
+
+		int percent()
+		{
+			return (step * 100)/CALIBARAION_SAMPLE_TIMES;
+		}
+};
+
+MQCalibrationClass calibr;
+
+// 25 sec
+bool MQCalibration()
 {
-	int i;
-	double RS_AIR_val=0,r0;
-
-	for (i=0;i<CALIBARAION_SAMPLE_TIMES;i++) {                     //take multiple samples
-		RS_AIR_val += MQResistanceCalculation();
-		delay(CALIBRATION_SAMPLE_INTERVAL);
-	}
-	RS_AIR_val = RS_AIR_val/CALIBARAION_SAMPLE_TIMES;              //calculate the average value
-
-	r0 = RS_AIR_val/RO_CLEAN_AIR_FACTOR_MQ2;                      //RS_AIR_val divided by RO_CLEAN_AIR_FACTOR yields the Ro
-	                                                               //according to the chart in the datasheet
-
-	return r0;
+	return calibr.start();
 }
-
-/*****************************  MQRead *********************************************
-Output:  Rs of the sensor
-Remarks: This function use MQResistanceCalculation to caculate the sensor resistenc (Rs).
-       The Rs changes as the sensor is in the different consentration of the target
-       gas. The sample times and the time interval between samples could be configured
-       by changing the definition of the macros.
-************************************************************************************/
-double MQRead()
-{
-	return MQResistanceCalculation();
-}
-
 
 /*****************************  MQGetGasPercentage **********************************
-Input:   rs_ro_ratio - Rs divided by Ro
+Input:   rs_ro_ratio - Rs divided by R0
        gas_id      - target gas type
 Output:  ppm of the target gas
 Remarks: This function uses different equations representing curves of each gas to
@@ -169,109 +273,45 @@ int MQGetGasPercentage(double rs_ro_ratio, int gas_id)
 	return 0;
 }
 
-void printVals()
+void printVals(Print &p=Serial, String sep=" ")
 {
-	double val = MQRead()/Ro;
-	Serial.print("HYDROGEN:");
-	Serial.print(MQGetGasPercentage(val, GAS_HYDROGEN));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("LPG:");
-	Serial.print(MQGetGasPercentage(val, GAS_LPG));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("METHANE:");
-	Serial.print(MQGetGasPercentage(val, GAS_METHANE));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("CARBON_MONOXIDE:");
-	Serial.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("ALCOHOL:");
-	Serial.print(MQGetGasPercentage(val, GAS_ALCOHOL));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("SMOKE:");
-	Serial.print(MQGetGasPercentage(val, GAS_SMOKE));
-	Serial.print( "ppm" );
-	Serial.print(" ");
-	Serial.print("PROPANE:");
-	Serial.print(MQGetGasPercentage(val, GAS_PROPANE));
-	Serial.print( "ppm" );
-	Serial.print("\n");
-}
-
-// Multicast declarations
-IPAddress ipMulti(239, 0, 0, 57);
-unsigned int portMulti = 8989; // local port to listen on
-
-WiFiUDP Udp;
-ESP8266WebServer server(80);
-
-boolean wifiConnected = false;
-boolean udpConnected = false;
-
-typedef struct __attribute__((packed)) {
-	int32_t data_send_period;
-	uint16_t checksum;
-} settings_t;
-
-settings_t settings = {.data_send_period = 5000};
-
-typedef struct {
-	time_t ts;
-	double voltage;
-	double rs_air;
-	double r0;
-} val_t;
-
-val_t cur_data = {0, 0};
-
-char htmlbuf[120];
-
-void load_settings()
-{
-	// Restore from EEPROM, check the checksum matches
-	settings_t s;
-	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
-	EEPROM.begin(sizeof(s));
-	uint16_t sum = 0x1234;
-	for (size_t i=0; i<sizeof(s); i++) {
-		ptr[i] = EEPROM.read(i);
-		if(i<sizeof(s)-sizeof(s.checksum)) {
-			sum += ptr[i];
-		}
+	if(settings.rs_air) {
+		double val = MQResistance()/settings.r0;
+		p.print("hydrogen:");
+		p.print(MQGetGasPercentage(val, GAS_HYDROGEN));
+		p.print( "ppm" );
+		p.print(sep);
+		p.print("lpg:");
+		p.print(MQGetGasPercentage(val, GAS_LPG));
+		p.print( "ppm" );
+		p.print(sep);
+		p.print("methane:");
+		p.print(MQGetGasPercentage(val, GAS_METHANE));
+		p.print( "ppm" );
+		p.print(sep);
+		p.print("carbon monoxide:");
+		p.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
+		p.print( "ppm" );
+		p.print(sep);
+		p.print("alcohol:");
+		p.print(MQGetGasPercentage(val, GAS_ALCOHOL));
+		p.print( "ppm" );
+		p.print(sep);
+		p.print("smoke:");
+		p.print(MQGetGasPercentage(val, GAS_SMOKE));
+		p.print( "ppm" );
+		p.print(sep);
+		p.print("propane:");
+		p.print(MQGetGasPercentage(val, GAS_PROPANE));
+		p.print( "ppm" );
+		p.print(sep);
 	}
-	EEPROM.end();
-	if(s.checksum == sum) {
-		memcpy(&settings, &s, sizeof(settings));
-		Serial.print("Settings loaded:");
-		Serial.println(settings.data_send_period);
-	} else {
-		Serial.print("Settings crc failed:");
+	p.println();
+	if(calibr.is_running()) {
+		p.printf("Calibrating...%d%%", calibr.percent());
+		p.print(sep);
+		p.println();
 	}
-}
-
-void save_settings()
-{
-	// Store in "EEPROM" to restart automatically
-	settings_t s;
-	memcpy(&s, &settings, sizeof(s));
-	s.checksum = 0x1234;
-	uint8_t *ptr = reinterpret_cast<uint8_t *>(&s);
-	for(size_t i=0; i<(sizeof(s)-sizeof(s.checksum)); i++) {
-		s.checksum += ptr[i];
-	}
-	EEPROM.begin(sizeof(s));
-	for(size_t i=0; i<sizeof(s); i++) {
-		EEPROM.write(i, ptr[i]);
-	}
-	EEPROM.commit();
-	EEPROM.end();
-	Serial.print("EEPROM ");
-	Serial.print(s.data_send_period);
-	Serial.println(" written");
 }
 
 const String home_link = "<a href=\"/\">Home</a>";
@@ -291,7 +331,9 @@ const String postForm[] = {
 		"<h1>Settings</h1><br>"
 		"<form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/write_settings.php\">"
 			"<label>Period(ms):</label><input type=\"number\" min=\"1000\" name=\"period\" value=\"", "\"></input><br>"
-			"<input type=\"submit\" value=\"Submit\"></input>"
+			"<input type=\"submit\" name=\"submit\" value=\"submit\">Submit</input>"
+			"<br/>"
+			"<input type=\"submit\" name=\"submit\" value=\"calibrate\">Calibrate</input>"
 		"</form>"};
 
 void handleNotFound(){
@@ -309,13 +351,6 @@ void handleNotFound(){
 	server.send(404, "text/plain", message);
 }
 
-double calc_rs_air(double sensorVoltage)
-{
-	double RS_air; //Define variable for sensor resistance
-	RS_air = (5/sensorVoltage)-1; //Calculate RS in fresh air
-	return RS_air;
-}
-
 void send_udp_string(String js)
 {
 	// send data message
@@ -326,27 +361,23 @@ void send_udp_string(String js)
 
 void send_data()
 {
-	if(wifiConnected && udpConnected) {
+	if(wifiConnected && udpConnected && settings.rs_air) {
 		cur_data.voltage = readVoltage();
-		cur_data.rs_air = calc_rs_air(cur_data.voltage);
-		cur_data.r0 = cur_data.rs_air/4.4;
+		cur_data.res = MQResistance(cur_data.voltage);
 		cur_data.ts = time(NULL);
 		Serial.print("V=");
 		Serial.println(cur_data.voltage);
-		Serial.print("R0=");
-		Serial.println(cur_data.r0);
-		send_udp_string("{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
-			",\"rawval\":" + String(cur_data.voltage) + ", \"r0\":" + String(cur_data.r0) +
-			",\"rs_air\":" + String(cur_data.rs_air) + "}");
-		double val = MQRead()/Ro;
-		String js = "{";
-		js += "\"HYDROGEN\":" + String(MQGetGasPercentage(val, GAS_HYDROGEN));
-		js += ",\"LPG\":" + String(MQGetGasPercentage(val, GAS_LPG));
-		js += ",\"METHANE\":" + String(MQGetGasPercentage(val, GAS_METHANE));
-		js += ",\"CARBON_MONOXIDE\":" + String(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
-		js += ",\"ALCOHOL\":" + String(MQGetGasPercentage(val, GAS_ALCOHOL));
-		js += ",\"SMOKE\":" + String(MQGetGasPercentage(val, GAS_SMOKE));
-		js += ",\"PROPANE\":" + String(MQGetGasPercentage(val, GAS_PROPANE));
+		double val = cur_data.res/settings.r0;
+		String js = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
+			",\"rawval\":" + String(cur_data.voltage) + ", \"r0\":" + String(settings.r0) +
+			",\"rs_air\":" + String(settings.rs_air) + ",\"res\":" + String(cur_data.res);
+		js += ",\"hydrogen\":" + String(MQGetGasPercentage(val, GAS_HYDROGEN));
+		js += ",\"lpg\":" + String(MQGetGasPercentage(val, GAS_LPG));
+		js += ",\"methane\":" + String(MQGetGasPercentage(val, GAS_METHANE));
+		js += ",\"carbon monoxide\":" + String(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
+		js += ",\"alcohol\":" + String(MQGetGasPercentage(val, GAS_ALCOHOL));
+		js += ",\"smoke\":" + String(MQGetGasPercentage(val, GAS_SMOKE));
+		js += ",\"propane\":" + String(MQGetGasPercentage(val, GAS_PROPANE));
 		js += "}";
 		send_udp_string(js);
 		blinker.blink(3);
@@ -371,12 +402,29 @@ void handleForm()
 			save_settings();
 			make_ticker();
 			message = "Success";
+			String submit_type = server.arg("submit");
+			Serial.printf("submit_type:%s\n", submit_type.c_str());
+			if(submit_type == "calibrate") {
+				MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
+			}
 		} else {
 			message = "Error in form";
 		}
 		server.send(200, "text/html", wrap_html(home_link + "<br>" + message + "<br><a href=\"/config.html\">Config</a>"));
 	}
 	blinker.blink(2);
+}
+
+void handleRoot()
+{
+	struct tm tmstruct;
+	StreamString page;
+	localtime_r(&cur_data.ts, &tmstruct);
+	page.printf("V: %.2f (range: %.2f..%.2f)<br/>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li<br/>", cur_data.voltage, sensorMinValue, sensorMaxValue,
+		(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
+	printVals(page, "<br/>");
+	server.send(200, "text/html", wrap_html(page, reload_script));
+	blinker.blink(3);
 }
 
 // connect to wifi returns true if successful or false if not
@@ -441,15 +489,8 @@ void setup()
 	WiFi.mode(WIFI_STA);
 	load_settings();
 
-	server.on("/", []() {
-		struct tm tmstruct;
-		localtime_r(&cur_data.ts, &tmstruct);
-		snprintf(htmlbuf, sizeof(htmlbuf), "V: %.2f (range: %.2f..%.2f)<br>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li", cur_data.voltage, sensorMinValue, sensorMaxValue,
-			(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1,
-			tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
-		server.send(200, "text/html", wrap_html(htmlbuf, reload_script));
-		blinker.blink(3);
-	});
+	server.on("/", handleRoot);
+	server.on("/index.html", handleRoot);
 	server.on("/config.html", []() {
 		server.send(200, "text/html", wrap_html(home_link + postForm[0] + settings.data_send_period + postForm[1]));
 	});
@@ -459,10 +500,11 @@ void setup()
 	Serial.println("HTTP server started");
 	make_ticker();
 	digitalWrite(LED_PIN, LOW);
-	Ro = MQCalibration(); //Calibrating the sensor. Please make sure the sensor is in clean air
-	Serial.print("Calibration is done...\n");
+	if(!settings.rs_air) {
+		MQCalibration();
+	}
 	Serial.print("Ro=");
-	Serial.print(Ro);
+	Serial.print(settings.r0);
 	Serial.print("kohm");
 	Serial.print("\n");
 }

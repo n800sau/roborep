@@ -8,6 +8,7 @@ import json
 import time
 import traceback
 import redis
+from math import log10
 
 import paho.mqtt.client as mqtt
 
@@ -28,7 +29,7 @@ j = """
 					"value": 0
 				},
 				"card-type": "crouton-simple-text",
-				"title": "MQ2"
+				"title": "MQ2 V"
 			}
 		},
 		"description": "MQ devices"
@@ -117,15 +118,18 @@ def main():
 	mqclient.loop_start()
 	while True:
 		try:
-			dbprint('Waiting...')
+#			dbprint('Waiting...')
 			data,address = sock.recvfrom(1000)
 			try:
 				jdata = json.loads((data).decode())
-				dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
-				r.rpush(REDIS_KEY, json.dumps(jdata))
-				mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", '{"value":' + str(jdata['rawval']) + '}')
-				while r.llen(REDIS_KEY) > MAX_ITEMS:
-					r.lpop(REDIS_KEY)
+				if 'sensor_id' in jdata:
+					dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
+					r.rpush(REDIS_KEY, json.dumps(jdata))
+#					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", json.dumps(jdata))
+					mqclient.publish("/hass/sensor/mq2/state", json.dumps(jdata))
+#					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", jdata['rawval'])
+					while r.llen(REDIS_KEY) > MAX_ITEMS:
+						r.lpop(REDIS_KEY)
 			except ValueError as e:
 				dbprint('%s: %s' % (e, data))
 				continue
@@ -134,6 +138,80 @@ def main():
 				raise
 			traceback.print_exc()
 
+# define the load resistance on the board, in kilo ohms
+RL_VALUE_MQ2 = 47 + 10
+# RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/RO which is derived from the chart in datasheet
+RO_CLEAN_AIR_FACTOR_MQ2 = 9.577
+
+# define how many samples you are going to take in the calibration phase
+CALIBARAION_SAMPLE_TIMES = 50
+
+# define the time interal(in milisecond) between each samples in the cablibration phase
+CALIBRATION_SAMPLE_INTERVAL = 500
+
+# define how many samples you are going to take in normal operation
+READ_SAMPLE_INTERVAL = 50
+# define the time interal(in milisecond) between each samples
+READ_SAMPLE_TIMES = 5
+
+GAS_HYDROGEN = 0
+GAS_LPG = 1
+GAS_METHANE = 2
+GAS_CARBON_MONOXIDE = 3
+GAS_ALCOHOL = 4
+GAS_SMOKE = 5
+GAS_PROPANE = 6
+
+accuracy = 0 # for linearcurves
+#accuracy = 1 # for nonlinearcurves, un comment this line and comment the above line if calculations are to be done using non linear curve equations
+
+def MQResistanceCalculation(voltage):
+	return float(RL_VALUE_MQ2) * (5 - voltage) / voltage
+
+def MQCalibration(mq_pin):
+	RS_AIR_val = 0
+	for i in range(CALIBARAION_SAMPLE_TIMES): # take multiple samples
+		RS_AIR_val += MQResistanceCalculation()
+		time.sleep(CALIBRATION_SAMPLE_INTERVAL)
+	RS_AIR_val = RS_AIR_val / CALIBARAION_SAMPLE_TIMES # calculate the average value
+	# RS_AIR_val divided by RO_CLEAN_AIR_FACTOR yields the Ro
+	# according to the chart in the datasheet
+	r0 = RS_AIR_val / RO_CLEAN_AIR_FACTOR_MQ2
+	return r0;
+
+
+def MQGetGasPercentage(rs_ro_ratio, gas_id):
+	if accuracy == 0:
+		if gas_id == GAS_HYDROGEN:
+			return (pow(10,((-2.109*(log10(rs_ro_ratio))) + 2.983)))
+		elif gas_id == GAS_LPG:
+			return (pow(10,((-2.123*(log10(rs_ro_ratio))) + 2.758)))
+		elif gas_id == GAS_METHANE:
+			return (pow(10,((-2.622*(log10(rs_ro_ratio))) + 3.635)))
+		elif gas_id == GAS_CARBON_MONOXIDE:
+			return (pow(10,((-2.955*(log10(rs_ro_ratio))) + 4.457)))
+		elif gas_id == GAS_ALCOHOL:
+			return (pow(10,((-2.692*(log10(rs_ro_ratio))) + 3.545)))
+		elif gas_id == GAS_SMOKE:
+			return (pow(10,((-2.331*(log10(rs_ro_ratio))) + 3.596)))
+		elif gas_id == GAS_PROPANE:
+			return (pow(10,((-2.174*(log10(rs_ro_ratio))) + 2.799)))
+	elif accuracy == 1:
+		if gas_id == GAS_HYDROGEN:
+			return (pow(10,((-2.109*(log10(rs_ro_ratio))) + 2.983)))
+		elif gas_id == GAS_LPG:
+			return (pow(10,((-2.123*(log10(rs_ro_ratio))) + 2.758)))
+		elif gas_id == GAS_METHANE:
+			return (pow(10,((-2.622*(log10(rs_ro_ratio))) + 3.635)))
+		elif gas_id == GAS_CARBON_MONOXIDE:
+			return (pow(10,((-2.955*(log10(rs_ro_ratio))) + 4.457)))
+		elif gas_id == GAS_ALCOHOL:
+			return (pow(10,((-2.692*(log10(rs_ro_ratio))) + 3.545)))
+		elif gas_id == GAS_SMOKE:
+			return (pow(10,(-0.976*pow((log10(rs_ro_ratio)), 2) - 2.018*(log10(rs_ro_ratio)) + 3.617)))
+		elif gas_id == GAS_PROPANE:
+			return (pow(10,((-2.174*(log10(rs_ro_ratio))) + 2.799)))
+	return 0
 
 if __name__ == '__main__':
 
