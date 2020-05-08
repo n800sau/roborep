@@ -104,9 +104,9 @@ def fill_wells(data):
 		r_name = 'last.' + sensor_id + '.' + k
 		r.set(r_name, json.encode({'v': v, 'ts': ts}))
 		for w_name, r_w in [
-					['monthly', r_dt.replace(day=0, hour=0, microsecond=0, second=0, minute=0)],
-					['daily', r_dt.replace(hour=0, microsecond=0, second=0, minute=0)],
-					['hourly', r_dt.replace(microsecond=0, second=0, minute=0)],
+					['monthly', time.mktime(r_dt.replace(day=1, hour=0, microsecond=0, second=0, minute=0).timetuple())],
+					['daily', time.mktime(r_dt.replace(hour=0, microsecond=0, second=0, minute=0).timetuple())],
+					['hourly', time.mktime(r_dt.replace(microsecond=0, second=0, minute=0).timetuple())],
 				]:
 			r_name = 'avg.' + sensor_id + '.' + w_name + '.' + k
 			w_d = r.hget(r_name, r_w)
