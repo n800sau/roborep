@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import datetime
 import socket
 import struct
 import json
@@ -9,6 +8,7 @@ import time
 import traceback
 import redis
 from math import log10
+from datetime import datetime
 
 import paho.mqtt.client as mqtt
 
@@ -50,8 +50,8 @@ REDIS_KEY = 'mq2_list'
 MAX_ITEMS = 100
 
 def dbprint(text):
-#	print('[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text), file=sys.__stderr__)
-	print >>sys.__stderr__, '[%s]:%s' % (datetime.datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
+#	print('[%s]:%s' % (datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text), file=sys.__stderr__)
+	print >>sys.__stderr__, '[%s]:%s' % (datetime.fromtimestamp(time.time()).strftime('%d/%m/%Y %H:%M:%S.%f'), text)
 
 def make_sock():
 
@@ -96,6 +96,26 @@ def on_mqdisconnect(client, userdata, rc):
 	time.sleep(10)
 	mqclient.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
 
+def fill_wells(data):
+	ts = data['ts']
+	sensor_id = data['sensor_id']
+	for k,v in set(data).difference(['ts', 'sensor_id']):
+		r_dt = datetime.fromtimestamp(ts)
+		r_name = 'last.' + sensor_id + '.' + k
+		r.set(r_name, json.encode({'v': v, 'ts': ts}))
+		for w_name, r_w in [
+					['monthly', time.mktime(r_dt.replace(day=1, hour=0, microsecond=0, second=0, minute=0).timetuple())],
+					['daily', time.mktime(r_dt.replace(hour=0, microsecond=0, second=0, minute=0).timetuple())],
+					['hourly', time.mktime(r_dt.replace(microsecond=0, second=0, minute=0).timetuple())],
+				]:
+			r_name = 'avg.' + sensor_id + '.' + w_name + '.' + k
+			w_d = r.hget(r_name, r_w)
+			if not w_d:
+				w_d = {'v': 0, 'count': 0}
+			w_d['count'] += 1
+			w_d['v'] += (v - w_d['v']) / w_d['count']
+			r.hset(r_name, r_w, json.encode(w_d))
+
 def main():
 
 	sock = make_sock()
@@ -123,10 +143,13 @@ def main():
 			try:
 				jdata = json.loads((data).decode())
 				if 'sensor_id' in jdata:
+					if 'ts' not in data:
+						data['ts'] = int(time.time())
 					dbprint('%g at %s from %s (%s)' % (jdata['rawval'], jdata['ts'], jdata['sensor_id'], ':'.join([str(v) for v in address])))
 					r.rpush(REDIS_KEY, json.dumps(jdata))
 #					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", json.dumps(jdata))
 					mqclient.publish("/hass/sensor/mq2/state", json.dumps(jdata))
+					fill_wells(jdata)
 #					mqclient.publish("/outbox/" + MQ_CLIENT_NAME + "/mq2", jdata['rawval'])
 					while r.llen(REDIS_KEY) > MAX_ITEMS:
 						r.lpop(REDIS_KEY)
