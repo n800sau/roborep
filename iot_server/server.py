@@ -59,9 +59,9 @@ def pull_redis():
 			dt = datetime.now()
 			data = {}
 			for w_name,dt,td in (
-						['monthly', dt.replace(day=1, hour=0, microsecond=0, second=0, minute=0), timedelta(days=31)],
-						['daily', dt.replace(hour=0, microsecond=0, second=0, minute=0), timedelta(days=1)],
-						['hourly', dt.replace(microsecond=0, second=0, minute=0), timedelta(hours=1)],
+						['monthly', dt.replace(month=1, day=1, hour=0, microsecond=0, second=0, minute=0), timedelta(days=366)],
+						['daily', dt.replace(day=1, hour=0, microsecond=0, second=0, minute=0), timedelta(days=31)],
+						['hourly', dt.replace(hour=0, microsecond=0, second=0, minute=0), timedelta(days=1)],
 					):
 				ts_start = time.mktime(dt.timetuple())
 				ts_end = time.mktime((dt + td).timetuple())
