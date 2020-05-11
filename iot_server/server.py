@@ -40,15 +40,16 @@ def handle_my_custom_event(json):
 def collect_data(r, w_name, start_ts, end_ts):
 	rs = {}
 	for k in r.keys('avg.*.' + w_name + '.*'):
-		_,sensor_id,_,param = k.split('.')
-		if sensor_id not in rs[w_name]:
-			rs[w_name][sensor_id] = {}
-		if param not in rs[w_name][sensor_id]:
-			rs[w_name][sensor_id][param] = []
-		for vobj in [json.loads(vstr) for vstr in r.lrange(k, -n_items, -1)]:
-			if vobj['ts'] >= start_ts and vobj['ts'] < end_ts:
-				rs[w_name][sensor_id][param].append(vobj)
-		rs[w_name][sensor_id][param].sort(key=lambda v: v.ts)
+		_,sensor_id,_,param = str(k).split('.')
+		if sensor_id not in rs:
+			rs[sensor_id] = {}
+		if param not in rs[sensor_id]:
+			rs[sensor_id][param] = []
+		for ts,vobj in [(ts, json.loads(vstr)) for ts,vstr in r.hgetall(k).items()]:
+			ts = float(ts)
+			if ts >= start_ts and ts < end_ts:
+				rs[sensor_id][param].append((ts, vobj['v']))
+		rs[sensor_id][param].sort(key=lambda v: float(v[0]))
 	return rs
 
 def pull_redis():
@@ -62,12 +63,18 @@ def pull_redis():
 						['daily', dt.replace(hour=0, microsecond=0, second=0, minute=0), timedelta(days=1)],
 						['hourly', dt.replace(microsecond=0, second=0, minute=0), timedelta(hours=1)],
 					):
-				data[w_name] = collect_data(r, w_name, time.mktime(dt.timetuple()), time.mktime((dt - td).timetuple()))
+				ts_start = time.mktime(dt.timetuple())
+				ts_end = time.mktime((dt + td).timetuple())
+				data[w_name] = {
+					'ts_start': ts_start,
+					'ts_end': ts_end,
+					'vals': collect_data(r, w_name, ts_start, ts_end),
+				}
 				if not data[w_name]:
 					del data[w_name]
 			if data:
 				socketio.emit('current_data', data)
-			gevent.sleep(1)
+			gevent.sleep(5)
 
 
 @socketio.on("my error event")
