@@ -8,6 +8,8 @@ from flask_socketio import SocketIO, send, emit
 import gevent
 from gevent import monkey
 import redis
+from dateutil.relativedelta import relativedelta
+from calendar import monthrange
 
 monkey.patch_socket()
 
@@ -33,45 +35,78 @@ def test_connect():
 def test_disconnect():
 	print('Client disconnected')
 
-@socketio.on('my event')
+@socketio.on('full_data_load')
 def handle_my_custom_event(json):
 	print('received json: ' + str(json))
 
-def collect_data(r, w_name, start_ts, end_ts):
+def collect_data_for_period(r, w_name, start_ts, end_ts):
 	rs = {}
 	for k in r.keys('avg.*.' + w_name + '.*'):
-		_,sensor_id,_,param = str(k).split('.')
+#		print('@@@', k.decode())
+		_,sensor_id,_,param = k.decode().split('.')
 		if sensor_id not in rs:
 			rs[sensor_id] = {}
 		if param not in rs[sensor_id]:
 			rs[sensor_id][param] = []
 		for ts,vobj in [(ts, json.loads(vstr)) for ts,vstr in r.hgetall(k).items()]:
-			ts = float(ts)
+			ts = datetime.fromtimestamp(float(ts))
 			if ts >= start_ts and ts < end_ts:
-				rs[sensor_id][param].append((ts, vobj['v']))
-		rs[sensor_id][param].sort(key=lambda v: float(v[0]))
+				rs[sensor_id][param].append(vobj['v'])
+#		rs[sensor_id][param].sort(key=lambda v: float(v[0]))
+		val = sum(rs[sensor_id][param])/len(rs[sensor_id][param]) if rs[sensor_id][param] else 0
+		if val:
+			rs[sensor_id][param] = val
+		else:
+			del rs[sensor_id][param]
+	for sensor_id in list(rs.keys()):
+		if not rs[sensor_id]:
+			del rs[sensor_id]
 	return rs
+
+def collect_data(r):
+	ts_format = '%Y-%m-%d %H:%M:%S'
+	dt = datetime.now()
+	data = {'hourly': [], 'daily': [], 'monthly': []}
+	# hourly
+	w_name = 'hourly'
+	for i in range(24):
+		ts_start = dt.replace(hour=0, microsecond=0, second=0, minute=0) - relativedelta(hours=i)
+		ts_end = ts_start + relativedelta(hours=1)
+		vals = collect_data_for_period(r, w_name, ts_start, ts_end)
+		if vals:
+			data[w_name].append({
+				'ts_start': ts_start.strftime(ts_format),
+				'vals': vals,
+			})
+	# daily
+	w_name = 'daily'
+	for i in range(1, monthrange(dt.year, dt.month)[1]+1):
+		ts_start = dt.replace(day=i, hour=0, microsecond=0, second=0, minute=0)
+		ts_end = ts_start + relativedelta(days=1)
+		vals = collect_data_for_period(r, w_name, ts_start, ts_end)
+		if vals:
+			data[w_name].append({
+				'ts_start': ts_start.strftime(ts_format),
+				'vals': vals,
+			})
+	# monthly
+	w_name = 'monthly'
+	for i in range(1, 13):
+		ts_start = dt.replace(month=i, day=1, hour=0, microsecond=0, second=0, minute=0)
+		ts_end = ts_start + relativedelta(months=1)
+		vals = collect_data_for_period(r, w_name, ts_start, ts_end)
+		if vals:
+			data[w_name].append({
+				'ts_start': ts_start.strftime(ts_format),
+				'vals': vals,
+			})
+	return data
 
 def pull_redis():
 	r = redis.Redis()
 	with app.test_request_context('/'):
 		while True:
-			dt = datetime.now()
-			data = {}
-			for w_name,dt,td in (
-						['monthly', dt.replace(month=1, day=1, hour=0, microsecond=0, second=0, minute=0), timedelta(days=366)],
-						['daily', dt.replace(day=1, hour=0, microsecond=0, second=0, minute=0), timedelta(days=31)],
-						['hourly', dt.replace(hour=0, microsecond=0, second=0, minute=0), timedelta(days=1)],
-					):
-				ts_start = time.mktime(dt.timetuple())
-				ts_end = time.mktime((dt + td).timetuple())
-				data[w_name] = {
-					'ts_start': ts_start,
-					'ts_end': ts_end,
-					'vals': collect_data(r, w_name, ts_start, ts_end),
-				}
-				if not data[w_name]:
-					del data[w_name]
+			data = collect_data(r)
 			if data:
 				socketio.emit('current_data', data)
 			gevent.sleep(5)
