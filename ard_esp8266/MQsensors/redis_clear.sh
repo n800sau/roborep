@@ -1,1 +1,1 @@
-redis-cli del mq2_list
+redis-cli keys \* |xargs -n1 redis-cli del

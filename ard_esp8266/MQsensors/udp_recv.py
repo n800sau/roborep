@@ -98,6 +98,7 @@ def on_mqdisconnect(client, userdata, rc):
 	mqclient.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, 60)
 
 def fill_wells(r, data):
+	ts_format = '%Y-%m-%d %H:%M:%S'
 	ts = data['ts']
 	sensor_id = data['sensor_id']
 	for k,v in data.items():
@@ -106,9 +107,9 @@ def fill_wells(r, data):
 			r_name = 'last.' + sensor_id + '.' + k
 			r.set(r_name, json.dumps({'v': v, 'ts': ts}))
 			for w_name, r_w in [
-						['monthly', time.mktime(r_dt.replace(day=1, hour=0, microsecond=0, second=0, minute=0).timetuple())],
-						['daily', time.mktime(r_dt.replace(hour=0, microsecond=0, second=0, minute=0).timetuple())],
-						['hourly', time.mktime(r_dt.replace(microsecond=0, second=0, minute=0).timetuple())],
+						['monthly', r_dt.replace(day=1, hour=0, microsecond=0, second=0, minute=0).strftime(ts_format)],
+						['daily', r_dt.replace(hour=0, microsecond=0, second=0, minute=0).strftime(ts_format)],
+						['hourly', r_dt.replace(microsecond=0, second=0, minute=0).strftime(ts_format)],
 					]:
 				r_name = 'avg.' + sensor_id + '.' + w_name + '.' + k
 				w_d = r.hget(r_name, r_w)
