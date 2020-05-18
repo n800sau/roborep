@@ -40,6 +40,9 @@ def handle_my_custom_event(json):
 	print('received json: ' + str(json))
 
 def collect_data_for_period(r, w_name, start_ts, end_ts):
+	ts_format = '%Y-%m-%d %H:%M:%S'
+	start_ts = start_ts.strftime(ts_format)
+	end_ts = end_ts.strftime(ts_format)
 	rs = {}
 	for k in r.keys('avg.*.' + w_name + '.*'):
 #		print('@@@', k.decode())
@@ -48,9 +51,8 @@ def collect_data_for_period(r, w_name, start_ts, end_ts):
 			rs[sensor_id] = {}
 		if param not in rs[sensor_id]:
 			rs[sensor_id][param] = []
-		for ts,vobj in [(ts, json.loads(vstr)) for ts,vstr in r.hgetall(k).items()]:
-			ts = datetime.fromtimestamp(float(ts))
-			if ts >= start_ts and ts < end_ts:
+		for ts,vobj in [(ts.decode(), json.loads(vstr)) for ts,vstr in r.hgetall(k).items()]:
+			if ts == start_ts:
 				rs[sensor_id][param].append(vobj['v'])
 #		rs[sensor_id][param].sort(key=lambda v: float(v[0]))
 		val = sum(rs[sensor_id][param])/len(rs[sensor_id][param]) if rs[sensor_id][param] else 0
