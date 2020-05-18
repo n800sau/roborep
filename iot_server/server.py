@@ -45,13 +45,14 @@ def collect_data_for_period(r, w_name, start_ts, end_ts):
 	end_ts = end_ts.strftime(ts_format)
 	rs = {}
 	for k in r.keys('avg.*.' + w_name + '.*'):
-#		print('@@@', k.decode())
 		_,sensor_id,_,param = k.decode().split('.')
 		if sensor_id not in rs:
 			rs[sensor_id] = {}
 		if param not in rs[sensor_id]:
 			rs[sensor_id][param] = []
 		for ts,vobj in [(ts.decode(), json.loads(vstr)) for ts,vstr in r.hgetall(k).items()]:
+#			if w_name == 'hourly':
+#				print(ts, start_ts)
 			if ts == start_ts:
 				rs[sensor_id][param].append(vobj['v'])
 #		rs[sensor_id][param].sort(key=lambda v: float(v[0]))
@@ -72,34 +73,34 @@ def collect_data(r):
 	# hourly
 	w_name = 'hourly'
 	for i in range(24):
-		ts_start = dt.replace(hour=0, microsecond=0, second=0, minute=0) - relativedelta(hours=i)
-		ts_end = ts_start + relativedelta(hours=1)
-		vals = collect_data_for_period(r, w_name, ts_start, ts_end)
+		start_ts = dt.replace(hour=0, microsecond=0, second=0, minute=0) + relativedelta(hours=i)
+		end_ts = start_ts + relativedelta(hours=1)
+		vals = collect_data_for_period(r, w_name, start_ts, end_ts)
 		if vals:
 			data[w_name].append({
-				'ts_start': ts_start.strftime(ts_format),
+				'start_ts': start_ts.strftime(ts_format),
 				'vals': vals,
 			})
 	# daily
 	w_name = 'daily'
 	for i in range(1, monthrange(dt.year, dt.month)[1]+1):
-		ts_start = dt.replace(day=i, hour=0, microsecond=0, second=0, minute=0)
-		ts_end = ts_start + relativedelta(days=1)
-		vals = collect_data_for_period(r, w_name, ts_start, ts_end)
+		start_ts = dt.replace(day=i, hour=0, microsecond=0, second=0, minute=0)
+		end_ts = start_ts + relativedelta(days=1)
+		vals = collect_data_for_period(r, w_name, start_ts, end_ts)
 		if vals:
 			data[w_name].append({
-				'ts_start': ts_start.strftime(ts_format),
+				'start_ts': start_ts.strftime(ts_format),
 				'vals': vals,
 			})
 	# monthly
 	w_name = 'monthly'
 	for i in range(1, 13):
-		ts_start = dt.replace(month=i, day=1, hour=0, microsecond=0, second=0, minute=0)
-		ts_end = ts_start + relativedelta(months=1)
-		vals = collect_data_for_period(r, w_name, ts_start, ts_end)
+		start_ts = dt.replace(month=i, day=1, hour=0, microsecond=0, second=0, minute=0)
+		end_ts = start_ts + relativedelta(months=1)
+		vals = collect_data_for_period(r, w_name, start_ts, end_ts)
 		if vals:
 			data[w_name].append({
-				'ts_start': ts_start.strftime(ts_format),
+				'start_ts': start_ts.strftime(ts_format),
 				'vals': vals,
 			})
 	return data

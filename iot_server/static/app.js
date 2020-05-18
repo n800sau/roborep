@@ -10,6 +10,8 @@ window.chartColors = {
 
 	initApp = function() {
 
+		var gCharts = {};
+
 		Vue.use(VueMaterial.default)
 
 		new Vue({
@@ -38,62 +40,65 @@ window.chartColors = {
 			}
 	 	})
 
-		var ts_f = 'DD/MM/YYYY HH:mm:SS';
+		var ts_f = 'YYYY-MM-DD HH:mm:SS';
+
+		var gTypes = ['hourly', 'daily', 'monthly'];
 
 		var make_wells = function(search_date) {
 			search_date = search_date || moment();
-			var wells = {
-				hourly: [],
-				daily: [],
-				monthly: [],
-			};
-			var labels = {
-				hourly: [],
-				daily: [],
-				monthly: [],
-			};
+			var wells = {};
+			var labels = {};
+			gTypes.forEach(function(name) {
+				wells[name] = [];
+				labels[name] = [];
+			});
 			var h = moment(search_date).set({hour:0, minute:0, second:0, millisecond:0});
-				for(var i=0; i<=24; i++) {
-					wells.hourly.push(h.hour(i).format(ts_f));
-				}
-				var m = moment(search_date).set({hour:0, minute:0, second:0, millisecond:0}).subtract(1, 'month');
-				while(m.isSameOrBefore(search_date)) {
-					wells.daily.push(m.add(1, 'day').format(ts_f));
-					labels.daily.push(m.format('MMM DD'));
-				}
-				labels.daily.splice(-1, 1);
-				var y = moment(search_date).set({date:1, hour:0, minute:0, second:0, millisecond:0}).subtract(1, 'years');
-				while(y.isSameOrBefore(search_date)) {
-					wells.monthly.push(y.add(1, 'month').format(ts_f));
-					labels.monthly.push(y.format('MMM YYYY'));
-				}
-				labels.monthly.splice(-1, 1);
-//	console.log(wells);
-				return {wells: wells, labels: labels};
+			for(var i=0; i<=24; i++) {
+				wells.hourly.push(h.hour(i).format(ts_f));
+				labels.hourly.push(h.format('DD MMM HH:00'));
 			}
-
-		var dailyChartData = {
-			labels: [],
-			datasets: [
-				{
-					label: 'sm',
-					backgroundColor: window.chartColors.blue,
-//					yAxisID: 'y-axis-smoke',
-					data: [],
-				}, {
-					label: 'al',
-					backgroundColor: window.chartColors.green,
-//					yAxisID: 'y-axis-alcohol',
-					data: [],
-				}
-			]
-		};
+			var m = moment(search_date).set({hour:0, minute:0, second:0, millisecond:0}).subtract(1, 'month');
+			while(m.isSameOrBefore(search_date)) {
+				wells.daily.push(m.add(1, 'day').format(ts_f));
+				labels.daily.push(m.format('DD MMM'));
+			}
+			labels.daily.splice(-1, 1);
+			var y = moment(search_date).set({date:1, hour:0, minute:0, second:0, millisecond:0}).subtract(1, 'years');
+			while(y.isSameOrBefore(search_date)) {
+				wells.monthly.push(y.add(1, 'month').format(ts_f));
+				labels.monthly.push(y.format('MMM YYYY'));
+			}
+			labels.monthly.splice(-1, 1);
+//	console.log(wells);
+			return {wells: wells, labels: labels};
+		}
 
 		var wells = make_wells();
-		dailyChartData.labels = wells.labels.daily;
-		dailyChartData.datasets[0].data = new Array(dailyChartData.labels.length).fill(0);
-		dailyChartData.datasets[1].data = new Array(dailyChartData.labels.length).fill(0);
-		dailyChartData.wells = wells.wells.daily;
+		var chartData = {};
+		gTypes.every(function(name) {
+			chartData[name] = {
+				labels: [],
+				datasets: [
+					{
+						label: 'sm',
+						backgroundColor: window.chartColors.blue,
+//						yAxisID: 'y-axis-smoke',
+						data: [],
+					}, {
+						label: 'al',
+						backgroundColor: window.chartColors.green,
+//						yAxisID: 'y-axis-alcohol',
+						data: [],
+					}
+				]
+			};
+			chartData[name].labels = wells.labels[name];
+			chartData[name].datasets[0].data = new Array(chartData[name].labels.length).fill(0);
+			chartData[name].datasets[1].data = new Array(chartData[name].labels.length).fill(0);
+			chartData[name].wells = wells.wells[name];
+			return true;
+		});
+
 
 		var socket = io();
 		socket.on('connect', function() {
@@ -101,43 +106,42 @@ window.chartColors = {
 		});
 		socket.on('current_data', function(data) {
 //			console.log(data);
-//				dailyChartData.datasets[0].data
-			data.daily.forEach(function(v) {
-				wells.labels.daily.forEach(function(w, wi) {
-					var ts_f = moment(v.ts_start).format('MMM DD');
-					if( ts_f == w) {
-						dailyChartData.datasets[0].data[wi] = v.vals.MQ2.smoke;
-						dailyChartData.datasets[1].data[wi] = v.vals.MQ2.alcohol;
-						return false;
-					}
+			gTypes.forEach(function(name) {
+				data[name].forEach(function(v) {
+					wells.labels[name].every(function(w, wi) {
+						if(v.start_ts == wells.wells[name][wi]) {
+							chartData[name].datasets[0].data[wi] = v.vals.MQ2.smoke;
+							chartData[name].datasets[1].data[wi] = v.vals.MQ2.alcohol;
+							return false;
+						}
+						return true;
+					});
 				});
+				gCharts[name].update();
 			});
-
-//			dailyChartData.datasets[1].data
-//			myChart.data.datasets[0].data.push(data.smoke);
-			myChart.update();
 		});
-		var ctx = document.getElementById('myChart').getContext('2d');
-		var myChart = new Chart(ctx,{
-			type: 'bar',
-			data: dailyChartData,
-			options: {
-				responsive: true,
-				title: {
-					display: true,
-					text: 'Chart.js Bar Chart - Multi Axis'
-				},
-				tooltips: {
-					mode: 'index',
-					intersect: true
-				},
-				scales: {
-					yAxes: [{
-						type: 'linear',
+		gTypes.forEach(function(name) {
+			var ctx = document.getElementById(name + 'Chart').getContext('2d');
+			gCharts[name] = new Chart(ctx,{
+				type: 'bar',
+				data: chartData[name],
+				options: {
+					responsive: true,
+					title: {
 						display: true,
-						position: 'left',
-						id: 'y-axis-smoke',
-//					}, {
+						text: 'Chart.js Bar Chart - Multi Axis'
+					},
+					tooltips: {
+						mode: 'index',
+							intersect: true
+					},
+					scales: {
+						yAxes: [{
+							type: 'linear',
+							display: true,
+							position: 'left',
+							id: 'y-axis-smoke',
+//						}, {
 //						type: 'linear',
 //						display: true,
 //						position: 'right',
@@ -145,9 +149,10 @@ window.chartColors = {
 //						gridLines: {
 //							drawOnChartArea: false
 //						}
-					}],
-				},
-				maintainAspectRatio: false,
-			}
+						}],
+					},
+					maintainAspectRatio: false,
+				}
+			});
 		});
 	}
