@@ -20,6 +20,7 @@ window.chartColors = {
 			data: {
 				server_ts: '',
 				last_data_ts: '',
+				last_data_value: '',
 			},
 			delimiters: ['[[',']]'],
 		});
@@ -120,9 +121,10 @@ window.chartColors = {
 			socket.emit('full_data_load', {data: 'I\'m connected!'});
 		});
 		socket.on('current_data', function(data) {
-//			console.log(data);
+//console.log(data);
 			v.server_ts = data['server_ts'];
 			v.last_data_ts = data['last_data_ts'];
+			v.last_data_value = data['last_data_value'];
 			gTypes.forEach(function(name) {
 				data[name].forEach(function(v) {
 					wells.labels[name].every(function(w, wi) {

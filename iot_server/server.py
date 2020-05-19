@@ -66,13 +66,14 @@ def collect_data_for_period(r, w_name, start_ts, end_ts):
 			del rs[sensor_id]
 	return rs
 
-def collect_data(r):
+def collect_data(r, full_data):
 	ts_format = '%Y-%m-%d %H:%M:%S'
 	dt = datetime.now()
 	data = {'hourly': [], 'daily': [], 'monthly': []}
 	# hourly
 	w_name = 'hourly'
-	for i in range(24):
+	i_range = range(24) if full_data else range(max(0, dt.hour-1), 24)
+	for i in i_range:
 		start_ts = dt.replace(hour=0, microsecond=0, second=0, minute=0) + relativedelta(hours=i)
 		end_ts = start_ts + relativedelta(hours=1)
 		vals = collect_data_for_period(r, w_name, start_ts, end_ts)
@@ -83,7 +84,8 @@ def collect_data(r):
 			})
 	# daily
 	w_name = 'daily'
-	for i in range(1, monthrange(dt.year, dt.month)[1]+1):
+	i_range = range(1, monthrange(dt.year, dt.month)[1]+1) if full_data else range(max(1, dt.day-1), monthrange(dt.year, dt.month)[1]+1)
+	for i in i_range:
 		start_ts = dt.replace(day=i, hour=0, microsecond=0, second=0, minute=0)
 		end_ts = start_ts + relativedelta(days=1)
 		vals = collect_data_for_period(r, w_name, start_ts, end_ts)
@@ -94,7 +96,8 @@ def collect_data(r):
 			})
 	# monthly
 	w_name = 'monthly'
-	for i in range(1, 13):
+	i_range = range(1, 13)  if full_data else range(max(1, dt.month-1), dt.month+1)
+	for i in i_range:
 		start_ts = dt.replace(month=i, day=1, hour=0, microsecond=0, second=0, minute=0)
 		end_ts = start_ts + relativedelta(months=1)
 		vals = collect_data_for_period(r, w_name, start_ts, end_ts)
@@ -107,15 +110,19 @@ def collect_data(r):
 	if last_rec:
 		last_rec = json.loads(last_rec[0])
 		data['server_ts'] =  time.strftime(ts_format)
-		data['last_data_ts'] =  datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
+		data['last_data_ts'] = datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
+		data['last_data_value'] = last_rec['smoke']
 	return data
 
 def pull_redis():
+	full_data = True
 	r = redis.Redis()
 	with app.test_request_context('/'):
 		while True:
-			data = collect_data(r)
+			data = collect_data(r, full_data=full_data)
 			if data:
+#				print('Sent daily len:', len(data['daily']))
+				full_data = False
 				socketio.emit('current_data', data)
 			gevent.sleep(5)
 

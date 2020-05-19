@@ -25,13 +25,19 @@
 	<body onLoad="initApp()">
 
 		<div id="currentdate">
-			Server: [[server_ts]]
-			<br/>
-			Data: [[last_data_ts]]
+			<template>
+				Server: [[server_ts]]
+				<br/>
+				Data: [[last_data_ts]]
+				<br/>
+				<md-content class="md-elevation-1">
+					[[last_data_value]]
+				</md-content>
+			</template>
 		</div>
 
 
-		<table class="charts" style="display:none">
+		<table class="charts">
 			<tr>
 				<td>
 					<div class="chart-container">

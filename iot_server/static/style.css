@@ -5,3 +5,12 @@ table.charts td {
 table.charts td canvas.chart {
 	width: 500px;
 }
+
+.md-content {
+	width: 100px;
+	height: 100px;
+	margin: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
