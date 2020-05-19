@@ -12,8 +12,19 @@ window.chartColors = {
 
 		var gCharts = {};
 
-		Vue.use(VueMaterial.default)
 
+		Vue.use(VueMaterial.default);
+
+		var v = new Vue({
+			el: '#currentdate',
+			data: {
+				server_ts: '',
+				last_data_ts: '',
+			},
+			delimiters: ['[[',']]'],
+		});
+
+/*
 		new Vue({
 			el: '#app',
 			name: 'BasicDatepicker',
@@ -39,7 +50,7 @@ window.chartColors = {
 				}
 			}
 	 	})
-
+*/
 		var ts_f = 'YYYY-MM-DD HH:mm:SS';
 
 		var gTypes = ['hourly', 'daily', 'monthly'];
@@ -55,7 +66,7 @@ window.chartColors = {
 			var h = moment(search_date).set({hour:0, minute:0, second:0, millisecond:0});
 			for(var i=0; i<=24; i++) {
 				wells.hourly.push(h.hour(i).format(ts_f));
-				labels.hourly.push(h.format('DD MMM HH:00'));
+				labels.hourly.push(h.format('HH'));
 			}
 			var m = moment(search_date).set({hour:0, minute:0, second:0, millisecond:0}).subtract(1, 'month');
 			while(m.isSameOrBefore(search_date)) {
@@ -71,6 +82,10 @@ window.chartColors = {
 			labels.monthly.splice(-1, 1);
 //	console.log(wells);
 			return {wells: wells, labels: labels};
+		}
+
+		String.prototype.capitalize = function() {
+			return this.charAt(0).toUpperCase() + this.slice(1);
 		}
 
 		var wells = make_wells();
@@ -106,6 +121,8 @@ window.chartColors = {
 		});
 		socket.on('current_data', function(data) {
 //			console.log(data);
+			v.server_ts = data['server_ts'];
+			v.last_data_ts = data['last_data_ts'];
 			gTypes.forEach(function(name) {
 				data[name].forEach(function(v) {
 					wells.labels[name].every(function(w, wi) {
@@ -126,21 +143,24 @@ window.chartColors = {
 				type: 'bar',
 				data: chartData[name],
 				options: {
-					responsive: true,
 					title: {
 						display: true,
-						text: 'Chart.js Bar Chart - Multi Axis'
+						text: name.capitalize(),
 					},
 					tooltips: {
 						mode: 'index',
-							intersect: true
+						intersect: true
 					},
 					scales: {
 						yAxes: [{
 							type: 'linear',
 							display: true,
 							position: 'left',
-							id: 'y-axis-smoke',
+							ticks: {
+								min: 0,
+								suggestedMax: 50,
+							},
+//							id: 'y-axis-smoke',
 //						}, {
 //						type: 'linear',
 //						display: true,
@@ -151,6 +171,7 @@ window.chartColors = {
 //						}
 						}],
 					},
+					aspectRatio: 1,
 					maintainAspectRatio: false,
 				}
 			});

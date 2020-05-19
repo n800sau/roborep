@@ -1,3 +1,7 @@
-.chart-container {
-	width: 300px;
+table.charts td {
+	margin: 10px;
+}
+
+table.charts td canvas.chart {
+	width: 500px;
 }

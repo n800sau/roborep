@@ -103,6 +103,11 @@ def collect_data(r):
 				'start_ts': start_ts.strftime(ts_format),
 				'vals': vals,
 			})
+	last_rec = r.lrange('mq2_list', -1, -1)
+	if last_rec:
+		last_rec = json.loads(last_rec[0])
+		data['server_ts'] =  time.strftime(ts_format)
+		data['last_data_ts'] =  datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
 	return data
 
 def pull_redis():

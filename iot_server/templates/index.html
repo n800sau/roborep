@@ -3,10 +3,11 @@
 		<meta charset="utf-8">
 		<meta content="width=device-width,initial-scale=1,minimal-ui" name="viewport">
 
-<!--		<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
--->
+		<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
 		<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+
 
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic|Material+Icons">
 		<link rel="stylesheet" href="https://unpkg.com/vue-material/dist/vue-material.css">
@@ -22,17 +23,37 @@
 		<title>Flask-SocketIO Test</title>
 	</head>
 	<body onLoad="initApp()">
-		<div class="chart-container">
-			<canvas id="hourlyChart"></canvas>
-		</div>
-		<div class="chart-container">
-			<canvas id="dailyChart"></canvas>
-		</div>
-		<div class="chart-container">
-			<canvas id="monthlyChart"></canvas>
+
+		<div id="currentdate">
+			Server: [[server_ts]]
+			<br/>
+			Data: [[last_data_ts]]
 		</div>
 
+
+		<table class="charts" style="display:none">
+			<tr>
+				<td>
+					<div class="chart-container">
+						<canvas id="hourlyChart"></canvas>
+					</div>
+				</td>
+				<td>
+					<div class="chart-container">
+						<canvas id="dailyChart"></canvas>
+					</div>
+				</td>
+				<td>
+					<div class="chart-container">
+						<canvas id="monthlyChart"></canvas>
+					</div>
+				</td>
+			</tr>
+		</table>
+
+<!--
 		<div id="app">
+
 
 <template>
   <div>
@@ -59,6 +80,6 @@
 </template>
 
 		</div>
-
+-->
 	</body>
 </html>
