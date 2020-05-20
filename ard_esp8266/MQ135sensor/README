@@ -2,6 +2,10 @@ esp8266
 
 io15 - green led
 
+
+io4 - am
+io5 - am
+
 tape recorder socket:
 
 from outside of wall

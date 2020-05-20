@@ -13,7 +13,7 @@
 
 const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
-#define HOSTNAME "mq135"
+#define HOSTNAME "mq2"
 
 #define LED_PIN 15
 Blinker blinker;
@@ -25,7 +25,7 @@ String sensor_id = "MQ135";
 #define SETTINGS_INIT_SUM 0x1234
 
 /************************Hardware Related Macros************************************/
-#define         RL_VALUE_MQ2                 (47 + 10)     //define the load resistance on the board, in kilo ohms
+#define         RL_VALUE_MQ2                 (5. * (47 + 10)/(5 + 47 + 10))     //define the load resistance on the board, in kilo ohms
 #define         RO_CLEAN_AIR_FACTOR_MQ2      (9.577)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/R0,
                                                      //which is derived from the chart in datasheet
 
@@ -35,16 +35,7 @@ String sensor_id = "MQ135";
                                                      //cablibration phase
 
 /**********************Application Related Macros**********************************/
-#define         GAS_HYDROGEN                  (0)
-#define         GAS_LPG                       (1)
-#define         GAS_METHANE                   (2)
-#define         GAS_CARBON_MONOXIDE           (3)
-#define         GAS_ALCOHOL                   (4)
-#define         GAS_SMOKE                     (5)
-#define         GAS_PROPANE                   (6)
-#define         accuracy                      (0)   //for linearcurves
-//#define         accuracy                    (1)   //for nonlinearcurves, un comment this line and comment the above line if calculations 
-                                                    //are to be done using non linear curve equations
+#define         GAS_CO2                       (0)
 /*****************************Globals************************************************/
 
 // Multicast declarations
@@ -237,39 +228,9 @@ Remarks: This function uses different equations representing curves of each gas 
 ************************************************************************************/
 int MQGetGasPercentage(double rs_ro_ratio, int gas_id)
 {
-	if ( accuracy == 0 ) {
-		if ( gas_id == GAS_HYDROGEN ) {
-			return (pow(10,((-2.109*(log10(rs_ro_ratio))) + 2.983)));
-		} else if ( gas_id == GAS_LPG ) {
-			return (pow(10,((-2.123*(log10(rs_ro_ratio))) + 2.758)));
-		} else if ( gas_id == GAS_METHANE ) {
-			return (pow(10,((-2.622*(log10(rs_ro_ratio))) + 3.635)));
-		} else if ( gas_id == GAS_CARBON_MONOXIDE ) {
-			return (pow(10,((-2.955*(log10(rs_ro_ratio))) + 4.457)));
-		} else if ( gas_id == GAS_ALCOHOL ) {
-			return (pow(10,((-2.692*(log10(rs_ro_ratio))) + 3.545)));
-		} else if ( gas_id == GAS_SMOKE ) {
-			return (pow(10,((-2.331*(log10(rs_ro_ratio))) + 3.596)));
-		} else if ( gas_id == GAS_PROPANE ) {
-			return (pow(10,((-2.174*(log10(rs_ro_ratio))) + 2.799)));
-		}		
-	} else if ( accuracy == 1 ) {
-		if ( gas_id == GAS_HYDROGEN ) {
-			return (pow(10,((-2.109*(log10(rs_ro_ratio))) + 2.983)));
-		} else if ( gas_id == GAS_LPG ) {
-			return (pow(10,((-2.123*(log10(rs_ro_ratio))) + 2.758)));
-		} else if ( gas_id == GAS_METHANE ) {
-			return (pow(10,((-2.622*(log10(rs_ro_ratio))) + 3.635)));
-		} else if ( gas_id == GAS_CARBON_MONOXIDE ) {
-			return (pow(10,((-2.955*(log10(rs_ro_ratio))) + 4.457)));
-		} else if ( gas_id == GAS_ALCOHOL ) {
-			return (pow(10,((-2.692*(log10(rs_ro_ratio))) + 3.545)));
-		} else if ( gas_id == GAS_SMOKE ) {
-			return (pow(10,(-0.976*pow((log10(rs_ro_ratio)), 2) - 2.018*(log10(rs_ro_ratio)) + 3.617)));
-		} else if ( gas_id == GAS_PROPANE ) {
-			return (pow(10,((-2.174*(log10(rs_ro_ratio))) + 2.799)));
-		}
-	}		
+	if ( gas_id == GAS_CO2 ) {
+		return pow(10,(-1.92 * log10(rs_ro_ratio) / -0.42));
+	}
 	return 0;
 }
 
@@ -277,32 +238,8 @@ void printVals(Print &p=Serial, String sep=" ")
 {
 	if(settings.rs_air) {
 		double val = MQResistance()/settings.r0;
-		p.print("hydrogen:");
-		p.print(MQGetGasPercentage(val, GAS_HYDROGEN));
-		p.print( "ppm" );
-		p.print(sep);
-		p.print("lpg:");
-		p.print(MQGetGasPercentage(val, GAS_LPG));
-		p.print( "ppm" );
-		p.print(sep);
-		p.print("methane:");
-		p.print(MQGetGasPercentage(val, GAS_METHANE));
-		p.print( "ppm" );
-		p.print(sep);
-		p.print("carbon monoxide:");
-		p.print(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
-		p.print( "ppm" );
-		p.print(sep);
-		p.print("alcohol:");
-		p.print(MQGetGasPercentage(val, GAS_ALCOHOL));
-		p.print( "ppm" );
-		p.print(sep);
-		p.print("smoke:");
-		p.print(MQGetGasPercentage(val, GAS_SMOKE));
-		p.print( "ppm" );
-		p.print(sep);
-		p.print("propane:");
-		p.print(MQGetGasPercentage(val, GAS_PROPANE));
+		p.print("co2:");
+		p.print(MQGetGasPercentage(val, GAS_CO2));
 		p.print( "ppm" );
 		p.print(sep);
 	}
@@ -371,13 +308,7 @@ void send_data()
 		String js = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
 			",\"rawval\":" + String(cur_data.voltage) + ", \"r0\":" + String(settings.r0) +
 			",\"rs_air\":" + String(settings.rs_air) + ",\"res\":" + String(cur_data.res);
-		js += ",\"hydrogen\":" + String(MQGetGasPercentage(val, GAS_HYDROGEN));
-		js += ",\"lpg\":" + String(MQGetGasPercentage(val, GAS_LPG));
-		js += ",\"methane\":" + String(MQGetGasPercentage(val, GAS_METHANE));
-		js += ",\"carbon monoxide\":" + String(MQGetGasPercentage(val, GAS_CARBON_MONOXIDE));
-		js += ",\"alcohol\":" + String(MQGetGasPercentage(val, GAS_ALCOHOL));
-		js += ",\"smoke\":" + String(MQGetGasPercentage(val, GAS_SMOKE));
-		js += ",\"propane\":" + String(MQGetGasPercentage(val, GAS_PROPANE));
+		js += ",\"co2\":" + String(MQGetGasPercentage(val, GAS_CO2));
 		js += "}";
 		send_udp_string(js);
 		blinker.blink(3);
