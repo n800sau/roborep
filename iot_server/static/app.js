@@ -105,6 +105,11 @@ window.chartColors = {
 						backgroundColor: window.chartColors.green,
 //						yAxisID: 'y-axis-alcohol',
 						data: [],
+					}, {
+						label: 'co',
+						backgroundColor: window.chartColors.brown,
+//						yAxisID: 'y-axis-co2',
+						data: [],
 					}
 				]
 			};
@@ -123,14 +128,21 @@ window.chartColors = {
 		socket.on('current_data', function(data) {
 //console.log(data);
 			v.server_ts = data['server_ts'];
-			v.last_data_ts = data['last_data_ts'];
-			v.last_data_value = data['last_data_value'];
+			if(data['last']['MQ135']) {
+				v.last_data_ts = data['last']['MQ135']['ts'];
+				v.last_data_value = data['last']['MQ135']['value'];
+			}
 			gTypes.forEach(function(name) {
 				data[name].forEach(function(v) {
 					wells.labels[name].every(function(w, wi) {
 						if(v.start_ts == wells.wells[name][wi]) {
-							chartData[name].datasets[0].data[wi] = v.vals.MQ2.smoke;
-							chartData[name].datasets[1].data[wi] = v.vals.MQ2.alcohol;
+							if(v.vals.MQ2) {
+								chartData[name].datasets[0].data[wi] = v.vals.MQ2.smoke;
+								chartData[name].datasets[1].data[wi] = v.vals.MQ2.alcohol;
+							}
+							if(v.vals.MQ135) {
+								chartData[name].datasets[2].data[wi] = v.vals.MQ135.co2;
+							}
 							return false;
 						}
 						return true;

@@ -13,7 +13,7 @@ from calendar import monthrange
 
 monkey.patch_socket()
 
-REDIS_KEY = 'mq2_list'
+REDIS_KEY = 'mq_list'
 
 async_mode = 'gevent'
 
@@ -106,12 +106,14 @@ def collect_data(r, full_data):
 				'start_ts': start_ts.strftime(ts_format),
 				'vals': vals,
 			})
-	last_rec = r.lrange('mq2_list', -1, -1)
-	if last_rec:
-		last_rec = json.loads(last_rec[0])
-		data['server_ts'] =  time.strftime(ts_format)
-		data['last_data_ts'] = datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
-		data['last_data_value'] = last_rec['smoke']
+	data['server_ts'] =  time.strftime(ts_format)
+	data['last'] = {}
+	for last_rec in r.lrange(REDIS_KEY, 0, -1):
+		last_rec = json.loads(last_rec)
+		if last_rec['sensor_id'] not in data['last']:
+			data['last'][last_rec['sensor_id']] = {}
+			data['last'][last_rec['sensor_id']]['ts'] = datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
+			data['last'][last_rec['sensor_id']]['data'] = last_rec
 	return data
 
 def pull_redis():
