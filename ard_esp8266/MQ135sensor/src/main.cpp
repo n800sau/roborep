@@ -77,8 +77,6 @@ typedef struct {
 
 val_t cur_data = {.ts=0, .co2=0, .h=0, .t=0};
 
-float sensorMinValue = -1, sensorMaxValue = -1;
-
 void load_settings()
 {
 	// Restore from EEPROM, check the checksum matches
@@ -123,76 +121,9 @@ void save_settings()
 	Serial.println(" written");
 }
 
-/***************************** MQCalibration ****************************************
-Remarks: This function assumes that the sensor is in clean air. It use
-	       MQResistance to calculates the sensor resistance in clean air
-	       and then divides it with RO_CLEAN_AIR_FACTOR. RO_CLEAN_AIR_FACTOR is about
-	       10, which differs slightly between different sensors.
-************************************************************************************/
-class MQCalibration {
-
-		int step;
-		float r0;
-		Ticker t;
-	public:
-
-		bool start()
-		{
-			bool rs = is_running();
-			if(rs) {
-				Serial.println("Calibration already running");
-			} else {
-				Serial.printf("Calibration started (it will takes %d secs)\n", (CALIBRATION_SAMPLE_TIMES*CALIBRATION_SAMPLE_INTERVAL)/1000);
-				r0 = 0;
-				step = 0;
-				t.attach_ms(CALIBRATION_SAMPLE_INTERVAL, std::bind(&MQCalibration::do_step, this));
-			}
-			return !rs;
-		}
-
-		void do_step()
-		{
-			mq135.update();
-			r0 += mq135.calibrate(RatioMQ135CleanAir);
-
-			if((++step) >= CALIBRATION_SAMPLE_TIMES)
-			{
-				stop();
-			}
-		}
-
-		void stop()
-		{
-			t.detach();
-			settings.r0 = r0/CALIBRATION_SAMPLE_TIMES;              //calculate the average value
-			if(isinf(r0)) {
-				Serial.println("Warning: Conection issue founded, R0 is infite (Open circuit detected) please check your wiring and supply");
-			} else if(r0 == 0) {
-				Serial.println("Warning: Conection issue founded, R0 is zero (Analog pin with short circuit to ground) please check your wiring and supply");
-			} else {
-				save_settings();
-				Serial.printf("Calibration finished (r0:%.2f)", settings.r0);
-			}
-		}
-
-		bool is_running()
-		{
-			return t.active();
-		}
-
-		int percent()
-		{
-			return (step * 100)/CALIBRATION_SAMPLE_TIMES;
-		}
-};
-
-
-//MQCalibration calibr;
-
 // 25 sec
 void run_calibration()
 {
-
 	Serial.print("Calibrating please wait.");
 	float calcR0 = 0;
 	for(int i=0; i<10; i++)
@@ -206,37 +137,33 @@ void run_calibration()
 	Serial.print("R0=");
 	Serial.println(settings.r0);
 	save_settings();
-
-//	calibr.start();
 }
 
 void printVals(Print &p=Serial, String sep=" ")
 {
 	if(settings.r0) {
-		p.print("co2:");
-		p.print(cur_data.co2);
-		p.print( "ppm" );
 		p.print(sep);
-		p.print("h:");
+		p.print("humidity: ");
 		p.print(cur_data.h);
+		p.print(" %");
 		p.print(sep);
-		p.print("t:");
+		p.print("temperature: ");
 		p.print(cur_data.t);
+		p.print(" &deg;C");
+		p.print(sep);
+		p.print("R0: ");
+		p.print(settings.r0);
+		p.print(" kΩ");
 		p.print(sep);
 	}
 	p.println();
-//	if(calibr.is_running()) {
-//		p.printf("Calibrating...%d%%", calibr.percent());
-//		p.print(sep);
-//		p.println();
-//	}
 }
 
 const String home_link = "<a href=\"/\">Home</a>";
 
 String wrap_html(String body, String head="")
 {
-	return "<html><head>"
+	return "<html><head><meta charset=\"UTF-8\">"
 		"<style>"
 		"body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }"
 		"</style>"
@@ -277,17 +204,27 @@ void send_udp_string(String js)
 	Udp.endPacket();
 }
 
+StreamString time2str(time_t ts)
+{
+	StreamString rs;
+	struct tm tmstruct;
+	localtime_r(&ts, &tmstruct);
+	rs.printf("%d-%02d-%02d %02d:%02d:%02d UTC", (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
+	return rs;
+}
+
 void send_data()
 {
 	if(wifiConnected && udpConnected && settings.r0) {
+		Serial.println("*****************************");
 		Serial.print("t=");
 		Serial.println(cur_data.t);
 		Serial.print("h=");
 		Serial.println(cur_data.h);
 		Serial.print("co2=");
 		Serial.println(cur_data.co2);
-		String js = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) +
-			",\"temperature\":" + String(cur_data.t) + ",\"humidity\":" + String(cur_data.h);
+		String js = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) + ",\"timestamp\":\"" + time2str(cur_data.ts) +
+			"\",\"temperature\":" + String(cur_data.t) + ",\"humidity\":" + String(cur_data.h);
 		js += ",\"co2\":" + String(cur_data.co2);
 		js += "}";
 		send_udp_string(js);
@@ -333,9 +270,8 @@ void handleRoot()
 	struct tm tmstruct;
 	StreamString page;
 	localtime_r(&cur_data.ts, &tmstruct);
-	page.printf("co2: %.2f (range: %.2f..%.2f)<br/>%d-%02d-%02d %02d:%02d:%02d UTC<br>ts: %li<br/>", cur_data.co2, sensorMinValue, sensorMaxValue,
-		(tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec, cur_data.ts);
-	printVals(page, "<br/>");
+	page.printf("co2: %.2f ppm<p>%s<br>ts: %li<br>", cur_data.co2, time2str(cur_data.ts).c_str(), cur_data.ts);
+	printVals(page, "<br>");
 	server.send(200, "text/html", wrap_html(page, reload_script));
 	blinker.blink(3);
 }
@@ -416,14 +352,12 @@ void th_update()
 
 void sensor_update()
 {
-//	if(!calibr.is_running()) {
-		th_update();
-		mq135.setR0(settings.r0);
-		mq135.update();
-		cur_data.ts = time(NULL);
-		mq135.setA(110.47); mq135.setB(-2.862); // Configurate the ecuation values to get CO2 concentration 
-		cur_data.co2 = mq135.readSensor(); // Sensor will read PPM concentration using the model and a and b values setted before or in the setup
-//	}
+	th_update();
+	mq135.setR0(settings.r0);
+	mq135.update();
+	cur_data.ts = time(NULL);
+	mq135.setA(110.47); mq135.setB(-2.862); // Configurate the ecuation values to get CO2 concentration 
+	cur_data.co2 = mq135.readSensor(); // Sensor will read PPM concentration using the model and a and b values setted before or in the setup
 }
 
 void setup()
