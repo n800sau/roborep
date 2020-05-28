@@ -8,59 +8,16 @@ window.chartColors = {
 	grey: 'rgb(201, 203, 207)'
 };
 
+
 	initApp = function() {
 
-		var gCharts = {};
-
-
-		Vue.use(VueMaterial.default);
-
-		var v = new Vue({
-			el: '#currentdate',
-			data: {
-				server_ts: '',
-				last_data_ts: '',
-				last_data_value: '',
-			},
-			delimiters: ['[[',']]'],
-		});
-
-/*
-		new Vue({
-			el: '#app',
-			name: 'BasicDatepicker',
-			data: () => ({
-				selectedDate: null
-			}),
-			computed: {
-				firstDayOfAWeek: {
-					get () {
-						return this.$material.locale.firstDayOfAWeek
-					},
-					set (val) {
-						this.$material.locale.firstDayOfAWeek = val
-					}
-				},
-				dateFormat: {
-					get () {
-						return this.$material.locale.dateFormat
-					},
-					set (val) {
-						this.$material.locale.dateFormat = val
-					}
-				}
-			}
-	 	})
-*/
 		var ts_f = 'YYYY-MM-DD HH:mm:SS';
-
-		var gTypes = ['hourly', 'daily', 'monthly'];
 
 		var make_wells = function(search_date) {
 			search_date = search_date || moment();
 			var wells = {};
 			var labels = {};
-			gTypes.forEach(function(name) {
+			v_opts.data.gTypes.forEach(function(name) {
 				wells[name] = [];
 				labels[name] = [];
 			});
@@ -89,73 +46,67 @@ window.chartColors = {
 			return this.charAt(0).toUpperCase() + this.slice(1);
 		}
 
-		var wells = make_wells();
-		var chartData = {};
-		gTypes.every(function(name) {
-			chartData[name] = {
-				labels: [],
-				datasets: [
-					{
-						label: 'sm',
-						backgroundColor: window.chartColors.blue,
-//						yAxisID: 'y-axis-smoke',
-						data: [],
-					}, {
-						label: 'al',
-						backgroundColor: window.chartColors.green,
-//						yAxisID: 'y-axis-alcohol',
-						data: [],
-					}, {
-						label: 'co',
-						backgroundColor: window.chartColors.brown,
-//						yAxisID: 'y-axis-co2',
-						data: [],
+		Vue.use(VueMaterial.default);
+
+		Vue.component('chart', {
+			chart: undefined,
+			props: ['chartOptions', 'ts'],
+			template: '<canvas></canvas>',
+			mounted: function() {
+//				console.log('options', this.chartOptions);
+				this.chart = new Chart(this.$el.getContext('2d'), this.chartOptions);
+			},
+			watch: {
+				ts: function(newVal) {
+					console.log('new ts', newVal);
+					if(this.chart) {
+						// update chart
+						this.chart.update();
 					}
-				]
-			};
-			chartData[name].labels = wells.labels[name];
-			chartData[name].datasets[0].data = new Array(chartData[name].labels.length).fill(0);
-			chartData[name].datasets[1].data = new Array(chartData[name].labels.length).fill(0);
-			chartData[name].wells = wells.wells[name];
-			return true;
+				},
+				chartOptions: function(newVal) {
+					if(this.chart) {
+						// update options
+						this.chart.update(newVal);
+					}
+				}
+			},
 		});
 
+		var v_opts = {
+			el: '#app',
+			data: {
+				server_ts: '',
+				card_values: {},
+				card_labels: {
+					temperature: '1',
+					humidity: 2,
+					co2: 3,
+					co: 4,
+				},
+				card_index_list: [
+					'temperature', 'humidity', 'co2', 'co',
+				],
+				gTypes: ['hourly', 'daily', 'monthly'],
+				bar_charts: {},
+				line_charts: {},
+			},
+			delimiters: ["<%","%>"],
+			created: function () {
+				// `this` points to the vm instance
+				console.log('a is: ' + Object.keys(this.bar_charts))
+			},
+		};
 
-		var socket = io();
-		socket.on('connect', function() {
-			socket.emit('full_data_load', {data: 'I\'m connected!'});
-		});
-		socket.on('current_data', function(data) {
-//console.log(data);
-			v.server_ts = data['server_ts'];
-			if(data['last']['MQ135']) {
-				v.last_data_ts = data['last']['MQ135']['ts'];
-				v.last_data_value = data['last']['MQ135']['value'];
-			}
-			gTypes.forEach(function(name) {
-				data[name].forEach(function(v) {
-					wells.labels[name].every(function(w, wi) {
-						if(v.start_ts == wells.wells[name][wi]) {
-							if(v.vals.MQ2) {
-								chartData[name].datasets[0].data[wi] = v.vals.MQ2.smoke;
-								chartData[name].datasets[1].data[wi] = v.vals.MQ2.alcohol;
-							}
-							if(v.vals.MQ135) {
-								chartData[name].datasets[2].data[wi] = v.vals.MQ135.co2;
-							}
-							return false;
-						}
-						return true;
-					});
-				});
-				gCharts[name].update();
-			});
-		});
-		gTypes.forEach(function(name) {
-			var ctx = document.getElementById(name + 'Chart').getContext('2d');
-			gCharts[name] = new Chart(ctx,{
+		var wells = make_wells();
+
+		v_opts.data.gTypes.forEach(function(name) {
+			v_opts.data.bar_charts[name] = {
 				type: 'bar',
-				data: chartData[name],
+				data: {
+					labels: wells.labels[name],
+					wells: wells.wells[name],
+				},
 				options: {
 					title: {
 						display: true,
@@ -188,6 +139,108 @@ window.chartColors = {
 					aspectRatio: 1,
 					maintainAspectRatio: false,
 				}
+			};
+			v_opts.data.bar_charts[name].data.datasets = [
+				{
+					label: 'co',
+					backgroundColor: window.chartColors.blue,
+					data: new Array(v_opts.data.bar_charts[name].data.labels.length).fill(0),
+				}, {
+					label: 'co2',
+					backgroundColor: window.chartColors.green,
+					data: new Array(v_opts.data.bar_charts[name].data.labels.length).fill(0),
+				}
+			];
+		});
+
+		v_opts.data.gTypes.forEach(function(name) {
+			v_opts.data.line_charts[name] = {
+				type: 'line',
+				data: {
+					labels: wells.labels[name],
+					wells: wells.wells[name],
+				},
+				options: {
+					title: {
+						display: true,
+						text: name.capitalize(),
+					},
+					tooltips: {
+						mode: 'index',
+						intersect: true
+					},
+					scales: {
+						yAxes: [{
+							type: 'linear',
+							display: true,
+							position: 'left',
+							ticks: {
+								min: 0,
+								suggestedMax: 50,
+							},
+//							id: 'y-axis-smoke',
+//						}, {
+//						type: 'linear',
+//						display: true,
+//						position: 'right',
+//						id: 'y-axis-alcohol',
+//						gridLines: {
+//							drawOnChartArea: false
+//						}
+						}],
+					},
+					aspectRatio: 1,
+					maintainAspectRatio: false,
+				}
+			};
+			v_opts.data.line_charts[name].data.datasets = [
+				{
+					label: 'co',
+					backgroundColor: window.chartColors.blue,
+					data: new Array(v_opts.data.line_charts[name].data.labels.length).fill(0),
+				}, {
+					label: 'co2',
+					backgroundColor: window.chartColors.green,
+					data: new Array(v_opts.data.line_charts[name].data.labels.length).fill(0),
+				}
+			];
+		});
+
+		var v = new Vue(v_opts);
+
+		var socket = io();
+		socket.on('connect', function() {
+			socket.emit('full_data_load', {data: 'I\'m connected!'});
+		});
+
+		socket.on('current_data', function(data) {
+console.log('data', data);
+			v.server_ts = data['server_ts'];
+			v.card_values.ts = Math.min(data.last.MQ2.ts, data.last.MQ135.ts);
+			if(data.last.MQ135) {
+				v.card_values.co2 = data.last.MQ135.data.co2;
+				v.card_values.temperature = data.last.MQ135.data.temperature;
+				v.card_values.humidity = data.last.MQ135.data.humidity;
+			}
+			if(data.last.MQ2) {
+				v.card_values.co = data.last.MQ2.data.co;
+			}
+			v.gTypes.forEach(function(name) {
+				data[name].forEach(function(d) {
+					wells.labels[name].every(function(w, wi) {
+						if(d.start_ts == wells.wells[name][wi]) {
+							if(d.vals.MQ2) {
+								v.bar_charts[name].data.datasets[0].data[wi] = d.vals.MQ2.co;
+							}
+							if(d.vals.MQ135) {
+								v.bar_charts[name].data.datasets[1].data[wi] = d.vals.MQ135.co2;
+							}
+							return false;
+						}
+						return true;
+					});
+				});
 			});
 		});
+
 	}

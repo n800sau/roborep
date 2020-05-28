@@ -1,9 +1,11 @@
-table.charts td {
-	margin: 10px;
+canvas.chart {
+	width: 500px;
 }
 
-table.charts td canvas.chart {
-	width: 500px;
+div.value-cards {
+	padding: 16px;
+	display: flex;
+	flex-wrap: wrap;
 }
 
 .md-content {
