@@ -8,7 +8,6 @@
 		<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
 
-
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic|Material+Icons">
 		<link rel="stylesheet" href="https://unpkg.com/vue-material/dist/vue-material.css">
 		<link rel="stylesheet" href="https://unpkg.com/vue-material/dist/theme/default.css">
@@ -24,68 +23,49 @@
 	</head>
 	<body onLoad="initApp()">
 
-		<div id="currentdate">
-			<template>
-				Server: [[server_ts]]
-				<br/>
-				Data: [[last_data_ts]]
-				<br/>
-				<md-content class="md-elevation-1">
-					[[last_data_value]]
-				</md-content>
-			</template>
-		</div>
-
-
-		<table class="charts">
-			<tr>
-				<td>
-					<div class="chart-container">
-						<canvas id="hourlyChart"></canvas>
-					</div>
-				</td>
-				<td>
-					<div class="chart-container">
-						<canvas id="dailyChart"></canvas>
-					</div>
-				</td>
-				<td>
-					<div class="chart-container">
-						<canvas id="monthlyChart"></canvas>
-					</div>
-				</td>
-			</tr>
-		</table>
-
-<!--
 		<div id="app">
-
+<!--
+			<template>
+				Server: <%server_ts%>
+				<br/>
+				Data: <%card_values.ts%>
+				<br/>
+				<div class="value-cards">
+					<md-content class="md-elevation-1" v-for="indx in card_index_list">
+						<table>
+							<tr>
+								<td>
+									<%card_labels[indx]%>
+								</td>
+							</tr>
+							<tr>
+								<th>
+									<%card_values[indx]%>
+								</th>
+							</tr>
+						</table>
+					</md-content>
+				</div>
+			</template>
+-->
 
 <template>
-  <div>
-    <md-datepicker v-model="selectedDate" />
-    <md-field>
-      <label for="movie">First day of a week</label>
-      <md-select v-model="firstDayOfAWeek">
-        <md-option value="0">Sunday</md-option>
-        <md-option value="1">Monday</md-option>
-      </md-select>
-      <span class="md-helper-text">This config is global.</span>
-    </md-field>
-    <md-field>
-      <label for="movie">Date format</label>
-      <md-select v-model="dateFormat">
-        <md-option value="yyyy-MM-dd">default</md-option>
-        <md-option value="yyyy/MM/dd">yyyy/MM/dd</md-option>
-        <md-option value="dd/MM/yyyy">dd/MM/yyyy</md-option>
-        <md-option value="MM/dd/yyyy">MM/dd/yyyy</md-option>
-      </md-select>
-      <span class="md-helper-text">This config is global.</span>
-    </md-field>
-  </div>
+	<div class="md-layout md-gutter md-alignment-center">
+		<div class="md-layout-item md-medium-size-33 md-small-size-50 md-xsmall-size-100" v-for="gt in gTypes">
+			<keep-alive>
+				<chart v-bind:chart-options="bar_charts[gt]" v-bind:ts="server_ts"></chart>
+			</keep-alive>
+		</div>
+	</div>
+	<div class="md-layout md-gutter md-alignment-center">
+		<div class="md-layout-item md-medium-size-33 md-small-size-50 md-xsmall-size-100" v-for="gt in gTypes">
+			<keep-alive>
+				<chart v-bind:chart-options="line_charts[gt]" v-bind:ts="server_ts"></chart>
+			</keep-alive>
+		</div>
+	</div>
 </template>
 
 		</div>
--->
 	</body>
 </html>

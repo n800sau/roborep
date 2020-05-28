@@ -29,10 +29,6 @@ Ticker send_ticker;
 #define RL_MODULE 10.
 #define RL RL_MODULE*(47+10)/(RL_MODULE+47+10)
 
-/***********************Software Related Macros************************************/
-#define         CALIBRATION_SAMPLE_TIMES     (50)    //define how many samples you are going to take in the calibration phase
-#define         CALIBRATION_SAMPLE_INTERVAL  (500)   //define the time interal(in milisecond) between each samples in the
-                                                     //cablibration phase
 String sensor_id = "MQ135";
 MQUnifiedsensor mq135("ESP8266", VOLTAGE_RESOLUTION, 10, A0, "MQ-135");
 
@@ -163,11 +159,11 @@ const String home_link = "<a href=\"/\">Home</a>";
 
 String wrap_html(String body, String head="")
 {
-	return "<html><head><meta charset=\"UTF-8\">"
-		"<style>"
-		"body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }"
-		"</style>"
-		"<title>" HOSTNAME "</title>" + head + "</head><body>" + body + "</body></html";
+	return "<html>\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+		"<style>\n"
+		"body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\n"
+		"</style>\n"
+		"<title>" HOSTNAME "</title>\n" + head + "\n</head>\n<body>\n" + body + "\n</body>\n</html";
 }
 
 const String reload_script = "<script>setTimeout(function() { location.reload(true); }, 10000)</script>";

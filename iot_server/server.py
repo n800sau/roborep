@@ -108,7 +108,7 @@ def collect_data(r, full_data):
 			})
 	data['server_ts'] =  time.strftime(ts_format)
 	data['last'] = {}
-	for last_rec in r.lrange(REDIS_KEY, 0, -1):
+	for last_rec in reversed(r.lrange(REDIS_KEY, 0, -1)):
 		last_rec = json.loads(last_rec)
 		if last_rec['sensor_id'] not in data['last']:
 			data['last'][last_rec['sensor_id']] = {}
