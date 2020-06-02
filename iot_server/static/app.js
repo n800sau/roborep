@@ -225,10 +225,10 @@ window.chartColors = {
 //console.log('data', data);
 			v.server_ts = data.server_ts;
 			if(data.last.MQ135) {
-				v.card_values.MQ135 = data.last.MQ135.data;
+				v.card_values.MQ135 = data.last.MQ135;
 			}
 			if(data.last.MQ2) {
-				v.card_values.MQ2 = data.last.MQ2.data;
+				v.card_values.MQ2 = data.last.MQ2;
 			}
 			v.gTypes.forEach(function(name) {
 				data[name].forEach(function(d) {

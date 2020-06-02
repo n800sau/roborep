@@ -114,8 +114,8 @@ def collect_data(r, full_data):
 		last_rec = json.loads(last_rec)
 		if last_rec['sensor_id'] not in data['last']:
 			data['last'][last_rec['sensor_id']] = {}
-			data['last'][last_rec['sensor_id']]['ts'] = datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
-			data['last'][last_rec['sensor_id']]['data'] = last_rec
+			data['last'][last_rec['sensor_id']] = last_rec
+			data['last'][last_rec['sensor_id']]['timestamp'] = datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
 	return data
 
 full_data = True
