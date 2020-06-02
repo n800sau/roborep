@@ -37,6 +37,8 @@ def test_disconnect():
 
 @socketio.on('full_data_load')
 def handle_my_custom_event(json):
+	global full_data
+	full_data = True
 	print('received json: ' + str(json))
 
 def collect_data_for_period(r, w_name, start_ts, end_ts):
@@ -116,13 +118,17 @@ def collect_data(r, full_data):
 			data['last'][last_rec['sensor_id']]['data'] = last_rec
 	return data
 
+full_data = True
+
 def pull_redis():
-	full_data = True
+	global full_data
 	r = redis.Redis()
 	with app.test_request_context('/'):
 		while True:
 			data = collect_data(r, full_data=full_data)
 			if data:
+				if full_data:
+					print('Sending full data')
 #				print('Sent daily len:', len(data['daily']))
 				full_data = False
 				socketio.emit('current_data', data)

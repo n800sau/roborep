@@ -7,12 +7,3 @@ div.value-cards {
 	display: flex;
 	flex-wrap: wrap;
 }
-
-.md-content {
-	width: 100px;
-	height: 100px;
-	margin: 24px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}

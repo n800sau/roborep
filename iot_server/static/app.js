@@ -79,16 +79,7 @@ window.chartColors = {
 			el: '#app',
 			data: {
 				server_ts: '',
-				card_values: {},
-				card_labels: {
-					temperature: '1',
-					humidity: 2,
-					co2: 3,
-					co: 4,
-				},
-				card_index_list: [
-					'temperature', 'humidity', 'co2', 'co',
-				],
+				card_values: {MQ2: {}, MQ135: {}},
 				gTypes: ['hourly', 'daily', 'monthly'],
 				bar_charts: {},
 				line_charts: {},
@@ -232,15 +223,12 @@ window.chartColors = {
 
 		socket.on('current_data', function(data) {
 //console.log('data', data);
-			v.server_ts = data['server_ts'];
-			v.card_values.ts = Math.min(data.last.MQ2.ts || data.last.MQ135.ts, data.last.MQ135.ts || data.last.MQ2.ts);
+			v.server_ts = data.server_ts;
 			if(data.last.MQ135) {
-				v.card_values.co2 = data.last.MQ135.data.co2;
-				v.card_values.temperature = data.last.MQ135.data.temperature;
-				v.card_values.humidity = data.last.MQ135.data.humidity;
+				v.card_values.MQ135 = data.last.MQ135.data;
 			}
 			if(data.last.MQ2) {
-				v.card_values.co = data.last.MQ2.data.co;
+				v.card_values.MQ2 = data.last.MQ2.data;
 			}
 			v.gTypes.forEach(function(name) {
 				data[name].forEach(function(d) {
@@ -248,9 +236,11 @@ window.chartColors = {
 						if(d.start_ts == wells.wells[name][wi]) {
 							if(d.vals.MQ2) {
 								v.bar_charts[name].data.datasets[0].data[wi] = d.vals.MQ2.co;
+								v.line_charts[name].data.datasets[0].data[wi] = d.vals.MQ2.co;
 							}
 							if(d.vals.MQ135) {
 								v.bar_charts[name].data.datasets[1].data[wi] = d.vals.MQ135.co2;
+								v.line_charts[name].data.datasets[1].data[wi] = d.vals.MQ135.co2;
 							}
 							return false;
 						}
