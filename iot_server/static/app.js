@@ -1,3 +1,5 @@
+Vue.use(VueMaterial.default)
+
 window.chartColors = {
 	red: 'rgb(255, 99, 132)',
 	orange: 'rgb(255, 159, 64)',
@@ -47,6 +49,7 @@ window.chartColors = {
 		}
 
 		Vue.use(VueMaterial.default);
+//		Vue.use(VueRouter);
 
 		Vue.component('chart', {
 			chart: undefined,
@@ -58,7 +61,6 @@ window.chartColors = {
 			},
 			watch: {
 				ts: function(newVal) {
-					console.log('new ts', newVal);
 					if(this.chart) {
 						// update chart
 						this.chart.update();
@@ -90,12 +92,27 @@ window.chartColors = {
 				gTypes: ['hourly', 'daily', 'monthly'],
 				bar_charts: {},
 				line_charts: {},
+				currentTab: 'home',
 			},
 			delimiters: ["<%","%>"],
 			created: function () {
 				// `this` points to the vm instance
-				console.log('a is: ' + Object.keys(this.bar_charts))
+//				console.log('a is: ' + Object.keys(this.bar_charts))
 			},
+			computed: {
+				currentPage() {
+					if(this.$route.path == "/" || this.$route.path == "/home" ) {
+						return '/home';
+					} else {
+						return this.$route.path;
+					}
+				}
+			},
+			methods: {
+				tabChange: function(id) {
+					this.currentTab = id;
+				},
+			}
 		};
 
 		var wells = make_wells();
@@ -214,9 +231,9 @@ window.chartColors = {
 		});
 
 		socket.on('current_data', function(data) {
-console.log('data', data);
+//console.log('data', data);
 			v.server_ts = data['server_ts'];
-			v.card_values.ts = Math.min(data.last.MQ2.ts, data.last.MQ135.ts);
+			v.card_values.ts = Math.min(data.last.MQ2.ts || data.last.MQ135.ts, data.last.MQ135.ts || data.last.MQ2.ts);
 			if(data.last.MQ135) {
 				v.card_values.co2 = data.last.MQ135.data.co2;
 				v.card_values.temperature = data.last.MQ135.data.temperature;
