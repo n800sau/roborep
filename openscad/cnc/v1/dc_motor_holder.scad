@@ -12,12 +12,18 @@ dc_motor_body_sz_z = 66.4;
 dc_motor_bearing_sz_z = 4; //?
 dc_motor_shaft_sz_z = 15; //?
 dc_motor_bottom_holes_dist = 29;
+dc_motor_bottom_bolt_d = 4;
 dc_motor_bottom_hole_d = 4.6;
 
 module dc_motor_mockup() {
 	cylinder(d=dc_motor_bottom_d, h=dc_motor_body_sz_z);
 	translate([0, 0, -dc_motor_bearing_sz_z]) {
 		cylinder(d=dc_motor_bearing_d, h=dc_motor_bearing_sz_z);
+		for(x=[-dc_motor_bottom_holes_dist, dc_motor_bottom_holes_dist]) {
+			translate([x/2, 0, -10]) {
+				cylinder(d=dc_motor_bottom_bolt_d, h=dc_motor_bearing_sz_z+10);
+			}
+		}
 		translate([0, 0, -dc_motor_shaft_sz_z]) {
 			cylinder(d=dc_motor_shaft_d, h=dc_motor_shaft_sz_z);
 		}
@@ -77,4 +83,6 @@ color("blue") {
 translate([0, 0, 0]) {
 	dc_motor_holder();
 }
-//%dc_motor_mockup();
+translate([0, -73, -23]) {
+	%dc_motor_mockup();
+}
