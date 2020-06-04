@@ -3,7 +3,7 @@
 import json
 import time
 from datetime import datetime, timedelta
-from flask import Flask, escape, request, render_template
+from flask import Flask, escape, request, render_template, jsonify
 from flask_socketio import SocketIO, send, emit
 import gevent
 from gevent import monkey
@@ -21,10 +21,21 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, message_queue='redis://', async_mode=async_mode)
 
+def dprint(*args, **kwds):
+	print(time.strftime('[%Y-%m-%d %H:%M:%S] '), end='')
+	print(*args, **kwds)
+
 @app.route('/')
 def hello():
 	name = 'Hello'
 	return render_template('index.html', name=name)
+
+@app.route('/refresh')
+def refresh():
+	print('Refresh')
+	global full_data
+	full_data = True
+	return jsonify({'ok': True})
 
 @socketio.on('connect')
 def test_connect():
@@ -33,13 +44,13 @@ def test_connect():
 
 @socketio.on('disconnect')
 def test_disconnect():
-	print('Client disconnected')
+	dprint('Client disconnected')
 
 @socketio.on('full_data_load')
 def handle_my_custom_event(json):
 	global full_data
 	full_data = True
-	print('received json: ' + str(json))
+	dprint('received json from',  request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr), ':', str(json))
 
 def collect_data_for_period(r, w_name, start_ts, end_ts):
 	ts_format = '%Y-%m-%d %H:%M:%S'
@@ -54,7 +65,7 @@ def collect_data_for_period(r, w_name, start_ts, end_ts):
 			rs[sensor_id][param] = []
 		for ts,vobj in [(ts.decode(), json.loads(vstr)) for ts,vstr in r.hgetall(k).items()]:
 #			if w_name == 'hourly':
-#				print(ts, start_ts)
+#				dprint(ts, start_ts)
 			if ts == start_ts:
 				rs[sensor_id][param].append(vobj['v'])
 #		rs[sensor_id][param].sort(key=lambda v: float(v[0]))
@@ -74,11 +85,13 @@ def collect_data(r, full_data):
 	data = {'hourly': [], 'daily': [], 'monthly': []}
 	# hourly
 	w_name = 'hourly'
-	i_range = range(24) if full_data else range(max(0, dt.hour-1), 24)
+	i_range = range(max(1, dt.hour+1)) if full_data else range(max(0, dt.hour-1), max(1, dt.hour+1))
+#	print('i_range', list(i_range))
 	for i in i_range:
 		start_ts = dt.replace(hour=0, microsecond=0, second=0, minute=0) + relativedelta(hours=i)
 		end_ts = start_ts + relativedelta(hours=1)
 		vals = collect_data_for_period(r, w_name, start_ts, end_ts)
+#		print(i, len(vals))
 		if vals:
 			data[w_name].append({
 				'start_ts': start_ts.strftime(ts_format),
@@ -98,7 +111,7 @@ def collect_data(r, full_data):
 			})
 	# monthly
 	w_name = 'monthly'
-	i_range = range(1, 13)  if full_data else range(max(1, dt.month-1), dt.month+1)
+	i_range = range(1, dt.month+1)  if full_data else range(max(1, dt.month-1), dt.month+1)
 	for i in i_range:
 		start_ts = dt.replace(month=i, day=1, hour=0, microsecond=0, second=0, minute=0)
 		end_ts = start_ts + relativedelta(months=1)
@@ -122,14 +135,15 @@ full_data = True
 
 def pull_redis():
 	global full_data
+	dprint('redis puller started')
 	r = redis.Redis()
 	with app.test_request_context('/'):
 		while True:
 			data = collect_data(r, full_data=full_data)
 			if data:
 				if full_data:
-					print('Sending full data')
-#				print('Sent daily len:', len(data['daily']))
+					dprint('Sending full data')
+				dprint('Sent hourly len:', len(data['hourly']))
 				full_data = False
 				socketio.emit('current_data', data)
 			gevent.sleep(5)
@@ -141,11 +155,11 @@ def on_my_event(data):
 
 @socketio.on_error_default
 def default_error_handler(e):
-	print(request.event["message"]) # "my error event"
-	print(request.event["args"])	# (data,)
+	dprint(request.event["message"]) # "my error event"
+	dprint(request.event["args"])	# (data,)
 
 def ack():
-	print('message was received!')
+	dprint('message was received!')
 
 if __name__ == '__main__':
 	socketio.run(app, debug=True)

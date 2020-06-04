@@ -103,6 +103,12 @@ window.chartColors = {
 				tabChange: function(id) {
 					this.currentTab = id;
 				},
+				refresh: function() {
+					console.log('refresh');
+					fetch('refresh').then(function(response) {
+						console.log('first', response.json());
+					}).then(data => console.log('second', data));
+				},
 			}
 		};
 
@@ -151,11 +157,11 @@ window.chartColors = {
 			v_opts.data.bar_charts[name].data.datasets = [
 				{
 					label: 'co',
-					backgroundColor: window.chartColors.blue,
+					backgroundColor: window.chartColors.gray,
 					data: new Array(v_opts.data.bar_charts[name].data.labels.length).fill(0),
 				}, {
 					label: 'co2',
-					backgroundColor: window.chartColors.green,
+					backgroundColor: window.chartColors.black,
 					data: new Array(v_opts.data.bar_charts[name].data.labels.length).fill(0),
 				}
 			];
@@ -203,12 +209,12 @@ window.chartColors = {
 			};
 			v_opts.data.line_charts[name].data.datasets = [
 				{
-					label: 'co',
-					backgroundColor: window.chartColors.blue,
+					label: 't',
+					backgroundColor: window.chartColors.red,
 					data: new Array(v_opts.data.line_charts[name].data.labels.length).fill(0),
 				}, {
-					label: 'co2',
-					backgroundColor: window.chartColors.green,
+					label: 'h',
+					backgroundColor: window.chartColors.blue,
 					data: new Array(v_opts.data.line_charts[name].data.labels.length).fill(0),
 				}
 			];
@@ -236,11 +242,11 @@ window.chartColors = {
 						if(d.start_ts == wells.wells[name][wi]) {
 							if(d.vals.MQ2) {
 								v.bar_charts[name].data.datasets[0].data[wi] = d.vals.MQ2.co;
-								v.line_charts[name].data.datasets[0].data[wi] = d.vals.MQ2.co;
 							}
 							if(d.vals.MQ135) {
 								v.bar_charts[name].data.datasets[1].data[wi] = d.vals.MQ135.co2;
-								v.line_charts[name].data.datasets[1].data[wi] = d.vals.MQ135.co2;
+								v.line_charts[name].data.datasets[0].data[wi] = d.vals.MQ135.temperature;
+								v.line_charts[name].data.datasets[1].data[wi] = d.vals.MQ135.humidity;
 							}
 							return false;
 						}

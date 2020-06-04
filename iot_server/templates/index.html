@@ -29,6 +29,8 @@
 
 			<md-tabs @md-changed="tabChange">
 				<md-tab id="home" md-label="Home">
+					<md-progress-spinner md-mode="indeterminate" v-if="!server_ts"></md-progress-spinner>
+					<md-button class="md-primary" v-if="server_ts" v-on:click="refresh()">Refresh</md-button>
 				</md-tab>
 				<md-tab id="single" md-label="Single">
 				</md-tab>
@@ -43,7 +45,7 @@
 							<td>Server ts:</td><td><%server_ts%></td>
 						</tr>
 						<tr>
-							<td>mq2:</td><td><%card_values.MQ2.timestamp%></td>
+							<td>mq2:</td><td><%card_values.MQ2.timestamp%></td><td><%card_values.MQ2.raw%></td>
 						</tr>
 						<tr>
 							<td>mq135:</td><td><%card_values.MQ135.timestamp%></td>
