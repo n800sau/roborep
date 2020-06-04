@@ -105,9 +105,10 @@ window.chartColors = {
 				},
 				refresh: function() {
 					console.log('refresh');
-					fetch('refresh').then(function(response) {
-						console.log('first', response.json());
-					}).then(data => console.log('second', data));
+					fetch('refresh').then(response => response.json()
+					).then(response => {
+						console.log(response);
+					});
 				},
 			}
 		};
@@ -157,11 +158,11 @@ window.chartColors = {
 			v_opts.data.bar_charts[name].data.datasets = [
 				{
 					label: 'co',
-					backgroundColor: window.chartColors.gray,
+					backgroundColor: window.chartColors.grey,
 					data: new Array(v_opts.data.bar_charts[name].data.labels.length).fill(0),
 				}, {
 					label: 'co2',
-					backgroundColor: window.chartColors.black,
+					backgroundColor: window.chartColors.purple,
 					data: new Array(v_opts.data.bar_charts[name].data.labels.length).fill(0),
 				}
 			];

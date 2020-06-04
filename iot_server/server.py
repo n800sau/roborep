@@ -3,10 +3,10 @@
 import json
 import time
 from datetime import datetime, timedelta
-from flask import Flask, escape, request, render_template, jsonify
+from flask import Flask, escape, request, render_template, jsonify, session
 from flask_socketio import SocketIO, send, emit
 import gevent
-from gevent import monkey
+from gevent import monkey, local as glocal
 import redis
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
@@ -33,13 +33,14 @@ def hello():
 @app.route('/refresh')
 def refresh():
 	print('Refresh')
-	global full_data
+	gevent.kill(session['redis_process'], exception=GreenletExit)
+	session['redis_process'] = gevent.spawn(pull_redis)
 	full_data = True
-	return jsonify({'ok': True})
+	return jsonify(ok=True)
 
 @socketio.on('connect')
 def test_connect():
-	gevent.spawn(pull_redis)
+	session['redis_process'] = gevent.spawn(pull_redis)
 	emit('my response', {'data': 'Connected'})
 
 @socketio.on('disconnect')
@@ -48,8 +49,6 @@ def test_disconnect():
 
 @socketio.on('full_data_load')
 def handle_my_custom_event(json):
-	global full_data
-	full_data = True
 	dprint('received json from',  request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr), ':', str(json))
 
 def collect_data_for_period(r, w_name, start_ts, end_ts):
@@ -97,6 +96,7 @@ def collect_data(r, full_data):
 				'start_ts': start_ts.strftime(ts_format),
 				'vals': vals,
 			})
+	print('hourly count', len(data[w_name]), ', range', len(i_range))
 	# daily
 	w_name = 'daily'
 	i_range = range(1, monthrange(dt.year, dt.month)[1]+1) if full_data else range(max(1, dt.day-1), monthrange(dt.year, dt.month)[1]+1)
@@ -131,11 +131,9 @@ def collect_data(r, full_data):
 			data['last'][last_rec['sensor_id']]['timestamp'] = datetime.fromtimestamp(last_rec['ts']).strftime(ts_format)
 	return data
 
-full_data = True
-
 def pull_redis():
-	global full_data
 	dprint('redis puller started')
+	full_data = True
 	r = redis.Redis()
 	with app.test_request_context('/'):
 		while True:
