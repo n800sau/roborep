@@ -1,0 +1,2 @@
+bottom stop trigger 5mm
+top stop trigger 40mm
