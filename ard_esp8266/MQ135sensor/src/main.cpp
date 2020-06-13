@@ -69,9 +69,11 @@ typedef struct {
 	float co2;
 	float h;
 	float t;
+	float raw;
+	float r0;
 } val_t;
 
-val_t cur_data = {.ts=0, .co2=0, .h=0, .t=0};
+val_t cur_data = {.ts=0, .co2=0, .h=0, .t=0, .raw=0, .r0=0};
 
 void load_settings()
 {
@@ -163,7 +165,7 @@ String wrap_html(String body, String head="")
 		"<style>\n"
 		"body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\n"
 		"</style>\n"
-		"<title>" HOSTNAME "</title>\n" + head + "\n</head>\n<body>\n" + body + "\n</body>\n</html";
+		"<title>" HOSTNAME "</title>\n" + head + "\n</head>\n<body>\n" + body + "\n</body>\n</html>\n";
 }
 
 const String reload_script = "<script>setTimeout(function() { location.reload(true); }, 10000)</script>";
@@ -220,8 +222,8 @@ void send_data()
 		Serial.print("co2=");
 		Serial.println(cur_data.co2);
 		String js = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) + ",\"timestamp\":\"" + time2str(cur_data.ts) +
-			"\",\"temperature\":" + String(cur_data.t) + ",\"humidity\":" + String(cur_data.h);
-		js += ",\"co2\":" + String(cur_data.co2);
+			"\",\"temperature\":" + String(cur_data.t) + ",\"humidity\":" + String(cur_data.h) + ",\"raw\":" + String(cur_data.raw);
+		js += ",\"co2\":" + String(cur_data.co2) + ",\"r0\":" + String(cur_data.r0);
 		js += "}";
 		send_udp_string(js);
 		blinker.blink(3);
@@ -351,6 +353,8 @@ void sensor_update()
 	th_update();
 	mq135.setR0(settings.r0);
 	mq135.update();
+	cur_data.r0 = settings.r0;
+	cur_data.raw = mq135.getVoltage();
 	cur_data.ts = time(NULL);
 	mq135.setA(110.47); mq135.setB(-2.862); // Configurate the ecuation values to get CO2 concentration 
 	cur_data.co2 = mq135.readSensor(); // Sensor will read PPM concentration using the model and a and b values setted before or in the setup
@@ -408,6 +412,7 @@ void loop()
 		digitalWrite(LED_PIN, HIGH);
 		wifiConnected = connectWifi();
 		if(wifiConnected) {
+			WiFi.hostname(HOSTNAME);
 			digitalWrite(LED_PIN, LOW);
 			Serial.println("Config time");
 			configTime(0, 0, "pool.ntp.org", "time.nist.gov");
@@ -415,6 +420,8 @@ void loop()
 				Serial.println("MDNS responder " HOSTNAME " started");
 				// Add service to MDNS-SD
 				MDNS.addService("http", "tcp", 80);
+			} else {
+				Serial.println("Error setting up MDNS responder!");
 			}
 		}
 	}
