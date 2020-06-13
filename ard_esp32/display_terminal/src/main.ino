@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 
 #include <Adafruit_GFX.h>    // Core graphics library
+#include <Fonts/FreeMonoBoldOblique12pt7b.h>
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
 
@@ -31,6 +32,11 @@ void setup()
 {
 	tft.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
+	tft.setFont(&FreeMonoBoldOblique12pt7b);
+	tft.setTextSize(0.5);
+	tft.setCursor(0, 30);
+	tft.setTextColor(ST77XX_WHITE);
+	tft.print("HELLO");
 
 	Serial.begin(115200);
 	Serial.print("setup starts at ");
@@ -104,7 +110,7 @@ void loop()
 	if(read_ts != display_ts) {
 		display_ts = read_ts;
 					tft.fillScreen(ST77XX_BLACK);
-					tft.setTextSize(2);
+					tft.setTextSize(1);
 					tft.setCursor(0, 30);
 					tft.setTextColor(ST77XX_RED);
 					tft.print("t:");
