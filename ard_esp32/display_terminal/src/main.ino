@@ -21,17 +21,22 @@ GFXcanvas1 dbuf(180, 120);
 
 AsyncUDP udp;
 
+//StaticJsonDocument<400> doc;
+DynamicJsonDocument doc(400);
+
+time_t read_ts = 0, display_ts = 0;
+float t, h, co2;
+
 void setup()
 {
+	tft.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
+	tft.fillScreen(ST77XX_BLACK);
+
 	Serial.begin(115200);
 	Serial.print("setup starts at ");
 	Serial.println(millis()/1000);
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(ssid, password);
-
-	tft.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
-	uint16_t t = millis();
-	tft.fillScreen(ST77XX_BLACK);
 
 	Serial.print(F("TFT initialized at "));
 	Serial.println(millis()/1000);
@@ -69,8 +74,6 @@ void setup()
 			Serial.println();
 			//reply to the client
 			packet.printf("Got %u bytes of data", packet.length());
-//			StaticJsonDocument<400> doc;
-			DynamicJsonDocument doc(300);
 			DeserializationError error = deserializeJson(doc, data);
 			// Test if parsing succeeded.
 			if (error) {
@@ -86,20 +89,10 @@ void setup()
 					Serial.print((float)doc["humidity"]);
 					Serial.print(" co2:");
 					Serial.println((float)doc["co2"]);
-					tft.fillScreen(ST77XX_BLACK);
-					tft.setTextSize(3);
-					tft.setCursor(0, 30);
-					tft.setTextColor(ST77XX_RED);
-					tft.print("t:");
-					tft.println((float)doc["temperature"]);
-					tft.setCursor(0, 60);
-					tft.setTextColor(ST77XX_BLUE);
-					tft.print("h:");
-					tft.println((float)doc["humidity"]);
-					tft.setCursor(0, 90);
-					tft.setTextColor(ST77XX_GREEN);
-					tft.print("co2:");
-					tft.println((float)doc["co2"]);
+					t = doc["temperature"];
+					h = doc["humidity"];
+					co2 = doc["co2"];
+					read_ts = time(NULL);
 				}
 			}
 		});
@@ -108,7 +101,21 @@ void setup()
 
 void loop()
 {
-	delay(1000);
-	//Send multicast
-	udp.print("Anyone here?");
+	if(read_ts != display_ts) {
+		display_ts = read_ts;
+					tft.fillScreen(ST77XX_BLACK);
+					tft.setTextSize(2);
+					tft.setCursor(0, 30);
+					tft.setTextColor(ST77XX_RED);
+					tft.print("t:");
+					tft.println(t);
+					tft.setCursor(0, 60);
+					tft.setTextColor(ST77XX_BLUE);
+					tft.print("h:");
+					tft.println(h);
+					tft.setCursor(0, 90);
+					tft.setTextColor(ST77XX_GREEN);
+					tft.print("co2:");
+					tft.println(co2);
+	}
 }
