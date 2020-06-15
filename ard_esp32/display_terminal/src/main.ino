@@ -37,6 +37,52 @@ DynamicJsonDocument doc(400);
 time_t read_ts = 0, display_ts = 0;
 float t, h, co2;
 
+typedef struct _ap {
+	String ssid;
+	String password;
+} ap_t;
+
+ap_t aplist[] = {
+	{WIFI_SSID, WIFI_PASSWORD}
+#ifdef WIFI_SSID_1
+	,{WIFI_SSID_1, WIFI_PASSWORD_1}
+#endif
+#ifdef WIFI_SSID_2
+	,{WIFI_SSID_2, WIFI_PASSWORD_2}
+#endif
+};
+
+const int ap_count = sizeof(aplist)/sizeof(ap_t);
+
+String find_better_ap(int thresh=20)
+{
+	String rs;
+	int max_power = WiFi.RSSI();
+	int n = WiFi.scanNetworks();
+	if(n > 0) {
+		Serial.print(n);
+		Serial.println(" networks found");
+		for (int i = 0; i < n; ++i) {
+			// Print SSID and RSSI for each network found
+			Serial.print(i + 1);
+			Serial.print(": ");
+			Serial.print(WiFi.SSID(i));
+			Serial.print(" (");
+			Serial.print(WiFi.RSSI(i));
+			Serial.println(")");
+			for(int j=0; j<ap_count; j++) {
+				if(WiFi.SSID(i) == aplist[j].ssid) {
+					if(WiFi.RSSI(i) - thresh > max_power) {
+						max_power = WiFi.RSSI(i);
+						rs = WiFi.SSID(i);
+					}
+				}
+			}
+		}
+	}
+	return rs;
+}
+
 bool is_wifi_connected()
 {
 	return wifiMulti.run() == WL_CONNECTED;
@@ -44,7 +90,6 @@ bool is_wifi_connected()
 
 void connectWifi()
 {
-	boolean state = true;
 	Serial.println("Connecting to WiFi");
 	wifiMulti.run(10000);
 	if (is_wifi_connected())
@@ -123,7 +168,7 @@ void setup()
 	blinker.begin(LED_PIN);
 	digitalWrite(LED_PIN, HIGH);
 
-	tft.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
+	tft.initR(INITR_BLACKTAB);  // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
 	tft.setFont(&FreeMonoBoldOblique12pt7b);
 	tft.setTextSize(0.5);
@@ -133,13 +178,9 @@ void setup()
 	Serial.println(millis()/1000);
 
 	WiFi.mode(WIFI_STA);
-	wifiMulti.addAP(WIFI_SSID, WIFI_PASSWORD);
-#ifdef WIFI_SSID_1
-	wifiMulti.addAP(WIFI_SSID_1, WIFI_PASSWORD_1);
-#endif
-#ifdef WIFI_SSID_2
-	wifiMulti.addAP(WIFI_SSID_2, WIFI_PASSWORD_2);
-#endif
+	for(int i=0; i<ap_count; i++) {
+		wifiMulti.addAP(aplist[i].ssid.c_str(), aplist[i].password.c_str());
+	}
 
 }
 
@@ -166,6 +207,13 @@ void loop()
 				tft.setTextColor(ST77XX_GREEN);
 				tft.print("co2:");
 				tft.println(co2);
+				String better_ssid = find_better_ap(-100);
+				if(better_ssid.length() > 0) {
+					Serial.print("Better found:");
+					Serial.print(better_ssid);
+					Serial.print(", connecting..");
+					WiFi.disconnect();
+				}
 			}
 		} else {
 			connectUDP();
