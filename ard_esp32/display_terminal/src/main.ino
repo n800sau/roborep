@@ -1,5 +1,4 @@
 #include "WiFi.h"
-#include <WiFiMulti.h>
 #include <ESPmDNS.h>
 #include "AsyncUDP.h"
 #include <ArduinoJson.h>
@@ -28,7 +27,6 @@ GFXcanvas1 dbuf(180, 120);
 
 #define HOSTNAME "esp32display"
 
-WiFiMulti wifiMulti;
 AsyncUDP udp;
 
 //StaticJsonDocument<400> doc;
@@ -54,10 +52,22 @@ ap_t aplist[] = {
 
 const int ap_count = sizeof(aplist)/sizeof(ap_t);
 
-String find_better_ap(int thresh=20)
+bool is_wifi_connected()
 {
-	String rs;
-	int max_power = WiFi.RSSI();
+	return WiFi.status() == WL_CONNECTED;
+}
+
+ap_t find_better_ap(int thresh=20)
+{
+	ap_t rs;
+	int max_power = 0;
+	String current_ssid;
+	if(is_wifi_connected()) {
+		max_power = WiFi.RSSI();
+		current_ssid = WiFi.SSID();
+	} else {
+		thresh = 0;
+	}
 	int n = WiFi.scanNetworks();
 	if(n > 0) {
 		Serial.print(n);
@@ -71,10 +81,10 @@ String find_better_ap(int thresh=20)
 			Serial.print(WiFi.RSSI(i));
 			Serial.println(")");
 			for(int j=0; j<ap_count; j++) {
-				if(WiFi.SSID(i) == aplist[j].ssid) {
-					if(WiFi.RSSI(i) - thresh > max_power) {
+				if(WiFi.SSID(i) == aplist[j].ssid && WiFi.SSID(i) != current_ssid) {
+					if(max_power == 0 || WiFi.RSSI(i) - thresh > max_power) {
 						max_power = WiFi.RSSI(i);
-						rs = WiFi.SSID(i);
+						rs = aplist[j];
 					}
 				}
 			}
@@ -83,24 +93,31 @@ String find_better_ap(int thresh=20)
 	return rs;
 }
 
-bool is_wifi_connected()
-{
-	return wifiMulti.run() == WL_CONNECTED;
-}
-
 void connectWifi()
 {
-	Serial.println("Connecting to WiFi");
-	wifiMulti.run(10000);
+	ap_t ap = find_better_ap();
+	if(ap.ssid.length()) {
+		Serial.print("Connecting to WiFi ");
+		Serial.println(ap.ssid);
+		WiFi.begin(ap.ssid.c_str(), ap.password.c_str());
+		int i = 0;
+		while (WiFi.status() != WL_CONNECTED) {
+			delay(500);
+			Serial.print(".");
+			if (i > 10){
+				break;
+			}
+			i++;
+		}
+	}
 	if (is_wifi_connected())
 	{
 		Serial.println("");
 		Serial.print("Connected to ");
-		Serial.println(ssid);
+		Serial.println(WiFi.SSID());
 		Serial.print("IP address: ");
 		Serial.println(WiFi.localIP());
 	} else {
-		Serial.println("");
 		Serial.println("Connection failed.");
 	}
 }
@@ -162,6 +179,7 @@ void connectUDP()
 void setup()
 {
 	Serial.begin(115200);
+	Serial.println();
 	Serial.print("setup starts at ");
 	Serial.println(millis()/1000);
 
@@ -178,9 +196,6 @@ void setup()
 	Serial.println(millis()/1000);
 
 	WiFi.mode(WIFI_STA);
-	for(int i=0; i<ap_count; i++) {
-		wifiMulti.addAP(aplist[i].ssid.c_str(), aplist[i].password.c_str());
-	}
 
 }
 
@@ -207,12 +222,12 @@ void loop()
 				tft.setTextColor(ST77XX_GREEN);
 				tft.print("co2:");
 				tft.println(co2);
-				String better_ssid = find_better_ap(-100);
-				if(better_ssid.length() > 0) {
+				ap_t better_ap = find_better_ap(-20);
+				if(better_ap.ssid.length() > 0) {
 					Serial.print("Better found:");
-					Serial.print(better_ssid);
-					Serial.print(", connecting..");
-					WiFi.disconnect();
+					Serial.print(better_ap.ssid);
+					Serial.println(", disconnecting..");
+					WiFi.disconnect(false, false);
 				}
 			}
 		} else {
