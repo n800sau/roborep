@@ -14,14 +14,20 @@
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
-#define K1_PIN 36
-#define K2_PIN 39
-#define K3_PIN 34
-#define K4_PIN 35
+# SPI for SD pins
+# miso - 12
+# mosi - 13
+# clk - 14
+# chosen ss pin - 9
+
+#define K1_PIN 0
+#define K2_PIN 2
+#define K3_PIN 4
+#define K4_PIN 15
 
 volatile uint8_t key_state = 0;
 
-#define TFT_CS   13
+#define TFT_CS   10 // old - 13
 #define TFT_RST  26 // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC   12 //A0
 #define TFT_MOSI 14  // SDA Data out
