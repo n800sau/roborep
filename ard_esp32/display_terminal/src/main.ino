@@ -1,7 +1,8 @@
 #include "WiFi.h"
 #include <ESPmDNS.h>
-#include "AsyncUDP.h"
+#include <AsyncUDP.h>
 #include <ArduinoJson.h>
+#include <Ticker.h>
 #include <blinker.h>
 
 #include <Adafruit_GFX.h>    // Core graphics library
@@ -13,6 +14,13 @@
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
+#define K1_PIN 36
+#define K2_PIN 39
+#define K3_PIN 34
+#define K4_PIN 35
+
+volatile uint8_t key_state = 0;
+
 #define TFT_CS   13
 #define TFT_RST  26 // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC   12 //A0
@@ -21,6 +29,8 @@ const char * password = WIFI_PASSWORD;
 
 #define LED_PIN 11
 Blinker blinker;
+Ticker check_wifi_ticker;
+Ticker keyboard_ticker;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 GFXcanvas1 dbuf(180, 120);
@@ -32,8 +42,10 @@ AsyncUDP udp;
 //StaticJsonDocument<400> doc;
 DynamicJsonDocument doc(400);
 
-time_t read_ts = 0, display_ts = 0;
+volatile time_t read_ts = 0, display_ts = 0;
 float t, h, co2;
+
+volatile bool do_check_for_better_wifi = false;
 
 typedef struct _ap {
 	String ssid;
@@ -186,6 +198,11 @@ void setup()
 	blinker.begin(LED_PIN);
 	digitalWrite(LED_PIN, HIGH);
 
+	pinMode(K1_PIN, INPUT_PULLUP);
+	pinMode(K2_PIN, INPUT_PULLUP);
+	pinMode(K3_PIN, INPUT_PULLUP);
+	pinMode(K4_PIN, INPUT_PULLUP);
+
 	tft.initR(INITR_BLACKTAB);  // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
 	tft.setFont(&FreeMonoBoldOblique12pt7b);
@@ -196,6 +213,14 @@ void setup()
 	Serial.println(millis()/1000);
 
 	WiFi.mode(WIFI_STA);
+	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
+	keyboard_ticker.attach(1, []() {
+		key_state = 0;
+		key_state |= uint8_t(digitalRead(K1_PIN) == LOW);
+		key_state |= uint8_t(digitalRead(K2_PIN) == LOW) << 1;
+		key_state |= uint8_t(digitalRead(K3_PIN) == LOW) << 2;
+		key_state |= uint8_t(digitalRead(K4_PIN) == LOW) << 3;
+	});
 
 }
 
@@ -207,31 +232,45 @@ void loop()
 //		server.handleClient();
 		if(udp.connected()) {
 			if(read_ts != display_ts) {
+				int y = 30;
+				int y_step = 30;
 				display_ts = read_ts;
 				tft.fillScreen(ST77XX_BLACK);
 				tft.setTextSize(1);
-				tft.setCursor(0, 30);
+				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_RED);
 				tft.print("t:");
 				tft.println(t);
-				tft.setCursor(0, 60);
+				y += y_step;
+				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_BLUE);
 				tft.print("h:");
 				tft.println(h);
-				tft.setCursor(0, 90);
+				y += y_step;
+				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_GREEN);
 				tft.print("co2:");
 				tft.println(co2);
-				ap_t better_ap = find_better_ap(-20);
-				if(better_ap.ssid.length() > 0) {
-					Serial.print("Better found:");
-					Serial.print(better_ap.ssid);
-					Serial.println(", disconnecting..");
-					WiFi.disconnect(false, false);
-				}
+				y += y_step;
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_WHITE);
+				tft.print("keyb:");
+				tft.println(key_state, HEX);
+				Serial.print("keys: ");
+				Serial.println(key_state, HEX);
 			}
 		} else {
 			connectUDP();
+		}
+		if(do_check_for_better_wifi) {
+			do_check_for_better_wifi = false;
+			ap_t better_ap = find_better_ap(-20);
+			if(better_ap.ssid.length() > 0) {
+				Serial.print("Better found:");
+				Serial.print(better_ap.ssid);
+				Serial.println(", disconnecting..");
+				WiFi.disconnect(false, false);
+			}
 		}
 	} else {
 		blinker.stop();
