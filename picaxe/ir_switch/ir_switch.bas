@@ -18,12 +18,13 @@ symbol mosfetstate = b10
 ' pullup C.1-C.4 on 20M2
 	pullup %0001111000000000
 	low B.6
+' current state of mosfet output
 	mosfetstate = 0
 ' set output low to prevent power leaking to esp32
-	low B.1
-	low B.2
-	low B.3
-	low B.4
+	low k1_outp
+	low k2_outp
+	low k3_outp
+	low k4_outp
 main:
 	irin [200, no_ir], ir_pin, irstate
 	sertxd("ir=", irstate, cr,lf)
@@ -43,31 +44,31 @@ process_keys:
 	if mosfetstate = 1 then
 		sertxd("mosfet is on", cr,lf)
 		if pinC.1 = 0 then
-			high B.1
+			high k1_outp
 		else
-			low B.1
+			low k1_outp
 		endif
 		if pinC.2 = 0 then
-			high B.2
+			high k2_outp
 		else
-			low B.2
+			low k2_outp
 		endif
 		if pinC.3 = 0 then
-			high B.3
+			high k3_outp
 		else
-			low B.3
+			low k3_outp
 		endif
 		if pinC.4 = 0 then
-			high B.4
+			high k4_outp
 		else
-			low B.4
+			low k4_outp
 		endif
 	else
 		sertxd("mosfet is off", cr,lf)
-		low B.1
-		low B.2
-		low B.3
-		low B.4
+		low k1_outp
+		low k2_outp
+		low k3_outp
+		low k4_outp
 	endif
 	return
 read_keys:
@@ -76,7 +77,7 @@ read_keys:
 	kstate = kstate & %00011110 / 2
 	sertxd("pinsC=", #kstate, cr,lf)
 	gosub process_keys
-'	gosub is_sleeptime
+	gosub is_sleeptime
 	return
 is_sleeptime:
 	if pinB.7 = 1 and kstate = 0 then
