@@ -1,17 +1,17 @@
-symbol ir_pin C.0
-symbol mosfet_pin C.1
-symbol esp_sleep_request_pin C.2
+symbol ir_pin = C.0
+symbol mosfet_pin = C.1
+symbol esp_sleep_request_pin = C.2
 ' only inputs C.1 to C.5 may be used for interrupts
-symbol k1_inp C.1
-symbol k2_inp C.2
-symbol k3_inp C.3
-symbol k4_inp C.4
-symbol k1_outp B.4
-symbol k2_outp B.5
-symbol k3_outp B.6
-symbol k4_outp B.7
-symbol kstate  b8
-symbol tmp_b   b1
+symbol k1_inp = C.1
+symbol k2_inp = C.2
+symbol k3_inp = C.3
+symbol k4_inp = C.4
+symbol k1_outp = B.4
+symbol k2_outp = B.5
+symbol k3_outp = B.6
+symbol k4_outp = B.7
+symbol kstate  = b8
+symbol tmp_b   = b1
 
 	pullup on
 ' pullup C.1-C.4 on 20M2?
@@ -31,7 +31,7 @@ main:
 	if kstate > 0 then
 		high mosfet_pin
 	endif
-	if esp_sleep_request_pin then
+	if pinC.2 = 1 then
 		low mosfet_pin
 	endif
 sleeptime:
@@ -39,3 +39,5 @@ sleeptime:
 '	nap 8
 '	sertxd("woke up", cr,lf)
 	goto main
+interrupt:
+	return
