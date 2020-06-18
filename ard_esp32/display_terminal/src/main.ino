@@ -14,16 +14,19 @@
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
-# SPI for SD pins
-# miso - 12
-# mosi - 13
-# clk - 14
-# chosen ss pin - 9
+// SPI for SD pins
+// miso - 12
+// mosi - 13
+// clk - 14
+// chosen ss pin - 9
 
-#define K1_PIN 0
+#define K1_PIN 15
 #define K2_PIN 2
 #define K3_PIN 4
-#define K4_PIN 15
+#define K4_PIN 16
+
+// set it high to go to sleep
+#define GOTOSLEEP_PIN 18
 
 volatile uint8_t key_state = 0;
 
@@ -37,6 +40,7 @@ volatile uint8_t key_state = 0;
 Blinker blinker;
 Ticker check_wifi_ticker;
 Ticker keyboard_ticker;
+Ticker gotosleep_ticker;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 GFXcanvas1 dbuf(180, 120);
@@ -194,6 +198,13 @@ void connectUDP()
 	}
 }
 
+void reset_gotosleep_timer()
+{
+	gotosleep_ticker.once(30, []() {
+		digitalWrite(GOTOSLEEP_PIN, HIGH);
+	});
+}
+
 void setup()
 {
 	Serial.begin(115200);
@@ -208,6 +219,9 @@ void setup()
 	pinMode(K2_PIN, INPUT_PULLUP);
 	pinMode(K3_PIN, INPUT_PULLUP);
 	pinMode(K4_PIN, INPUT_PULLUP);
+
+	pinMode(GOTOSLEEP_PIN, OUTPUT);
+	digitalWrite(GOTOSLEEP_PIN, LOW);
 
 	tft.initR(INITR_BLACKTAB);  // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
@@ -226,8 +240,9 @@ void setup()
 		key_state |= uint8_t(digitalRead(K2_PIN) == LOW) << 1;
 		key_state |= uint8_t(digitalRead(K3_PIN) == LOW) << 2;
 		key_state |= uint8_t(digitalRead(K4_PIN) == LOW) << 3;
+		reset_gotosleep_timer();
 	});
-
+	reset_gotosleep_timer();
 }
 
 void loop()
