@@ -13,6 +13,8 @@ symbol k4_outp = B.4
 symbol kstate  = b8
 symbol irstate = b9
 symbol mosfetstate = b10
+symbol start_time = b11
+symbol diff_time = b12
 
 	pullup on
 ' pullup C.1-C.4 on 20M2
@@ -36,9 +38,10 @@ no_ir:
 	gosub read_keys
 	goto main
 process_keys:
-	if kstate <> 0 then
+	if kstate <> 0 and mosfetstate = 0 then
 		high B.6
 		mosfetstate = 1
+		start_time = time
 		sertxd("mosfet set on", cr,lf)
 	endif
 	if mosfetstate = 1 then
@@ -80,7 +83,8 @@ read_keys:
 	gosub is_sleeptime
 	return
 is_sleeptime:
-	if pinB.7 = 1 and kstate = 0 then
+	diff_time = time - start_time
+	if pinB.7 = 1 and kstate = 0 and diff_time > 10 then
 		low k1_outp
 		low k2_outp
 		low k3_outp
