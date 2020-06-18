@@ -3,6 +3,7 @@
 #include <AsyncUDP.h>
 #include <ArduinoJson.h>
 #include <Ticker.h>
+#include <SD.h>
 #include <blinker.h>
 
 #include <Adafruit_GFX.h>    // Core graphics library
@@ -14,12 +15,6 @@
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
-// SPI for SD pins
-// miso - 12
-// mosi - 13
-// clk - 14
-// chosen ss pin - 9
-
 #define K1_PIN 15
 #define K2_PIN 2
 #define K3_PIN 4
@@ -30,11 +25,20 @@ const char * password = WIFI_PASSWORD;
 
 volatile uint8_t key_state = 0;
 
-#define TFT_CS   10 // old - 13
-#define TFT_RST  26 // Or set to -1 and connect to Arduino RESET pin
-#define TFT_DC   12 //A0
-#define TFT_MOSI 14  // SDA Data out
-#define TFT_SCLK 27  // SCK Clock out
+// SPI for SD pins
+// miso - 12
+// mosi - 13
+// clk - 14
+// chosen ss pin - 9
+
+#define SD_SS 9
+
+#define TFT_CS   10  // old - 13
+#define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
+
+#define SPI_MISO 12  // A0
+#define SPI_MOSI 13  // old - 14, SDA Data out
+#define SPI_CLK  14  // old - 27, SCK Clock out
 
 #define LED_PIN 11
 Blinker blinker;
@@ -42,7 +46,7 @@ Ticker check_wifi_ticker;
 Ticker keyboard_ticker;
 Ticker gotosleep_ticker;
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, SPI_MISO, SPI_MOSI, SPI_CLK, TFT_RST);
 GFXcanvas1 dbuf(180, 120);
 
 #define HOSTNAME "esp32display"
@@ -222,6 +226,10 @@ void setup()
 
 	pinMode(GOTOSLEEP_PIN, OUTPUT);
 	digitalWrite(GOTOSLEEP_PIN, LOW);
+
+	if(!SD.begin(SD_SS)) {
+		Serial.println("Card Mount Failed");
+	}
 
 	tft.initR(INITR_BLACKTAB);  // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
