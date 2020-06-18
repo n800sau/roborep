@@ -81,6 +81,10 @@ read_keys:
 	return
 is_sleeptime:
 	if pinB.7 = 1 and kstate = 0 then
+		low k1_outp
+		low k2_outp
+		low k3_outp
+		low k4_outp
 		low B.6
 		mosfetstate = 0
 	endif
