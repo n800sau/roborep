@@ -32,13 +32,15 @@ volatile uint8_t key_state = 0;
 // chosen ss pin - 9
 
 #define SD_SS 9
+#define SPI_MISO 12
+#define SPI_MOSI 13
+#define SPI_CLK  14
 
-#define TFT_CS   10  // old - 13
+#define TFT_CS   35  // old - 13
 #define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
-
-#define SPI_MISO 12  // A0
-#define SPI_MOSI 13  // old - 14, SDA Data out
-#define SPI_CLK  14  // old - 27, SCK Clock out
+#define TFT_DC   32  //A0
+#define TFT_MOSI 33  // SDA Data out
+#define TFT_SCLK 27  // SCK Clock out
 
 #define LED_PIN 11
 Blinker blinker;
@@ -46,7 +48,7 @@ Ticker check_wifi_ticker;
 Ticker keyboard_ticker;
 Ticker gotosleep_ticker;
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, SPI_MISO, SPI_MOSI, SPI_CLK, TFT_RST);
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 GFXcanvas1 dbuf(180, 120);
 
 #define HOSTNAME "esp32display"
