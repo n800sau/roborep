@@ -9,21 +9,24 @@
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <Fonts/FreeMonoBoldOblique12pt7b.h>
+#include <Fonts/FreeMonoBoldOblique24pt7b.h>
 #include <SPI.h>
 
 #include "config.h"
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
-#define K1_PIN 15
-#define K2_PIN 2
-#define K3_PIN 4
+#define K1_PIN 0
+#define K2_PIN 21
+#define K3_PIN 22
 #define K4_PIN 16
 
 // set it high to go to sleep
 #define GOTOSLEEP_PIN 18
 
 volatile uint8_t key_state = 0;
+enum SCREEN_TYPE {VAL_SCREEN, INFO_SCREEN};
+SCREEN_TYPE screen_num = VAL_SCREEN;
 
 // SPI for SD pins
 // miso - 12
@@ -39,6 +42,8 @@ volatile uint8_t key_state = 0;
 
 bool SD_available = false;
 
+
+// display resolution 160x128 (160/3 = 41)
 #define TFT_CS   35  // old - 13
 #define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC   32  //A0
@@ -61,8 +66,9 @@ AsyncUDP udp;
 //StaticJsonDocument<400> doc;
 DynamicJsonDocument doc(400);
 
-volatile time_t read_ts = 0, display_ts = 0;
+volatile time_t read_ts = 0, display_ts = 0, refresh_screen_ts = 0;
 float t, h, co2;
+#define REFRESH_SCREEN_TIMEOUT 1
 
 volatile bool do_check_for_better_wifi = false;
 
@@ -305,11 +311,33 @@ void setup()
 	tft.initR(INITR_BLACKTAB);  // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
 	tft.setFont(&FreeMonoBoldOblique12pt7b);
-	tft.setTextSize(0.5);
+	tft.setTextSize(1);
 	tft.setCursor(0, 30);
 	tft.setTextColor(ST77XX_WHITE);
 	Serial.print(F("TFT initialized at "));
 	Serial.println(millis()/1000);
+
+				int16_t xp, yp;
+				uint16_t w, h;
+				tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
+				Serial.print("bounds of text 12:");
+				Serial.print(xp);
+				Serial.print(",");
+				Serial.print(yp);
+				Serial.print(",");
+				Serial.print(w);
+				Serial.print("x");
+				Serial.println(h);
+				tft.setFont(&FreeMonoBoldOblique24pt7b);
+				tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
+				Serial.print("bounds of text 24:");
+				Serial.print(xp);
+				Serial.print(",");
+				Serial.print(yp);
+				Serial.print(",");
+				Serial.print(w);
+				Serial.print("x");
+				Serial.println(h);
 
 	WiFi.mode(WIFI_STA);
 	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
@@ -320,6 +348,10 @@ void setup()
 		key_state |= uint8_t(digitalRead(K3_PIN) == LOW) << 2;
 		key_state |= uint8_t(digitalRead(K4_PIN) == LOW) << 3;
 		reset_gotosleep_timer();
+				Serial.print("keys: ");
+				Serial.println(key_state, HEX);
+				Serial.print("key 1: ");
+				Serial.println(digitalRead(K1_PIN));
 	});
 	reset_gotosleep_timer();
 }
@@ -331,35 +363,44 @@ void loop()
 	{
 //		server.handleClient();
 		if(udp.connected()) {
-			if(read_ts != display_ts) {
-				int y = 30;
-				int y_step = 30;
-				display_ts = read_ts;
-				tft.fillScreen(ST77XX_BLACK);
+			time_t t = time(NULL);
+			if(refresh_screen_ts + REFRESH_SCREEN_TIMEOUT < t) {
+				refresh_screen_ts = t;
 				tft.setTextSize(1);
-				tft.setCursor(0, y);
-				tft.setTextColor(ST77XX_RED);
-				tft.print("t:");
-				tft.println(t);
-				y += y_step;
-				tft.setCursor(0, y);
-				tft.setTextColor(ST77XX_BLUE);
-				tft.print("h:");
-				tft.println(h);
-				y += y_step;
-				tft.setCursor(0, y);
-				tft.setTextColor(ST77XX_GREEN);
-				tft.print("co2:");
-				tft.println(co2);
-				y += y_step;
-				tft.setCursor(0, y);
-				tft.setTextColor(ST77XX_WHITE);
-				tft.print("keyb:");
-				tft.println(key_state, HEX);
-				Serial.print("keys: ");
-				Serial.print(key_state, HEX);
-				Serial.print(", sd: ");
-				Serial.println(SD_available);
+				tft.setFont(&FreeMonoBoldOblique12pt7b);
+				switch(screen_num) {
+					case VAL_SCREEN:
+						if(read_ts != display_ts) {
+							display_ts = read_ts;
+							int y = 30;
+							int y_step = 30;
+							tft.fillScreen(ST77XX_BLACK);
+							tft.setCursor(0, y);
+							tft.setTextColor(ST77XX_RED);
+							tft.print("t:");
+							tft.println(t);
+							y += y_step;
+							tft.setCursor(0, y);
+							tft.setTextColor(ST77XX_BLUE);
+							tft.print("h:");
+							tft.println(h);
+							y += y_step;
+							tft.setCursor(0, y);
+							tft.setTextColor(ST77XX_GREEN);
+							tft.print("co2:");
+							tft.println(co2);
+							y += y_step;
+							tft.setCursor(0, y);
+							tft.setTextColor(ST77XX_WHITE);
+							tft.print("keys: ");
+							tft.println(key_state, HEX);
+							tft.print(", sd: ");
+							tft.println(SD_available);
+						}
+						break;
+					default:
+						break;
+				}
 			}
 		} else {
 			connectUDP();
