@@ -29,9 +29,9 @@ volatile uint8_t key_state = 0;
 // miso - 12
 // mosi - 13
 // clk - 14
-// chosen ss pin - 9
+// chosen ss pin - 25
 
-#define SD_SS 9
+#define SD_SS 25
 // default SPI pins
 //#define SPI_MISO 12
 //#define SPI_MOSI 13
