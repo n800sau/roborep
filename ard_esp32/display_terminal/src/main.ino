@@ -32,9 +32,10 @@ volatile uint8_t key_state = 0;
 // chosen ss pin - 9
 
 #define SD_SS 9
-#define SPI_MISO 12
-#define SPI_MOSI 13
-#define SPI_CLK  14
+// default SPI pins
+//#define SPI_MISO 12
+//#define SPI_MOSI 13
+//#define SPI_CLK  14
 
 #define TFT_CS   35  // old - 13
 #define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
@@ -209,6 +210,71 @@ void reset_gotosleep_timer()
 	gotosleep_ticker.once(30, []() {
 		digitalWrite(GOTOSLEEP_PIN, HIGH);
 	});
+}
+
+void listDir(fs::FS &fs, const char * dirname, uint8_t levels)
+{
+	Serial.printf("Listing directory: %s\n", dirname);
+
+	File root = fs.open(dirname);
+	if(!root){
+		Serial.println("Failed to open directory");
+		return;
+	}
+	if(!root.isDirectory()){
+		Serial.println("Not a directory");
+		return;
+	}
+
+	File file = root.openNextFile();
+	while(file){
+		if(file.isDirectory()){
+			Serial.print("  DIR : ");
+			Serial.println(file.name());
+			if(levels){
+				listDir(fs, file.name(), levels -1);
+			}
+		} else {
+			Serial.print("  FILE: ");
+			Serial.print(file.name());
+			Serial.print("  SIZE: ");
+			Serial.println(file.size());
+		}
+		file = root.openNextFile();
+	}
+}
+
+void print_SD_info()
+{
+	uint8_t cardType = SD.cardType();
+
+	switch(cardType) {
+		case CARD_NONE:
+			Serial.println("No SD card attached");
+			break;
+		default: {
+			Serial.print("SD Card Type: ");
+			switch(cardType) {
+				case CARD_MMC:
+					Serial.println("MMC");
+					break;
+				case CARD_SD:
+					Serial.println("SDSC");
+					break;
+				case CARD_SDHC:
+					Serial.println("SDHC");
+					break;
+				default:
+					Serial.println("UNKNOWN");
+					break;
+			}
+			uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+			Serial.printf("SD Card Size: %lluMB\n", cardSize);
+			listDir(SD, "/", 0);
+			break;
+		}
+	}
+
 }
 
 void setup()
