@@ -37,6 +37,8 @@ volatile uint8_t key_state = 0;
 //#define SPI_MOSI 13
 //#define SPI_CLK  14
 
+bool SD_available = false;
+
 #define TFT_CS   35  // old - 13
 #define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC   32  //A0
@@ -295,7 +297,8 @@ void setup()
 	pinMode(GOTOSLEEP_PIN, OUTPUT);
 	digitalWrite(GOTOSLEEP_PIN, LOW);
 
-	if(!SD.begin(SD_SS)) {
+	SD_available = SD.begin(SD_SS);
+	if(!SD_available) {
 		Serial.println("Card Mount Failed");
 	}
 
@@ -354,7 +357,9 @@ void loop()
 				tft.print("keyb:");
 				tft.println(key_state, HEX);
 				Serial.print("keys: ");
-				Serial.println(key_state, HEX);
+				Serial.print(key_state, HEX);
+				Serial.print(", sd: ");
+				Serial.println(SD_available);
 			}
 		} else {
 			connectUDP();
