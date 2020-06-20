@@ -16,13 +16,13 @@
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
-#define K1_PIN 0
-#define K2_PIN 21
-#define K3_PIN 22
-#define K4_PIN 16
+#define K1_PIN 27 //0
+#define K2_PIN 26 //21
+#define K3_PIN 25 //22
+#define K4_PIN 33 //16
 
 // set it high to go to sleep
-#define GOTOSLEEP_PIN 18
+#define GOTOSLEEP_PIN 13
 
 volatile uint8_t key_state = 0;
 enum SCREEN_TYPE {VAL_SCREEN, INFO_SCREEN};
@@ -34,21 +34,30 @@ SCREEN_TYPE screen_num = VAL_SCREEN;
 // clk - 14
 // chosen ss pin - 25
 
-#define SD_SS 25
+#define TFT_CS         4
+#define TFT_RST        22
+#define TFT_DC         21
+
+//#define TFT_MISO      19
+//#define TFT_MOSI      23
+//#define TFT_SCLK      18
+
+
+#define SD_SS 5
 // default SPI pins
-//#define SPI_MISO 12
-//#define SPI_MOSI 13
-//#define SPI_CLK  14
+//#define SPI_MISO 19
+//#define SPI_MOSI 23
+//#define SPI_CLK  18
 
 bool SD_available = false;
 
 
 // display resolution 160x128 (160/3 = 41)
-#define TFT_CS   35  // old - 13
-#define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
-#define TFT_DC   32  //A0
-#define TFT_MOSI 33  // SDA Data out
-#define TFT_SCLK 27  // SCK Clock out
+//#define TFT_CS   35  // old - 13
+//#define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
+//#define TFT_DC   32  //A0
+//#define TFT_MOSI 33  // SDA Data out
+//#define TFT_SCLK 27  // SCK Clock out
 
 #define LED_PIN 11
 Blinker blinker;
@@ -56,7 +65,7 @@ Ticker check_wifi_ticker;
 Ticker keyboard_ticker;
 Ticker gotosleep_ticker;
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 GFXcanvas1 dbuf(180, 120);
 
 #define HOSTNAME "esp32display"
