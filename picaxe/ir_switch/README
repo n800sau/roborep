@@ -27,7 +27,7 @@ B.2
 B.3
 B.4
 
-B.7 - mosfet on/off
+B.7 - el switch on/off
 
 C.0 - green to esp32 
 B.6 - blue to esp32 - gotosleep pin
@@ -46,3 +46,9 @@ accummulator
 6000mah
 
 40mm internal height corner
+
+el.switch pnp transistor 2SA1300
+b - 10k -gnd
+  - 330 om - B.7
+e - +
+k - esp32 +
