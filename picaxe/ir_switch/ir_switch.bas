@@ -15,7 +15,10 @@ symbol irstate = b9
 symbol mosfetstate = b10
 symbol start_time = b11
 symbol diff_time = b12
+symbol sleep_again_timeout = 5
 
+
+	enabletime
 	pullup on
 ' pullup C.1-C.4 on 20M2
 	pullup %0001111000000000
@@ -28,8 +31,9 @@ symbol diff_time = b12
 	low k3_outp
 	low k4_outp
 main:
-	irin [200, no_ir], ir_pin, irstate
-	sertxd("ir=", irstate, cr,lf)
+'	irin [200, no_ir], ir_pin, irstate
+'	sertxd("ir=", irstate, cr,lf)
+	pause 200
 	if irstate > 0 and irstate < 16 then
 		kstate = irstate
 		gosub process_keys
@@ -84,7 +88,9 @@ read_keys:
 	return
 is_sleeptime:
 	diff_time = time - start_time
-	if pinB.6 = 1 and kstate = 0 and diff_time > 10 then
+	sertxd("diff_time=", #diff_time, ",", #start_time, ",", #time, cr,lf)
+	if pinB.6 = 1 and kstate = 0 and diff_time > sleep_again_timeout then
+		sertxd("turn mosfet off", cr,lf)
 		low k1_outp
 		low k2_outp
 		low k3_outp
