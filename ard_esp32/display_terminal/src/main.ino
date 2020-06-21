@@ -224,7 +224,10 @@ void connectUDP()
 
 void reset_gotosleep_timer()
 {
-	gotosleep_ticker.once(30, []() {
+	digitalWrite(GOTOSLEEP_PIN, LOW);
+	gotosleep_ticker.once(10, []() {
+		Serial.println("Go to sleep");
+		delay(1000);
 		digitalWrite(GOTOSLEEP_PIN, HIGH);
 	});
 }
@@ -352,11 +355,14 @@ void setup()
 	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
 	keyboard_ticker.attach(1, []() {
 		key_state = 0;
-		key_state |= uint8_t(digitalRead(K1_PIN) == LOW);
-		key_state |= uint8_t(digitalRead(K2_PIN) == LOW) << 1;
-		key_state |= uint8_t(digitalRead(K3_PIN) == LOW) << 2;
-		key_state |= uint8_t(digitalRead(K4_PIN) == LOW) << 3;
-		reset_gotosleep_timer();
+		key_state |= uint8_t(digitalRead(K1_PIN) == HIGH);
+		key_state |= uint8_t(digitalRead(K2_PIN) == HIGH) << 1;
+		key_state |= uint8_t(digitalRead(K3_PIN) == HIGH) << 2;
+		key_state |= uint8_t(digitalRead(K4_PIN) == HIGH) << 3;
+		if(key_state) {
+			Serial.println("Reset gotosleep timer");
+			reset_gotosleep_timer();
+		}
 				Serial.print("keys: ");
 				Serial.println(key_state, HEX);
 				Serial.print("key 1: ");
