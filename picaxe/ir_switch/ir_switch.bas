@@ -1,6 +1,6 @@
 symbol ir_pin = B.5
-symbol mosfet_pin = B.6
-symbol esp_sleep_request_pin = B.7
+symbol mosfet_pin = B.7
+symbol esp_sleep_request_pin = B.6
 ' only inputs C.1 to C.5 may be used for interrupts
 symbol k1_inp = C.1
 symbol k2_inp = C.2
@@ -19,7 +19,7 @@ symbol diff_time = b12
 	pullup on
 ' pullup C.1-C.4 on 20M2
 	pullup %0001111000000000
-	low B.6
+	low mosfet_pin
 ' current state of mosfet output
 	mosfetstate = 0
 ' set output low to prevent power leaking to esp32
@@ -39,7 +39,7 @@ no_ir:
 	goto main
 process_keys:
 	if kstate <> 0 and mosfetstate = 0 then
-		high B.6
+		high mosfet_pin
 		mosfetstate = 1
 		start_time = time
 		sertxd("mosfet set on", cr,lf)
@@ -84,12 +84,12 @@ read_keys:
 	return
 is_sleeptime:
 	diff_time = time - start_time
-	if pinB.7 = 1 and kstate = 0 and diff_time > 10 then
+	if pinB.6 = 1 and kstate = 0 and diff_time > 10 then
 		low k1_outp
 		low k2_outp
 		low k3_outp
 		low k4_outp
-		low B.6
+		low mosfet_pin
 		mosfetstate = 0
 	endif
 	return
