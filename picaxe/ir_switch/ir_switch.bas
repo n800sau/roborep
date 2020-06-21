@@ -31,9 +31,9 @@ symbol sleep_again_timeout = 5
 	low k3_outp
 	low k4_outp
 main:
-'	irin [200, no_ir], ir_pin, irstate
-'	sertxd("ir=", irstate, cr,lf)
-	pause 200
+	irin [200, no_ir], ir_pin, irstate
+	sertxd("ir=", #irstate, cr,lf)
+'	pause 200
 	if irstate > 0 and irstate < 16 then
 		kstate = irstate
 		gosub process_keys
