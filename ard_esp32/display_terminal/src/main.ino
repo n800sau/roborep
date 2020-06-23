@@ -332,8 +332,9 @@ void setup()
 	tft.fillScreen(ST77XX_BLACK);
 	tft.setFont(&FreeMonoBoldOblique12pt7b);
 	tft.setTextSize(1);
-	tft.setCursor(0, 30);
 	tft.setTextColor(ST77XX_WHITE);
+	tft.setCursor(0, 30);
+	tft.print("Hello there");
 	Serial.print(F("TFT initialized at "));
 	Serial.println(millis()/1000);
 	// turn on tft led
