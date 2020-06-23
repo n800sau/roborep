@@ -18,23 +18,17 @@
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
-#define K1_PIN 27 //0
-#define K2_PIN 26 //21
-#define K3_PIN 25 //22
-#define K4_PIN 33 //16
+#define K1_PIN 27
+#define K2_PIN 26
+#define K3_PIN 25
+#define K4_PIN 33
 
 // set it high to go to sleep
-#define GOTOSLEEP_PIN 13
+#define GOTOSLEEP_REQUEST_PIN 14
 
 volatile uint8_t key_state = 0;
 enum SCREEN_TYPE {VAL_SCREEN, INFO_SCREEN};
 SCREEN_TYPE screen_num = VAL_SCREEN;
-
-// SPI for SD pins
-// miso - 12
-// mosi - 13
-// clk - 14
-// chosen ss pin - 25
 
 #define TFT_CS         4
 #define TFT_RST        22
@@ -56,13 +50,8 @@ bool SD_available = false;
 
 
 // display resolution 160x128 (160/3 = 41)
-//#define TFT_CS   35  // old - 13
-//#define TFT_RST  26  // Or set to -1 and connect to Arduino RESET pin
-//#define TFT_DC   32  //A0
-//#define TFT_MOSI 33  // SDA Data out
-//#define TFT_SCLK 27  // SCK Clock out
 
-#define LED_PIN 11
+#define LED_PIN 34
 Blinker blinker;
 Ticker check_wifi_ticker;
 Ticker keyboard_ticker;
@@ -227,11 +216,11 @@ void connectUDP()
 
 void reset_gotosleep_timer()
 {
-	digitalWrite(GOTOSLEEP_PIN, LOW);
+	digitalWrite(GOTOSLEEP_REQUEST_PIN, LOW);
 	gotosleep_ticker.once(10, []() {
 		Serial.println("Go to sleep");
 		gotosleep_ticker.once(1, []() {
-			digitalWrite(GOTOSLEEP_PIN, HIGH);
+			digitalWrite(GOTOSLEEP_REQUEST_PIN, HIGH);
 		});
 	});
 }
@@ -320,8 +309,8 @@ void setup()
 	pinMode(K3_PIN, INPUT_PULLUP);
 	pinMode(K4_PIN, INPUT_PULLUP);
 
-	pinMode(GOTOSLEEP_PIN, OUTPUT);
-	digitalWrite(GOTOSLEEP_PIN, LOW);
+	pinMode(GOTOSLEEP_REQUEST_PIN, OUTPUT);
+	digitalWrite(GOTOSLEEP_REQUEST_PIN, LOW);
 
 	SD_available = SD.begin(SD_SS);
 	if(!SD_available) {
