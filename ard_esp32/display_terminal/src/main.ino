@@ -12,6 +12,8 @@
 #include <Fonts/FreeMonoBoldOblique24pt7b.h>
 #include <SPI.h>
 
+#include "httpsrv.hpp"
+
 #include "config.h"
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
@@ -37,6 +39,7 @@ SCREEN_TYPE screen_num = VAL_SCREEN;
 #define TFT_CS         4
 #define TFT_RST        22
 #define TFT_DC         21
+#define TFT_LED_PIN    32
 
 //#define TFT_MISO      19
 //#define TFT_MOSI      23
@@ -299,6 +302,10 @@ void print_SD_info()
 
 void setup()
 {
+	pinMode(TFT_LED_PIN, OUTPUT);
+	// turn off tft led
+	digitalWrite(TFT_LED_PIN, HIGH);
+
 	Serial.begin(115200);
 	Serial.println();
 	Serial.print("setup starts at ");
@@ -328,6 +335,8 @@ void setup()
 	tft.setTextColor(ST77XX_WHITE);
 	Serial.print(F("TFT initialized at "));
 	Serial.println(millis()/1000);
+	// turn on tft led
+	digitalWrite(TFT_LED_PIN, LOW);
 
 				int16_t xp, yp;
 				uint16_t w, h;
@@ -376,7 +385,7 @@ void loop()
 	// check if the WiFi and UDP connections were successful
 	if(is_wifi_connected())
 	{
-//		server.handleClient();
+		httpsrv::update();
 		if(udp.connected()) {
 			time_t t = time(NULL);
 			if(refresh_screen_ts + REFRESH_SCREEN_TIMEOUT < t) {
@@ -443,6 +452,7 @@ void loop()
 				Serial.println("MDNS responder " HOSTNAME " started");
 				// Add service to MDNS-SD
 				MDNS.addService("http", "tcp", 80);
+				httpsrv::init();
 			} else {
 				Serial.println("Error setting up MDNS responder!");
 			}
