@@ -230,8 +230,9 @@ void reset_gotosleep_timer()
 	digitalWrite(GOTOSLEEP_PIN, LOW);
 	gotosleep_ticker.once(10, []() {
 		Serial.println("Go to sleep");
-		delay(1000);
-		digitalWrite(GOTOSLEEP_PIN, HIGH);
+		gotosleep_ticker.once(1, []() {
+			digitalWrite(GOTOSLEEP_PIN, HIGH);
+		});
 	});
 }
 
