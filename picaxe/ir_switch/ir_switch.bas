@@ -10,6 +10,7 @@ symbol k1_outp = B.1
 symbol k2_outp = B.2
 symbol k3_outp = B.3
 symbol k4_outp = B.4
+symbol esp_sleep_request_state = b7
 symbol kstate  = b8
 symbol irstate = b9
 symbol esp32state = b10
@@ -49,7 +50,7 @@ process_keys:
 		sertxd("esp32 set on", cr,lf)
 	endif
 	if esp32state = 1 then
-		sertxd("esp32 is on", cr,lf)
+'		sertxd("esp32 is on", cr,lf)
 		if pinC.1 = 0 then
 			high k1_outp
 		else
@@ -71,7 +72,7 @@ process_keys:
 			low k4_outp
 		endif
 	else
-		sertxd("esp32 is off", cr,lf)
+'		sertxd("esp32 is off", cr,lf)
 		low k1_outp
 		low k2_outp
 		low k3_outp
@@ -82,14 +83,15 @@ read_keys:
 	kstate = pinsC
 	kstate = not kstate
 	kstate = kstate & %00011110 / 2
-	sertxd("pinsC=", #kstate, cr,lf)
+'	sertxd("pinsC=", #kstate, cr,lf)
 	gosub process_keys
 	gosub is_sleeptime
 	return
 is_sleeptime:
 	diff_time = time - start_time
-	sertxd("diff_time=", #diff_time, ",", #start_time, ",", #time, cr,lf)
-	if pinB.6 = 1 and kstate = 0 and diff_time > sleep_again_timeout then
+	let esp_sleep_request_state = pinB.6
+	sertxd("diff_time=", #diff_time, ",", #start_time, ",", #time, ",", #esp_sleep_request_state, cr,lf)
+	if esp_sleep_request_state = 1 and kstate = 0 and diff_time > sleep_again_timeout then
 		sertxd("turn esp32 off", cr,lf)
 		low k1_outp
 		low k2_outp
