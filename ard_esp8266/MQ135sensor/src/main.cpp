@@ -211,22 +211,33 @@ StreamString time2str(time_t ts)
 	return rs;
 }
 
+String json_data()
+{
+	String rs;
+	if(settings.r0) {
+		rs = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) + ",\"timestamp\":\"" + time2str(cur_data.ts) +
+			"\",\"temperature\":" + String(cur_data.t) + ",\"humidity\":" + String(cur_data.h) + ",\"raw\":" + String(cur_data.raw);
+		rs += ",\"co2\":" + String(cur_data.co2) + ",\"r0\":" + String(cur_data.r0);
+		rs += "}";
+	}
+	return rs;
+}
+
 void send_data()
 {
-	if(wifiConnected && udpConnected && settings.r0) {
-		Serial.println("*****************************");
-		Serial.print("t=");
-		Serial.println(cur_data.t);
-		Serial.print("h=");
-		Serial.println(cur_data.h);
-		Serial.print("co2=");
-		Serial.println(cur_data.co2);
-		String js = "{\"sensor_id\":\"" + sensor_id + "\",\"ts\":" + String(cur_data.ts) + ",\"timestamp\":\"" + time2str(cur_data.ts) +
-			"\",\"temperature\":" + String(cur_data.t) + ",\"humidity\":" + String(cur_data.h) + ",\"raw\":" + String(cur_data.raw);
-		js += ",\"co2\":" + String(cur_data.co2) + ",\"r0\":" + String(cur_data.r0);
-		js += "}";
-		send_udp_string(js);
-		blinker.blink(3);
+	if(wifiConnected && udpConnected) {
+		String js = json_data();
+		if(js != "") {
+			Serial.println("*****************************");
+			Serial.print("t=");
+			Serial.println(cur_data.t);
+			Serial.print("h=");
+			Serial.println(cur_data.h);
+			Serial.print("co2=");
+			Serial.println(cur_data.co2);
+			send_udp_string(js);
+			blinker.blink(3);
+		}
 	}
 }
 
@@ -271,6 +282,12 @@ void handleRoot()
 	page.printf("co2: %.2f ppm<p>%s<br>ts: %li<br>", cur_data.co2, time2str(cur_data.ts).c_str(), cur_data.ts);
 	printVals(page, "<br>");
 	server.send(200, "text/html", wrap_html(page, reload_script));
+	blinker.blink(3);
+}
+
+void handleData()
+{
+	server.send(200, "text/json", json_data());
 	blinker.blink(3);
 }
 
@@ -379,6 +396,7 @@ void setup()
 
 	server.on("/", handleRoot);
 	server.on("/index.html", handleRoot);
+	server.on("/data.json", handleData);
 	server.on("/config.html", []() {
 		server.send(200, "text/html", wrap_html(home_link + postForm[0] + settings.data_send_period + postForm[1]));
 	});
