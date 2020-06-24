@@ -1,7 +1,7 @@
 symbol ir_pin = B.5
 symbol esp32_pin = B.7
 symbol esp_sleep_request_pin = B.6
-symbol ttf_led_pin = B.0
+symbol ttf_led_pin = C.5 ' pwm, hpwm pin
 ' only inputs C.1 to C.5 may be used for interrupts
 symbol k1_inp = C.1
 symbol k2_inp = C.2
