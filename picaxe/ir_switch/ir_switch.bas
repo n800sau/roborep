@@ -111,10 +111,13 @@ is_sleeptime:
 			low k3_outp
 			low k4_outp
 			high esp32_pin
+			pwmout ttf_led_pin, OFF
 			high ttf_led_pin
 			esp32state = 0
 		else
-			low ttf_led_pin
+			pwmout ttf_led_pin, 150, 150
+			pwmduty ttf_led_pin, 150
+'			low ttf_led_pin
 		endif
 	endif
 	return
