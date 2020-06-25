@@ -161,6 +161,31 @@ void connectWifi()
 	}
 }
 
+void process_json(String data)
+{
+	DeserializationError error = deserializeJson(doc, data);
+	// Test if parsing succeeded.
+	if (error) {
+		Serial.print("deserializeMsgPack() failed: ");
+		Serial.println(error.c_str());
+	} else {
+		if(doc["sensor_id"] == String("MQ135")) {
+			Serial.print("Sensor:");
+			Serial.print((const char *)doc["sensor_id"]);
+			Serial.print(" t:");
+			Serial.print((float)doc["temperature"]);
+			Serial.print(" h:");
+			Serial.print((float)doc["humidity"]);
+			Serial.print(" co2:");
+			Serial.println((float)doc["co2"]);
+			t = doc["temperature"];
+			h = doc["humidity"];
+			co2 = doc["co2"];
+			read_ts = time(NULL);
+		}
+	}
+}
+
 void connectUDP()
 {
 	Serial.print("about to listen at ");
@@ -190,27 +215,7 @@ void connectUDP()
 			Serial.println();
 			//reply to the client
 			packet.printf("Got %u bytes of data", packet.length());
-			DeserializationError error = deserializeJson(doc, data);
-			// Test if parsing succeeded.
-			if (error) {
-				Serial.print("deserializeMsgPack() failed: ");
-				Serial.println(error.c_str());
-			} else {
-				if(doc["sensor_id"] == String("MQ135")) {
-					Serial.print("Sensor:");
-					Serial.print((const char *)doc["sensor_id"]);
-					Serial.print(" t:");
-					Serial.print((float)doc["temperature"]);
-					Serial.print(" h:");
-					Serial.print((float)doc["humidity"]);
-					Serial.print(" co2:");
-					Serial.println((float)doc["co2"]);
-					t = doc["temperature"];
-					h = doc["humidity"];
-					co2 = doc["co2"];
-					read_ts = time(NULL);
-				}
-			}
+			process_json(data);
 		});
 	}
 }
@@ -303,15 +308,7 @@ void get_data_now()
 		Serial.println(httpResponceCode);
 		Serial.println(response);
 		if(response.length() > 0) {
-			DeserializationError error = deserializeJson(doc, response);
-			if (error) {
-				Serial.print("deserializeJson() failed: ");
-				Serial.println(error.c_str());
-			} else {
-				const char* retval1 = doc["sensor_id"][0];
-				Serial.println("Sensor Id: ");
-				Serial.println(retval1);
-			}
+			process_json(response);
 		}
 	} else {
 		Serial.print("Direct connection to sensor failed: ");
