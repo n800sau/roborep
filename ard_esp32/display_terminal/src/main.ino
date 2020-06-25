@@ -5,6 +5,7 @@
 #include <Ticker.h>
 #include <SD.h>
 #include <blinker.h>
+#include <HTTPClient.h>
 
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
@@ -290,6 +291,35 @@ void print_SD_info()
 
 }
 
+void get_data_now()
+{
+	HTTPClient http;
+	reset_gotosleep_timer();
+	http.begin("http://mq135.local/data.json");
+	http.addHeader("Content-Type","text/json");
+	int httpResponceCode = http.GET();
+	if (httpResponceCode == 200) {
+		String response = http.getString();
+		Serial.println(httpResponceCode);
+		Serial.println(response);
+		if(response.length() > 0) {
+			DeserializationError error = deserializeJson(doc, response);
+			if (error) {
+				Serial.print("deserializeJson() failed: ");
+				Serial.println(error.c_str());
+			} else {
+				const char* retval1 = doc["sensor_id"][0];
+				Serial.println("Sensor Id: ");
+				Serial.println(retval1);
+			}
+		}
+	} else {
+		Serial.print("Direct connection to sensor failed: ");
+		Serial.println(httpResponceCode);
+	}
+	http.end();
+}
+
 void setup()
 {
 	pinMode(TFT_LED_PIN, OUTPUT);
@@ -317,8 +347,9 @@ void setup()
 		Serial.println("Card Mount Failed");
 	}
 
-	tft.initR(INITR_BLACKTAB);  // Init ST7735S chip, black tab
+	tft.initR(INITR_BLACKTAB); // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
+	tft.setRotation(3);
 	tft.setFont(&FreeMonoBoldOblique12pt7b);
 	tft.setTextSize(1);
 	tft.setTextColor(ST77XX_WHITE);
@@ -443,6 +474,7 @@ void loop()
 				Serial.println("MDNS responder " HOSTNAME " started");
 				// Add service to MDNS-SD
 				MDNS.addService("http", "tcp", 80);
+				get_data_now();
 				httpsrv::init();
 			} else {
 				Serial.println("Error setting up MDNS responder!");
