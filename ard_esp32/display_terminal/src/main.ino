@@ -11,6 +11,7 @@
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <Fonts/FreeMonoBoldOblique12pt7b.h>
 #include <Fonts/FreeMonoBoldOblique24pt7b.h>
+#include <Fonts/FreeMonoBoldOblique36pt7b.h>
 #include <SPI.h>
 
 #include "httpsrv.hpp"
@@ -28,8 +29,6 @@ const char * password = WIFI_PASSWORD;
 #define GOTOSLEEP_REQUEST_PIN 14
 
 volatile uint8_t key_state = 0;
-enum SCREEN_TYPE {VAL_SCREEN, INFO_SCREEN};
-SCREEN_TYPE screen_num = VAL_SCREEN;
 
 #define TFT_CS         4
 #define TFT_RST        22
@@ -52,7 +51,7 @@ bool SD_available = false;
 
 // display resolution 160x128 (160/3 = 41)
 enum D_VIEW {DV_DEFAULT, DV_TEMP, DV_HUM, DV_CO2, DV_COUNT};
-D_VIEW d_view = DV_DEFAULT;
+D_VIEW d_view = DV_TEMP;
 
 #define LED_PIN 34
 Blinker blinker;
@@ -136,6 +135,7 @@ ap_t find_better_ap(int thresh=20)
 
 void connectWifi()
 {
+	static bool connection_success = true;
 	ap_t ap = find_better_ap();
 	if(ap.ssid.length()) {
 		Serial.print("Connecting to WiFi ");
@@ -153,13 +153,18 @@ void connectWifi()
 	}
 	if (is_wifi_connected())
 	{
+		connection_success = true;
 		Serial.println("");
 		Serial.print("Connected to ");
 		Serial.println(WiFi.SSID());
 		Serial.print("IP address: ");
 		Serial.println(WiFi.localIP());
 	} else {
-		Serial.println("Connection failed.");
+		if(connection_success) {
+			Serial.println("Connection failed.");
+		}
+		connection_success = false;
+		delay(100);
 	}
 }
 
@@ -226,7 +231,7 @@ void connectUDP()
 
 void reset_gotosleep_timer()
 {
-	Serial.println("Reset gotosleep timer");
+//	Serial.println("Reset gotosleep timer");
 	digitalWrite(GOTOSLEEP_REQUEST_PIN, LOW);
 	gotosleep_ticker.once(10, []() {
 		Serial.println("Go to sleep");
@@ -322,6 +327,21 @@ void get_data_now()
 	http.end();
 }
 
+void print_text_bounds(String text, int16_t x, int16_t y)
+{
+	int16_t xp, yp;
+	uint16_t w, h;
+	tft.getTextBounds(text, x, y, &xp, &yp, &w, &h);
+	Serial.printf("bounds of %s:", text.c_str());
+	Serial.print(xp);
+	Serial.print(",");
+	Serial.print(yp);
+	Serial.print(",");
+	Serial.print(w);
+	Serial.print("x");
+	Serial.println(h);
+}
+
 void setup()
 {
 	pinMode(TFT_LED_PIN, OUTPUT);
@@ -362,28 +382,6 @@ void setup()
 	// turn on tft led
 	digitalWrite(TFT_LED_PIN, LOW);
 
-	int16_t xp, yp;
-	uint16_t w, h;
-	tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
-	Serial.print("bounds of text 12:");
-	Serial.print(xp);
-	Serial.print(",");
-	Serial.print(yp);
-	Serial.print(",");
-	Serial.print(w);
-	Serial.print("x");
-	Serial.println(h);
-	tft.setFont(&FreeMonoBoldOblique24pt7b);
-	tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
-	Serial.print("bounds of text 24:");
-	Serial.print(xp);
-	Serial.print(",");
-	Serial.print(yp);
-	Serial.print(",");
-	Serial.print(w);
-	Serial.print("x");
-	Serial.println(h);
-
 	WiFi.mode(WIFI_STA);
 	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
 	keyboard_ticker.attach(1, []() {
@@ -399,8 +397,8 @@ void setup()
 				update_display();
 			}
 		}
-				Serial.print("keys: ");
-				Serial.println(key_state, BIN);
+//				Serial.print("keys: ");
+//				Serial.println(key_state, BIN);
 //				Serial.print("key 1: ");
 //				Serial.println(digitalRead(K1_PIN));
 	});
@@ -412,53 +410,52 @@ void update_display()
 	switch(d_view) {
 		case DV_TEMP:
 			{
-				int y = 30;
+				tft.setFont(&FreeMonoBoldOblique36pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setCursor(0, y);
+				tft.setCursor(0, 50);
 				tft.setTextColor(ST77XX_RED);
-				tft.print("t:");
-				tft.println(t);
+				print_text_bounds("+00.0", 0, 50);
+				tft.printf("%+.1f", t);
 			}
 			break;
 		case DV_HUM:
 			{
+				tft.setFont(&FreeMonoBoldOblique36pt7b);
 				int y = 30;
 				tft.fillScreen(ST77XX_BLACK);
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_BLUE);
-				tft.print("h:");
-				tft.println(h);
+				tft.printf("%d", (int)h);
 			}
 			break;
 		case DV_CO2:
 			{
+				tft.setFont(&FreeMonoBoldOblique36pt7b);
 				int y = 30;
 				tft.fillScreen(ST77XX_BLACK);
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_GREEN);
-				tft.print("co2:");
-				tft.println(co2);
+				tft.printf("%d", (int)co2);
 			}
 			break;
 		default:
 			{
+				tft.setFont(&FreeMonoBoldOblique12pt7b);
 				int y = 30;
 				int y_step = 30;
 				tft.fillScreen(ST77XX_BLACK);
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_RED);
-				tft.print("t:");
-				tft.println(t);
+				tft.printf("t: %+.1f", t);
 				y += y_step;
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_BLUE);
-				tft.print("h:");
-				tft.println(h);
+				tft.printf("h: %d", (int)h);
 				y += y_step;
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_GREEN);
 				tft.print("co2:");
-				tft.println(co2);
+				tft.print(co2);
 				y += y_step;
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_WHITE);
@@ -483,15 +480,9 @@ void loop()
 				refresh_screen_ts = t;
 				tft.setTextSize(1);
 				tft.setFont(&FreeMonoBoldOblique12pt7b);
-				switch(screen_num) {
-					case VAL_SCREEN:
-						if(read_ts != display_ts) {
-							display_ts = read_ts;
-							update_display();
-						}
-						break;
-					default:
-						break;
+				if(read_ts != display_ts) {
+					display_ts = read_ts;
+					update_display();
 				}
 			}
 		} else {
