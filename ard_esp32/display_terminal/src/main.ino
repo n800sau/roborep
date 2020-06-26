@@ -51,6 +51,8 @@ bool SD_available = false;
 
 
 // display resolution 160x128 (160/3 = 41)
+enum D_VIEW {DV_DEFAULT, DV_TEMP, DV_HUM, DV_CO2, DV_COUNT};
+D_VIEW d_view = DV_DEFAULT;
 
 #define LED_PIN 34
 Blinker blinker;
@@ -170,7 +172,9 @@ void process_json(String data)
 		Serial.println(error.c_str());
 	} else {
 		if(doc["sensor_id"] == String("MQ135")) {
-			Serial.print("Sensor:");
+			time_t t = time(NULL);
+			Serial.print(localtime(&t));
+			Serial.print(": Sensor:");
 			Serial.print((const char *)doc["sensor_id"]);
 			Serial.print(" t:");
 			Serial.print((float)doc["temperature"]);
@@ -222,6 +226,7 @@ void connectUDP()
 
 void reset_gotosleep_timer()
 {
+	Serial.println("Reset gotosleep timer");
 	digitalWrite(GOTOSLEEP_REQUEST_PIN, LOW);
 	gotosleep_ticker.once(10, []() {
 		Serial.println("Go to sleep");
@@ -357,27 +362,27 @@ void setup()
 	// turn on tft led
 	digitalWrite(TFT_LED_PIN, LOW);
 
-				int16_t xp, yp;
-				uint16_t w, h;
-				tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
-				Serial.print("bounds of text 12:");
-				Serial.print(xp);
-				Serial.print(",");
-				Serial.print(yp);
-				Serial.print(",");
-				Serial.print(w);
-				Serial.print("x");
-				Serial.println(h);
-				tft.setFont(&FreeMonoBoldOblique24pt7b);
-				tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
-				Serial.print("bounds of text 24:");
-				Serial.print(xp);
-				Serial.print(",");
-				Serial.print(yp);
-				Serial.print(",");
-				Serial.print(w);
-				Serial.print("x");
-				Serial.println(h);
+	int16_t xp, yp;
+	uint16_t w, h;
+	tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
+	Serial.print("bounds of text 12:");
+	Serial.print(xp);
+	Serial.print(",");
+	Serial.print(yp);
+	Serial.print(",");
+	Serial.print(w);
+	Serial.print("x");
+	Serial.println(h);
+	tft.setFont(&FreeMonoBoldOblique24pt7b);
+	tft.getTextBounds("+88", 0, 0, &xp, &yp, &w, &h);
+	Serial.print("bounds of text 24:");
+	Serial.print(xp);
+	Serial.print(",");
+	Serial.print(yp);
+	Serial.print(",");
+	Serial.print(w);
+	Serial.print("x");
+	Serial.println(h);
 
 	WiFi.mode(WIFI_STA);
 	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
@@ -388,15 +393,82 @@ void setup()
 		key_state |= uint8_t(digitalRead(K3_PIN) == HIGH) << 2;
 		key_state |= uint8_t(digitalRead(K4_PIN) == HIGH) << 3;
 		if(key_state) {
-			Serial.println("Reset gotosleep timer");
 			reset_gotosleep_timer();
+			if(key_state >= 1 && key_state <= DV_COUNT) {
+				d_view = (D_VIEW)(key_state-1);
+				update_display();
+			}
 		}
 				Serial.print("keys: ");
-				Serial.println(key_state, HEX);
-				Serial.print("key 1: ");
-				Serial.println(digitalRead(K1_PIN));
+				Serial.println(key_state, BIN);
+//				Serial.print("key 1: ");
+//				Serial.println(digitalRead(K1_PIN));
 	});
 	reset_gotosleep_timer();
+}
+
+void update_display()
+{
+	switch(d_view) {
+		case DV_TEMP:
+			{
+				int y = 30;
+				tft.fillScreen(ST77XX_BLACK);
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_RED);
+				tft.print("t:");
+				tft.println(t);
+			}
+			break;
+		case DV_HUM:
+			{
+				int y = 30;
+				tft.fillScreen(ST77XX_BLACK);
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_BLUE);
+				tft.print("h:");
+				tft.println(h);
+			}
+			break;
+		case DV_CO2:
+			{
+				int y = 30;
+				tft.fillScreen(ST77XX_BLACK);
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_GREEN);
+				tft.print("co2:");
+				tft.println(co2);
+			}
+			break;
+		default:
+			{
+				int y = 30;
+				int y_step = 30;
+				tft.fillScreen(ST77XX_BLACK);
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_RED);
+				tft.print("t:");
+				tft.println(t);
+				y += y_step;
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_BLUE);
+				tft.print("h:");
+				tft.println(h);
+				y += y_step;
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_GREEN);
+				tft.print("co2:");
+				tft.println(co2);
+				y += y_step;
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_WHITE);
+				tft.print("keys: ");
+				tft.println(key_state, HEX);
+				tft.print(", sd: ");
+				tft.println(SD_available);
+			}
+			break;
+	}
 }
 
 void loop()
@@ -415,30 +487,7 @@ void loop()
 					case VAL_SCREEN:
 						if(read_ts != display_ts) {
 							display_ts = read_ts;
-							int y = 30;
-							int y_step = 30;
-							tft.fillScreen(ST77XX_BLACK);
-							tft.setCursor(0, y);
-							tft.setTextColor(ST77XX_RED);
-							tft.print("t:");
-							tft.println(t);
-							y += y_step;
-							tft.setCursor(0, y);
-							tft.setTextColor(ST77XX_BLUE);
-							tft.print("h:");
-							tft.println(h);
-							y += y_step;
-							tft.setCursor(0, y);
-							tft.setTextColor(ST77XX_GREEN);
-							tft.print("co2:");
-							tft.println(co2);
-							y += y_step;
-							tft.setCursor(0, y);
-							tft.setTextColor(ST77XX_WHITE);
-							tft.print("keys: ");
-							tft.println(key_state, HEX);
-							tft.print(", sd: ");
-							tft.println(SD_available);
+							update_display();
 						}
 						break;
 					default:
