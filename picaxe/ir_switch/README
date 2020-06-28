@@ -48,7 +48,9 @@ accummulator
 40mm internal height corner
 
 el.switch pnp transistor 2SA1300
-b - 10k -gnd
-  - 330 om - B.7
-e - +
+b - 10k - picaxe +
+  - 330 om - picaxe B.7
+e - picaxe +
 k - esp32 +
+gnd - esp32 -
+gnd - picaxe gnd
