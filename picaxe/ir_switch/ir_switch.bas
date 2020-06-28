@@ -1,8 +1,9 @@
 symbol ir_pin = B.5
 symbol esp32_pin = B.7
 symbol esp_sleep_request_pin = B.6
-symbol ttf_led_pin = C.5 ' pwm, hpwm pin
+symbol tft_led_pin = C.5 ' pwm, hpwm pin
 ' only inputs C.1 to C.5 may be used for interrupts
+symbol led_pin = C.7
 symbol k1_inp = C.1
 symbol k2_inp = C.2
 symbol k3_inp = C.3
@@ -24,8 +25,9 @@ symbol sleep_again_timeout = 5
 	pullup on
 ' pullup C.1-C.4 on 20M2
 	pullup %0001111000000000
+	gosub led_on
 	high esp32_pin
-	high ttf_led_pin
+	high tft_led_pin
 ' current state of esp32 output
 	esp32state = 0
 ' set output low to prevent power leaking to esp32
@@ -33,6 +35,8 @@ symbol sleep_again_timeout = 5
 	low k2_outp
 	low k3_outp
 	low k4_outp
+	pause 500
+	gosub led_off
 main:
 	irin [200, no_ir], ir_pin, irstate
 	sertxd("ir=", #irstate, cr,lf)
@@ -46,6 +50,7 @@ no_ir:
 	goto main
 process_keys:
 	if kstate <> 0 and esp32state = 0 then
+		gosub led_on
 		low esp32_pin
 		esp32state = 1
 		start_time = time
@@ -111,13 +116,18 @@ is_sleeptime:
 			low k3_outp
 			low k4_outp
 			high esp32_pin
-			pwmout ttf_led_pin, OFF
-			high ttf_led_pin
+			pwmout tft_led_pin, OFF
+			high tft_led_pin
 			esp32state = 0
 		else
-			pwmout ttf_led_pin, 150, 150
-			pwmduty ttf_led_pin, 150
-'			low ttf_led_pin
+			gosub led_off
+			pwmout tft_led_pin, 50, 150
 		endif
 	endif
+	return
+led_on:
+	high led_pin
+	return
+led_off:
+	low led_pin
 	return
