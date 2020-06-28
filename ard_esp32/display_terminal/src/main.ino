@@ -11,7 +11,7 @@
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <Fonts/FreeMonoBoldOblique12pt7b.h>
 #include <Fonts/FreeMonoBoldOblique24pt7b.h>
-#include <Fonts/FreeMonoBoldOblique36pt7b.h>
+#include <Fonts/FreeMonoBoldOblique30pt7b.h>
 #include <SPI.h>
 
 #include "httpsrv.hpp"
@@ -20,20 +20,20 @@
 const char * ssid = WIFI_SSID;
 const char * password = WIFI_PASSWORD;
 
-#define K1_PIN 27
-#define K2_PIN 26
-#define K3_PIN 25
-#define K4_PIN 33
+#define K1_PIN 26 // "1"
+#define K2_PIN 27 // "2"
+#define K3_PIN 25 // "3"
+#define K4_PIN 33 // "4"
 
 // set it high to go to sleep
 #define GOTOSLEEP_REQUEST_PIN 14
+#define GOTOSLEEP_TIMEOUT 60
 
 volatile uint8_t key_state = 0;
 
 #define TFT_CS         4
 #define TFT_RST        22
 #define TFT_DC         21
-#define TFT_LED_PIN    32
 
 //#define TFT_MISO      19
 //#define TFT_MOSI      23
@@ -50,7 +50,7 @@ bool SD_available = false;
 
 
 // display resolution 160x128 (160/3 = 41)
-enum D_VIEW {DV_DEFAULT, DV_TEMP, DV_HUM, DV_CO2, DV_COUNT};
+enum D_VIEW {DV_TEMP, DV_HUM, DV_CO2, DV_INFO, DV_COUNT};
 D_VIEW d_view = DV_TEMP;
 
 #define LED_PIN 34
@@ -66,8 +66,8 @@ GFXcanvas1 dbuf(180, 120);
 
 AsyncUDP udp;
 
-//StaticJsonDocument<400> doc;
-DynamicJsonDocument doc(400);
+StaticJsonDocument<400> doc;
+//DynamicJsonDocument doc(400);
 
 volatile time_t read_ts = 0, display_ts = 0, refresh_screen_ts = 0;
 float t, h, co2;
@@ -177,20 +177,20 @@ void process_json(String data)
 		Serial.println(error.c_str());
 	} else {
 		if(doc["sensor_id"] == String("MQ135")) {
-			time_t t = time(NULL);
-			Serial.print(localtime(&t));
-			Serial.print(": Sensor:");
-			Serial.print((const char *)doc["sensor_id"]);
-			Serial.print(" t:");
-			Serial.print((float)doc["temperature"]);
-			Serial.print(" h:");
-			Serial.print((float)doc["humidity"]);
-			Serial.print(" co2:");
-			Serial.println((float)doc["co2"]);
 			t = doc["temperature"];
 			h = doc["humidity"];
 			co2 = doc["co2"];
 			read_ts = time(NULL);
+			time_t tm = read_ts;
+			Serial.print(localtime(&tm));
+			Serial.print(": Sensor:");
+			Serial.print((const char *)doc["sensor_id"]);
+			Serial.print(" t:");
+			Serial.print(t);
+			Serial.print(" h:");
+			Serial.print(h);
+			Serial.print(" co2:");
+			Serial.println(co2);
 		}
 	}
 }
@@ -233,7 +233,7 @@ void reset_gotosleep_timer()
 {
 //	Serial.println("Reset gotosleep timer");
 	digitalWrite(GOTOSLEEP_REQUEST_PIN, LOW);
-	gotosleep_ticker.once(10, []() {
+	gotosleep_ticker.once(GOTOSLEEP_TIMEOUT, []() {
 		Serial.println("Go to sleep");
 		gotosleep_ticker.once(1, []() {
 			digitalWrite(GOTOSLEEP_REQUEST_PIN, HIGH);
@@ -344,10 +344,6 @@ void print_text_bounds(String text, int16_t x, int16_t y)
 
 void setup()
 {
-	pinMode(TFT_LED_PIN, OUTPUT);
-	// turn off tft led
-	digitalWrite(TFT_LED_PIN, HIGH);
-
 	Serial.begin(115200);
 	Serial.println();
 	Serial.print("setup starts at ");
@@ -376,11 +372,9 @@ void setup()
 	tft.setTextSize(1);
 	tft.setTextColor(ST77XX_WHITE);
 	tft.setCursor(0, 30);
-	tft.print("Hello there");
+	tft.print("Waiting...");
 	Serial.print(F("TFT initialized at "));
 	Serial.println(millis()/1000);
-	// turn on tft led
-	digitalWrite(TFT_LED_PIN, LOW);
 
 	WiFi.mode(WIFI_STA);
 	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
@@ -392,13 +386,16 @@ void setup()
 		key_state |= uint8_t(digitalRead(K4_PIN) == HIGH) << 3;
 		if(key_state) {
 			reset_gotosleep_timer();
-			if(key_state >= 1 && key_state <= DV_COUNT) {
-				d_view = (D_VIEW)(key_state-1);
-				update_display();
+			for(int i=0; i<4; i++) {
+				int b = 1 << i;
+				if(key_state & b) {
+					d_view = (D_VIEW)i;
+				}
 			}
+			update_display();
 		}
-//				Serial.print("keys: ");
-//				Serial.println(key_state, BIN);
+				Serial.print("keys: ");
+				Serial.println(key_state, BIN);
 //				Serial.print("key 1: ");
 //				Serial.println(digitalRead(K1_PIN));
 	});
@@ -410,32 +407,30 @@ void update_display()
 	switch(d_view) {
 		case DV_TEMP:
 			{
-				tft.setFont(&FreeMonoBoldOblique36pt7b);
+				tft.setFont(&FreeMonoBoldOblique30pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setCursor(0, 50);
+				tft.setCursor(0, 70);
 				tft.setTextColor(ST77XX_RED);
-				print_text_bounds("+00.0", 0, 50);
-				tft.printf("%+.1f", t);
+				//print_text_bounds("+00.0", 0, 50);
+				tft.printf("%d", (int)t);
 			}
 			break;
 		case DV_HUM:
 			{
-				tft.setFont(&FreeMonoBoldOblique36pt7b);
-				int y = 30;
+				tft.setFont(&FreeMonoBoldOblique30pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setCursor(0, y);
+				tft.setCursor(0, 70);
 				tft.setTextColor(ST77XX_BLUE);
-				tft.printf("%d", (int)h);
+				tft.printf("%d%%", (int)h);
 			}
 			break;
 		case DV_CO2:
 			{
-				tft.setFont(&FreeMonoBoldOblique36pt7b);
-				int y = 30;
+				tft.setFont(&FreeMonoBoldOblique30pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setCursor(0, y);
+				tft.setCursor(0, 70);
 				tft.setTextColor(ST77XX_GREEN);
-				tft.printf("%d", (int)co2);
+				tft.printf("%.1f", co2);
 			}
 			break;
 		default:
@@ -446,7 +441,7 @@ void update_display()
 				tft.fillScreen(ST77XX_BLACK);
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_RED);
-				tft.printf("t: %+.1f", t);
+				tft.printf("t: %d", (int)t);
 				y += y_step;
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_BLUE);
@@ -510,9 +505,9 @@ void loop()
 			if(MDNS.begin(HOSTNAME)) {
 				Serial.println("MDNS responder " HOSTNAME " started");
 				// Add service to MDNS-SD
-				MDNS.addService("http", "tcp", 80);
-				get_data_now();
-				httpsrv::init();
+//				MDNS.addService("http", "tcp", 80);
+//				httpsrv::init();
+				//get_data_now();
 			} else {
 				Serial.println("Error setting up MDNS responder!");
 			}

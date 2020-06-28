@@ -18,7 +18,7 @@ outpath=../Fonts/
 fonts=(FreeMono FreeSans FreeSerif)
 styles=("" Bold Italic BoldItalic Oblique BoldOblique)
 #sizes=(9 12 18 24)
-sizes=(36 48 72)
+sizes=(30)
 
 for f in ${fonts[*]}
 do
