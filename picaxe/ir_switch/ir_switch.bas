@@ -30,6 +30,8 @@ symbol sleep_again_timeout = 5
 	high tft_led_pin
 ' current state of esp32 output
 	esp32state = 0
+' no ir state
+	irstate = 0
 ' set output low to prevent power leaking to esp32
 	low k1_outp
 	low k2_outp
@@ -38,12 +40,12 @@ symbol sleep_again_timeout = 5
 	pause 500
 	gosub led_off
 main:
-	irin [200, no_ir], ir_pin, irstate
-	sertxd("ir=", #irstate, cr,lf)
-'	pause 200
-	if irstate > 0 and irstate < 16 then
-		kstate = irstate
-		gosub process_keys
+	irin [200, no_ir], ir_pin, b0
+	if b0 >= 0 and b0 < 4 then
+		irstate = b0 + 1
+		gosub led_on
+		sertxd("ir=", #irstate, cr,lf)
+		gosub read_keys
 	endif
 no_ir:
 	gosub read_keys
@@ -58,22 +60,26 @@ process_keys:
 	endif
 	if esp32state = 1 then
 '		sertxd("esp32 is on", cr,lf)
-		if pinC.1 = 0 then
+		b0 = kstate & 1
+		if b0 <> 0 then
 			high k1_outp
 		else
 			low k1_outp
 		endif
-		if pinC.2 = 0 then
+		b0 = kstate & 2
+		if b0 <> 0 then
 			high k2_outp
 		else
 			low k2_outp
 		endif
-		if pinC.3 = 0 then
+		b0 = kstate & 4
+		if b0 <> 0 then
 			high k3_outp
 		else
 			low k3_outp
 		endif
-		if pinC.4 = 0 then
+		b0 = kstate & 8
+		if b0 <> 0  then
 			high k4_outp
 		else
 			low k4_outp
@@ -89,25 +95,40 @@ process_keys:
 read_keys:
 	kstate = 0
 	if pinC.1 = 0 then
-		let kstate = kstate | 2
-	endif
-	if pinC.2 = 0 then
 		let kstate = kstate | 1
 	endif
-	if pinC.3 = 0 then
-		let kstate = kstate | 8
+	if pinC.2 = 0 then
+		let kstate = kstate | 2
 	endif
-	if pinC.4 = 0 then
+	if pinC.3 = 0 then
 		let kstate = kstate | 4
 	endif
-'	sertxd("kstate=", #kstate, cr,lf)
+	if pinC.4 = 0 then
+		let kstate = kstate | 8
+	endif
+	if kstate = 0 then
+		select irstate
+			case 1
+				kstate = 2
+			case 2
+				kstate = 1
+			case 3
+				kstate = 8
+			case 4
+				kstate = 4
+		endselect
+	else
+		gosub led_on
+		irstate = 0
+	endif
+	sertxd("kstate=", #kstate, cr,lf)
 	gosub process_keys
 	gosub is_sleeptime
 	return
 is_sleeptime:
 	diff_time = time - start_time
 	let esp_sleep_request_state = pinB.6
-	sertxd("diff_time=", #diff_time, ",", #start_time, ",", #time, ",", #esp_sleep_request_state, cr,lf)
+'	sertxd("diff_time=", #diff_time, ",", #start_time, ",", #time, ",", #esp_sleep_request_state, cr,lf)
 	if esp32state = 1 and diff_time > sleep_again_timeout then
 		if esp_sleep_request_state = 1 and kstate = 0 then
 			sertxd("turn esp32 off", cr,lf)
