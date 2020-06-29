@@ -61,8 +61,8 @@ Ticker keyboard_ticker;
 Ticker gotosleep_ticker;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-#define DISPLAY_WIDTH 180
-#define DISPLAY_HEIGHT 120
+#define DISPLAY_WIDTH 160
+#define DISPLAY_HEIGHT 128
 
 #define HOSTNAME "esp32display"
 
@@ -307,7 +307,7 @@ void print_SD_info()
 
 }
 
-DynamicJsonDocument js(400);
+DynamicJsonDocument js(1000);
 void get_data_now()
 {
 	reset_gotosleep_timer();
@@ -374,8 +374,8 @@ void setup()
 	tft.setTextColor(ST77XX_WHITE);
 	tft.setCursor(0, 30);
 	tft.print("Waiting...");
-	Serial.print(F("TFT initialized at "));
-	Serial.println(millis()/1000);
+//	Serial.print(F("TFT initialized at "));
+//	Serial.println(millis()/1000);
 
 	WiFi.mode(WIFI_STA);
 	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
@@ -395,8 +395,8 @@ void setup()
 			}
 			update_display();
 		}
-//				Serial.print("keys: ");
-//				Serial.println(key_state, BIN);
+				Serial.print("keys: ");
+				Serial.println(key_state, BIN);
 //				Serial.print("key 1: ");
 //				Serial.println(digitalRead(K1_PIN));
 	});
@@ -408,8 +408,12 @@ void center_align_print(String text)
 	int16_t xp, yp;
 	uint16_t w, h;
 	tft.getTextBounds(text, 0, 0, &xp, &yp, &w, &h);
-	xp = max(0, DISPLAY_WIDTH - w - 1);
-	yp = max(0, (DISPLAY_HEIGHT - h) / 2);
+	Serial.print("init pos:");
+	Serial.print(xp);
+	Serial.print(",");
+	Serial.println(yp);
+	xp = (DISPLAY_WIDTH - w) / 2;
+	yp = (DISPLAY_HEIGHT - h)/2 + h;
 	Serial.print("pos:");
 	Serial.print(xp);
 	Serial.print(",");
@@ -430,6 +434,7 @@ void update_display()
 				tft.setTextColor(ST77XX_RED);
 				text.printf("%d", (int)t);
 				center_align_print(text);
+				tft.drawRect(0, 0, DISPLAY_WIDTH-1, DISPLAY_HEIGHT-1, ST77XX_BLUE);
 			}
 			break;
 		case DV_HUM:
