@@ -6,6 +6,7 @@
 #include <SD.h>
 #include <blinker.h>
 #include <HTTPClient.h>
+#include <StreamString.h>
 
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
@@ -60,14 +61,13 @@ Ticker keyboard_ticker;
 Ticker gotosleep_ticker;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-GFXcanvas1 dbuf(180, 120);
+#define DISPLAY_WIDTH 180
+#define DISPLAY_HEIGHT 120
 
 #define HOSTNAME "esp32display"
 
 AsyncUDP udp;
-
-StaticJsonDocument<400> doc;
-//DynamicJsonDocument doc(400);
+HTTPClient http;
 
 volatile time_t read_ts = 0, display_ts = 0, refresh_screen_ts = 0;
 float t, h, co2;
@@ -168,7 +168,7 @@ void connectWifi()
 	}
 }
 
-void process_json(String data)
+void process_json(String data, DynamicJsonDocument &doc)
 {
 	DeserializationError error = deserializeJson(doc, data);
 	// Test if parsing succeeded.
@@ -195,6 +195,7 @@ void process_json(String data)
 	}
 }
 
+DynamicJsonDocument doc(400);
 void connectUDP()
 {
 	Serial.print("about to listen at ");
@@ -224,7 +225,7 @@ void connectUDP()
 			Serial.println();
 			//reply to the client
 			packet.printf("Got %u bytes of data", packet.length());
-			process_json(data);
+			process_json(data, doc);
 		});
 	}
 }
@@ -306,19 +307,19 @@ void print_SD_info()
 
 }
 
+DynamicJsonDocument js(400);
 void get_data_now()
 {
-	HTTPClient http;
 	reset_gotosleep_timer();
 	http.begin("http://mq135.local/data.json");
-	http.addHeader("Content-Type","text/json");
+//	http.addHeader("Content-Type","text/json");
 	int httpResponceCode = http.GET();
 	if (httpResponceCode == 200) {
-		String response = http.getString();
 		Serial.println(httpResponceCode);
+		String response = http.getString();
 		Serial.println(response);
 		if(response.length() > 0) {
-			process_json(response);
+			process_json(response, js);
 		}
 	} else {
 		Serial.print("Direct connection to sensor failed: ");
@@ -394,43 +395,59 @@ void setup()
 			}
 			update_display();
 		}
-				Serial.print("keys: ");
-				Serial.println(key_state, BIN);
+//				Serial.print("keys: ");
+//				Serial.println(key_state, BIN);
 //				Serial.print("key 1: ");
 //				Serial.println(digitalRead(K1_PIN));
 	});
 	reset_gotosleep_timer();
 }
 
+void center_align_print(String text)
+{
+	int16_t xp, yp;
+	uint16_t w, h;
+	tft.getTextBounds(text, 0, 0, &xp, &yp, &w, &h);
+	xp = max(0, DISPLAY_WIDTH - w - 1);
+	yp = max(0, (DISPLAY_HEIGHT - h) / 2);
+	Serial.print("pos:");
+	Serial.print(xp);
+	Serial.print(",");
+	Serial.println(yp);
+	print_text_bounds(text, xp, yp);
+	tft.setCursor(xp, yp);
+	tft.print(text);
+}
+
 void update_display()
 {
+	StreamString text;
 	switch(d_view) {
 		case DV_TEMP:
 			{
 				tft.setFont(&FreeMonoBoldOblique30pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setCursor(0, 70);
 				tft.setTextColor(ST77XX_RED);
-				//print_text_bounds("+00.0", 0, 50);
-				tft.printf("%d", (int)t);
+				text.printf("%d", (int)t);
+				center_align_print(text);
 			}
 			break;
 		case DV_HUM:
 			{
 				tft.setFont(&FreeMonoBoldOblique30pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setCursor(0, 70);
 				tft.setTextColor(ST77XX_BLUE);
-				tft.printf("%d%%", (int)h);
+				text.printf("%d", (int)h);
+				center_align_print(text);
 			}
 			break;
 		case DV_CO2:
 			{
 				tft.setFont(&FreeMonoBoldOblique30pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setCursor(0, 70);
 				tft.setTextColor(ST77XX_GREEN);
-				tft.printf("%.1f", co2);
+				text.printf("%.1f", co2);
+				center_align_print(text);
 			}
 			break;
 		default:
@@ -505,9 +522,9 @@ void loop()
 			if(MDNS.begin(HOSTNAME)) {
 				Serial.println("MDNS responder " HOSTNAME " started");
 				// Add service to MDNS-SD
-//				MDNS.addService("http", "tcp", 80);
+				MDNS.addService("http", "tcp", 80);
 //				httpsrv::init();
-				//get_data_now();
+				get_data_now();
 			} else {
 				Serial.println("Error setting up MDNS responder!");
 			}
