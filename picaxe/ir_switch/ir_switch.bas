@@ -132,6 +132,8 @@ is_sleeptime:
 	if esp32state = 1 and diff_time > sleep_again_timeout then
 		if esp_sleep_request_state = 1 then
 			sertxd("turn esp32 off", cr,lf)
+			kstate = 0
+			irstate = 0
 			low k1_outp
 			low k2_outp
 			low k3_outp
