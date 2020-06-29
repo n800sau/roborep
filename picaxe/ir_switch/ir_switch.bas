@@ -130,7 +130,7 @@ is_sleeptime:
 	let esp_sleep_request_state = pinB.6
 '	sertxd("diff_time=", #diff_time, ",", #start_time, ",", #time, ",", #esp_sleep_request_state, cr,lf)
 	if esp32state = 1 and diff_time > sleep_again_timeout then
-		if esp_sleep_request_state = 1 and kstate = 0 then
+		if esp_sleep_request_state = 1 then
 			sertxd("turn esp32 off", cr,lf)
 			low k1_outp
 			low k2_outp
