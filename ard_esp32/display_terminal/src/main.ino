@@ -319,7 +319,7 @@ void get_data_now()
 		String response = http.getString();
 		Serial.println(response);
 		if(response.length() > 0) {
-			process_json(response, js);
+	//		process_json(response, js);
 		}
 	} else {
 		Serial.print("Direct connection to sensor failed: ");
@@ -380,12 +380,13 @@ void setup()
 	WiFi.mode(WIFI_STA);
 	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
 	keyboard_ticker.attach(1, []() {
-		key_state = 0;
-		key_state |= uint8_t(digitalRead(K1_PIN) == HIGH);
-		key_state |= uint8_t(digitalRead(K2_PIN) == HIGH) << 1;
-		key_state |= uint8_t(digitalRead(K3_PIN) == HIGH) << 2;
-		key_state |= uint8_t(digitalRead(K4_PIN) == HIGH) << 3;
-		if(key_state) {
+		uint8_t new_key_state = 0;
+		new_key_state |= uint8_t(digitalRead(K1_PIN) == HIGH);
+		new_key_state |= uint8_t(digitalRead(K2_PIN) == HIGH) << 1;
+		new_key_state |= uint8_t(digitalRead(K3_PIN) == HIGH) << 2;
+		new_key_state |= uint8_t(digitalRead(K4_PIN) == HIGH) << 3;
+		if(new_key_state && new_key_state != key_state) {
+			key_state = new_key_state;
 			reset_gotosleep_timer();
 			for(int i=0; i<4; i++) {
 				int b = 1 << i;
