@@ -337,9 +337,10 @@ void get_data_now()
 		}
 	} else {
 		Serial.print("Direct connection to sensor failed: ");
-		Serial.println(httpResponceCode);
+		Serial.print(httpResponceCode);
+		Serial.println("(" + http.errorToString(httpResponceCode) + ")");
 	}
-	http.end();
+//	http.end();
 }
 
 void print_text_bounds(String text, int16_t x, int16_t y)
@@ -375,10 +376,10 @@ void setup()
 	pinMode(GOTOSLEEP_REQUEST_PIN, OUTPUT);
 	digitalWrite(GOTOSLEEP_REQUEST_PIN, LOW);
 
-	SD_available = SD.begin(SD_SS);
-	if(!SD_available) {
-		Serial.println("Card Mount Failed");
-	}
+//	SD_available = SD.begin(SD_SS);
+//	if(!SD_available) {
+//		Serial.println("Card Mount Failed");
+//	}
 
 	tft.initR(INITR_BLACKTAB); // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
