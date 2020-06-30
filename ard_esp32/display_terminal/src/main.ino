@@ -10,8 +10,7 @@
 
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
-#include <Fonts/FreeMonoBoldOblique12pt7b.h>
-#include <Fonts/FreeMonoBoldOblique24pt7b.h>
+#include <Fonts/FreeMonoBoldOblique9pt7b.h>
 #include <Fonts/FreeMonoBoldOblique30pt7b.h>
 #include <SPI.h>
 
@@ -49,7 +48,6 @@ volatile uint8_t key_state = 0;
 
 bool SD_available = false;
 
-
 // display resolution 160x128 (160/3 = 41)
 enum D_VIEW {DV_TEMP, DV_HUM, DV_CO2, DV_INFO, DV_COUNT};
 D_VIEW d_view = DV_TEMP;
@@ -68,6 +66,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 AsyncUDP udp;
 HTTPClient http;
+String sensor_data;
 
 volatile time_t read_ts = 0, display_ts = 0, refresh_screen_ts = 0;
 float t, h, co2;
@@ -97,7 +96,7 @@ bool is_wifi_connected()
 	return WiFi.status() == WL_CONNECTED;
 }
 
-ap_t find_better_ap(int thresh=20)
+ap_t find_better_ap(int thresh=20, bool verbose=false)
 {
 	ap_t rs;
 	int max_power = 0;
@@ -113,13 +112,15 @@ ap_t find_better_ap(int thresh=20)
 		Serial.print(n);
 		Serial.println(" networks found");
 		for (int i = 0; i < n; ++i) {
-			// Print SSID and RSSI for each network found
-			Serial.print(i + 1);
-			Serial.print(": ");
-			Serial.print(WiFi.SSID(i));
-			Serial.print(" (");
-			Serial.print(WiFi.RSSI(i));
-			Serial.println(")");
+			if(verbose) {
+				// Print SSID and RSSI for each network found
+				Serial.print(i + 1);
+				Serial.print(": ");
+				Serial.print(WiFi.SSID(i));
+				Serial.print(" (");
+				Serial.print(WiFi.RSSI(i));
+				Serial.println(")");
+			}
 			for(int j=0; j<ap_count; j++) {
 				if(WiFi.SSID(i) == aplist[j].ssid && WiFi.SSID(i) != current_ssid) {
 					if(max_power == 0 || WiFi.RSSI(i) - thresh > max_power) {
@@ -131,6 +132,14 @@ ap_t find_better_ap(int thresh=20)
 		}
 	}
 	return rs;
+}
+
+void serial_print_prefix()
+{
+	time_t tm = time(NULL);
+	Serial.print("[");
+	Serial.print(localtime(&tm));
+	Serial.print("] ");
 }
 
 void connectWifi()
@@ -168,34 +177,40 @@ void connectWifi()
 	}
 }
 
-void process_json(String data, DynamicJsonDocument &doc)
+void serial_print_data()
 {
-	DeserializationError error = deserializeJson(doc, data);
-	// Test if parsing succeeded.
-	if (error) {
-		Serial.print("deserializeMsgPack() failed: ");
-		Serial.println(error.c_str());
-	} else {
-		if(doc["sensor_id"] == String("MQ135")) {
-			t = doc["temperature"];
-			h = doc["humidity"];
-			co2 = doc["co2"];
-			read_ts = time(NULL);
-			time_t tm = read_ts;
-			Serial.print(localtime(&tm));
-			Serial.print(": Sensor:");
-			Serial.print((const char *)doc["sensor_id"]);
-			Serial.print(" t:");
-			Serial.print(t);
-			Serial.print(" h:");
-			Serial.print(h);
-			Serial.print(" co2:");
-			Serial.println(co2);
+	Serial.print(" t:");
+	Serial.print(t);
+	Serial.print(" h:");
+	Serial.print(h);
+	Serial.print(" co2:");
+	Serial.print(co2);
+}
+
+void process_json()
+{
+	DynamicJsonDocument doc(400);
+	if(sensor_data.length()) {
+		DeserializationError error = deserializeJson(doc, sensor_data);
+		// Test if parsing succeeded.
+		if (error) {
+			Serial.print("deserializeMsgPack() failed: ");
+			Serial.println(error.c_str());
+		} else {
+			if(doc["sensor_id"] == String("MQ135")) {
+				t = doc["temperature"];
+				h = doc["humidity"];
+				co2 = doc["co2"];
+				read_ts = time(NULL);
+				serial_print_prefix();
+				Serial.print(": Sensor:");
+				Serial.println((const char *)doc["sensor_id"]);
+			}
 		}
+		sensor_data = "";
 	}
 }
 
-DynamicJsonDocument doc(400);
 void connectUDP()
 {
 	Serial.print("about to listen at ");
@@ -204,8 +219,7 @@ void connectUDP()
 		Serial.print("UDP Listening on IP: ");
 		Serial.println(WiFi.localIP());
 		udp.onPacket([](AsyncUDPPacket packet) {
-			Serial.print("received at ");
-			Serial.println(millis()/1000);
+			serial_print_prefix();
 			Serial.print("UDP Packet Type: ");
 			Serial.print(packet.isBroadcast()?"Broadcast":packet.isMulticast()?"Multicast":"Unicast");
 			Serial.print(", From: ");
@@ -225,7 +239,7 @@ void connectUDP()
 			Serial.println();
 			//reply to the client
 			packet.printf("Got %u bytes of data", packet.length());
-			process_json(data, doc);
+			sensor_data = data.c_str();
 		});
 	}
 }
@@ -307,19 +321,19 @@ void print_SD_info()
 
 }
 
-DynamicJsonDocument js(1000);
 void get_data_now()
 {
 	reset_gotosleep_timer();
 	http.begin("http://mq135.local/data.json");
-//	http.addHeader("Content-Type","text/json");
+	http.addHeader("Content-Type","text/json");
 	int httpResponceCode = http.GET();
 	if (httpResponceCode == 200) {
+		Serial.print("get_data_now:");
 		Serial.println(httpResponceCode);
 		String response = http.getString();
-		Serial.println(response);
+//		Serial.println(response);
 		if(response.length() > 0) {
-	//		process_json(response, js);
+			sensor_data = response;
 		}
 	} else {
 		Serial.print("Direct connection to sensor failed: ");
@@ -369,11 +383,11 @@ void setup()
 	tft.initR(INITR_BLACKTAB); // Init ST7735S chip, black tab
 	tft.fillScreen(ST77XX_BLACK);
 	tft.setRotation(3);
-	tft.setFont(&FreeMonoBoldOblique12pt7b);
+	tft.setFont(&FreeMonoBoldOblique9pt7b);
 	tft.setTextSize(1);
 	tft.setTextColor(ST77XX_WHITE);
 	tft.setCursor(0, 30);
-	tft.print("Waiting...");
+	center_align_print("Waiting...");
 //	Serial.print(F("TFT initialized at "));
 //	Serial.println(millis()/1000);
 
@@ -396,8 +410,8 @@ void setup()
 			}
 			update_display();
 		}
-				Serial.print("keys: ");
-				Serial.println(key_state, BIN);
+//				Serial.print("keys: ");
+//				Serial.println(key_state, BIN);
 //				Serial.print("key 1: ");
 //				Serial.println(digitalRead(K1_PIN));
 	});
@@ -409,17 +423,17 @@ void center_align_print(String text)
 	int16_t xp, yp;
 	uint16_t w, h;
 	tft.getTextBounds(text, 0, 0, &xp, &yp, &w, &h);
-	Serial.print("init pos:");
-	Serial.print(xp);
-	Serial.print(",");
-	Serial.println(yp);
+//	Serial.print("init pos:");
+//	Serial.print(xp);
+//	Serial.print(",");
+//	Serial.println(yp);
 	xp = (DISPLAY_WIDTH - w) / 2;
 	yp = (DISPLAY_HEIGHT - h)/2 + h;
-	Serial.print("pos:");
-	Serial.print(xp);
-	Serial.print(",");
-	Serial.println(yp);
-	print_text_bounds(text, xp, yp);
+//	Serial.print("pos:");
+//	Serial.print(xp);
+//	Serial.print(",");
+//	Serial.println(yp);
+//	print_text_bounds(text, xp, yp);
 	tft.setCursor(xp, yp);
 	tft.print(text);
 }
@@ -427,6 +441,7 @@ void center_align_print(String text)
 void update_display()
 {
 	StreamString text;
+	serial_print_data();
 	switch(d_view) {
 		case DV_TEMP:
 			{
@@ -458,29 +473,29 @@ void update_display()
 			break;
 		default:
 			{
-				tft.setFont(&FreeMonoBoldOblique12pt7b);
-				int y = 30;
+				tft.setFont(&FreeMonoBoldOblique9pt7b);
 				int y_step = 30;
+				int y = 20;
 				tft.fillScreen(ST77XX_BLACK);
 				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_CYAN);
+				time_t tm = time(NULL);
+				tft.print(localtime(&tm));
+				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_RED);
-				tft.printf("t: %d", (int)t);
-				y += y_step;
-				tft.setCursor(0, y);
+				tft.printf("%d", (int)t);
 				tft.setTextColor(ST77XX_BLUE);
-				tft.printf("h: %d", (int)h);
-				y += y_step;
-				tft.setCursor(0, y);
+				tft.printf(" %d", (int)h);
 				tft.setTextColor(ST77XX_GREEN);
-				tft.print("co2:");
-				tft.print(co2);
+				tft.printf(" %.1f", co2);
 				y += y_step;
 				tft.setCursor(0, y);
-				tft.setTextColor(ST77XX_WHITE);
-				tft.print("keys: ");
-				tft.println(key_state, HEX);
-				tft.print(", sd: ");
-				tft.println(SD_available);
+				tft.setTextColor(ST77XX_YELLOW);
+				tft.print(WiFi.SSID());
+				y += y_step;
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_MAGENTA);
+				tft.printf("sd: %s%s", SD_available ? "" : " not"," available");
 			}
 			break;
 	}
@@ -493,13 +508,14 @@ void loop()
 	{
 		httpsrv::update();
 		if(udp.connected()) {
-			time_t t = time(NULL);
-			if(refresh_screen_ts + REFRESH_SCREEN_TIMEOUT < t) {
-				refresh_screen_ts = t;
-				tft.setTextSize(1);
-				tft.setFont(&FreeMonoBoldOblique12pt7b);
+			time_t tm = time(NULL);
+			if(refresh_screen_ts + REFRESH_SCREEN_TIMEOUT < tm) {
+				refresh_screen_ts = tm;
 				if(read_ts != display_ts) {
 					display_ts = read_ts;
+					Serial.println("Process");
+					process_json();
+					Serial.println("Process end");
 					update_display();
 				}
 			}
