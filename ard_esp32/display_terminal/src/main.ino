@@ -12,6 +12,7 @@
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <Fonts/FreeMonoBoldOblique9pt7b.h>
 #include <Fonts/FreeMonoBoldOblique30pt7b.h>
+#include <Fonts/Org_01.h>
 #include <SPI.h>
 
 #include "httpsrv.hpp"
@@ -72,6 +73,8 @@ volatile time_t read_ts = 0, display_ts = 0, refresh_screen_ts = 0;
 float t, h, co2;
 #define REFRESH_SCREEN_TIMEOUT 1
 
+#define TS_FORMAT "%Y-%m-%d %H:%M:%S"
+
 volatile bool do_check_for_better_wifi = false;
 
 typedef struct _ap {
@@ -104,6 +107,8 @@ ap_t find_better_ap(int thresh=20, bool verbose=false)
 	if(is_wifi_connected()) {
 		max_power = WiFi.RSSI();
 		current_ssid = WiFi.SSID();
+		Serial.print("Connected to ");
+		Serial.println(current_ssid);
 	} else {
 		thresh = 0;
 	}
@@ -134,12 +139,26 @@ ap_t find_better_ap(int thresh=20, bool verbose=false)
 	return rs;
 }
 
-void serial_print_prefix()
+void print_uptime_prefix(Print &printer=Serial)
 {
-	time_t tm = time(NULL);
-	Serial.print("[");
-	Serial.print(localtime(&tm));
-	Serial.print("] ");
+	printer.print("[");
+	printer.print(millis());
+	printer.print("]");
+}
+
+void print_ts(Print &printer=Serial)
+{
+	struct tm timeinfo;
+	if(getLocalTime(&timeinfo)) {
+		printer.print(&timeinfo, TS_FORMAT);
+	}
+}
+
+void print_ts_prefix(Print &printer=Serial)
+{
+	printer.print("[");
+	print_ts(printer);
+	printer.print("]");
 }
 
 void connectWifi()
@@ -179,11 +198,11 @@ void connectWifi()
 
 void serial_print_data()
 {
-	Serial.print(" t:");
+	Serial.print("t:");
 	Serial.print(t);
-	Serial.print(" h:");
+	Serial.print(", h:");
 	Serial.print(h);
-	Serial.print(" co2:");
+	Serial.print(", co2:");
 	Serial.print(co2);
 }
 
@@ -191,6 +210,7 @@ void process_json()
 {
 	DynamicJsonDocument doc(400);
 	if(sensor_data.length()) {
+		Serial.println("Process json");
 		DeserializationError error = deserializeJson(doc, sensor_data);
 		// Test if parsing succeeded.
 		if (error) {
@@ -202,7 +222,7 @@ void process_json()
 				h = doc["humidity"];
 				co2 = doc["co2"];
 				read_ts = time(NULL);
-				serial_print_prefix();
+				print_ts_prefix();
 				Serial.print(": Sensor:");
 				Serial.println((const char *)doc["sensor_id"]);
 			}
@@ -213,13 +233,13 @@ void process_json()
 
 void connectUDP()
 {
-	Serial.print("about to listen at ");
-	Serial.println(millis()/1000);
+	Serial.print("UDP listen");
 	if(udp.listenMulticast(IPAddress(239, 0, 0, 57), 8989)) {
 		Serial.print("UDP Listening on IP: ");
 		Serial.println(WiFi.localIP());
 		udp.onPacket([](AsyncUDPPacket packet) {
-			serial_print_prefix();
+			String data = packet.readString();
+/*
 			Serial.print("UDP Packet Type: ");
 			Serial.print(packet.isBroadcast()?"Broadcast":packet.isMulticast()?"Multicast":"Unicast");
 			Serial.print(", From: ");
@@ -232,11 +252,11 @@ void connectUDP()
 			Serial.print(packet.localPort());
 			Serial.print(", Length: ");
 			Serial.print(packet.length());
-			String data = packet.readString();
 			Serial.print(", Data: ");
 			Serial.print(data);
 //			Serial.write(packet.data(), packet.length());
 			Serial.println();
+*/
 			//reply to the client
 			packet.printf("Got %u bytes of data", packet.length());
 			sensor_data = data.c_str();
@@ -249,7 +269,8 @@ void reset_gotosleep_timer()
 //	Serial.println("Reset gotosleep timer");
 	digitalWrite(GOTOSLEEP_REQUEST_PIN, LOW);
 	gotosleep_ticker.once(GOTOSLEEP_TIMEOUT, []() {
-		Serial.println("Go to sleep");
+		print_uptime_prefix();
+		Serial.println(" go to sleep");
 		gotosleep_ticker.once(1, []() {
 			digitalWrite(GOTOSLEEP_REQUEST_PIN, HIGH);
 		});
@@ -335,6 +356,7 @@ void get_data_now()
 		if(response.length() > 0) {
 			sensor_data = response;
 		}
+		update_display();
 	} else {
 		Serial.print("Direct connection to sensor failed: ");
 		Serial.print(httpResponceCode);
@@ -362,8 +384,8 @@ void setup()
 {
 	Serial.begin(115200);
 	Serial.println();
-	Serial.print("setup starts at ");
-	Serial.println(millis()/1000);
+	print_uptime_prefix();
+	Serial.println("setup");
 
 	blinker.begin(LED_PIN);
 	digitalWrite(LED_PIN, HIGH);
@@ -389,11 +411,9 @@ void setup()
 	tft.setTextColor(ST77XX_WHITE);
 	tft.setCursor(0, 30);
 	center_align_print("Waiting...");
-//	Serial.print(F("TFT initialized at "));
-//	Serial.println(millis()/1000);
 
 	WiFi.mode(WIFI_STA);
-	check_wifi_ticker.attach(30, [](){ do_check_for_better_wifi=true; });
+	check_wifi_ticker.attach(120, [](){ do_check_for_better_wifi=true; });
 	keyboard_ticker.attach(1, []() {
 		uint8_t new_key_state = 0;
 		new_key_state |= uint8_t(digitalRead(K1_PIN) == HIGH);
@@ -416,6 +436,14 @@ void setup()
 //				Serial.print("key 1: ");
 //				Serial.println(digitalRead(K1_PIN));
 	});
+	if(MDNS.begin(HOSTNAME)) {
+		Serial.println("MDNS responder " HOSTNAME " started");
+		// Add service to MDNS-SD
+		MDNS.addService("http", "tcp", 80);
+//		httpsrv::init();
+	} else {
+		Serial.println("Error setting up MDNS responder!");
+	}
 	reset_gotosleep_timer();
 }
 
@@ -442,7 +470,11 @@ void center_align_print(String text)
 void update_display()
 {
 	StreamString text;
+	print_uptime_prefix();
+	Serial.println("update display");
+	process_json();
 	serial_print_data();
+	Serial.println();
 	switch(d_view) {
 		case DV_TEMP:
 			{
@@ -474,14 +506,14 @@ void update_display()
 			break;
 		default:
 			{
-				tft.setFont(&FreeMonoBoldOblique9pt7b);
 				int y_step = 30;
 				int y = 20;
 				tft.fillScreen(ST77XX_BLACK);
+				tft.setFont(&Org_01);
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_CYAN);
-				time_t tm = time(NULL);
-				tft.print(localtime(&tm));
+				print_ts(tft);
+				tft.setFont(&FreeMonoBoldOblique9pt7b);
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_RED);
 				tft.printf("%d", (int)t);
@@ -492,6 +524,7 @@ void update_display()
 				y += y_step;
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_YELLOW);
+				tft.setFont(&Org_01);
 				tft.print(WiFi.SSID());
 				y += y_step;
 				tft.setCursor(0, y);
@@ -514,9 +547,6 @@ void loop()
 				refresh_screen_ts = tm;
 				if(read_ts != display_ts) {
 					display_ts = read_ts;
-					Serial.println("Process");
-					process_json();
-					Serial.println("Process end");
 					update_display();
 				}
 			}
@@ -525,13 +555,14 @@ void loop()
 		}
 		if(do_check_for_better_wifi) {
 			do_check_for_better_wifi = false;
-			ap_t better_ap = find_better_ap(-20);
-			if(better_ap.ssid.length() > 0) {
-				Serial.print("Better found:");
-				Serial.print(better_ap.ssid);
-				Serial.println(", disconnecting..");
-				WiFi.disconnect(false, false);
-			}
+//			WiFi.disconnect(false, false);
+//			ap_t better_ap = find_better_ap(-20);
+//			if(better_ap.ssid.length() > 0) {
+//				Serial.print("Better found:");
+//				Serial.print(better_ap.ssid);
+//				Serial.println(", disconnecting..");
+//				WiFi.disconnect(false, false);
+//			}
 		}
 	} else {
 		blinker.stop();
@@ -542,14 +573,9 @@ void loop()
 			digitalWrite(LED_PIN, LOW);
 			Serial.println("Config time");
 			configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-			if(MDNS.begin(HOSTNAME)) {
-				Serial.println("MDNS responder " HOSTNAME " started");
-				// Add service to MDNS-SD
-				MDNS.addService("http", "tcp", 80);
-//				httpsrv::init();
+			if(h == 0) {
+				// request data the first time only
 				get_data_now();
-			} else {
-				Serial.println("Error setting up MDNS responder!");
 			}
 		}
 	}
