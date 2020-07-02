@@ -3,9 +3,9 @@
 #include <ESP8266WiFi.h>
 
 // connect to wifi returns true if successful or false if not
-boolean connectWifi(const char *ssid, const char *password)
+bool connectWifi(const char *ssid, const char *password)
 {
-	boolean state = true;
+	bool state = true;
 	int i = 0;
 	WiFi.begin(ssid, password);
 	Serial.println("");

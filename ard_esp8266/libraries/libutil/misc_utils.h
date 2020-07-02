@@ -3,8 +3,14 @@
 
 #include <Arduino.h>
 
-void print_ts(Print &printer=Serial);
+#define TS_FORMAT "%Y-%m-%d %H:%M:%S"
 
-void print_ts_prefix(Print &printer=Serial);
+bool getLocalTime(struct tm * info, uint32_t ms=5000);
+
+void print_ts(Print &printer=Serial, const char *format=NULL);
+
+void print_ts_prefix(Print &printer=Serial, const char *format=NULL);
+
+void goto_deepsleep(int secs);
 
 #endif // __MISC_UTILS_H
