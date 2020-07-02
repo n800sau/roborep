@@ -93,20 +93,20 @@ process_keys:
 	endif
 	return
 read_keys:
-	kstate = 0
+	b0 = 0
 	if pinC.1 = 0 then
-		let kstate = kstate | 1
+		let b0 = b0 | 1
 	endif
 	if pinC.2 = 0 then
-		let kstate = kstate | 2
+		let b0 = b0 | 2
 	endif
 	if pinC.3 = 0 then
-		let kstate = kstate | 4
+		let b0 = b0 | 4
 	endif
 	if pinC.4 = 0 then
-		let kstate = kstate | 8
+		let b0 = b0 | 8
 	endif
-	if kstate = 0 then
+	if b0 = 0 then
 		select irstate
 			case 1
 				kstate = 2
@@ -118,6 +118,7 @@ read_keys:
 				kstate = 4
 		endselect
 	else
+		kstate = b0
 		gosub led_on
 		irstate = 0
 	endif
