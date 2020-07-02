@@ -18,8 +18,8 @@
 #include "httpsrv.hpp"
 
 #include "config.h"
-const char * ssid = WIFI_SSID;
-const char * password = WIFI_PASSWORD;
+const char *ssid = WIFI_SSID;
+const char *password = WIFI_PASSWORD;
 
 #define K1_PIN 26 // "1"
 #define K2_PIN 27 // "2"
@@ -204,6 +204,8 @@ void serial_print_data()
 	Serial.print(h);
 	Serial.print(", co2:");
 	Serial.print(co2);
+	Serial.printf(",Free mem: %d", ESP.getFreeHeap());
+	Serial.printf(",Free sketch space: %d", ESP.getFreeSketchSpace());
 }
 
 void process_json()
@@ -483,7 +485,7 @@ void update_display()
 				tft.setTextColor(ST77XX_RED);
 				text.printf("%d", (int)t);
 				center_align_print(text);
-				tft.drawRect(0, 0, DISPLAY_WIDTH-1, DISPLAY_HEIGHT-1, ST77XX_BLUE);
+//				tft.drawRect(0, 0, DISPLAY_WIDTH-1, DISPLAY_HEIGHT-1, ST77XX_BLUE);
 			}
 			break;
 		case DV_HUM:
@@ -530,6 +532,10 @@ void update_display()
 				tft.setCursor(0, y);
 				tft.setTextColor(ST77XX_MAGENTA);
 				tft.printf("sd: %s%s", SD_available ? "" : " not"," available");
+				y += y_step;
+				tft.setCursor(0, y);
+				tft.setTextColor(ST77XX_GREEN);
+				tft.printf("Free mem: %d", ESP.getFreeHeap());
 			}
 			break;
 	}
