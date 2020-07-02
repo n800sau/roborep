@@ -1,4 +1,5 @@
 
+	setfreq k31
 	high B.1
 main:
 	disablebod
