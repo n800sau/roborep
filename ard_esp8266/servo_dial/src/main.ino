@@ -4,10 +4,13 @@
 #include <ArduinoJson.h>
 #include <wifi_utils.h>
 #include <misc_utils.h>
+#include <ESP_EEPROM.h>
 
 #include "config.h"
 const char *ssid = WIFI_SSID_1;
 const char *password = WIFI_PASSWORD_1;
+
+#define LED_PIN 12
 
 #define T_SRV_PIN 2
 #define H_SRV_PIN 4
@@ -36,15 +39,16 @@ float t=0, h=0, a=0;
 // time to sleep
 #define SLEEP_SECS 300
 
-void setup()
-{
-	Serial.begin(115200);
-	WiFi.mode(WIFI_STA);
-	if(!connectWifi(ssid, password)) {
-		// can not connect. just sleep
-		goto_deepsleep(SLEEP_SECS);
-	}
-}
+#define TIMEZONE "Australia/Sydney"
+
+#define FAIL_COUNT_MAX 10
+
+#define PERMDATA_CODE 0xF3E0
+
+struct _PERMDATA {
+	uint16_t code;
+	int fail_count;
+} permdata = {.code=PERMDATA_CODE, .fail_count=0};
 
 bool process_json(String sensor_data)
 {
@@ -107,6 +111,37 @@ void apply2servo()
 	}
 }
 
+void check_failure()
+{
+	if(permdata.fail_count > FAIL_COUNT_MAX) {
+		t = h = a = 0;
+		apply2servo();
+	}
+}
+
+void setup()
+{
+	Serial.begin(115200);
+	pinMode(LED_PIN, OUTPUT);
+	digitalWrite(LED_PIN, HIGH);
+	EEPROM.begin(sizeof(permdata));
+	_PERMDATA d;
+	EEPROM.get(0, d);
+	if(d.code == PERMDATA_CODE) {
+		permdata = d;
+	}
+	WiFi.mode(WIFI_STA);
+	if(!connectWifi(ssid, password)) {
+		permdata.fail_count++;
+		EEPROM.put(0, permdata);
+		check_failure();
+		// can not connect. just goto sleep
+		goto_deepsleep(SLEEP_SECS);
+	}
+	configTime(TIMEZONE, "pool.ntp.org", "time.nist.gov", "time.windows.com");
+	digitalWrite(LED_PIN, LOW);
+}
+
 void loop()
 {
 	HTTPClient http;
@@ -125,16 +160,24 @@ void loop()
 				String payload = http.getString();
 				Serial.println(payload);
 				if(process_json(payload)) {
+					permdata.fail_count = 0;
+					if(!EEPROM.commit()) {
+						Serial.println("Commit to EEPROM failed");
+					}
 					apply2servo();
 				}
 			}
 		} else {
 			Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+			permdata.fail_count++;
 		}
 		http.end();
 	} else {
 		Serial.printf("[HTTP} Unable to connect\n");
+		permdata.fail_count++;
 	}
+	EEPROM.put(0, permdata);
+	check_failure();
 	goto_deepsleep(SLEEP_SECS);
 }
 
