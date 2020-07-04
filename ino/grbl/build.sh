@@ -1,3 +1,3 @@
 #platformio run -v
-platformio run -v &>build.log
+platformio run -e LGT8F328P -v &>build.log
 echo $?
