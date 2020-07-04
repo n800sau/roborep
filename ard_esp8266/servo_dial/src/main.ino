@@ -7,8 +7,8 @@
 #include <ESP_EEPROM.h>
 
 #include "config.h"
-const char *ssid = WIFI_SSID_1;
-const char *password = WIFI_PASSWORD_1;
+const char *ssid = WIFI_SSID;
+const char *password = WIFI_PASSWORD;
 
 #define LED_PIN 12
 
@@ -37,7 +37,7 @@ float t=0, h=0, a=0;
 #define SRV_MAX 180
 
 // time to sleep
-#define SLEEP_SECS 300
+#define SLEEP_SECS 10
 
 #define TIMEZONE "Australia/Sydney"
 
@@ -49,6 +49,16 @@ struct _PERMDATA {
 	uint16_t code;
 	int fail_count;
 } permdata = {.code=PERMDATA_CODE, .fail_count=0};
+
+void goto_sleep()
+{
+	EEPROM.put(0, permdata);
+	if(!EEPROM.commit()) {
+		Serial.println("Commit to EEPROM failed");
+	}
+	Serial.println("Goto sleep");
+	goto_deepsleep(SLEEP_SECS);
+}
 
 bool process_json(String sensor_data)
 {
@@ -133,10 +143,9 @@ void setup()
 	WiFi.mode(WIFI_STA);
 	if(!connectWifi(ssid, password)) {
 		permdata.fail_count++;
-		EEPROM.put(0, permdata);
 		check_failure();
 		// can not connect. just goto sleep
-		goto_deepsleep(SLEEP_SECS);
+		goto_sleep();
 	}
 	configTime(TIMEZONE, "pool.ntp.org", "time.nist.gov", "time.windows.com");
 	digitalWrite(LED_PIN, LOW);
@@ -161,9 +170,6 @@ void loop()
 				Serial.println(payload);
 				if(process_json(payload)) {
 					permdata.fail_count = 0;
-					if(!EEPROM.commit()) {
-						Serial.println("Commit to EEPROM failed");
-					}
 					apply2servo();
 				}
 			}
@@ -176,8 +182,7 @@ void loop()
 		Serial.printf("[HTTP} Unable to connect\n");
 		permdata.fail_count++;
 	}
-	EEPROM.put(0, permdata);
 	check_failure();
-	goto_deepsleep(SLEEP_SECS);
+	goto_sleep();
 }
 
