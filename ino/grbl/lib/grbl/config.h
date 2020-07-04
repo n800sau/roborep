@@ -517,7 +517,7 @@
 // NOTE: If disabled and to ensure Grbl can never alter the build info line, you'll also need to enable
 // the SETTING_RESTORE_ALL macro above and remove SETTINGS_RESTORE_BUILD_INFO from the mask.
 // NOTE: See the included grblWrite_BuildInfo.ino example file to write this string seperately.
-//#define ENABLE_BUILD_INFO_WRITE_COMMAND // '$I=' Default enabled. Comment to disable.
+#define ENABLE_BUILD_INFO_WRITE_COMMAND // '$I=' Default enabled. Comment to disable.
 
 // AVR processors require all interrupts to be disabled during an EEPROM write. This includes both
 // the stepper ISRs and serial comm ISRs. In the event of a long EEPROM write, this ISR pause can
