@@ -21,6 +21,8 @@
 const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 
+#define TIMEZONE "Australia/Sydney"
+
 #define K1_PIN 26 // "1"
 #define K2_PIN 27 // "2"
 #define K3_PIN 25 // "3"
@@ -578,7 +580,7 @@ void loop()
 			WiFi.setHostname(HOSTNAME);
 			digitalWrite(LED_PIN, LOW);
 			Serial.println("Config time");
-			configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+			configTzTime(TIMEZONE, "pool.ntp.org", "time.nist.gov");
 			if(h == 0) {
 				// request data the first time only
 				get_data_now();
