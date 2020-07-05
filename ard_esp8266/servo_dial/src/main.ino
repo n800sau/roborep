@@ -12,9 +12,9 @@ const char *password = WIFI_PASSWORD;
 
 #define LED_PIN 12
 
-#define T_SRV_PIN 2
-#define H_SRV_PIN 4
-#define A_SRV_PIN 5
+#define T_SRV_PIN D2
+#define H_SRV_PIN D3
+#define A_SRV_PIN D4
 
 Servo t_servo;
 Servo h_servo;
@@ -95,29 +95,32 @@ void apply2servo()
 		old_t = t;
 		pos = map(t, T_MIN, T_MAX, SRV_MIN, SRV_MAX);
 		t_servo.attach(T_SRV_PIN);
+		Serial.printf("t pos: %d\n", pos);
 		t_servo.write(pos);
 		t_servo.detach();
 		changed = true;
 	}
 	if(old_h != h) {
 		old_h = h;
-		pos = map(t, H_MIN, H_MAX, SRV_MIN, SRV_MAX);
+		pos = map(h, H_MIN, H_MAX, SRV_MIN, SRV_MAX);
 		h_servo.attach(H_SRV_PIN);
+		Serial.printf("h pos: %d\n", pos);
 		h_servo.write(pos);
 		h_servo.detach();
 		changed = true;
 	}
 	if(old_a != a) {
 		old_a = a;
-		pos = map(t, A_MIN, A_MAX, SRV_MIN, SRV_MAX);
+		pos = map(a, A_MIN, A_MAX, SRV_MIN, SRV_MAX);
 		a_servo.attach(A_SRV_PIN);
+		Serial.printf("a pos: %d\n", pos);
 		a_servo.write(pos);
 		a_servo.detach();
 		changed = true;
 	}
 	if(changed) {
 		// wait for some time, let servo finish
-		delay(15);
+		delay(500);
 	}
 }
 
