@@ -90,15 +90,14 @@ bool process_json(String sensor_data)
 void apply2servo()
 {
 	int pos;
-	bool changed = false;
 	if(old_t != t) {
 		old_t = t;
 		pos = map(t, T_MIN, T_MAX, SRV_MIN, SRV_MAX);
 		t_servo.attach(T_SRV_PIN);
 		Serial.printf("t pos: %d\n", pos);
 		t_servo.write(pos);
+		delay(500);
 		t_servo.detach();
-		changed = true;
 	}
 	if(old_h != h) {
 		old_h = h;
@@ -106,8 +105,8 @@ void apply2servo()
 		h_servo.attach(H_SRV_PIN);
 		Serial.printf("h pos: %d\n", pos);
 		h_servo.write(pos);
+		delay(500);
 		h_servo.detach();
-		changed = true;
 	}
 	if(old_a != a) {
 		old_a = a;
@@ -115,12 +114,8 @@ void apply2servo()
 		a_servo.attach(A_SRV_PIN);
 		Serial.printf("a pos: %d\n", pos);
 		a_servo.write(pos);
-		a_servo.detach();
-		changed = true;
-	}
-	if(changed) {
-		// wait for some time, let servo finish
 		delay(500);
+		a_servo.detach();
 	}
 }
 

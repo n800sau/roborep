@@ -5,6 +5,8 @@ mini d1 deepsleep current:
 servo
 no signal 5v - 6ma
 
+servo signal can be connected via diod 
+
 servo behaviour on attach/detach
 
 1501MG - initial does not keep, then keeps position
@@ -14,3 +16,4 @@ mg90s - does not
 dgservo s05nf - does not
 sm-s3317sr - spinning servo
 1705mg - does not
+
