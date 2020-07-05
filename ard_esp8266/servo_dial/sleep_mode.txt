@@ -1,0 +1,16 @@
+mini d1 deepsleep current:
+3.3 v provided - 0.3 ma
+5 v - 0.3 ma
+
+servo
+no signal 5v - 6ma
+
+servo behaviour on attach/detach
+
+1501MG - initial does not keep, then keeps position
+micro 9g 
+sg90 - does not keep
+mg90s - does not 
+dgservo s05nf - does not
+sm-s3317sr - spinning servo
+1705mg - does not
