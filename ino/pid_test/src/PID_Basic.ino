@@ -5,8 +5,8 @@
 
 #include <PID_v1.h>
 
-#define PIN_INPUT 0
-#define PIN_OUTPUT 3
+#define PIN_INPUT 7
+#define PIN_OUTPUT 8
 
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
