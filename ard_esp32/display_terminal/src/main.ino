@@ -487,14 +487,14 @@ void update_display()
 				tft.setTextColor(ST77XX_RED);
 				text.printf("%d", (int)t);
 				center_align_print(text);
-//				tft.drawRect(0, 0, DISPLAY_WIDTH-1, DISPLAY_HEIGHT-1, ST77XX_BLUE);
+//				tft.drawRect(0, 0, DISPLAY_WIDTH-1, DISPLAY_HEIGHT-1, ST77XX_ORANGE);
 			}
 			break;
 		case DV_HUM:
 			{
 				tft.setFont(&FreeMonoBoldOblique30pt7b);
 				tft.fillScreen(ST77XX_BLACK);
-				tft.setTextColor(ST77XX_BLUE);
+				tft.setTextColor(ST77XX_ORANGE);
 				text.printf("%d", (int)h);
 				center_align_print(text);
 			}
@@ -517,7 +517,7 @@ void update_display()
 				tft.setCursor(20, y);
 				tft.setTextColor(ST77XX_RED);
 				tft.printf("%d", (int)t);
-				tft.setTextColor(ST77XX_BLUE);
+				tft.setTextColor(ST77XX_ORANGE);
 				tft.printf(" %d", (int)h);
 				tft.setTextColor(ST77XX_GREEN);
 				tft.printf(" %.1f", co2);
