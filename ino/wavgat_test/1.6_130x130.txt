@@ -1,0 +1,6 @@
+5v
+cs - 10
+rst - 8
+a0 - 9
+sda - mosi 11
+sck - 13
