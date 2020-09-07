@@ -29,7 +29,9 @@ RotaryEncoder encoderZ(zp1, zp2, zb);
 #define TFT_MOSI PB0
 #define TFT_SCLK PA7
 
+// colored 160x80 0.96"
 Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+GFXcanvas1 dbuf(160, 80);
 
 void XencoderISR()
 {
@@ -61,6 +63,21 @@ void ZencoderButtonISR()
 	encoderZ.readPushButton();
 }
 
+void update_display()
+{
+	dbuf.fillScreen(0);
+	dbuf.setCursor(0, 0);
+	dbuf.print(F("X:"));
+	dbuf.print(x_position);
+	dbuf.setCursor(0, 20);
+	dbuf.print(F("Y"));
+	dbuf.print(y_position);
+	dbuf.setCursor(0, 40);
+	dbuf.print(F("Z"));
+	dbuf.print(z_position);
+	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
+}
+
 void setup()
 {
 
@@ -71,6 +88,7 @@ void setup()
 	display.setRotation(1);
 	display.setTextSize(1);
 	display.setTextColor(ST77XX_WHITE);
+	update_display();
 
 	ms.begin();
 	while(!USBComposite);
@@ -95,24 +113,14 @@ void setup()
 void loop()
 {
 
-	int inByte;
-
-	while(Serial1.available() || Serial2.available()) {
-		if(Serial1.available()) {
-			inByte = Serial1.read();
-			Serial2.write(inByte);
-		}
-		if(Serial2.available()) {
-			inByte = Serial2.read();
-			Serial1.write(inByte);
-		}
-	}
+	bool changed = false;
 
 	if (x_position != encoderX.getPosition())
 	{
-	  x_position = encoderX.getPosition();
-	  DBGSerial.print("Xpos:");
-	  DBGSerial.println(x_position);
+		changed = true;
+		x_position = encoderX.getPosition();
+		DBGSerial.print("Xpos:");
+		DBGSerial.println(x_position);
 	}
 	
 	if (encoderX.getPushButton() == true)
@@ -122,9 +130,10 @@ void loop()
 
 	if (y_position != encoderY.getPosition())
 	{
-	  y_position = encoderY.getPosition();
-	  DBGSerial.print("Ypos:");
-	  DBGSerial.println(y_position);
+		changed = true;
+		y_position = encoderY.getPosition();
+		DBGSerial.print("Ypos:");
+		DBGSerial.println(y_position);
 	}
 	
 	if (encoderY.getPushButton() == true)
@@ -134,14 +143,19 @@ void loop()
 
 	if (z_position != encoderZ.getPosition())
 	{
-	  z_position = encoderZ.getPosition();
-	  DBGSerial.print("Zpos:");
-	  DBGSerial.println(z_position);
+		changed = true;
+		z_position = encoderZ.getPosition();
+		DBGSerial.print("Zpos:");
+		DBGSerial.println(z_position);
 	}
 	
 	if (encoderZ.getPushButton() == true)
 	{
 		DBGSerial.println(F("Z PRESSED"));
+	}
+
+	if(changed) {
+		update_display();
 	}
 
 	while(ms.ports[IN_USBSER].available())
