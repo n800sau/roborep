@@ -1,5 +1,7 @@
 #include <USBComposite.h>
 #include <RotaryEncoder.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ST7735.h>
 
 #define IN_USBSER 0
 #define OUT_USBSER 1
@@ -21,6 +23,13 @@ RotaryEncoder encoderY(yp1, yp2, yb);
 const int zp1=PB6, zp2=PB7, zb=PB5;
 RotaryEncoder encoderZ(zp1, zp2, zb);
 
+#define TFT_CS PB11
+#define TFT_DC PB10
+#define TFT_RST PB1
+#define TFT_MOSI PB0
+#define TFT_SCLK PA7
+
+Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 void XencoderISR()
 {
@@ -54,8 +63,18 @@ void ZencoderButtonISR()
 
 void setup()
 {
+
+	DBGSerial.begin(115200);
+	display.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
+	display.setTextWrap(false); // Allow text to run off right edge
+	display.fillScreen(ST7735_BLACK);
+	display.setRotation(1);
+	display.setTextSize(1);
+	display.setTextColor(ST77XX_WHITE);
+
 	ms.begin();
 	while(!USBComposite);
+
 
 	encoderX.begin();
 	encoderY.begin();
@@ -70,7 +89,6 @@ void setup()
 	attachInterrupt(digitalPinToInterrupt(zp1), ZencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(zb), ZencoderButtonISR, FALLING);
 
-	DBGSerial.begin(115200);
 	CNCSerial.begin(115200);
 }
 
