@@ -11,7 +11,9 @@ USBMultiSerial<2> ms;
 #define CNCSerial Serial1
 #define DBGSerial Serial
 
-int16_t x_position = 0, y_position = 0, z_position=0;
+int16_t x_pos = 0, y_pos = 0, z_pos = 0;
+float x_fpos = 0, y_fpos = 0, z_fpos = 0;
+float x_frate = 1, y_frate = 1, z_frate = 1;
 
 // p1, p2, button
 const int xp1=PB13, xp2=PB14, xb=PB12;
@@ -68,13 +70,13 @@ void update_display()
 	dbuf.fillScreen(0);
 	dbuf.setCursor(0, 0);
 	dbuf.print(F("X:"));
-	dbuf.print(x_position);
+	dbuf.print(x_fpos);
 	dbuf.setCursor(0, 20);
 	dbuf.print(F("Y"));
-	dbuf.print(y_position);
+	dbuf.print(y_fpos);
 	dbuf.setCursor(0, 40);
 	dbuf.print(F("Z"));
-	dbuf.print(z_position);
+	dbuf.print(z_fpos);
 	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
 }
 
@@ -110,48 +112,50 @@ void setup()
 	CNCSerial.begin(115200);
 }
 
+bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, bool &btn, float &fpos, float &frate)
+{
+	btn = enc.getPushButton();
+	int16_t pos = enc.getPosition();
+	float pdiff = pos - oldpos;
+	if(btn) {
+		frate = pow(frate, 1 + pdiff/100.);
+	} else {
+		fpos += pdiff * frate;
+	}
+	return bool(pdiff);
+}
+
 void loop()
 {
 
 	bool changed = false;
+	bool btn;
 
-	if (x_position != encoderX.getPosition())
+	if(encoder_update(encoderX, x_pos, btn, x_fpos, x_frate))
 	{
 		changed = true;
-		x_position = encoderX.getPosition();
 		DBGSerial.print("Xpos:");
-		DBGSerial.println(x_position);
-	}
-	
-	if (encoderX.getPushButton() == true)
-	{
-		DBGSerial.println(F("X PRESSED"));
+		DBGSerial.println(x_fpos);
+		DBGSerial.print("Xrate:");
+		DBGSerial.println(x_frate);
 	}
 
-	if (y_position != encoderY.getPosition())
+	if(encoder_update(encoderY, y_pos, btn, y_fpos, y_frate))
 	{
 		changed = true;
-		y_position = encoderY.getPosition();
 		DBGSerial.print("Ypos:");
-		DBGSerial.println(y_position);
-	}
-	
-	if (encoderY.getPushButton() == true)
-	{
-		DBGSerial.println(F("Y PRESSED"));
+		DBGSerial.println(y_fpos);
+		DBGSerial.print("Yrate:");
+		DBGSerial.println(y_frate);
 	}
 
-	if (z_position != encoderZ.getPosition())
+	if(encoder_update(encoderZ, z_pos, btn, z_fpos, z_frate))
 	{
 		changed = true;
-		z_position = encoderZ.getPosition();
 		DBGSerial.print("Zpos:");
-		DBGSerial.println(z_position);
-	}
-	
-	if (encoderZ.getPushButton() == true)
-	{
-		DBGSerial.println(F("Z PRESSED"));
+		DBGSerial.println(z_fpos);
+		DBGSerial.print("Zrate:");
+		DBGSerial.println(z_frate);
 	}
 
 	if(changed) {
