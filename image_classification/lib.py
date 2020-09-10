@@ -32,6 +32,11 @@ def dir_images_generator(root_dir):
 	for root, dirs, files in os.walk(root_dir, followlinks=True):
 		for fname in files:
 			fname = os.path.join(root, fname)
-#			print(fname, imghdr.what(fname))
-			if imghdr.what(fname):
-				yield(fname)
+			print(fname)
+			try:
+				itype = imghdr.what(fname)
+				if itype:
+					yield(fname)
+			except Exception as e:
+				print('%s' % e)
+				continue

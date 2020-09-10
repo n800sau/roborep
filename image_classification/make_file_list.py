@@ -13,15 +13,19 @@ try:
 		print(bpath)
 		for i,fname in enumerate(lib.dir_images_generator(bpath)):
 #			print(fname)
-			if fname not in db:
-				f = open(fname,'rb')
-				file_md5 = hashlib.md5(f.read()).hexdigest()
-				f.close()
-				db[fname] = file_md5
-				# sync after every 10th file
-				if (i+1)%10 == 0:
-					db.sync()
-			n += 1
+			try:
+				if fname not in db:
+					f = open(fname,'rb')
+					file_md5 = hashlib.md5(f.read()).hexdigest()
+					f.close()
+					db[fname] = file_md5
+					# sync after every 10th file
+					if (i+1)%10 == 0:
+						db.sync()
+				n += 1
+			except Exception as e:
+				print('%s' % e)
+				continue
 except:
 	print('Error on %d file' % n)
 	raise
