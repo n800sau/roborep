@@ -3,6 +3,7 @@
 import os
 import lib
 import hashlib
+import json
 import dbm
 
 n = 0
