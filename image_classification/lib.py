@@ -1,5 +1,7 @@
 
 import os
+from PIL import ExifTags
+from PIL import Image
 import imghdr
 # Monkeypatch bug in imagehdr
 from imghdr import tests
@@ -32,11 +34,21 @@ def dir_images_generator(root_dir):
 	for root, dirs, files in os.walk(root_dir, followlinks=True):
 		for fname in files:
 			fname = os.path.join(root, fname)
-			print(fname)
+#			print(fname)
 			try:
 				itype = imghdr.what(fname)
 				if itype:
-					yield(fname)
+					img = Image.open(fname)
+					try:
+						exif_data = img._getexif()
+						if not exif_data is None:
+							exif = {
+								ExifTags.TAGS[k]: v for k, v in exif_data.items() if k in ExifTags.TAGS
+							}
+					except Exception as e:
+						print('exif error', e)
+						exif = dict({})
+					yield(fname, exif)
 			except Exception as e:
-				print('%s' % e)
+				print('image open error:', e)
 				continue

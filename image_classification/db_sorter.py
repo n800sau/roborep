@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-import dbm
+import shelve
 import json
 import re
 import datetime
@@ -14,15 +14,14 @@ bpath = os.path.expanduser('~/sshfs/asus/root/g750/hdd750/mydvd')
 # 2014-06-22_16_06_05.jpg
 # IMG_20191207_162312.jpg
 
-with dbm.open('imlist.db') as db:
+with shelve.open('imlist.shelve') as db:
 
 	done = 0
 	ts_sorted = {'no_dated': []}
 	all_rows = dict(db)
-	for fname in all_rows.keys():
+	for fname,exif in all_rows.items():
 		ts = None
 		try:
-			fname = fname.decode()
 			bname = os.path.basename(fname)
 #			print(bname)
 			for ex,df in (
@@ -38,27 +37,27 @@ with dbm.open('imlist.db') as db:
 			pass
 		if ts is None:
 			try:
-				img = Image.open(fname)
-				exif_data = img._getexif()
-				if not exif_data is None:
-					exif = {
-						ExifTags.TAGS[k]: v for k, v in exif_data.items() if k in ExifTags.TAGS
-					}
-					if 'DateTime' in exif:
-						print('exif: %s' % exif['DateTime'])
-						try:
-							ts = datetime.datetime.strptime(exif['DateTime'], '%Y:%m:%d %H:%M:%S')
-						except ValueError:
-							pass
+				if 'DateTime' in exif:
+					print('exif: %s' % exif['DateTime'])
+					try:
+						ts = datetime.datetime.strptime(exif['DateTime'], '%Y:%m:%d %H:%M:%S')
+					except ValueError:
+						pass
 			except Exception as e:
 				print(e)
 			if ts is None:
 				ts_sorted['no_dated'].append(fname[len(bpath):])
 		if not ts is None:
-			dt = ts.strftime('%Y-%m-%d')
-			if dt not in ts_sorted:
-				ts_sorted[dt] = []
-			ts_sorted[dt].append(fname[len(bpath):])
+			y = ts.strftime('%Y')
+			if y not in ts_sorted:
+				ts_sorted[y] = {}
+			m = ts.strftime('%Y-%m')
+			if m not in ts_sorted[y]:
+				ts_sorted[y][m] = {}
+			d = ts.strftime('%Y-%m-%d')
+			if d not in ts_sorted[y][m]:
+				ts_sorted[y][m][d] = []
+			ts_sorted[y][m][d].append(fname[len(bpath):])
 			done += 1
 
 	json.dump(ts_sorted, open('ts_sorted.json', 'w'), indent=2, ensure_ascii=False, sort_keys=True)
