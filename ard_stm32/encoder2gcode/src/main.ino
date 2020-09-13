@@ -3,11 +3,10 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 
-#define IN_USBSER 0
-#define OUT_USBSER 1
+#define USBSerial 0
 
 // USB - PA11,PA12
-USBMultiSerial<2> ms;
+USBMultiSerial<1> ms;
 
 #define CNCSerial Serial1
 #define DBGSerial Serial
@@ -23,7 +22,7 @@ const int xp1=PB13, xp2=PB14, xb=PB12;
 RotaryEncoder encoderX(xp1, xp2, xb);
 eMODE xMode = EM_POS;
 
-const int yp1=PB5, yp2=PB6, yb=PB4;
+const int yp1=PA3, yp2=PA2, yb=PA4;
 RotaryEncoder encoderY(yp1, yp2, yb);
 eMODE yMode = EM_POS;
 
@@ -31,15 +30,17 @@ const int zp1=PB8, zp2=PB9, zb=PB7;
 RotaryEncoder encoderZ(zp1, zp2, zb);
 eMODE zMode = EM_POS;
 
-#define TFT_CS PB11
-#define TFT_DC PB10
-#define TFT_RST PB1
+#define TFT_CS PB15
+#define TFT_DC PB1
+#define TFT_RST PB0
 #define TFT_MOSI PA7
 #define TFT_SCLK PA5
 
 // colored 160x80 0.96"
-Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
-//Adafruit_ST7735 display = Adafruit_ST7735(*SPI1, TFT_CS, TFT_DC, TFT_RST);
+//Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+// SPI version much faster
+SPIClass SPI_1(1);
+Adafruit_ST7735 display = Adafruit_ST7735(&SPI_1, TFT_CS, TFT_DC, TFT_RST);
 GFXcanvas1 dbuf(160, 80);
 
 #define LED_PIN LED_BUILTIN
@@ -76,18 +77,33 @@ void ZencoderButtonISR()
 
 void update_display()
 {
-//	return;
 	dbuf.fillScreen(0);
-	dbuf.setCursor(10, 5);
-	dbuf.print(F("X:"));
+	int y = 5, x[] = {10, 80};
+	const int y_step = 20;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(F("X: "));
 	dbuf.print(x_fpos);
-	dbuf.setCursor(10, 25);
-	dbuf.print(F("Y"));
+	dbuf.print(F(","));
+	dbuf.setCursor(x[1], y);
+	dbuf.print(xMode ? F("*") : F(" "));
+	dbuf.print(x_frate);
+	y += y_step;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(F("Y: "));
 	dbuf.print(y_fpos);
-	dbuf.setCursor(10, 45);
-	dbuf.print(F("Z"));
+	dbuf.print(F(","));
+	dbuf.setCursor(x[1], y);
+	dbuf.print(yMode ? F("*") : F(" "));
+	dbuf.print(y_frate);
+	y += y_step;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(F("Z :"));
 	dbuf.print(z_fpos);
-	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST7735_BLACK, ST7735_YELLOW);
+	dbuf.print(F(","));
+	dbuf.setCursor(x[1], y);
+	dbuf.print(zMode ? F("*") : F(" "));
+	dbuf.print(z_frate);
+	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST7735_YELLOW, ST7735_BLACK);
 }
 
 void setup()
@@ -95,15 +111,21 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
 
+	SPI_1.begin(); //Initialize the SPI_2 port.
+//	SPI_1.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
+//	SPI_1.setDataMode(SPI_MODE0); //Set the	SPI_2 data mode 0
+//	SPI_1.setClockDivider(SPI_CLOCK_DIV16);	// Use a different speed to SPI 1
+
 	DBGSerial.begin(115200);
 	DBGSerial.println("Hello from encoder2gcode");
 	DBGSerial.flush();
 
-	display.initR(INITR_MINI160x80);   // initialize a ST7735S chip
+	display.initR(INITR_MINI160x80); // initialize a ST7735S chip
 	display.setTextWrap(false); // Allow text to run off right edge
 	display.fillScreen(ST7735_BLACK);
 	display.setRotation(1);
 	display.setTextSize(1);
+	display.invertDisplay(true);
 	display.setTextColor(ST77XX_WHITE);
 	update_display();
 
@@ -155,6 +177,7 @@ void loop()
 	bool changed = false;
 
 	if(encoderX.getPushButton()) {
+		changed = true;
 		Serial.println("X pressed");
 		xMode = xMode == EM_POS ? EM_RATE : EM_POS;
 	}
@@ -169,6 +192,7 @@ void loop()
 	}
 
 	if(encoderY.getPushButton()) {
+		changed = true;
 		yMode = yMode == EM_POS ? EM_RATE : EM_POS;
 		Serial.println("Y pressed");
 	}
@@ -183,6 +207,7 @@ void loop()
 	}
 
 	if(encoderZ.getPushButton() == true) {
+		changed = true;
 		zMode = zMode == EM_POS ? EM_RATE : EM_POS;
 		Serial.println("Z pressed");
 	}
@@ -203,9 +228,14 @@ void loop()
 		Serial.println("Update end");
 	}
 
-	while(ms.ports[IN_USBSER].available())
-	{
-		ms.ports[OUT_USBSER].write(ms.ports[0].read());
+	while(ms.ports[USBSerial].available() || CNCSerial.available()) {
+		if(ms.ports[USBSerial].available())
+		{
+			CNCSerial.write(ms.ports[USBSerial].read());
+		}
+		if(CNCSerial.available()) {
+			ms.ports[USBSerial].write(CNCSerial.read());
+		}
 	}
 
 	if(m+1000 < millis()) {

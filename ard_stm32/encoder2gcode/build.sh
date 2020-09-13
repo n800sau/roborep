@@ -1,3 +1,3 @@
-platformio run -v &>build.log
-#platformio run -v
+#platformio run -v &>build.log
+platformio run -v
 echo $?
