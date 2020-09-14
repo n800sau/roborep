@@ -3,13 +3,19 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 
-#define USBSerial 0
+#define USBSerialIndex 0
 
 // USB - PA11,PA12
 USBMultiSerial<1> ms;
 
-#define CNCSerial Serial1
+#define CNCSerial Serial3
 #define DBGSerial Serial
+#define USBSerial ms.ports[USBSerialIndex]
+//#define USBSerial DBGSerial
+
+uint8_t usb_buf[256];
+uint8_t cnc_buf[256];
+unsigned usb_counter = 0, cnc_counter = 0;
 
 int16_t x_pos = 0, y_pos = 0, z_pos = 0;
 float x_fpos = 0, y_fpos = 0, z_fpos = 0;
@@ -228,18 +234,48 @@ void loop()
 		Serial.println("Update end");
 	}
 
-	while(ms.ports[USBSerial].available() || CNCSerial.available()) {
-		if(ms.ports[USBSerial].available())
+	while(USBSerial.available() || CNCSerial.available()) {
+		digitalWrite(LED_PIN, LOW);
+		if(USBSerial.available())
 		{
-			CNCSerial.write(ms.ports[USBSerial].read());
+			uint8_t c = USBSerial.read();
+			CNCSerial.write(c);
+//			cnc_buf[cnc_counter++] = c;
+//			if(cnc_counter >= sizeof(cnc_buf) || c == (uint8_t)0xa) {
+//				for(unsigned i=0; i<cnc_counter; i++) {
+//					CNCSerial.write(cnc_buf[i]);
+//					DBGSerial.print(usb_buf[i], HEX);
+//					DBGSerial.print(" ");
+//				}
+//				CNCSerial.flush();
+//				DBGSerial.println();
+//				DBGSerial.flush();
+//				cnc_counter = 0;
+//			}
 		}
 		if(CNCSerial.available()) {
-			ms.ports[USBSerial].write(CNCSerial.read());
+			uint8_t c = CNCSerial.read();
+			USBSerial.write(c);
+//			usb_buf[usb_counter++] = c;
+//					DBGSerial.print(c, HEX);
+//					DBGSerial.print(" ");
+//			if(usb_counter >= sizeof(usb_buf) || c == (uint8_t)0xa) {
+//				for(unsigned i=0; i<usb_counter; i++) {
+//					USBSerial.write(usb_buf[i]);
+//					DBGSerial.print(usb_buf[i], HEX);
+//					DBGSerial.print(" ");
+//				}
+//				USBSerial.flush();
+//				DBGSerial.println();
+//				DBGSerial.flush();
+//				usb_counter = 0;
+//			}
 		}
 	}
+	digitalWrite(LED_PIN, HIGH);
 
-	if(m+1000 < millis()) {
-		m = millis();
-		digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-	}
+//	if(m+1000 < millis()) {
+//		m = millis();
+//		digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+//	}
 }
