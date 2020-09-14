@@ -13,10 +13,6 @@ USBMultiSerial<1> ms;
 #define USBSerial ms.ports[USBSerialIndex]
 //#define USBSerial DBGSerial
 
-uint8_t usb_buf[256];
-uint8_t cnc_buf[256];
-unsigned usb_counter = 0, cnc_counter = 0;
-
 int16_t x_pos = 0, y_pos = 0, z_pos = 0;
 float x_fpos = 0, y_fpos = 0, z_fpos = 0;
 float x_frate = 1, y_frate = 1, z_frate = 1;
@@ -176,6 +172,10 @@ bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, eMODE mode, float &fpos
 }
 
 unsigned long m = millis();
+uint8_t cnc_reply_buf[256];
+unsigned cnc_counter = 0;
+String jog_command;
+#define IDLE_MARKER "<Idle"
 
 void loop()
 {
@@ -227,52 +227,37 @@ void loop()
 		DBGSerial.println(z_frate);
 	}
 
-	DBGSerial.flush();
 	if(changed) {
-		Serial.println("Update display");
-		update_display();
-		Serial.println("Update end");
+		jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F100";
 	}
 
 	while(USBSerial.available() || CNCSerial.available()) {
 		digitalWrite(LED_PIN, LOW);
-		if(USBSerial.available())
-		{
-			uint8_t c = USBSerial.read();
-			CNCSerial.write(c);
-//			cnc_buf[cnc_counter++] = c;
-//			if(cnc_counter >= sizeof(cnc_buf) || c == (uint8_t)0xa) {
-//				for(unsigned i=0; i<cnc_counter; i++) {
-//					CNCSerial.write(cnc_buf[i]);
-//					DBGSerial.print(usb_buf[i], HEX);
-//					DBGSerial.print(" ");
-//				}
-//				CNCSerial.flush();
-//				DBGSerial.println();
-//				DBGSerial.flush();
-//				cnc_counter = 0;
-//			}
+		if(USBSerial.available()) {
+			CNCSerial.write(USBSerial.read());
 		}
 		if(CNCSerial.available()) {
 			uint8_t c = CNCSerial.read();
 			USBSerial.write(c);
-//			usb_buf[usb_counter++] = c;
-//					DBGSerial.print(c, HEX);
-//					DBGSerial.print(" ");
-//			if(usb_counter >= sizeof(usb_buf) || c == (uint8_t)0xa) {
-//				for(unsigned i=0; i<usb_counter; i++) {
-//					USBSerial.write(usb_buf[i]);
-//					DBGSerial.print(usb_buf[i], HEX);
-//					DBGSerial.print(" ");
-//				}
-//				USBSerial.flush();
-//				DBGSerial.println();
-//				DBGSerial.flush();
-//				usb_counter = 0;
-//			}
+            cnc_reply_buf[cnc_counter++] = c;
+	        if(cnc_counter >= sizeof(cnc_reply_buf) || c == (uint8_t)0xa) {
+				if(memcmp(cnc_reply_buf, IDLE_MARKER, min(cnc_counter, strlen(IDLE_MARKER))) == 0 && jog_command != "") {
+					CNCSerial.println(jog_command);
+					jog_command = "";
+					// here pos must be reset
+					encoderX.setPosition(0);
+					encoderY.setPosition(0);
+					encoderZ.setPosition(0);
+					changed = true;
+				}
+                cnc_counter = 0;
+        	}
 		}
 	}
 	digitalWrite(LED_PIN, HIGH);
+	if(changed) {
+		update_display();
+	}
 
 //	if(m+1000 < millis()) {
 //		m = millis();
