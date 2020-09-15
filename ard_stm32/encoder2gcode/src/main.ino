@@ -3,37 +3,49 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 
-#define IN_USBSER 0
-#define OUT_USBSER 1
+#define USBSerialIndex 0
 
-USBMultiSerial<2> ms;
+// USB - PA11,PA12
+USBMultiSerial<1> ms;
 
-#define CNCSerial Serial1
+#define CNCSerial Serial3
 #define DBGSerial Serial
+#define USBSerial ms.ports[USBSerialIndex]
+//#define USBSerial DBGSerial
 
 int16_t x_pos = 0, y_pos = 0, z_pos = 0;
 float x_fpos = 0, y_fpos = 0, z_fpos = 0;
 float x_frate = 1, y_frate = 1, z_frate = 1;
 
+enum eMODE {EM_POS, EM_RATE};
+
 // p1, p2, button
 const int xp1=PB13, xp2=PB14, xb=PB12;
 RotaryEncoder encoderX(xp1, xp2, xb);
+eMODE xMode = EM_POS;
 
-const int yp1=PB3, yp2=PB4, yb=PA15;
+const int yp1=PA3, yp2=PA2, yb=PA4;
 RotaryEncoder encoderY(yp1, yp2, yb);
+eMODE yMode = EM_POS;
 
-const int zp1=PB6, zp2=PB7, zb=PB5;
+const int zp1=PB8, zp2=PB9, zb=PB7;
 RotaryEncoder encoderZ(zp1, zp2, zb);
+eMODE zMode = EM_POS;
 
-#define TFT_CS PB11
-#define TFT_DC PB10
-#define TFT_RST PB1
-#define TFT_MOSI PB0
-#define TFT_SCLK PA7
+#define TFT_CS PB15
+#define TFT_DC PB1
+#define TFT_RST PB0
+#define TFT_MOSI PA7
+#define TFT_SCLK PA5
 
 // colored 160x80 0.96"
-Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+//Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+// SPI version much faster
+SPIClass SPI_1(1);
+Adafruit_ST7735 display = Adafruit_ST7735(&SPI_1, TFT_CS, TFT_DC, TFT_RST);
 GFXcanvas1 dbuf(160, 80);
+
+#define LED_PIN LED_BUILTIN
 
 void XencoderISR()
 {
@@ -68,32 +80,59 @@ void ZencoderButtonISR()
 void update_display()
 {
 	dbuf.fillScreen(0);
-	dbuf.setCursor(0, 0);
-	dbuf.print(F("X:"));
+	int y = 5, x[] = {10, 80};
+	const int y_step = 20;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(F("X: "));
 	dbuf.print(x_fpos);
-	dbuf.setCursor(0, 20);
-	dbuf.print(F("Y"));
+	dbuf.print(F(","));
+	dbuf.setCursor(x[1], y);
+	dbuf.print(xMode ? F("*") : F(" "));
+	dbuf.print(x_frate);
+	y += y_step;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(F("Y: "));
 	dbuf.print(y_fpos);
-	dbuf.setCursor(0, 40);
-	dbuf.print(F("Z"));
+	dbuf.print(F(","));
+	dbuf.setCursor(x[1], y);
+	dbuf.print(yMode ? F("*") : F(" "));
+	dbuf.print(y_frate);
+	y += y_step;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(F("Z :"));
 	dbuf.print(z_fpos);
-	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST77XX_YELLOW, ST77XX_BLACK);
+	dbuf.print(F(","));
+	dbuf.setCursor(x[1], y);
+	dbuf.print(zMode ? F("*") : F(" "));
+	dbuf.print(z_frate);
+	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST7735_YELLOW, ST7735_BLACK);
 }
 
 void setup()
 {
+	pinMode(LED_PIN, OUTPUT);
+	digitalWrite(LED_PIN, HIGH);
+
+	SPI_1.begin(); //Initialize the SPI_2 port.
+//	SPI_1.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
+//	SPI_1.setDataMode(SPI_MODE0); //Set the	SPI_2 data mode 0
+//	SPI_1.setClockDivider(SPI_CLOCK_DIV16);	// Use a different speed to SPI 1
 
 	DBGSerial.begin(115200);
-	display.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
+	DBGSerial.println("Hello from encoder2gcode");
+	DBGSerial.flush();
+
+	display.initR(INITR_MINI160x80); // initialize a ST7735S chip
 	display.setTextWrap(false); // Allow text to run off right edge
 	display.fillScreen(ST7735_BLACK);
 	display.setRotation(1);
 	display.setTextSize(1);
+	display.invertDisplay(true);
 	display.setTextColor(ST77XX_WHITE);
 	update_display();
 
 	ms.begin();
-	while(!USBComposite);
+	//while(!USBComposite);
 
 
 	encoderX.begin();
@@ -101,37 +140,55 @@ void setup()
 	encoderZ.begin();
 
 	attachInterrupt(digitalPinToInterrupt(xp1), XencoderISR, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(xp2), XencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(xb), XencoderButtonISR, FALLING);
 
 	attachInterrupt(digitalPinToInterrupt(yp1), YencoderISR, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(yp2), YencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(yb), YencoderButtonISR, FALLING);
 
 	attachInterrupt(digitalPinToInterrupt(zp1), ZencoderISR, CHANGE);
+	attachInterrupt(digitalPinToInterrupt(zp2), ZencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(zb), ZencoderButtonISR, FALLING);
 
 	CNCSerial.begin(115200);
 }
 
-bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, bool &btn, float &fpos, float &frate)
+bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, eMODE mode, float &fpos, float &frate)
 {
-	btn = enc.getPushButton();
 	int16_t pos = enc.getPosition();
+
 	float pdiff = pos - oldpos;
-	if(btn) {
-		frate = pow(frate, 1 + pdiff/100.);
+	if(mode == EM_RATE) {
+		frate += frate * pdiff/10.;
+		if(frate < 0.1) {
+			frate = 0.1;
+		}
 	} else {
 		fpos += pdiff * frate;
 	}
+	oldpos = pos;
 	return bool(pdiff);
 }
+
+unsigned long m = millis();
+uint8_t cnc_reply_buf[256];
+unsigned cnc_counter = 0;
+String jog_command;
+#define IDLE_MARKER "<Idle"
 
 void loop()
 {
 
 	bool changed = false;
-	bool btn;
 
-	if(encoder_update(encoderX, x_pos, btn, x_fpos, x_frate))
+	if(encoderX.getPushButton()) {
+		changed = true;
+		Serial.println("X pressed");
+		xMode = xMode == EM_POS ? EM_RATE : EM_POS;
+	}
+
+	if(encoder_update(encoderX, x_pos, xMode, x_fpos, x_frate))
 	{
 		changed = true;
 		DBGSerial.print("Xpos:");
@@ -140,7 +197,13 @@ void loop()
 		DBGSerial.println(x_frate);
 	}
 
-	if(encoder_update(encoderY, y_pos, btn, y_fpos, y_frate))
+	if(encoderY.getPushButton()) {
+		changed = true;
+		yMode = yMode == EM_POS ? EM_RATE : EM_POS;
+		Serial.println("Y pressed");
+	}
+
+	if(encoder_update(encoderY, y_pos, yMode, y_fpos, y_frate))
 	{
 		changed = true;
 		DBGSerial.print("Ypos:");
@@ -149,7 +212,13 @@ void loop()
 		DBGSerial.println(y_frate);
 	}
 
-	if(encoder_update(encoderZ, z_pos, btn, z_fpos, z_frate))
+	if(encoderZ.getPushButton() == true) {
+		changed = true;
+		zMode = zMode == EM_POS ? EM_RATE : EM_POS;
+		Serial.println("Z pressed");
+	}
+
+	if(encoder_update(encoderZ, z_pos, zMode, z_fpos, z_frate))
 	{
 		changed = true;
 		DBGSerial.print("Zpos:");
@@ -159,12 +228,39 @@ void loop()
 	}
 
 	if(changed) {
+		jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F100";
+	}
+
+	while(USBSerial.available() || CNCSerial.available()) {
+		digitalWrite(LED_PIN, LOW);
+		if(USBSerial.available()) {
+			CNCSerial.write(USBSerial.read());
+		}
+		if(CNCSerial.available()) {
+			uint8_t c = CNCSerial.read();
+			USBSerial.write(c);
+            cnc_reply_buf[cnc_counter++] = c;
+	        if(cnc_counter >= sizeof(cnc_reply_buf) || c == (uint8_t)0xa) {
+				if(memcmp(cnc_reply_buf, IDLE_MARKER, min(cnc_counter, strlen(IDLE_MARKER))) == 0 && jog_command != "") {
+					CNCSerial.println(jog_command);
+					jog_command = "";
+					// here pos must be reset
+					encoderX.setPosition(0);
+					encoderY.setPosition(0);
+					encoderZ.setPosition(0);
+					changed = true;
+				}
+                cnc_counter = 0;
+        	}
+		}
+	}
+	digitalWrite(LED_PIN, HIGH);
+	if(changed) {
 		update_display();
 	}
 
-	while(ms.ports[IN_USBSER].available())
-	{
-		ms.ports[OUT_USBSER].write(ms.ports[0].read());
-	}
-
+//	if(m+1000 < millis()) {
+//		m = millis();
+//		digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+//	}
 }
