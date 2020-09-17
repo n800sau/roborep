@@ -21,7 +21,12 @@ struct Status_T {
 	String state;
 	float mXpos, mYpos, mZpos;
 	float wXpos, wYpos, wZpos;
-} status = {.state = "", .mXpos = 0, .mYpos = 0, .mZpos = 0, .wXpos = 0, .wYpos = 0, .wZpos = 0};
+	String limit_state;
+} status = {
+	.state = "",
+	.mXpos = 0, .mYpos = 0, .mZpos = 0, .wXpos = 0, .wYpos = 0, .wZpos = 0,
+	.limit_state = ""
+};
 
 enum eMODE {EM_POS, EM_RATE};
 
@@ -96,6 +101,9 @@ void update_display()
 	dbuf.fillScreen(0);
 	int y = 5, x[] = {10, 80};
 	const int y_step = 20;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(status.state + " " + status.limit_state);
+	y += y_step;
 	dbuf.setCursor(x[0], y);
 	dbuf.print(F("X: "));
 	dbuf.print(status.mXpos);
@@ -357,6 +365,10 @@ void grblStatusEvaluation(uint8_t *buf, int count)
 							status.wZpos = atof(p1);
 						}
 					}
+				} else if(strcmp(p1, "Lim:") == 0) {
+					// work position
+					p1 += 4;
+					status.limit_state = p1;
 				}
 			}
 		}
