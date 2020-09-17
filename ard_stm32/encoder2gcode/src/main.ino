@@ -17,6 +17,12 @@ int16_t x_pos = 0, y_pos = 0, z_pos = 0;
 float x_fpos = 0, y_fpos = 0, z_fpos = 0;
 float x_frate = 1, y_frate = 1, z_frate = 1;
 
+struct Status_T {
+	String state;
+	float mXpos, mYpos, mZpos;
+	float wXpos, wYpos, wZpos;
+} status = {.state = "", .mXpos = 0, .mYpos = 0, .mZpos = 0, .wXpos = 0, .wYpos = 0, .wZpos = 0};
+
 enum eMODE {EM_POS, EM_RATE};
 
 // p1, p2, button
@@ -31,6 +37,9 @@ eMODE yMode = EM_POS;
 const int zp1=PB8, zp2=PB9, zb=PB7;
 RotaryEncoder encoderZ(zp1, zp2, zb);
 eMODE zMode = EM_POS;
+
+#define STOP_BUTTON_PIN PB15
+volatile bool stop_marker = false;
 
 #define TFT_CS PB15
 #define TFT_DC PB1
@@ -77,6 +86,11 @@ void ZencoderButtonISR()
 	encoderZ.readPushButton();
 }
 
+void StopISR()
+{
+	stop_marker = true;
+}
+
 void update_display()
 {
 	dbuf.fillScreen(0);
@@ -84,7 +98,8 @@ void update_display()
 	const int y_step = 20;
 	dbuf.setCursor(x[0], y);
 	dbuf.print(F("X: "));
-	dbuf.print(x_fpos);
+	dbuf.print(status.mXpos);
+//	dbuf.print(x_fpos);
 	dbuf.print(F(","));
 	dbuf.setCursor(x[1], y);
 	dbuf.print(xMode ? F("*") : F(" "));
@@ -92,7 +107,8 @@ void update_display()
 	y += y_step;
 	dbuf.setCursor(x[0], y);
 	dbuf.print(F("Y: "));
-	dbuf.print(y_fpos);
+	dbuf.print(status.mYpos);
+//	dbuf.print(y_fpos);
 	dbuf.print(F(","));
 	dbuf.setCursor(x[1], y);
 	dbuf.print(yMode ? F("*") : F(" "));
@@ -100,7 +116,8 @@ void update_display()
 	y += y_step;
 	dbuf.setCursor(x[0], y);
 	dbuf.print(F("Z :"));
-	dbuf.print(z_fpos);
+	dbuf.print(status.mZpos);
+//	dbuf.print(z_fpos);
 	dbuf.print(F(","));
 	dbuf.setCursor(x[1], y);
 	dbuf.print(zMode ? F("*") : F(" "));
@@ -112,6 +129,7 @@ void setup()
 {
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
+	pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
 
 	SPI_1.begin(); //Initialize the SPI_2 port.
 //	SPI_1.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
@@ -138,6 +156,8 @@ void setup()
 	encoderX.begin();
 	encoderY.begin();
 	encoderZ.begin();
+
+	attachInterrupt(digitalPinToInterrupt(STOP_BUTTON_PIN), StopISR, FALLING);
 
 	attachInterrupt(digitalPinToInterrupt(xp1), XencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(xp2), XencoderISR, CHANGE);
@@ -173,6 +193,7 @@ bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, eMODE mode, float &fpos
 
 unsigned long m = millis();
 uint8_t cnc_reply_buf[256];
+char status_process_buf[sizeof(cnc_reply_buf)];
 unsigned cnc_counter = 0;
 String jog_command;
 #define IDLE_MARKER "<Idle"
@@ -231,6 +252,11 @@ void loop()
 		jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F100";
 	}
 
+	if(stop_marker) {
+		stop_marker = false;
+		CNCSerial.println("\nM112");
+	}
+
 	while(USBSerial.available() || CNCSerial.available()) {
 		digitalWrite(LED_PIN, LOW);
 		if(USBSerial.available()) {
@@ -239,8 +265,9 @@ void loop()
 		if(CNCSerial.available()) {
 			uint8_t c = CNCSerial.read();
 			USBSerial.write(c);
-            cnc_reply_buf[cnc_counter++] = c;
-	        if(cnc_counter >= sizeof(cnc_reply_buf) || c == (uint8_t)0xa) {
+			cnc_reply_buf[cnc_counter++] = c;
+			if(cnc_counter >= sizeof(cnc_reply_buf) || c == (uint8_t)0xa) {
+				grblStatusEvaluation(cnc_reply_buf, cnc_counter);
 				if(memcmp(cnc_reply_buf, IDLE_MARKER, min(cnc_counter, strlen(IDLE_MARKER))) == 0 && jog_command != "") {
 					CNCSerial.println(jog_command);
 					jog_command = "";
@@ -250,8 +277,8 @@ void loop()
 					encoderZ.setPosition(0);
 					changed = true;
 				}
-                cnc_counter = 0;
-        	}
+				cnc_counter = 0;
+			}
 		}
 	}
 	digitalWrite(LED_PIN, HIGH);
@@ -263,4 +290,75 @@ void loop()
 //		m = millis();
 //		digitalWrite(LED_PIN, !digitalRead(LED_PIN));
 //	}
+}
+
+/*------------------------------------------------------------------------------
+	The status line can take these various states:
+	$10=1
+	<Idle|MPos:0.000,0.000,0.000|FS:0,0|WCO:0.000,0.000,0.000>
+	<Idle|MPos:0.000,0.000,0.000|FS:0,0|Ov:100,100,100>
+	<Idle|MPos:0.000,0.000,0.000|FS:0,0>
+	$10=2
+	<Idle|WPos:0.000,0.000,0.000|Bf:15,128|FS:0,0|WCO:0.000,0.000,0.000>
+	<Idle|WPos:0.000,0.000,0.000|Bf:15,128|FS:0,0|Ov:100,100,100>
+	<Idle|WPos:0.000,0.000,0.000|Bf:15,128|FS:0,0>
+--------------------------------------------------------------------------------
+*/
+void grblStatusEvaluation(uint8_t *buf, int count)
+{
+	uint8_t *start_pos = (uint8_t*)memchr(buf, '<', count);
+	if(start_pos)												// Status GRBL
+	{
+		uint8_t *end_pos = (uint8_t*)memchr(buf, '>', count);
+		if(end_pos) {
+			memcpy(status_process_buf, start_pos, end_pos - start_pos);
+			status_process_buf[end_pos - start_pos] = 0;
+			char *p1 = status_process_buf;
+			char *p2 = strchr(p1, '|');
+			if(p2) {
+				*p2 = 0;
+			}
+			status.state = p1;
+			while(p2) {
+				p1 = p2 + 1;
+				p2 = strchr(p1, '|');
+				if(p2) {
+					*p2 = 0;
+				}
+				if(strcmp(p1, "MPos:") == 0) {
+					// machine position
+					p1 += 5;
+					char *p3 = strchr(p1, ',');
+					if(p3) {
+						*p3 = 0;
+						status.mXpos = atof(p1);
+						p1 = p3 + 1;
+						p3 = strchr(p1, ',');
+						if(p3) {
+							*p3 = 0;
+							status.mYpos = atof(p1);
+							p1 = p3 + 1;
+							status.mZpos = atof(p1);
+						}
+					}
+				} else if(strcmp(p1, "WPos:") == 0) {
+					// work position
+					p1 += 5;
+					char *p3 = strchr(p1, ',');
+					if(p3) {
+						*p3 = 0;
+						status.wXpos = atof(p1);
+						p1 = p3 + 1;
+						p3 = strchr(p1, ',');
+						if(p3) {
+							*p3 = 0;
+							status.wYpos = atof(p1);
+							p1 = p3 + 1;
+							status.wZpos = atof(p1);
+						}
+					}
+				}
+			}
+		}
+	}
 }
