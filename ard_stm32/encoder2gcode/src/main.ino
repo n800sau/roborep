@@ -46,6 +46,13 @@ eMODE zMode = EM_POS;
 #define STOP_BUTTON_PIN PB15
 volatile bool stop_marker = false;
 
+#define PAUSE_BUTTON_PIN PA8
+volatile bool pause_marker = false;
+bool paused = false;
+
+#define UNLOCK_BUTTON_PIN PA0
+volatile bool unlock_marker = false;
+
 #define TFT_CS PB15
 #define TFT_DC PB1
 #define TFT_RST PB0
@@ -96,6 +103,16 @@ void StopISR()
 	stop_marker = true;
 }
 
+void PauseISR()
+{
+	pause_marker = true;
+}
+
+void UnlockISR()
+{
+	unlock_marker = true;
+}
+
 void update_display()
 {
 	dbuf.fillScreen(0);
@@ -138,6 +155,8 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
 	pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
+	pinMode(PAUSE_BUTTON_PIN, INPUT_PULLUP);
+	pinMode(UNLOCK_BUTTON_PIN, INPUT_PULLUP);
 
 	SPI_1.begin(); //Initialize the SPI_2 port.
 //	SPI_1.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
@@ -166,6 +185,8 @@ void setup()
 	encoderZ.begin();
 
 	attachInterrupt(digitalPinToInterrupt(STOP_BUTTON_PIN), StopISR, FALLING);
+	attachInterrupt(digitalPinToInterrupt(PAUSE_BUTTON_PIN), PauseISR, FALLING);
+	attachInterrupt(digitalPinToInterrupt(UNLOCK_BUTTON_PIN), UnlockISR, FALLING);
 
 	attachInterrupt(digitalPinToInterrupt(xp1), XencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(xp2), XencoderISR, CHANGE);
@@ -262,7 +283,27 @@ void loop()
 
 	if(stop_marker) {
 		stop_marker = false;
-		CNCSerial.println("\nM112");
+//		CNCSerial.println("\nM112");
+		// sort reset
+		CNCSerial.print("\030");
+		CNCSerial.flush();
+	}
+
+	if(unlock_marker) {
+		unlock_marker = false;
+		CNCSerial.println("$X");
+		CNCSerial.flush();
+	}
+
+	if(pause_marker) {
+		pause_marker = false;
+		if(paused) {
+			paused = false;
+		} else {
+			paused = true;
+		}
+		CNCSerial.print(paused ? "!" : "~");
+		CNCSerial.flush();
 	}
 
 	while(USBSerial.available() || CNCSerial.available()) {
