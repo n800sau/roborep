@@ -31,15 +31,15 @@ struct Status_T {
 enum eMODE {EM_POS, EM_RATE};
 
 // p1, p2, button
-const int xp1=PB13, xp2=PB14, xb=PB12;
+const int xp1=PB14, xp2=PB13, xb=PB12;
 RotaryEncoder encoderX(xp1, xp2, xb);
 eMODE xMode = EM_POS;
 
-const int yp1=PA3, yp2=PA2, yb=PA4;
+const int yp1=PA2, yp2=PA3, yb=PA4;
 RotaryEncoder encoderY(yp1, yp2, yb);
 eMODE yMode = EM_POS;
 
-const int zp1=PB8, zp2=PB9, zb=PB7;
+const int zp1=PB9, zp2=PB8, zb=PB7;
 RotaryEncoder encoderZ(zp1, zp2, zb);
 eMODE zMode = EM_POS;
 
@@ -50,7 +50,7 @@ volatile bool stop_marker = false;
 volatile bool pause_marker = false;
 bool paused = false;
 
-#define UNLOCK_BUTTON_PIN PA0
+#define UNLOCK_BUTTON_PIN PA6
 volatile bool unlock_marker = false;
 
 #define TFT_CS PB15
@@ -119,7 +119,7 @@ void update_display()
 	int y = 5, x[] = {10, 80};
 	const int y_step = 20;
 	dbuf.setCursor(x[0], y);
-	dbuf.print(status.state + " " + status.limit_state);
+	dbuf.print(status.state);
 	y += y_step;
 	dbuf.setCursor(x[0], y);
 	dbuf.print(F("X: "));
@@ -170,7 +170,7 @@ void setup()
 	display.initR(INITR_MINI160x80); // initialize a ST7735S chip
 	display.setTextWrap(false); // Allow text to run off right edge
 	display.fillScreen(ST7735_BLACK);
-	display.setRotation(1);
+	display.setRotation(3);
 	display.setTextSize(1);
 	display.invertDisplay(true);
 	display.setTextColor(ST77XX_WHITE);
@@ -226,6 +226,7 @@ char status_process_buf[sizeof(cnc_reply_buf)];
 unsigned cnc_counter = 0;
 String jog_command;
 #define IDLE_MARKER "<Idle"
+#define JOG_MARKER "<Jog"
 
 void loop()
 {
@@ -279,6 +280,8 @@ void loop()
 
 	if(changed) {
 		jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F100";
+		CNCSerial.print("?");
+		CNCSerial.flush();
 	}
 
 	if(stop_marker) {
@@ -317,14 +320,18 @@ void loop()
 			cnc_reply_buf[cnc_counter++] = c;
 			if(cnc_counter >= sizeof(cnc_reply_buf) || c == (uint8_t)0xa) {
 				grblStatusEvaluation(cnc_reply_buf, cnc_counter);
-				if(memcmp(cnc_reply_buf, IDLE_MARKER, min(cnc_counter, strlen(IDLE_MARKER))) == 0 && jog_command != "") {
-					CNCSerial.println(jog_command);
-					jog_command = "";
-					// here pos must be reset
-					encoderX.setPosition(0);
-					encoderY.setPosition(0);
-					encoderZ.setPosition(0);
-					changed = true;
+				if(jog_command != "") {
+					if(memcmp(cnc_reply_buf, IDLE_MARKER, min(cnc_counter, strlen(IDLE_MARKER))) == 0 || memcmp(cnc_reply_buf, JOG_MARKER, min(cnc_counter, strlen(JOG_MARKER))) == 0) {
+						DBGSerial.print("Sending:");
+						DBGSerial.println(jog_command);
+						CNCSerial.println(jog_command);
+						jog_command = "";
+						// here pos must be reset
+						encoderX.setPosition(0);
+						encoderY.setPosition(0);
+						encoderZ.setPosition(0);
+						changed = true;
+					}
 				}
 				cnc_counter = 0;
 			}
@@ -360,56 +367,56 @@ void grblStatusEvaluation(uint8_t *buf, int count)
 	{
 		uint8_t *end_pos = (uint8_t*)memchr(buf, '>', count);
 		if(end_pos) {
-			memcpy(status_process_buf, start_pos, end_pos - start_pos);
-			status_process_buf[end_pos - start_pos] = 0;
+			memcpy(status_process_buf, start_pos+1, end_pos - start_pos - 1);
+			status_process_buf[end_pos - start_pos - 1] = 0;
 			char *p1 = status_process_buf;
 			char *p2 = strchr(p1, '|');
 			if(p2) {
 				*p2 = 0;
-			}
-			status.state = p1;
-			while(p2) {
-				p1 = p2 + 1;
-				p2 = strchr(p1, '|');
-				if(p2) {
-					*p2 = 0;
-				}
-				if(strcmp(p1, "MPos:") == 0) {
-					// machine position
-					p1 += 5;
-					char *p3 = strchr(p1, ',');
-					if(p3) {
-						*p3 = 0;
-						status.mXpos = atof(p1);
-						p1 = p3 + 1;
-						p3 = strchr(p1, ',');
+				status.state = p1;
+				while(p2) {
+					p1 = p2 + 1;
+					p2 = strchr(p1, '|');
+					if(p2) {
+						*p2 = 0;
+					}
+					if(strncmp(p1, "MPos:", 5) == 0) {
+						// machine position
+						p1 += 5;
+						char *p3 = strchr(p1, ',');
 						if(p3) {
 							*p3 = 0;
-							status.mYpos = atof(p1);
+							status.mXpos = atof(p1);
 							p1 = p3 + 1;
-							status.mZpos = atof(p1);
+							p3 = strchr(p1, ',');
+							if(p3) {
+								*p3 = 0;
+								status.mYpos = atof(p1);
+								p1 = p3 + 1;
+								status.mZpos = atof(p1);
+							}
 						}
-					}
-				} else if(strcmp(p1, "WPos:") == 0) {
-					// work position
-					p1 += 5;
-					char *p3 = strchr(p1, ',');
-					if(p3) {
-						*p3 = 0;
-						status.wXpos = atof(p1);
-						p1 = p3 + 1;
-						p3 = strchr(p1, ',');
+					} else if(strncmp(p1, "WPos:", 5) == 0) {
+						// work position
+						p1 += 5;
+						char *p3 = strchr(p1, ',');
 						if(p3) {
 							*p3 = 0;
-							status.wYpos = atof(p1);
+							status.wXpos = atof(p1);
 							p1 = p3 + 1;
-							status.wZpos = atof(p1);
+							p3 = strchr(p1, ',');
+							if(p3) {
+								*p3 = 0;
+								status.wYpos = atof(p1);
+								p1 = p3 + 1;
+								status.wZpos = atof(p1);
+							}
 						}
+					} else if(strncmp(p1, "Lim:", 4) == 0) {
+						// work position
+						p1 += 4;
+						status.limit_state = p1;
 					}
-				} else if(strcmp(p1, "Lim:") == 0) {
-					// work position
-					p1 += 4;
-					status.limit_state = p1;
 				}
 			}
 		}
