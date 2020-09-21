@@ -17,13 +17,23 @@ int16_t x_pos = 0, y_pos = 0, z_pos = 0;
 float x_fpos = 0, y_fpos = 0, z_fpos = 0;
 float x_frate = 1, y_frate = 1, z_frate = 1;
 
+// buffer for cnc reply
+uint8_t cnc_reply_buf[256];
+// current pointer in cnc_reply_buf
+unsigned cnc_counter = 0;
+// buffer for cnc status line
+char status_process_buf[sizeof(cnc_reply_buf)];
+String jog_command;
+#define IDLE_STATE "Idle"
+#define JOG_STATE "Jog"
+
 struct Status_T {
 	String state;
 	float mXpos, mYpos, mZpos;
 	float wXpos, wYpos, wZpos;
 	String limit_state;
 } status = {
-	.state = "",
+	.state = IDLE_STATE,
 	.mXpos = 0, .mYpos = 0, .mZpos = 0, .wXpos = 0, .wYpos = 0, .wZpos = 0,
 	.limit_state = ""
 };
@@ -43,8 +53,9 @@ const int zp1=PB9, zp2=PB8, zb=PB7;
 RotaryEncoder encoderZ(zp1, zp2, zb);
 eMODE zMode = EM_POS;
 
-#define STOP_BUTTON_PIN PB15
-volatile bool stop_marker = false;
+// turn on/off own gcode and external gcode mode
+#define MODE_BUTTON_PIN PB15
+volatile bool bypass_mode = false;
 
 #define PAUSE_BUTTON_PIN PA8
 volatile bool pause_marker = false;
@@ -98,9 +109,9 @@ void ZencoderButtonISR()
 	encoderZ.readPushButton();
 }
 
-void StopISR()
+void ModeISR()
 {
-	stop_marker = true;
+	bypass_mode = true;
 }
 
 void PauseISR()
@@ -119,7 +130,7 @@ void update_display()
 	int y = 5, x[] = {10, 80};
 	const int y_step = 20;
 	dbuf.setCursor(x[0], y);
-	dbuf.print(status.state);
+	dbuf.print(status.state + (bypass_mode ? " (bypass)" : " (control)"));
 	y += y_step;
 	dbuf.setCursor(x[0], y);
 	dbuf.print(F("X: "));
@@ -154,7 +165,7 @@ void setup()
 {
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
-	pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
+	pinMode(MODE_BUTTON_PIN, INPUT_PULLUP);
 	pinMode(PAUSE_BUTTON_PIN, INPUT_PULLUP);
 	pinMode(UNLOCK_BUTTON_PIN, INPUT_PULLUP);
 
@@ -184,7 +195,7 @@ void setup()
 	encoderY.begin();
 	encoderZ.begin();
 
-	attachInterrupt(digitalPinToInterrupt(STOP_BUTTON_PIN), StopISR, FALLING);
+	attachInterrupt(digitalPinToInterrupt(MODE_BUTTON_PIN), ModeISR, FALLING);
 	attachInterrupt(digitalPinToInterrupt(PAUSE_BUTTON_PIN), PauseISR, FALLING);
 	attachInterrupt(digitalPinToInterrupt(UNLOCK_BUTTON_PIN), UnlockISR, FALLING);
 
@@ -220,76 +231,73 @@ bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, eMODE mode, float &fpos
 	return bool(pdiff);
 }
 
-unsigned long m = millis();
-uint8_t cnc_reply_buf[256];
-char status_process_buf[sizeof(cnc_reply_buf)];
-unsigned cnc_counter = 0;
-String jog_command;
-#define IDLE_MARKER "<Idle"
-#define JOG_MARKER "<Jog"
+bool process_byte_from_cnc(char c)
+{
+	bool rs = false;
+	cnc_reply_buf[cnc_counter++] = c;
+	if(cnc_counter >= sizeof(cnc_reply_buf) || c == (uint8_t)0xa) {
+		rs = grblStatusEvaluation(cnc_reply_buf, cnc_counter);
+		cnc_counter = 0;
+	}
+	return rs;
+}
 
 void loop()
 {
 
 	bool changed = false;
 
-	if(encoderX.getPushButton()) {
-		changed = true;
-		Serial.println("X pressed");
-		xMode = xMode == EM_POS ? EM_RATE : EM_POS;
-	}
+	if(!bypass_mode) {
 
-	if(encoder_update(encoderX, x_pos, xMode, x_fpos, x_frate))
-	{
-		changed = true;
-		DBGSerial.print("Xpos:");
-		DBGSerial.println(x_fpos);
-		DBGSerial.print("Xrate:");
-		DBGSerial.println(x_frate);
-	}
+		if(encoderX.getPushButton()) {
+			changed = true;
+			Serial.println("X pressed");
+			xMode = xMode == EM_POS ? EM_RATE : EM_POS;
+		}
 
-	if(encoderY.getPushButton()) {
-		changed = true;
-		yMode = yMode == EM_POS ? EM_RATE : EM_POS;
-		Serial.println("Y pressed");
-	}
+		if(encoder_update(encoderX, x_pos, xMode, x_fpos, x_frate))
+		{
+			changed = true;
+			DBGSerial.print("Xpos:");
+			DBGSerial.println(x_fpos);
+			DBGSerial.print("Xrate:");
+			DBGSerial.println(x_frate);
+		}
 
-	if(encoder_update(encoderY, y_pos, yMode, y_fpos, y_frate))
-	{
-		changed = true;
-		DBGSerial.print("Ypos:");
-		DBGSerial.println(y_fpos);
-		DBGSerial.print("Yrate:");
-		DBGSerial.println(y_frate);
-	}
+		if(encoderY.getPushButton()) {
+			changed = true;
+			yMode = yMode == EM_POS ? EM_RATE : EM_POS;
+			Serial.println("Y pressed");
+		}
 
-	if(encoderZ.getPushButton() == true) {
-		changed = true;
-		zMode = zMode == EM_POS ? EM_RATE : EM_POS;
-		Serial.println("Z pressed");
-	}
+		if(encoder_update(encoderY, y_pos, yMode, y_fpos, y_frate))
+		{
+			changed = true;
+			DBGSerial.print("Ypos:");
+			DBGSerial.println(y_fpos);
+			DBGSerial.print("Yrate:");
+			DBGSerial.println(y_frate);
+		}
 
-	if(encoder_update(encoderZ, z_pos, zMode, z_fpos, z_frate))
-	{
-		changed = true;
-		DBGSerial.print("Zpos:");
-		DBGSerial.println(z_fpos);
-		DBGSerial.print("Zrate:");
-		DBGSerial.println(z_frate);
-	}
+		if(encoderZ.getPushButton() == true) {
+			changed = true;
+			zMode = zMode == EM_POS ? EM_RATE : EM_POS;
+			Serial.println("Z pressed");
+		}
 
-	if(changed) {
-		jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F100";
-		CNCSerial.print("?");
-		CNCSerial.flush();
-	}
+		if(encoder_update(encoderZ, z_pos, zMode, z_fpos, z_frate))
+		{
+			changed = true;
+			DBGSerial.print("Zpos:");
+			DBGSerial.println(z_fpos);
+			DBGSerial.print("Zrate:");
+			DBGSerial.println(z_frate);
+		}
 
-	if(stop_marker) {
-		stop_marker = false;
-//		CNCSerial.println("\nM112");
-		// sort reset
-		CNCSerial.print("\030");
-		CNCSerial.flush();
+		if(changed) {
+			CNCSerial.print("?");
+			CNCSerial.flush();
+		}
 	}
 
 	if(unlock_marker) {
@@ -309,31 +317,36 @@ void loop()
 		CNCSerial.flush();
 	}
 
-	while(USBSerial.available() || CNCSerial.available()) {
-		digitalWrite(LED_PIN, LOW);
-		if(USBSerial.available()) {
-			CNCSerial.write(USBSerial.read());
+	if(bypass_mode) {
+		while(USBSerial.available() || CNCSerial.available()) {
+			digitalWrite(LED_PIN, LOW);
+			if(USBSerial.available()) {
+				CNCSerial.write(USBSerial.read());
+			}
+			if(CNCSerial.available()) {
+				uint8_t c = CNCSerial.read();
+				USBSerial.write(c);
+				changed |= process_byte_from_cnc(c);
+			}
 		}
-		if(CNCSerial.available()) {
+	} else {
+		while(CNCSerial.available()) {
+			digitalWrite(LED_PIN, LOW);
 			uint8_t c = CNCSerial.read();
-			USBSerial.write(c);
-			cnc_reply_buf[cnc_counter++] = c;
-			if(cnc_counter >= sizeof(cnc_reply_buf) || c == (uint8_t)0xa) {
-				grblStatusEvaluation(cnc_reply_buf, cnc_counter);
-				if(jog_command != "") {
-					if(memcmp(cnc_reply_buf, IDLE_MARKER, min(cnc_counter, strlen(IDLE_MARKER))) == 0 || memcmp(cnc_reply_buf, JOG_MARKER, min(cnc_counter, strlen(JOG_MARKER))) == 0) {
-						DBGSerial.print("Sending:");
-						DBGSerial.println(jog_command);
-						CNCSerial.println(jog_command);
-						jog_command = "";
-						// here pos must be reset
-						encoderX.setPosition(0);
-						encoderY.setPosition(0);
-						encoderZ.setPosition(0);
-						changed = true;
-					}
+			changed |= process_byte_from_cnc(c);
+			if(encoderX.getPosition() || encoderY.getPosition() || encoderZ.getPosition()) {
+				jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F100";
+				if(status.state == IDLE_STATE || status.state == JOG_STATE) {
+					DBGSerial.print("Sending:");
+					DBGSerial.println(jog_command);
+					CNCSerial.println(jog_command);
+					jog_command = "";
+					// here pos must be reset
+					encoderX.setPosition(0);
+					encoderY.setPosition(0);
+					encoderZ.setPosition(0);
+					changed = true;
 				}
-				cnc_counter = 0;
 			}
 		}
 	}
@@ -341,11 +354,6 @@ void loop()
 	if(changed) {
 		update_display();
 	}
-
-//	if(m+1000 < millis()) {
-//		m = millis();
-//		digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-//	}
 }
 
 /*------------------------------------------------------------------------------
@@ -360,8 +368,9 @@ void loop()
 	<Idle|WPos:0.000,0.000,0.000|Bf:15,128|FS:0,0>
 --------------------------------------------------------------------------------
 */
-void grblStatusEvaluation(uint8_t *buf, int count)
+bool grblStatusEvaluation(uint8_t *buf, int count)
 {
+	bool rs = false;
 	uint8_t *start_pos = (uint8_t*)memchr(buf, '<', count);
 	if(start_pos)												// Status GRBL
 	{
@@ -372,6 +381,7 @@ void grblStatusEvaluation(uint8_t *buf, int count)
 			char *p1 = status_process_buf;
 			char *p2 = strchr(p1, '|');
 			if(p2) {
+				rs = true;
 				*p2 = 0;
 				status.state = p1;
 				while(p2) {
@@ -421,4 +431,5 @@ void grblStatusEvaluation(uint8_t *buf, int count)
 			}
 		}
 	}
+	return rs;
 }
