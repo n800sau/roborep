@@ -54,21 +54,25 @@ RotaryEncoder encoderZ(zp1, zp2, zb);
 eMODE zMode = EM_POS;
 
 // turn on/off own gcode and external gcode mode
-#define MODE_BUTTON_PIN PB15
+#define MODE_BUTTON_PIN PA15
 volatile bool bypass_mode = false;
 
-#define PAUSE_BUTTON_PIN PA8
-volatile bool pause_marker = false;
-bool paused = false;
-
-#define UNLOCK_BUTTON_PIN PA6
+#define UNLOCK_BUTTON_PIN PB3
 volatile bool unlock_marker = false;
 
+// brown
 #define TFT_CS PB15
+// orange
 #define TFT_DC PB1
+// yellow
 #define TFT_RST PB0
+// blue
 #define TFT_MOSI PA7
+// green
 #define TFT_SCLK PA5
+// blk - black
+// gnd - white
+// 3.3v - red
 
 // colored 160x80 0.96"
 //Adafruit_ST7735 display = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
@@ -112,11 +116,6 @@ void ZencoderButtonISR()
 void ModeISR()
 {
 	bypass_mode = true;
-}
-
-void PauseISR()
-{
-	pause_marker = true;
 }
 
 void UnlockISR()
@@ -166,7 +165,6 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
 	pinMode(MODE_BUTTON_PIN, INPUT_PULLUP);
-	pinMode(PAUSE_BUTTON_PIN, INPUT_PULLUP);
 	pinMode(UNLOCK_BUTTON_PIN, INPUT_PULLUP);
 
 	SPI_1.begin(); //Initialize the SPI_2 port.
@@ -196,7 +194,6 @@ void setup()
 	encoderZ.begin();
 
 	attachInterrupt(digitalPinToInterrupt(MODE_BUTTON_PIN), ModeISR, FALLING);
-	attachInterrupt(digitalPinToInterrupt(PAUSE_BUTTON_PIN), PauseISR, FALLING);
 	attachInterrupt(digitalPinToInterrupt(UNLOCK_BUTTON_PIN), UnlockISR, FALLING);
 
 	attachInterrupt(digitalPinToInterrupt(xp1), XencoderISR, CHANGE);
@@ -303,17 +300,6 @@ void loop()
 	if(unlock_marker) {
 		unlock_marker = false;
 		CNCSerial.println("$X");
-		CNCSerial.flush();
-	}
-
-	if(pause_marker) {
-		pause_marker = false;
-		if(paused) {
-			paused = false;
-		} else {
-			paused = true;
-		}
-		CNCSerial.print(paused ? "!" : "~");
 		CNCSerial.flush();
 	}
 
