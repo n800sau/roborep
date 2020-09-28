@@ -333,7 +333,7 @@ void loop()
 			uint8_t c = CNCSerial.read();
 			changed |= process_byte_from_cnc(c);
 			if(encoderX.getPosition() || encoderY.getPosition() || encoderZ.getPosition()) {
-				jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F1000";
+				jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F5000";
 				if(status.state == IDLE_STATE || status.state == JOG_STATE) {
 					DBGSerial.print("Sending:");
 					DBGSerial.println(jog_command);
