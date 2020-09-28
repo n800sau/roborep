@@ -115,7 +115,8 @@ void ZencoderButtonISR()
 
 void ModeISR()
 {
-	bypass_mode = true;
+	bypass_mode = !bypass_mode;
+	digitalWrite(LED_PIN, LOW);
 }
 
 void UnlockISR()
@@ -127,9 +128,13 @@ void update_display()
 {
 	dbuf.fillScreen(0);
 	int y = 5, x[] = {10, 80};
-	const int y_step = 20;
+	int y_step = 14; // 80/14 = 5
 	dbuf.setCursor(x[0], y);
 	dbuf.print(status.state + (bypass_mode ? " (bypass)" : " (control)"));
+	y += y_step;
+	dbuf.setCursor(x[0], y);
+	dbuf.print(F("limits: "));
+	dbuf.print(status.limit_state);
 	y += y_step;
 	dbuf.setCursor(x[0], y);
 	dbuf.print(F("X: "));
@@ -239,10 +244,18 @@ bool process_byte_from_cnc(char c)
 	return rs;
 }
 
+bool old_bypass_mode = false;
+
 void loop()
 {
 
 	bool changed = false;
+
+	if(bypass_mode != old_bypass_mode) {
+		Serial.print("bypass mode now:");
+		Serial.println(bypass_mode);
+		old_bypass_mode = bypass_mode;
+	}
 
 	if(!bypass_mode) {
 
@@ -291,14 +304,13 @@ void loop()
 			DBGSerial.println(z_frate);
 		}
 
-		if(changed) {
-			CNCSerial.print("?");
-			CNCSerial.flush();
-		}
+		CNCSerial.print("?");
+		CNCSerial.flush();
 	}
 
 	if(unlock_marker) {
 		unlock_marker = false;
+		DBGSerial.println("$X");
 		CNCSerial.println("$X");
 		CNCSerial.flush();
 	}
@@ -321,7 +333,7 @@ void loop()
 			uint8_t c = CNCSerial.read();
 			changed |= process_byte_from_cnc(c);
 			if(encoderX.getPosition() || encoderY.getPosition() || encoderZ.getPosition()) {
-				jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F100";
+				jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F1000";
 				if(status.state == IDLE_STATE || status.state == JOG_STATE) {
 					DBGSerial.print("Sending:");
 					DBGSerial.println(jog_command);
@@ -364,6 +376,7 @@ bool grblStatusEvaluation(uint8_t *buf, int count)
 		if(end_pos) {
 			memcpy(status_process_buf, start_pos+1, end_pos - start_pos - 1);
 			status_process_buf[end_pos - start_pos - 1] = 0;
+DBGSerial.println(status_process_buf);
 			char *p1 = status_process_buf;
 			char *p2 = strchr(p1, '|');
 			if(p2) {
