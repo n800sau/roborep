@@ -421,9 +421,9 @@ DBGSerial.println(status_process_buf);
 								status.wZpos = atof(p1);
 							}
 						}
-					} else if(strncmp(p1, "Lim:", 4) == 0) {
+					} else if(strncmp(p1, "Pn:", 4) == 0) {
 						// work position
-						p1 += 4;
+						p1 += 3;
 						status.limit_state = p1;
 					}
 				}
