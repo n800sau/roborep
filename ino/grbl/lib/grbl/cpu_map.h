@@ -26,7 +26,8 @@
 #ifndef cpu_map_h
 #define cpu_map_h
 
-#define CNC_V4_MODE
+// set build_flags = -DCNC_V4_MODE in platformio.ini instead
+// #define CNC_V4_MODE
 
 #ifdef CPU_MAP_ATMEGA328P // (Arduino Uno) Officially supported by Grbl.
 
