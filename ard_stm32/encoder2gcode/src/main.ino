@@ -16,6 +16,10 @@ USBMultiSerial<1> ms;
 int16_t x_pos = 0, y_pos = 0, z_pos = 0;
 float x_fpos = 0, y_fpos = 0, z_fpos = 0;
 float x_frate = 1, y_frate = 1, z_frate = 1;
+uint8_t menu_x = 0, menu_z = 0;
+
+const uint8_t menu_count_z = 2;
+const uint8_t menu_count_x[] = {4, 1};
 
 // buffer for cnc reply
 uint8_t cnc_reply_buf[256];
@@ -35,7 +39,7 @@ struct Status_T {
 } status = {
 	.state = IDLE_STATE,
 	.mXpos = 0, .mYpos = 0, .mZpos = 0, .wXpos = 0, .wYpos = 0, .wZpos = 0,
-	.limit_state = ""
+	.limit_state = "",
 };
 
 enum eMODE {EM_POS, EM_RATE};
@@ -57,8 +61,9 @@ eMODE zMode = EM_POS;
 #define MODE_BUTTON_PIN PA15
 volatile bool bypass_mode = false;
 
-#define UNLOCK_BUTTON_PIN PB3
-volatile bool unlock_marker = false;
+#define MENU_BUTTON_PIN PB3
+volatile bool menu_mode_marker = false;
+
 
 // brown
 #define TFT_CS PB15
@@ -121,47 +126,65 @@ void ModeISR()
 
 void UnlockISR()
 {
-	unlock_marker = true;
+	menu_mode_marker = !menu_mode_marker;
 }
 
 void update_display()
 {
 	dbuf.fillScreen(0);
-	int y = 5, x[] = {10, 80};
 	int y_step = 14; // 80/14 = 5
-	dbuf.setCursor(x[0], y);
-	dbuf.print(status.state + (bypass_mode ? " (bypass)" : " (control)"));
-	y += y_step;
-	dbuf.setCursor(x[0], y);
-	dbuf.print(F("limits: "));
-	dbuf.print(status.limit_state);
-	y += y_step;
-	dbuf.setCursor(x[0], y);
-	dbuf.print(F("X: "));
-	dbuf.print(status.mXpos);
-//	dbuf.print(x_fpos);
-	dbuf.print(F(","));
-	dbuf.setCursor(x[1], y);
-	dbuf.print(xMode ? F("*") : F(" "));
-	dbuf.print(x_frate);
-	y += y_step;
-	dbuf.setCursor(x[0], y);
-	dbuf.print(F("Y: "));
-	dbuf.print(status.mYpos);
-//	dbuf.print(y_fpos);
-	dbuf.print(F(","));
-	dbuf.setCursor(x[1], y);
-	dbuf.print(yMode ? F("*") : F(" "));
-	dbuf.print(y_frate);
-	y += y_step;
-	dbuf.setCursor(x[0], y);
-	dbuf.print(F("Z :"));
-	dbuf.print(status.mZpos);
-//	dbuf.print(z_fpos);
-	dbuf.print(F(","));
-	dbuf.setCursor(x[1], y);
-	dbuf.print(zMode ? F("*") : F(" "));
-	dbuf.print(z_frate);
+	if(menu_mode_marker) {
+		int y = 5, x[] = {10, 30, 40, 50, 60, 70};
+		dbuf.setCursor(x[0], y);
+		dbuf.print("Menu");
+		y += y_step;
+		dbuf.print("Memory:");
+		for(int i=0; i<=menu_count_x[0]; i++) {
+			dbuf.setCursor(x[1 + i], y);
+			dbuf.print("M");
+			dbuf.print(1+i);
+			dbuf.print(" ");
+		}
+		y += y_step;
+		dbuf.print("Commands:");
+		for(int i=0; i<=menu_count_x[1]; i++) {
+			dbuf.setCursor(x[1 + i], y);
+			dbuf.print("Unlock");
+			dbuf.print(" ");
+		}
+	} else {
+		int y = 5, x[] = {10, 80};
+		dbuf.setCursor(x[0], y);
+		dbuf.print(status.state + (bypass_mode ? " (bypass)" : " (control)"));
+		y += y_step;
+		dbuf.setCursor(x[0], y);
+		dbuf.print(F("limits: "));
+		dbuf.print(status.limit_state);
+		y += y_step;
+		dbuf.setCursor(x[0], y);
+		dbuf.print(F("X: "));
+		dbuf.print(status.mXpos);
+		dbuf.print(F(","));
+		dbuf.setCursor(x[1], y);
+		dbuf.print(xMode ? F("*") : F(" "));
+		dbuf.print(x_frate);
+		y += y_step;
+		dbuf.setCursor(x[0], y);
+		dbuf.print(F("Y: "));
+		dbuf.print(status.mYpos);
+		dbuf.print(F(","));
+		dbuf.setCursor(x[1], y);
+		dbuf.print(yMode ? F("*") : F(" "));
+		dbuf.print(y_frate);
+		y += y_step;
+		dbuf.setCursor(x[0], y);
+		dbuf.print(F("Z :"));
+		dbuf.print(status.mZpos);
+		dbuf.print(F(","));
+		dbuf.setCursor(x[1], y);
+		dbuf.print(zMode ? F("*") : F(" "));
+		dbuf.print(z_frate);
+	}
 	display.drawBitmap(0, 0, dbuf.getBuffer(), dbuf.width(), dbuf.height(), ST7735_YELLOW, ST7735_BLACK);
 }
 
@@ -170,7 +193,7 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
 	pinMode(MODE_BUTTON_PIN, INPUT_PULLUP);
-	pinMode(UNLOCK_BUTTON_PIN, INPUT_PULLUP);
+	pinMode(MENU_BUTTON_PIN, INPUT_PULLUP);
 
 	SPI_1.begin(); //Initialize the SPI_2 port.
 //	SPI_1.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
@@ -199,7 +222,7 @@ void setup()
 	encoderZ.begin();
 
 	attachInterrupt(digitalPinToInterrupt(MODE_BUTTON_PIN), ModeISR, FALLING);
-	attachInterrupt(digitalPinToInterrupt(UNLOCK_BUTTON_PIN), UnlockISR, FALLING);
+	attachInterrupt(digitalPinToInterrupt(MENU_BUTTON_PIN), UnlockISR, FALLING);
 
 	attachInterrupt(digitalPinToInterrupt(xp1), XencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(xp2), XencoderISR, CHANGE);
@@ -219,8 +242,7 @@ void setup()
 bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, eMODE mode, float &fpos, float &frate)
 {
 	int16_t pos = enc.getPosition();
-
-	float pdiff = pos - oldpos;
+	int pdiff = pos - oldpos;
 	if(mode == EM_RATE) {
 		frate += frate * pdiff/10.;
 		if(frate < 0.1) {
@@ -228,6 +250,23 @@ bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, eMODE mode, float &fpos
 		}
 	} else {
 		fpos += pdiff * frate;
+	}
+	oldpos = pos;
+	return bool(pdiff);
+}
+
+bool encoder_menu_update(RotaryEncoder &enc, int16_t &oldpos, uint8_t &menu_pos, uint8_t max_pos)
+{
+	int16_t pos = enc.getPosition();
+	int pdiff = pos - oldpos;
+	if(pdiff) {
+		pdiff = pdiff > 0 ? 1 : -1;
+	}
+	menu_pos += pdiff;
+	if(menu_pos < 0) {
+		menu_pos = 0;
+	} else if(menu_pos = max_pos) {
+		menu_pos = max_pos;
 	}
 	oldpos = pos;
 	return bool(pdiff);
@@ -259,61 +298,100 @@ void loop()
 
 	if(!bypass_mode) {
 
-		if(encoderX.getPushButton()) {
-			changed = true;
-			Serial.println("X pressed");
-			xMode = xMode == EM_POS ? EM_RATE : EM_POS;
-		}
+		if(menu_mode_marker) {
 
-		if(encoder_update(encoderX, x_pos, xMode, x_fpos, x_frate))
-		{
-			changed = true;
-			DBGSerial.print("Xpos:");
-			DBGSerial.println(x_fpos);
-			DBGSerial.print("Xrate:");
-			DBGSerial.println(x_frate);
-		}
+			if(encoderX.getPushButton()) {
+				changed = true;
+				Serial.println("X pressed");
+			}
 
-		if(encoderY.getPushButton()) {
-			changed = true;
-			yMode = yMode == EM_POS ? EM_RATE : EM_POS;
-			Serial.println("Y pressed");
-		}
+			if(encoderY.getPushButton()) {
+				changed = true;
+				Serial.println("Y pressed");
+			}
 
-		if(encoder_update(encoderY, y_pos, yMode, y_fpos, y_frate))
-		{
-			changed = true;
-			DBGSerial.print("Ypos:");
-			DBGSerial.println(y_fpos);
-			DBGSerial.print("Yrate:");
-			DBGSerial.println(y_frate);
-		}
+			if(encoderZ.getPushButton() == true) {
+				changed = true;
+				Serial.println("Z pressed");
+			}
 
-		if(encoderZ.getPushButton() == true) {
-			changed = true;
-			zMode = zMode == EM_POS ? EM_RATE : EM_POS;
-			Serial.println("Z pressed");
-		}
+			if(encoder_menu_update(encoderX, x_pos, menu_x, menu_count_x[menu_z]-1))
+			{
+				changed = true;
+				DBGSerial.print("Xpos:");
+				DBGSerial.println(menu_x);
+			}
 
-		if(encoder_update(encoderZ, z_pos, zMode, z_fpos, z_frate))
-		{
-			changed = true;
-			DBGSerial.print("Zpos:");
-			DBGSerial.println(z_fpos);
-			DBGSerial.print("Zrate:");
-			DBGSerial.println(z_frate);
+			if(encoder_menu_update(encoderZ, z_pos, menu_z, menu_count_z-1))
+			{
+				changed = true;
+				DBGSerial.print("Zpos:");
+				DBGSerial.println(menu_z);
+			}
+			if(changed) {
+				if(menu_x >= menu_count_x[menu_z]) {
+					menu_x = menu_count_x[menu_z] - 1;
+				}
+			}
+
+		} else {
+
+			if(encoderX.getPushButton()) {
+				changed = true;
+				xMode = xMode == EM_POS ? EM_RATE : EM_POS;
+				Serial.println("X pressed");
+			}
+
+			if(encoderY.getPushButton()) {
+				changed = true;
+				yMode = yMode == EM_POS ? EM_RATE : EM_POS;
+				Serial.println("Y pressed");
+			}
+
+			if(encoderZ.getPushButton() == true) {
+				changed = true;
+				zMode = zMode == EM_POS ? EM_RATE : EM_POS;
+				Serial.println("Z pressed");
+			}
+
+			if(encoder_update(encoderX, x_pos, xMode, x_fpos, x_frate))
+			{
+				changed = true;
+				DBGSerial.print("Xpos:");
+				DBGSerial.println(x_fpos);
+				DBGSerial.print("Xrate:");
+				DBGSerial.println(x_frate);
+			}
+
+			if(encoder_update(encoderY, y_pos, yMode, y_fpos, y_frate))
+			{
+				changed = true;
+				DBGSerial.print("Ypos:");
+				DBGSerial.println(y_fpos);
+				DBGSerial.print("Yrate:");
+				DBGSerial.println(y_frate);
+			}
+
+			if(encoder_update(encoderZ, z_pos, zMode, z_fpos, z_frate))
+			{
+				changed = true;
+				DBGSerial.print("Zpos:");
+				DBGSerial.println(z_fpos);
+				DBGSerial.print("Zrate:");
+				DBGSerial.println(z_frate);
+			}
 		}
 
 		CNCSerial.print("?");
 		CNCSerial.flush();
 	}
 
-	if(unlock_marker) {
-		unlock_marker = false;
-		DBGSerial.println("$X");
-		CNCSerial.println("$X");
-		CNCSerial.flush();
-	}
+//	if(menu_mode_marker) {
+//		menu_mode_marker = false;
+//		DBGSerial.println("$X");
+//		CNCSerial.println("$X");
+//		CNCSerial.flush();
+//	}
 
 	if(bypass_mode) {
 		while(USBSerial.available() || CNCSerial.available()) {
@@ -333,18 +411,20 @@ void loop()
 			uint8_t c = CNCSerial.read();
 			changed |= process_byte_from_cnc(c);
 			if(encoderX.getPosition() || encoderY.getPosition() || encoderZ.getPosition()) {
-				jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F5000";
-				if(status.state == IDLE_STATE || status.state == JOG_STATE) {
-					DBGSerial.print("Sending:");
-					DBGSerial.println(jog_command);
-					CNCSerial.println(jog_command);
-					jog_command = "";
-					// here pos must be reset
-					encoderX.setPosition(0);
-					encoderY.setPosition(0);
-					encoderZ.setPosition(0);
-					changed = true;
+				if(!menu_mode_marker) {
+					jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F5000";
+					if(status.state == IDLE_STATE || status.state == JOG_STATE) {
+						DBGSerial.print("Sending:");
+						DBGSerial.println(jog_command);
+						CNCSerial.println(jog_command);
+						jog_command = "";
+						changed = true;
+					}
 				}
+				// here pos must be reset
+				encoderX.setPosition(0);
+				encoderY.setPosition(0);
+				encoderZ.setPosition(0);
 			}
 		}
 	}
