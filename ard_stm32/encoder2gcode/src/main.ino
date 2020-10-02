@@ -18,8 +18,18 @@ float x_fpos = 0, y_fpos = 0, z_fpos = 0;
 float x_frate = 1, y_frate = 1, z_frate = 1;
 uint8_t menu_x = 0, menu_z = 0;
 
+const uint8_t memory_cell_count = 4;
+
 const uint8_t menu_count_z = 2;
-const uint8_t menu_count_x[] = {4, 1};
+const uint8_t menu_count_x[] = {memory_cell_count, 1};
+
+struct t_pos {
+	float x;
+	float y;
+	float z;
+	bool enabled;
+	t_pos():x(0),y(0),z(0),enabled(false) {}
+} m_pos[memory_cell_count];
 
 // buffer for cnc reply
 uint8_t cnc_reply_buf[256];
@@ -63,6 +73,8 @@ volatile bool bypass_mode = false;
 
 #define MENU_BUTTON_PIN PB3
 volatile bool menu_mode_marker = false;
+
+enum BTN_TYPES:uint8_t {BTN_X, BTN_Y, BTN_Z};
 
 
 // brown
@@ -143,7 +155,7 @@ void update_display()
 			dbuf.setCursor(x[1 + i], y);
 			dbuf.print("M");
 			dbuf.print(1+i);
-			dbuf.print(" ");
+			dbuf.print(m_pos[i].enabled ? "*" : " ");
 		}
 		y += y_step;
 		dbuf.print("Commands:");
@@ -272,6 +284,33 @@ bool encoder_menu_update(RotaryEncoder &enc, int16_t &oldpos, uint8_t &menu_pos,
 	return bool(pdiff);
 }
 
+void menu_item_clicked(BTN_TYPES btn)
+{
+	switch(menu_z) {
+		case 0: // memory
+			switch(btn) {
+				case BTN_X:
+					// remember position
+					m_pos[menu_x].x = status.mXpos;
+					m_pos[menu_x].y = status.mYpos;
+					m_pos[menu_x].z = status.mZpos;
+					m_pos[menu_x].enabled = true;
+					break;
+				case BTN_Y:
+					m_pos[menu_x].enabled = false;
+					break;
+				case BTN_Z:
+					if(m_pos[menu_x].enabled) {
+						CNCSerial.println(String("$J=X") + m_pos[menu_x].x + " Y" + m_pos[menu_x].y + " Z" + m_pos[menu_x].z + " F5000");
+					}
+					break;
+			}
+			break;
+		case 1: // functions
+			break;
+	}
+}
+
 bool process_byte_from_cnc(char c)
 {
 	bool rs = false;
@@ -303,16 +342,19 @@ void loop()
 			if(encoderX.getPushButton()) {
 				changed = true;
 				Serial.println("X pressed");
+				menu_item_clicked(BTN_X);
 			}
 
 			if(encoderY.getPushButton()) {
 				changed = true;
 				Serial.println("Y pressed");
+				menu_item_clicked(BTN_Y);
 			}
 
 			if(encoderZ.getPushButton() == true) {
 				changed = true;
 				Serial.println("Z pressed");
+				menu_item_clicked(BTN_Z);
 			}
 
 			if(encoder_menu_update(encoderX, x_pos, menu_x, menu_count_x[menu_z]-1))
