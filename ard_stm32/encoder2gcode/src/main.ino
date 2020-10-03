@@ -19,9 +19,9 @@ float x_frate = 1, y_frate = 1, z_frate = 1;
 uint8_t menu_x = 0, menu_z = 0;
 
 const uint8_t memory_cell_count = 4;
-
+const uint8_t command_cell_count = 1;
 const uint8_t menu_count_z = 2;
-const uint8_t menu_count_x[] = {memory_cell_count, 1};
+const int menu_count_x[menu_count_z] = {memory_cell_count, command_cell_count};
 
 struct t_pos {
 	float x;
@@ -55,7 +55,7 @@ struct Status_T {
 enum eMODE {EM_POS, EM_RATE};
 
 // p1, p2, button
-const int xp1=PB14, xp2=PB13, xb=PB12;
+const int xp1=PB9, xp2=PB8, xb=PB7;
 RotaryEncoder encoderX(xp1, xp2, xb);
 eMODE xMode = EM_POS;
 
@@ -63,7 +63,7 @@ const int yp1=PA2, yp2=PA3, yb=PA4;
 RotaryEncoder encoderY(yp1, yp2, yb);
 eMODE yMode = EM_POS;
 
-const int zp1=PB9, zp2=PB8, zb=PB7;
+const int zp1=PB14, zp2=PB13, zb=PB12;
 RotaryEncoder encoderZ(zp1, zp2, zb);
 eMODE zMode = EM_POS;
 
@@ -71,8 +71,10 @@ eMODE zMode = EM_POS;
 #define MODE_BUTTON_PIN PA15
 volatile bool bypass_mode = false;
 
-#define MENU_BUTTON_PIN PB3
-volatile bool menu_mode_marker = false;
+#define MENU_BUTTON_PIN PB5
+volatile bool menu_mode = false;
+
+volatile bool debounce_set = false;
 
 enum BTN_TYPES:uint8_t {BTN_X, BTN_Y, BTN_Z};
 
@@ -132,37 +134,57 @@ void ZencoderButtonISR()
 
 void ModeISR()
 {
-	bypass_mode = !bypass_mode;
-	digitalWrite(LED_PIN, LOW);
+	if(!debounce_set) {
+		bypass_mode = !bypass_mode;
+		debounce_set = true;
+		digitalWrite(LED_PIN, LOW);
+	}
 }
 
-void UnlockISR()
+void MenuISR()
 {
-	menu_mode_marker = !menu_mode_marker;
+	if(!debounce_set) {
+		menu_mode = !menu_mode;
+		debounce_set = true;
+	}
 }
 
 void update_display()
 {
 	dbuf.fillScreen(0);
 	int y_step = 14; // 80/14 = 5
-	if(menu_mode_marker) {
-		int y = 5, x[] = {10, 30, 40, 50, 60, 70};
+	if(menu_mode) {
+		int y = 5, x[memory_cell_count+1] = {10, 60, 85, 110, 135};
 		dbuf.setCursor(x[0], y);
 		dbuf.print("Menu");
 		y += y_step;
+		if(menu_z == 0) {
+			dbuf.setCursor(0, y);
+			dbuf.print(">");
+		}
+		dbuf.setCursor(x[0], y);
 		dbuf.print("Memory:");
-		for(int i=0; i<=menu_count_x[0]; i++) {
+		for(int i=0; i<memory_cell_count; i++) {
 			dbuf.setCursor(x[1 + i], y);
 			dbuf.print("M");
 			dbuf.print(1+i);
 			dbuf.print(m_pos[i].enabled ? "*" : " ");
+			if(menu_x == i) {
+				dbuf.setCursor(x[1 + i], y + y_step/2);
+				dbuf.print("^");
+			}
 		}
 		y += y_step;
-		dbuf.print("Commands:");
-		for(int i=0; i<=menu_count_x[1]; i++) {
-			dbuf.setCursor(x[1 + i], y);
+		if(menu_z == 1) {
+			dbuf.setCursor(0, y);
+			dbuf.print(">");
+		}
+		dbuf.setCursor(x[0], y);
+		dbuf.print("Action:");
+		int xa[command_cell_count+1] = {10, 80};
+		for(int i=0; i<command_cell_count; i++) {
+			dbuf.setCursor(xa[1 + i], y);
 			dbuf.print("Unlock");
-			dbuf.print(" ");
 		}
 	} else {
 		int y = 5, x[] = {10, 80};
@@ -234,7 +256,7 @@ void setup()
 	encoderZ.begin();
 
 	attachInterrupt(digitalPinToInterrupt(MODE_BUTTON_PIN), ModeISR, FALLING);
-	attachInterrupt(digitalPinToInterrupt(MENU_BUTTON_PIN), UnlockISR, FALLING);
+	attachInterrupt(digitalPinToInterrupt(MENU_BUTTON_PIN), MenuISR, FALLING);
 
 	attachInterrupt(digitalPinToInterrupt(xp1), XencoderISR, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(xp2), XencoderISR, CHANGE);
@@ -255,32 +277,38 @@ bool encoder_update(RotaryEncoder &enc, int16_t &oldpos, eMODE mode, float &fpos
 {
 	int16_t pos = enc.getPosition();
 	int pdiff = pos - oldpos;
-	if(mode == EM_RATE) {
-		frate += frate * pdiff/10.;
-		if(frate < 0.1) {
-			frate = 0.1;
+	if(pdiff) {
+		if(mode == EM_RATE) {
+			frate += frate * pdiff/10.;
+			if(frate < 0.1) {
+				frate = 0.1;
+			}
+		} else {
+			fpos += pdiff * frate / 2;
 		}
-	} else {
-		fpos += pdiff * frate;
+		oldpos = pos;
 	}
-	oldpos = pos;
 	return bool(pdiff);
 }
 
 bool encoder_menu_update(RotaryEncoder &enc, int16_t &oldpos, uint8_t &menu_pos, uint8_t max_pos)
 {
 	int16_t pos = enc.getPosition();
-	int pdiff = pos - oldpos;
+Serial.print("pos:");
+Serial.println(pos);
+	int pdiff = (pos - oldpos) / 2;
 	if(pdiff) {
 		pdiff = pdiff > 0 ? 1 : -1;
+Serial.print("pdiff:");
+Serial.println(pdiff);
+		menu_pos += pdiff;
+		if(menu_pos < 0) {
+			menu_pos = 0;
+		} else if(menu_pos > max_pos) {
+			menu_pos = max_pos;
+		}
+		oldpos = pos;
 	}
-	menu_pos += pdiff;
-	if(menu_pos < 0) {
-		menu_pos = 0;
-	} else if(menu_pos = max_pos) {
-		menu_pos = max_pos;
-	}
-	oldpos = pos;
 	return bool(pdiff);
 }
 
@@ -337,7 +365,7 @@ void loop()
 
 	if(!bypass_mode) {
 
-		if(menu_mode_marker) {
+		if(menu_mode) {
 
 			if(encoderX.getPushButton()) {
 				changed = true;
@@ -374,6 +402,9 @@ void loop()
 				if(menu_x >= menu_count_x[menu_z]) {
 					menu_x = menu_count_x[menu_z] - 1;
 				}
+					encoderX.setPosition(0);
+					encoderY.setPosition(0);
+					encoderZ.setPosition(0);
 			}
 
 		} else {
@@ -428,8 +459,8 @@ void loop()
 		CNCSerial.flush();
 	}
 
-//	if(menu_mode_marker) {
-//		menu_mode_marker = false;
+//	if(menu_mode) {
+//		menu_mode = false;
 //		DBGSerial.println("$X");
 //		CNCSerial.println("$X");
 //		CNCSerial.flush();
@@ -452,9 +483,10 @@ void loop()
 			digitalWrite(LED_PIN, LOW);
 			uint8_t c = CNCSerial.read();
 			changed |= process_byte_from_cnc(c);
-			if(encoderX.getPosition() || encoderY.getPosition() || encoderZ.getPosition()) {
-				if(!menu_mode_marker) {
+			if(x_fpos || y_fpos || z_fpos) {
+				if(!menu_mode) {
 					jog_command = String("$J=G91 X") + x_fpos + " Y" + y_fpos + " Z" + z_fpos + " F5000";
+					x_fpos = y_fpos = z_fpos = 0;
 					if(status.state == IDLE_STATE || status.state == JOG_STATE) {
 						DBGSerial.print("Sending:");
 						DBGSerial.println(jog_command);
@@ -462,17 +494,21 @@ void loop()
 						jog_command = "";
 						changed = true;
 					}
+//					encoderX.setPosition(0);
+//					encoderY.setPosition(0);
+//					encoderZ.setPosition(0);
 				}
-				// here pos must be reset
-				encoderX.setPosition(0);
-				encoderY.setPosition(0);
-				encoderZ.setPosition(0);
 			}
 		}
 	}
 	digitalWrite(LED_PIN, HIGH);
-	if(changed) {
+	if(changed || debounce_set) {
 		update_display();
+		if(debounce_set) {
+			Serial.print("menu mode ");
+			Serial.println(menu_mode);
+			debounce_set = false;
+		}
 	}
 }
 
