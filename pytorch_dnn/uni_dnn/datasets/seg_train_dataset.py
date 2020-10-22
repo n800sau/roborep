@@ -5,11 +5,6 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
-DB_CLASSES = ('background',  # always index 0
-			   'dirt', 'coal', 'belaz')
-
-NUM_CLASSES = len(DB_CLASSES)
-
 class SegmentTrainDataset(Dataset):
 
 	def __init__(self, img_dir, mask_dir, img_shape, num_classes, label_map=None):
@@ -55,7 +50,9 @@ class SegmentTrainDataset(Dataset):
 	def load_mask(self, raw_image):
 		raw_image = raw_image.resize(self.img_shape, resample=Image.NEAREST)
 		# take a single colour
-		imx_t = np.array(raw_image)[:,:,0]
+		imx_t = np.array(raw_image)
+		if len(imx_t.shape) > 2:
+			imx_t = imx_t[:,:,0]
 		vf = np.vectorize(lambda v: self.label_map.get(v, v))
 		imx_t = vf(imx_t)
 		# everything outside is background
@@ -65,31 +62,42 @@ class SegmentTrainDataset(Dataset):
 
 	def get_class_probability(self):
 		values = np.array(list(self.counts.values()))
-		p_values = values/np.sum(values)
-		return torch.Tensor(p_values)
+		return torch.Tensor(values)
+#		p_values = values/np.sum(values)
+#		return torch.Tensor(p_values)
 
 	def __compute_class_probability(self):
 		counts = dict((i, 0) for i in range(self.num_classes))
+		total = 0
 
 		max_label = 0
 
 		for name in self.bnames:
 			mask_path = os.path.join(self.mask_root_dir, name + self.mask_extension)
 
-			raw_image = Image.open(mask_path).resize(self.img_shape)
-			# take a single colour
-			imx_t = np.array(raw_image)[:,:,0]
+			raw_image = Image.open(mask_path)
+			imx_t = self.load_mask(raw_image)
 #			print('uniq 0:', np.unique(imx_t[:,:,0]))
 #			print('uniq 1:', np.unique(imx_t[:,:,1]))
 #			print('uniq 2:', np.unique(imx_t[:,:,2]))
+
+			# also find just to show max label
 			l_max = imx_t.max()
 			if max_label < l_max:
 				max_label = l_max
-			imx_t = imx_t.reshape(self.img_shape[0]*self.img_shape[1])
-			imx_t[imx_t>=self.num_classes] = 0
 
 			for i in range(self.num_classes):
 				counts[i] += np.sum(imx_t == i)
+			total += imx_t.shape[0] * imx_t.shape[1]
+		print('total:%f, counts: %s' % (total, counts))
+		freq = []
+		for i in range(self.num_classes):
+			freq.append(float(counts[i]) / total)
+		mfreq = np.median(freq)
+		print('mfreq: %f, freq: %s' % (mfreq, freq))
+		weightings = dict((i, mfreq/f) for i,f in enumerate(freq))
+		print('class_weightings: %s' % weightings)
 
 		print('max label: %d' % max_label)
-		return counts
+#		return counts
+		return weightings
