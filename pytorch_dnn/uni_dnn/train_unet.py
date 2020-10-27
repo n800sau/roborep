@@ -10,39 +10,29 @@ from datasets import SegmentTrainDataset
 from models import UNet
 from utils.misc import save_model_state, make_test_masked_images, get_criterion, create_or_clean_dirs
 import numpy as np
+from config import Config
 
-GPU_ID = 0
-NUM_CLASSES = 6
-DS_BASE_DIR = 'data'
-IMG_DIR = 'images'
-MASK_DIR = 'masks'
-BATCH_SIZE = 6
-NUM_INPUT_CHANNELS = 3
-INITIAL_WNAME = 'unet_model_best.pth'
-SAVE_WNAME = 'unet_model_best_%Y-%m-%d_%H:%M:%S'
-LEARNING_RATE = 0.002
-NUM_EPOCHS = 40
-
-MONTAGE_DIR = None
-LOG_DIR = os.path.join(DS_BASE_DIR, 'unet_logs')
+C = Config('unet')
+C.NUM_EPOCHS = 40
+C.MONTAGE_DIR = None
 
 def train(train_dataset):
 
-	train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+	train_dataloader = DataLoader(train_dataset, batch_size=C.BATCH_SIZE, shuffle=True, num_workers=2)
 
-	model = UNet(input_channels=NUM_INPUT_CHANNELS, output_channels=NUM_CLASSES)
-	if GPU_ID >= 0:
-		model = model.cuda(GPU_ID)
-	if os.path.exists(INITIAL_WNAME):
-		model.load_state_dict(torch.load(INITIAL_WNAME))
-	if GPU_ID >= 0:
-		model = model.cuda(GPU_ID)
+	model = UNet(input_channels=C.NUM_INPUT_CHANNELS, output_channels=C.NUM_CLASSES)
+	if C.GPU_ID >= 0:
+		model = model.cuda(C.GPU_ID)
+	if os.path.exists(C.INITIAL_WNAME):
+		model.load_state_dict(torch.load(C.INITIAL_WNAME))
+	if C.GPU_ID >= 0:
+		model = model.cuda(C.GPU_ID)
 
-	criterion = get_criterion(train_dataset, gpu_id=GPU_ID)
+	criterion = get_criterion(train_dataset, gpu_id=C.GPU_ID)
 
-	optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+	optimizer = torch.optim.Adam(model.parameters(), lr=C.LEARNING_RATE)
 
-	with SummaryWriter('logs', comment=f'LR_{LEARNING_RATE}_BS_{BATCH_SIZE}') as writer:
+	with SummaryWriter('logs', comment=f'LR_{C.LEARNING_RATE}_BS_{C.BATCH_SIZE}') as writer:
 
 		is_better = True
 		prev_loss = float('inf')
@@ -50,7 +40,7 @@ def train(train_dataset):
 		model.train()
 
 		global_step = 0
-		for epoch in range(NUM_EPOCHS):
+		for epoch in range(C.NUM_EPOCHS):
 			loss_f = 0
 			t_start = time.time()
 
@@ -58,8 +48,8 @@ def train(train_dataset):
 
 				# make sample and save
 #				print('!!!!!!!!!!!', batch['fname'])
-				if MONTAGE_DIR:
-					make_test_masked_images(MONTAGE_DIR, batch)
+				if C.MONTAGE_DIR:
+					make_test_masked_images(C.MONTAGE_DIR, batch)
 
 #				print(batch['fname'])
 #				print('input tensor', input_tensor.shape)
@@ -67,9 +57,9 @@ def train(train_dataset):
 
 				input_tensor = torch.autograd.Variable(batch['image'])
 				target_tensor = torch.autograd.Variable(batch['mask'])
-				if GPU_ID >= 0:
-					input_tensor = input_tensor.cuda(GPU_ID)
-					target_tensor = target_tensor.cuda(GPU_ID)
+				if C.GPU_ID >= 0:
+					input_tensor = input_tensor.cuda(C.GPU_ID)
+					target_tensor = target_tensor.cuda(C.GPU_ID)
 
 				predicted_tensor, softmaxed_tensor = model(input_tensor)
 
@@ -82,7 +72,7 @@ def train(train_dataset):
 				loss.backward()
 				optimizer.step()
 
-			loss_f = loss.float()
+				loss_f += loss.float()
 #				prediction_f = softmaxed_tensor.float()
 
 			delta = time.time() - t_start
@@ -92,7 +82,7 @@ def train(train_dataset):
 			if is_better:
 				print(' {:.3f} better'.format(prev_loss-loss_f))
 				prev_loss = loss_f
-				save_model_state(model, DS_BASE_DIR, '%s_%.4f' % (SAVE_WNAME, loss_f), INITIAL_WNAME)
+				save_model_state(model, C.DS_BASE_DIR, '%s_%.4f' % (C.SAVE_WNAME, loss_f), C.INITIAL_WNAME)
 
 				for param_group in optimizer.param_groups:
 					param_group['lr'] *= 0.9
@@ -100,7 +90,7 @@ def train(train_dataset):
 				print(' no better')
 
 			global_step += 1
-			if global_step % (len(train_dataset) // (10 * BATCH_SIZE)) == 0:
+			if global_step % (len(train_dataset) // (10 * C.BATCH_SIZE)) == 0:
 				for tag, value in model.named_parameters():
 					tag = tag.replace('.', '/')
 					writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
@@ -109,7 +99,7 @@ def train(train_dataset):
 
 if __name__ == "__main__":
 
-	create_or_clean_dirs((MONTAGE_DIR, LOG_DIR))
+	create_or_clean_dirs((C.MONTAGE_DIR, C.LOG_DIR))
 
-	train(SegmentTrainDataset(img_dir=os.path.join(DS_BASE_DIR, IMG_DIR), mask_dir=os.path.join(DS_BASE_DIR, MASK_DIR), num_classes=NUM_CLASSES, img_shape=(224, 224)))
+	train(SegmentTrainDataset(img_dir=os.path.join(C.DS_BASE_DIR, C.IMG_DIR), mask_dir=os.path.join(C.DS_BASE_DIR, C.MASK_DIR), num_classes=C.NUM_CLASSES, img_shape=(224, 224)))
 	print('Finished')

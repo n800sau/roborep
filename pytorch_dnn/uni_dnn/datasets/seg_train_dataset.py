@@ -57,7 +57,7 @@ class SegmentTrainDataset(Dataset):
 		imx_t = vf(imx_t)
 		# everything outside is background
 		imx_t[imx_t>=self.num_classes] = 0
-#		print('mask shape:%s, uniq: %s' % (imx_t.shape, np.unique(imx_t[:,:])))
+#		print('mask shape:%s, uniq: %s, count:%s' % (imx_t.shape, np.unique(imx_t[:,:]), dict([(i, np.sum(imx_t==i)) for i in np.unique(imx_t[:,:])])))
 		return imx_t
 
 	def get_class_probability(self):
@@ -89,6 +89,7 @@ class SegmentTrainDataset(Dataset):
 			for i in range(self.num_classes):
 				counts[i] += np.sum(imx_t == i)
 			total += imx_t.shape[0] * imx_t.shape[1]
+
 		print('total:%f, counts: %s' % (total, counts))
 		freq = []
 		for i in range(self.num_classes):
