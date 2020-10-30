@@ -8,6 +8,7 @@ C.BATCH_SIZE = 4
 
 import os
 import torch
+from PIL import Image
 from utils.misc import create_or_clean_dirs
 from utils.inference import save_segmentation
 
@@ -19,7 +20,10 @@ def load_model():
 if __name__ == "__main__":
 
 	create_or_clean_dirs((C.PREDICT_OUTPUT_DIR, ))
-	input_dataset = PredictImageDataset(input_dir=os.path.join(C.PREDICT_INPUT_DIR), img_shape=(224, 224))
-	save_segmentation(load_model(), input_dataset, C.PREDICT_OUTPUT_DIR, batch_size=C.BATCH_SIZE, gpu_id=C.GPU_ID)
+	input_dataset = PredictImageDataset(input_dir=C.PREDICT_INPUT_DIR, img_shape=(224, 224))
+	for bname,idx,img_arr in save_segmentation(load_model(), input_dataset, batch_size=C.BATCH_SIZE, gpu_id=C.GPU_ID):
+		fname = os.path.join(C.PREDICT_OUTPUT_DIR, "{}_{}.png".format(bname, idx))
+		im = Image.fromarray(img_arr)
+		im.save(fname)
 
 	print('Finished')

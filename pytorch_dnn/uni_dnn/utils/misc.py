@@ -52,11 +52,12 @@ def get_criterion(train_dataset, gpu_id=-1):
 		criterion = criterion.cuda(gpu_id)
 	return criterion
 
-def create_or_clean_dirs(dirlist):
+def create_or_clean_dirs(dirlist, extensions=('.png', '.mp4')):
 	for dname in dirlist:
 		if dname:
 			if os.path.exists(dname):
-				for fname in glob.glob(os.path.join(dname, '*.png')):
-					os.unlink(fname)
+				for ext in extensions:
+					for fname in glob.glob(os.path.join(dname, '*' + ext)):
+						os.unlink(fname)
 			else:
 				os.makedirs(dname)

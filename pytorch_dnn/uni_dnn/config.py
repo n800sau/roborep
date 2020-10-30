@@ -17,7 +17,11 @@ class Config:
 
 		self.MONTAGE_DIR = os.path.join(self.DS_BASE_DIR, 'test_images')
 		self.LOG_DIR = os.path.join(self.DS_BASE_DIR, '%s_logs' % net_name)
-		# dir to output predicted
+		# dir with images to predict
 		self.PREDICT_INPUT_DIR = os.path.join(self.DS_BASE_DIR, 'input')
-		# dir to output predicted
+		# dir to output predicted images
 		self.PREDICT_OUTPUT_DIR = os.path.join(self.DS_BASE_DIR, 'output')
+		# dir with video to predict
+		self.PREDICT_VIDS_INPUT_DIR = os.path.join(self.DS_BASE_DIR, 'input_vids')
+		# dir to output predicted videos
+		self.PREDICT_VIDS_OUTPUT_DIR = os.path.join(self.DS_BASE_DIR, 'output_vids')
