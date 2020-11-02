@@ -21,11 +21,11 @@ def train(train_dataset):
 	train_dataloader = DataLoader(train_dataset, batch_size=C.BATCH_SIZE, shuffle=True, num_workers=2)
 
 	model = UNet(input_channels=C.NUM_INPUT_CHANNELS, output_channels=C.NUM_CLASSES)
-	if C.GPU_ID >= 0:
+	if C.is_cuda():
 		model = model.cuda(C.GPU_ID)
 	if os.path.exists(C.INITIAL_WNAME):
 		model.load_state_dict(torch.load(C.INITIAL_WNAME))
-	if C.GPU_ID >= 0:
+	if C.is_cuda():
 		model = model.cuda(C.GPU_ID)
 
 	criterion = get_criterion(train_dataset, gpu_id=C.GPU_ID)
@@ -57,7 +57,7 @@ def train(train_dataset):
 
 				input_tensor = torch.autograd.Variable(batch['image'])
 				target_tensor = torch.autograd.Variable(batch['mask'])
-				if C.GPU_ID >= 0:
+				if C.is_cuda():
 					input_tensor = input_tensor.cuda(C.GPU_ID)
 					target_tensor = target_tensor.cuda(C.GPU_ID)
 

@@ -7,13 +7,19 @@ import json
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+import torch.optim as optim
+import torch.nn as nn
+from torchsummary import summary
 from datasets import SegmentTrainDataset
-from models import SegNet
+from models import Yolo3
+from models.yolo3.yolo_loss import YOLOLoss
 from utils.misc import save_model_state, make_test_masked_images, get_criterion, create_or_clean_dirs
 import numpy as np
 from config import Config
+from data.yolo3_params import TRAINING_PARAMS
 
-C = Config('segnet')
+C = Config('yolo3')
+C.BACKBONE_WNAME = 'weights/darknet53_weights_pytorch.pth'
 
 def train(train_dataset):
 
@@ -97,19 +103,85 @@ def train(train_dataset):
 				add_image('prediction', prediction_f, global_step)
 				writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
 
+def _get_optimizer(net):
+	optimizer = None
+
+	# Assign different lr for each layer
+	params = None
+	base_params = list(
+		map(id, net.backbone.parameters())
+	)
+	logits_params = filter(lambda p: id(p) not in base_params, net.parameters())
+
+	if not TRAINING_PARAMS['lr']['freeze_backbone']:
+		params = [
+			{"params": logits_params, "lr": TRAINING_PARAMS['lr']["other_lr"]},
+			{"params": net.backbone.parameters(), "lr": TRAINING_PARAMS['lr']["backbone_lr"]},
+		]
+	else:
+		print("freeze backbone's parameters.")
+		for p in net.backbone.parameters():
+			p.requires_grad = False
+		params = [
+			{"params": logits_params, "lr": TRAINING_PARAMS['lr']["other_lr"]},
+		]
+
+	# Initialize optimizer class
+	if TRAINING_PARAMS['optimizer']["type"] == "adam":
+		optimizer = optim.Adam(params, weight_decay=TRAINING_PARAMS['optimizer']["weight_decay"])
+	elif TRAINING_PARAMS['optimizer']["type"] == "amsgrad":
+		optimizer = optim.Adam(params, weight_decay=TRAINING_PARAMS['optimizer']["weight_decay"],
+							   amsgrad=True)
+	elif TRAINING_PARAMS['optimizer']["type"] == "rmsprop":
+		optimizer = optim.RMSprop(params, weight_decay=TRAINING_PARAMS['optimizer']["weight_decay"])
+	else:
+		# Default to sgd
+		print("Using SGD optimizer.")
+		optimizer = optim.SGD(params, momentum=0.9,
+							  weight_decay=TRAINING_PARAMS['optimizer']["weight_decay"],
+							  nesterov=(TRAINING_PARAMS['optimizer']["type"] == "nesterov"))
+
+	return optimizer
+
 if __name__ == "__main__":
 
 	create_or_clean_dirs((C.MONTAGE_DIR, C.LOG_DIR))
-	label_map = {}
-	lname = os.path.join(C.DS_BASE_DIR, 'labels.json')
-	if os.path.exists(lname):
-		labels = json.load(open(lname))
-		for l in labels:
-			if 'segnet_val' in l:
-				label_map[l['val']] = l['segnet_val']
-		C.NUM_CLASSES = max(label_map.values()) + 1
-	print('label_map=', label_map, C.NUM_CLASSES)
-	ds = SegmentTrainDataset(img_dir=os.path.join(C.DS_BASE_DIR, C.IMG_DIR), mask_dir=os.path.join(C.DS_BASE_DIR, C.MASK_DIR),
-		num_classes=C.NUM_CLASSES, img_shape=(224, 224), label_map=label_map)
-	train(ds)
+#	print(TRAINING_PARAMS)
+	TRAINING_PARAMS['classes'] = C.NUM_CLASSES
+	load_weights = os.path.exists(C.INITIAL_WNAME)
+	m = Yolo3(TRAINING_PARAMS, backbone_weights_path=None if load_weights else C.BACKBONE_WNAME)
+	if C.is_cuda():
+		m = m.cuda(C.GPU_ID)
+	m.train(True)
+
+	# Optimizer and learning rate
+	optimizer = _get_optimizer(m)
+	lr_scheduler = optim.lr_scheduler.StepLR(
+		optimizer,
+		step_size=TRAINING_PARAMS['lr']["decay_step"],
+		gamma=TRAINING_PARAMS['lr']["decay_gamma"])
+
+	# Set data parallel
+	m = nn.DataParallel(m)
+
+	if load_weights:
+		print("Load pretrained weights from {}".format(C.INITIAL_WNAME))
+		m.load_state_dict(torch.load(C.INITIAL_WNAME))
+
+	# YOLO loss with 3 scales
+	yolo_losses = []
+	for i in range(3):
+		yolo_losses.append(YOLOLoss(TRAINING_PARAMS["anchors"][i], C.NUM_CLASSES, (TRAINING_PARAMS["img_w"], TRAINING_PARAMS["img_h"])))
+
+#	print(summary(m, (3, 416, 416), device='cpu'))
+
+	dataloader = torch.utils.data.DataLoader(,
+											 batch_size=C.BATCH_SIZE,
+											 shuffle=True, num_workers=32, pin_memory=True)
+
+	x = torch.randn(1, 3, 416, 416).cuda(C.GPU_ID)
+	y0, y1, y2 = m(x)
+	print(y0.size())
+	print(y1.size())
+	print(y2.size())
 	print('Finished')
