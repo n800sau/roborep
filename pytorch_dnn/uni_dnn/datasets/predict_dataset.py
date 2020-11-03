@@ -8,8 +8,8 @@ import cv2
 
 class PredictImageDataset(Dataset):
 
-	def __init__(self, input_dir, img_shape):
-		self.img_shape = img_shape
+	def __init__(self, input_dir, img_size):
+		self.img_size = img_size
 		self.fnames = []
 		for fname in glob.glob(os.path.join(input_dir, '*')):
 			ext = os.path.splitext(fname)[-1].lower()
@@ -31,7 +31,7 @@ class PredictImageDataset(Dataset):
 		return rs
 
 	def load_image(self, raw_image):
-		raw_image = raw_image.resize(self.img_shape)
+		raw_image = raw_image.resize(self.img_size)
 #		print('1 max=', np.array(raw_image).max())
 		raw_image = np.transpose(raw_image, (2,1,0))
 #		print('2 max=', np.array(raw_image).max())

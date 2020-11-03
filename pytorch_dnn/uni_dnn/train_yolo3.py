@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.optim as optim
 import torch.nn as nn
 from torchsummary import summary
-from datasets import SegmentTrainDataset
+from datasets import YoloTrainDataset
 from models import Yolo3
 from models.yolo3.yolo_loss import YOLOLoss
 from utils.misc import save_model_state, make_test_masked_images, get_criterion, create_or_clean_dirs
@@ -175,13 +175,61 @@ if __name__ == "__main__":
 
 #	print(summary(m, (3, 416, 416), device='cpu'))
 
-	dataloader = torch.utils.data.DataLoader(,
-											 batch_size=C.BATCH_SIZE,
-											 shuffle=True, num_workers=32, pin_memory=True)
+	dataloader = torch.utils.data.DataLoader(YoloTrainDataset(os.path.join(C.DS_BASE_DIR, C.YOLO_IMG_DIR), os.path.join(C.DS_BASE_DIR, C.YOLO_LABEL_DIR), img_size=(224, 224)),
+					batch_size=C.BATCH_SIZE, shuffle=True, num_workers=32, pin_memory=True)
 
-	x = torch.randn(1, 3, 416, 416).cuda(C.GPU_ID)
-	y0, y1, y2 = m(x)
-	print(y0.size())
-	print(y1.size())
-	print(y2.size())
+	# Start the training loop
+	print("Start training.")
+	global_step = 0
+	for epoch in range(C.NUM_EPOCHS):
+		for step, samples in enumerate(dataloader):
+			images, labels = samples["image"], samples["label"]
+			start_time = time.time()
+			global_step += 1
+
+			# Forward and backward
+			optimizer.zero_grad()
+			outputs = m(images)
+			losses_name = ["total_loss", "x", "y", "w", "h", "conf", "cls"]
+			losses = []
+			for _ in range(len(losses_name)):
+				losses.append([])
+			for i in range(3):
+				_loss_item = yolo_losses[i](outputs[i], labels)
+				for j, l in enumerate(_loss_item):
+					losses[j].append(l)
+			losses = [sum(l) for l in losses]
+			loss = losses[0]
+			loss.backward()
+			optimizer.step()
+
+			if step > 0 and step % 10 == 0:
+				_loss = loss.item()
+				duration = float(time.time() - start_time)
+				example_per_second = C.BATCH_SIZE / duration
+				lr = optimizer.param_groups[0]['lr']
+				print(
+					"epoch [%.3d] iter = %d loss = %.2f example/sec = %.3f lr = %.5f "%
+					(epoch, step, _loss, example_per_second, lr)
+				)
+				TRAINING_PARAMS["tensorboard_writer"].add_scalar("lr",
+														lr,
+														config["global_step"])
+				TRAINING_PARAMS["tensorboard_writer"].add_scalar("example/sec",
+														example_per_second,
+														config["global_step"])
+				for i, name in enumerate(losses_name):
+					value = _loss if i == 0 else losses[i]
+					TRAINING_PARAMS["tensorboard_writer"].add_scalar(name, value, global_step)
+
+			if step > 0 and step % 1000 == 0:
+				# m.train(False)
+				_save_checkpoint(m.state_dict())
+				# m.train(True)
+
+		lr_scheduler.step()
+
+	# m.train(False)
+	_save_checkpoint(m.state_dict())
+	# m.train(True)
 	print('Finished')

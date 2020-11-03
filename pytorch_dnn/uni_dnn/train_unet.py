@@ -101,5 +101,5 @@ if __name__ == "__main__":
 
 	create_or_clean_dirs((C.MONTAGE_DIR, C.LOG_DIR))
 
-	train(SegmentTrainDataset(img_dir=os.path.join(C.DS_BASE_DIR, C.IMG_DIR), mask_dir=os.path.join(C.DS_BASE_DIR, C.MASK_DIR), num_classes=C.NUM_CLASSES, img_shape=(224, 224)))
+	train(SegmentTrainDataset(img_dir=os.path.join(C.DS_BASE_DIR, C.IMG_DIR), mask_dir=os.path.join(C.DS_BASE_DIR, C.MASK_DIR), num_classes=C.NUM_CLASSES, img_size=(224, 224)))
 	print('Finished')

@@ -110,6 +110,6 @@ if __name__ == "__main__":
 		C.NUM_CLASSES = max(label_map.values()) + 1
 	print('label_map=', label_map, C.NUM_CLASSES)
 	ds = SegmentTrainDataset(img_dir=os.path.join(C.DS_BASE_DIR, C.IMG_DIR), mask_dir=os.path.join(C.DS_BASE_DIR, C.MASK_DIR),
-		num_classes=C.NUM_CLASSES, img_shape=(224, 224), label_map=label_map)
+		num_classes=C.NUM_CLASSES, img_size=(224, 224), label_map=label_map)
 	train(ds)
 	print('Finished')

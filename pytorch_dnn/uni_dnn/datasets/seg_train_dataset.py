@@ -7,7 +7,7 @@ from PIL import Image
 
 class SegmentTrainDataset(Dataset):
 
-	def __init__(self, img_dir, mask_dir, img_shape, num_classes, label_map=None):
+	def __init__(self, img_dir, mask_dir, img_size, num_classes, label_map=None):
 		self.label_map = label_map if label_map else {}
 		self.img_extension = ".png"
 		self.mask_extension = ".png"
@@ -17,7 +17,7 @@ class SegmentTrainDataset(Dataset):
 
 		self.bnames = [os.path.splitext(os.path.basename(fname))[0] for fname in glob.glob(os.path.join(img_dir, '*' + self.img_extension))] if img_dir else []
 		self.num_classes = num_classes
-		self.img_shape = img_shape
+		self.img_size = img_size
 		self.counts = self.__compute_class_probability()
 
 	def __len__(self):
@@ -38,7 +38,7 @@ class SegmentTrainDataset(Dataset):
 		return rs
 
 	def load_image(self, raw_image):
-		raw_image = raw_image.resize(self.img_shape)
+		raw_image = raw_image.resize(self.img_size)
 #		print('1 max=', np.array(raw_image).max())
 		raw_image = np.transpose(raw_image, (2,1,0))
 #		print('2 max=', np.array(raw_image).max())
@@ -48,7 +48,7 @@ class SegmentTrainDataset(Dataset):
 		return imx_t
 
 	def load_mask(self, raw_image):
-		raw_image = raw_image.resize(self.img_shape, resample=Image.NEAREST)
+		raw_image = raw_image.resize(self.img_size, resample=Image.NEAREST)
 		# take a single colour
 		imx_t = np.array(raw_image)
 		if len(imx_t.shape) > 2:

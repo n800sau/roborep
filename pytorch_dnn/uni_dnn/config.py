@@ -8,6 +8,8 @@ class Config:
 		self.DS_BASE_DIR = 'data'
 		self.IMG_DIR = 'images'
 		self.MASK_DIR = 'masks'
+		self.YOLO_IMG_DIR = 'yolo_images'
+		self.YOLO_LABEL_DIR = 'yolo_labels'
 		self.BATCH_SIZE = 8
 		self.NUM_INPUT_CHANNELS = 3
 		self.BACKBONE_WNAME = None
