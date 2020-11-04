@@ -65,6 +65,9 @@ def _get_optimizer(net):
 
 	return optimizer
 
+def _save_checkpoint(model, loss_f):
+	save_model_state(model, C.DS_BASE_DIR, '%s_%.4f' % (C.SAVE_WNAME, loss_f), C.INITIAL_WNAME)
+
 if __name__ == "__main__":
 
 	create_or_clean_dirs((C.MONTAGE_DIR, C.LOG_DIR))
@@ -74,14 +77,16 @@ if __name__ == "__main__":
 	m = Yolo3(TRAINING_PARAMS, backbone_weights_path=None if load_weights else C.BACKBONE_WNAME)
 	if C.is_cuda():
 		m = m.cuda(C.GPU_ID)
+
+
+	prev_loss = float('inf')
+
 	m.train(True)
 
 	# Optimizer and learning rate
 	optimizer = _get_optimizer(m)
-	lr_scheduler = optim.lr_scheduler.StepLR(
-		optimizer,
-		step_size=TRAINING_PARAMS['lr']["decay_step"],
-		gamma=TRAINING_PARAMS['lr']["decay_gamma"])
+	lr_scheduler = optim.lr_scheduler.StepLR(optimizer,
+		step_size=TRAINING_PARAMS['lr']["decay_step"], gamma=TRAINING_PARAMS['lr']["decay_gamma"])
 
 	# Set data parallel
 	m = nn.DataParallel(m)
@@ -105,12 +110,14 @@ if __name__ == "__main__":
 		# Start the training loop
 		print("Start training.")
 		global_step = 0
+		loss_f = 0
 		for epoch in range(C.NUM_EPOCHS):
+			loss_f = 0
 			for step, samples in enumerate(dataloader):
 				images, labels = samples["image"], samples["label"]
 				start_time = time.time()
 				global_step += 1
-    
+
 				# Forward and backward
 				optimizer.zero_grad()
 				outputs = m(images)
@@ -126,7 +133,8 @@ if __name__ == "__main__":
 				loss = losses[0]
 				loss.backward()
 				optimizer.step()
-    
+				loss_f += loss.float()
+
 				if step > 0 and step % 10 == 0:
 					_loss = loss.item()
 					duration = float(time.time() - start_time)
@@ -141,15 +149,16 @@ if __name__ == "__main__":
 					for i, name in enumerate(losses_name):
 						value = _loss if i == 0 else losses[i]
 						tf_writer.add_scalar(name, value, global_step)
-    
-				if step > 0 and step % 1000 == 0:
-					# m.train(False)
-					_save_checkpoint(m.state_dict())
-					# m.train(True)
-    
+
+			if loss_f < prev_loss:
+				prev_loss = loss_f
+				m.train(False)
+				_save_checkpoint(m, loss_f)
+				m.train(True)
+
 			lr_scheduler.step()
 
-		# m.train(False)
-		_save_checkpoint(m.state_dict())
-	# m.train(True)
+		m.train(False)
+		_save_checkpoint(m, loss_f)
+		m.train(True)
 	print('Finished')

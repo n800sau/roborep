@@ -12,6 +12,7 @@ def save_model_state(model, dname, wbname_tpl, symlink_bname):
 	slink_name = os.path.join(dname, symlink_bname + '.pth')
 	wname = time.strftime(wbname_tpl) + '.pth'
 	torch.save(model.state_dict(), os.path.join(dname, wname))
+	print("Model checkpoint saved to %s in %s" % (wname, dname))
 	if os.path.exists(slink_name) or os.path.islink(slink_name):
 #		print('file or link exists, unlink')
 		os.unlink(slink_name)
