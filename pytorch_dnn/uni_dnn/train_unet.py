@@ -32,7 +32,7 @@ def train(train_dataset):
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=C.LEARNING_RATE)
 
-	with SummaryWriter('logs', comment=f'LR_{C.LEARNING_RATE}_BS_{C.BATCH_SIZE}') as writer:
+	with SummaryWriter(C.LOG_DIR, comment=f'LR_{C.LEARNING_RATE}_BS_{C.BATCH_SIZE}') as tf_writer:
 
 		is_better = True
 		prev_loss = float('inf')
@@ -67,7 +67,7 @@ def train(train_dataset):
 
 				loss = criterion(predicted_tensor, target_tensor)
 
-				writer.add_scalar('Loss/train', loss.item(), global_step)
+				tf_writer.add_scalar('Loss/train', loss.item(), global_step)
 
 				loss.backward()
 				optimizer.step()
@@ -93,9 +93,9 @@ def train(train_dataset):
 			if global_step % (len(train_dataset) // (10 * C.BATCH_SIZE)) == 0:
 				for tag, value in model.named_parameters():
 					tag = tag.replace('.', '/')
-					writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
-					writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
-				writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
+					tf_writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
+					tf_writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
+				tf_writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
 
 if __name__ == "__main__":
 

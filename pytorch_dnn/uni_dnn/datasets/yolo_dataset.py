@@ -2,6 +2,7 @@ import os
 import glob
 import numpy as np
 import cv2
+import csv
 
 import torch
 from torch.utils.data import Dataset
@@ -11,15 +12,16 @@ from utils import data_transforms
 
 class YoloTrainDataset(Dataset):
 	def __init__(self, img_dir, label_dir, img_size, is_debug=False):
+		self.labels = []
 		self.image_root_dir = img_dir
 		self.label_root_dir = label_dir
 		self.img_size = img_size
 		self.max_objects = 50
 		self.is_debug = is_debug
 		self.bnames = []
-		for bname in [os.path.splitext(os.path.basename(fname))[0] for fname in (glob.glob(os.path.join(img_dir, '*.png')) + glob.glob(os.path.join(img_dir, '*.jpg')))]:
-			lbname = bname + '.txt'
-			if os.path.exists(os.path.join(self.label_root_dir, lbname)):
+		for bname in [os.path.basename(fname) for fname in (glob.glob(os.path.join(img_dir, '*.png')) + glob.glob(os.path.join(img_dir, '*.jpg')))]:
+			lbname = os.path.join(self.label_root_dir, bname + '.csv')
+			if os.path.exists(lbname):
 				self.bnames.append(bname)
 			else:
 				print("no label found. skip it: {}".format(lbname))
@@ -44,9 +46,19 @@ class YoloTrainDataset(Dataset):
 		ori_h, ori_w = img.shape[:2]
 		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-		label_path = os.path.join(self.image_root_dir, bname + '.txt')
-		labels = np.loadtxt(label_path).reshape(-1, 5)
-
+		label_path = os.path.join(self.label_root_dir, bname + '.csv')
+		labels = []
+		for line in csv.reader(open(label_path, 'rt')):
+			if line:
+				if line[0] in self.labels:
+					lindex = self.labels.index(line[0])
+				else:
+					lindex = len(self.labels)
+					self.labels.append(line[0])
+				line[0] = lindex
+				labels.append(line)
+		labels = np.array(labels)
+#		print('lshape', labels.shape)
 		sample = {'image': img, 'label': labels}
 		if self.transforms is not None:
 			sample = self.transforms(sample)
