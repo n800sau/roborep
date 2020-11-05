@@ -25,8 +25,9 @@ def train(train_dataset):
 
 	criterion = get_criterion(train_dataset, gpu_id=C.GPU_ID)
 
-	if os.path.exists(C.INITIAL_WNAME):
-		model.load_state_dict(torch.load(C.INITIAL_WNAME))
+	initial_wname = os.path.join(C.DS_BASE_DIR, C.INITIAL_WNAME) + '.pth'
+	if os.path.exists(initial_wname):
+		model.load_state_dict(torch.load(initial_wname))
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=C.LEARNING_RATE)
 

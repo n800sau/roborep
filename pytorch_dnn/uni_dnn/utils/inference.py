@@ -26,7 +26,7 @@ def predict_normalised_batch(model, batch, gpu_id=-1):
 
 	return input_tensor, predicted_tensor, softmaxed_tensor
 
-def save_segmentation(model, input_dataset, batch_size, gpu_id=-1, video_mode=False):
+def predict_segmentation(model, input_dataset, batch_size, gpu_id=-1, video_mode=False):
 
 	input_dataloader = DataLoader(input_dataset, batch_size=batch_size, shuffle=False, num_workers=0 if video_mode else 4)
 

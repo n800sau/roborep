@@ -23,8 +23,9 @@ def train(train_dataset):
 	model = UNet(input_channels=C.NUM_INPUT_CHANNELS, output_channels=C.NUM_CLASSES)
 	if C.is_cuda():
 		model = model.cuda(C.GPU_ID)
-	if os.path.exists(C.INITIAL_WNAME):
-		model.load_state_dict(torch.load(C.INITIAL_WNAME))
+	initial_wname = os.path.join(C.DS_BASE_DIR, C.INITIAL_WNAME) + '.pth'
+	if os.path.exists(initial_wname):
+		model.load_state_dict(torch.load(initial_wname))
 	if C.is_cuda():
 		model = model.cuda(C.GPU_ID)
 

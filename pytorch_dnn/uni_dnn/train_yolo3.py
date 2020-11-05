@@ -13,6 +13,7 @@ from torchsummary import summary
 from datasets import YoloTrainDataset
 from models import Yolo3
 from models.yolo3.yolo_loss import YOLOLoss
+from models.yolo3.utils import non_max_suppression, bbox_iou
 from utils.misc import save_model_state, make_test_masked_images, get_criterion, create_or_clean_dirs
 import numpy as np
 from config import Config
@@ -72,8 +73,14 @@ if __name__ == "__main__":
 
 	create_or_clean_dirs((C.MONTAGE_DIR, C.LOG_DIR))
 #	print(TRAINING_PARAMS)
+
+	dataset = YoloTrainDataset(os.path.join(C.DS_BASE_DIR, C.YOLO_IMG_DIR), os.path.join(C.DS_BASE_DIR, C.YOLO_LABEL_DIR), img_size=(224, 224))
+	json.dump(dataset.labels(), open(os.path.join(C.DS_BASE_DIR, 'yolo_labels.json'), 'wt'), indent=2)
+
+	C.NUM_CLASSES = len(dataset.labels())
 	TRAINING_PARAMS['classes'] = C.NUM_CLASSES
-	load_weights = os.path.exists(C.INITIAL_WNAME)
+	initial_wname = os.path.join(C.DS_BASE_DIR, C.INITIAL_WNAME) + '.pth'
+	load_weights = os.path.exists(initial_wname)
 	m = Yolo3(TRAINING_PARAMS, backbone_weights_path=None if load_weights else C.BACKBONE_WNAME)
 	if C.is_cuda():
 		m = m.cuda(C.GPU_ID)
@@ -92,8 +99,8 @@ if __name__ == "__main__":
 	m = nn.DataParallel(m)
 
 	if load_weights:
-		print("Load pretrained weights from {}".format(C.INITIAL_WNAME))
-		m.load_state_dict(torch.load(C.INITIAL_WNAME))
+		print("Load pretrained weights from {}".format(initial_wname))
+		m.load_state_dict(torch.load(initial_wname))
 
 	# YOLO loss with 3 scales
 	yolo_losses = []
@@ -102,8 +109,7 @@ if __name__ == "__main__":
 
 #	print(summary(m, (3, 416, 416), device='cpu'))
 
-	dataloader = torch.utils.data.DataLoader(YoloTrainDataset(os.path.join(C.DS_BASE_DIR, C.YOLO_IMG_DIR), os.path.join(C.DS_BASE_DIR, C.YOLO_LABEL_DIR), img_size=(224, 224)),
-					batch_size=C.BATCH_SIZE, shuffle=True, num_workers=32, pin_memory=True)
+	dataloader = torch.utils.data.DataLoader(dataset, batch_size=C.BATCH_SIZE, shuffle=True, num_workers=32, pin_memory=True)
 
 	with SummaryWriter(C.LOG_DIR, comment=f'LR_{C.LEARNING_RATE}_BS_{C.BATCH_SIZE}') as tf_writer:
 

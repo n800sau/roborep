@@ -11,7 +11,7 @@ C.BATCH_SIZE = 4
 import cv2
 import torch
 from utils.misc import create_or_clean_dirs
-from utils.inference import save_segmentation
+from utils.inference import predict_segmentation
 
 def load_model():
 	model = SegNet(input_channels=C.NUM_INPUT_CHANNELS, output_channels=C.NUM_CLASSES).cuda(C.GPU_ID)
@@ -25,7 +25,7 @@ if __name__ == "__main__":
 		input_dataset = PredictVideoDataset(vid_path=fname, frame_shape=(224, 224))
 		ofname = os.path.join(C.PREDICT_VIDS_OUTPUT_DIR, os.path.basename(fname))
 		out = None
-		for bname,idx,img_arr in save_segmentation(load_model(), input_dataset, batch_size=C.BATCH_SIZE, gpu_id=C.GPU_ID, video_mode=True):
+		for bname,idx,img_arr in predict_segmentation(load_model(), input_dataset, batch_size=C.BATCH_SIZE, gpu_id=C.GPU_ID, video_mode=True):
 			if out is None:
 				out = cv2.VideoWriter(ofname, cv2.CAP_FFMPEG, fourcc=cv2.VideoWriter_fourcc(*'mp4v'), fps=input_dataset.fps, frameSize=tuple(reversed(img_arr.shape[:2])))
 #			print('write', idx)

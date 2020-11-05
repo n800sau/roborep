@@ -12,3 +12,6 @@ label_preview_colors = (
 	(0, 108, 255, 255),
 	(62, 71, 86, 255),
 )
+
+def label_preview_colors_0_1():
+	return [[v/255. for v in clr] for clr in label_preview_colors]
