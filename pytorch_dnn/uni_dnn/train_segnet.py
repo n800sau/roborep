@@ -7,10 +7,11 @@ import json
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from datasets import SegmentTrainDataset
+from datasets import SegTrainDataset
 from models import SegNet
 from utils.misc import save_model_state, make_test_masked_images, get_criterion, create_or_clean_dirs
 import numpy as np
+from data.labels import LABELS
 from config import Config
 
 C = Config('segnet')
@@ -102,15 +103,13 @@ if __name__ == "__main__":
 
 	create_or_clean_dirs((C.MONTAGE_DIR, C.LOG_DIR))
 	label_map = {}
-	lname = os.path.join(C.DS_BASE_DIR, 'labels.json')
-	if os.path.exists(lname):
-		labels = json.load(open(lname))
-		for l in labels:
-			if 'segnet_val' in l:
-				label_map[l['val']] = l['segnet_val']
+	for l in LABELS:
+		if 'segnet_val' in l:
+			label_map[l['val']] = l['segnet_val']
+		# +1 for background
 		C.NUM_CLASSES = max(label_map.values()) + 1
 	print('label_map=', label_map, C.NUM_CLASSES)
-	ds = SegmentTrainDataset(img_dir=os.path.join(C.DS_BASE_DIR, C.IMG_DIR), mask_dir=os.path.join(C.DS_BASE_DIR, C.MASK_DIR),
+	ds = SegTrainDataset(img_dir=os.path.join(C.DS_BASE_DIR, C.IMG_DIR), mask_dir=os.path.join(C.DS_BASE_DIR, C.MASK_DIR),
 		num_classes=C.NUM_CLASSES, img_size=(224, 224), label_map=label_map)
 	train(ds)
 	print('Finished')

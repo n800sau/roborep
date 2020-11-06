@@ -6,22 +6,24 @@ from torch.utils.data import Dataset
 from PIL import Image
 import cv2
 
-class SegPredictImageDataset(Dataset):
+class SegImageDataset(Dataset):
 
-	def __init__(self, input_dir, img_size):
+	def __init__(self, img_dir, img_size):
+		self.image_root_dir = img_dir
 		self.img_size = img_size
-		self.fnames = []
-		for fname in glob.glob(os.path.join(input_dir, '*')):
-			ext = os.path.splitext(fname)[-1].lower()
+		self.bnames = []
+		for bname in glob.glob(os.path.join(self.image_root_dir, '*')):
+			ext = os.path.splitext(bname)[-1].lower()
 			if ext in ('.png', '.jpg'):
 				# image
-				self.fnames.append(fname)
+				self.bnames.append(os.path.basename(bname))
 
 	def __len__(self):
-		return len(self.fnames)
+		return len(self.bnames)
 
 	def __getitem__(self, index):
-		fname = self.fnames[index]
+		bname = self.bnames[index]
+		fname = os.path.join(self.image_root_dir, bname)
 		image = self.load_image(Image.open(fname))
 		rs = {
 			'loaded': True,
@@ -40,7 +42,7 @@ class SegPredictImageDataset(Dataset):
 #		print('image shape:%s' % (imx_t.shape,))
 		return imx_t
 
-class PredictVideoDataset(Dataset):
+class SegVideoDataset(SegImageDataset):
 
 	def __init__(self, vid_path, frame_shape):
 		self.input_path = vid_path
@@ -68,13 +70,3 @@ class PredictVideoDataset(Dataset):
 			'image': image,
 		}
 		return rs
-
-	def load_image(self, raw_image):
-		raw_image = raw_image.resize(self.frame_shape)
-#		print('1 max=', np.array(raw_image).max())
-		raw_image = np.transpose(raw_image, (2,1,0))
-#		print('2 max=', np.array(raw_image).max())
-		imx_t = np.array(raw_image, dtype=np.float32)/255.0
-#		print('3 max=', imx_t.max())
-#		print('image shape:%s' % (imx_t.shape,))
-		return imx_t

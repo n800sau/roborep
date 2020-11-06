@@ -1,4 +1,4 @@
-from datasets import PredictImageDataset
+from datasets import SegImageDataset
 from models import SegNet
 from config import Config
 
@@ -20,7 +20,7 @@ def load_model():
 if __name__ == "__main__":
 
 	create_or_clean_dirs((C.PREDICT_OUTPUT_DIR, ))
-	input_dataset = PredictImageDataset(input_dir=C.PREDICT_INPUT_DIR, img_size=(224, 224))
+	input_dataset = SegImageDataset(img_dir=C.PREDICT_INPUT_DIR, img_size=(224, 224))
 	for bname,idx,img_arr in predict_segmentation(load_model(), input_dataset, batch_size=C.BATCH_SIZE, gpu_id=C.GPU_ID):
 		fname = os.path.join(C.PREDICT_OUTPUT_DIR, "{}_{}.png".format(bname, idx))
 		im = Image.fromarray(img_arr)

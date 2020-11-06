@@ -2,50 +2,38 @@ import numpy as np
 import os
 import glob
 import torch
-from torch.utils.data import Dataset
+from .seg_image_dataset import SegImageDataset
 from PIL import Image
 
-class SegmentTrainDataset(Dataset):
+class SegTrainDataset(SegImageDataset):
 
 	def __init__(self, img_dir, mask_dir, img_size, num_classes, label_map=None):
+		SegImageDataset.__init__(self, img_dir, img_size)
+		self.mask_extension = '.png'
 		self.label_map = label_map if label_map else {}
-		self.img_extension = ".png"
-		self.mask_extension = ".png"
-
-		self.image_root_dir = img_dir
 		self.mask_root_dir = mask_dir
-
-		self.bnames = [os.path.splitext(os.path.basename(fname))[0] for fname in glob.glob(os.path.join(img_dir, '*' + self.img_extension))] if img_dir else []
 		self.num_classes = num_classes
-		self.img_size = img_size
+		clean_bnames = []
+		for bname in self.bnames:
+			mfname = os.path.join(self.mask_root_dir, os.path.splitext(bname)[0] + self.mask_extension)
+			if os.path.exists(mfname):
+				clean_bnames.append(bname)
+			else:
+				print("no mask file found. skip it: {}".format(mfname))
+		self.bnames = clean_bnames
+		print("Total labelled images: {}".format(len(self.bnames)))
 		self.counts = self.__compute_class_probability()
 
 	def __len__(self):
 		return len(self.bnames)
 
 	def __getitem__(self, index):
-		name = self.bnames[index]
-		image_path = os.path.join(self.image_root_dir, name + self.img_extension)
-		mask_path = os.path.join(self.mask_root_dir, name + self.mask_extension)
-		self.input_path = image_path
-		image = self.load_image(Image.open(image_path))
+		sample = SegImageDataset.__getitem__(self, index)
+		bname = os.path.splitext(self.bnames[index])[0]
+		mask_path = os.path.join(self.mask_root_dir, bname + self.mask_extension)
 		gt_mask = self.load_mask(Image.open(mask_path))
-		rs = {
-				'fname': image_path,
-				'image': torch.FloatTensor(image),
-				'mask' : torch.LongTensor(gt_mask)
-				}
-		return rs
-
-	def load_image(self, raw_image):
-		raw_image = raw_image.resize(self.img_size)
-#		print('1 max=', np.array(raw_image).max())
-		raw_image = np.transpose(raw_image, (2,1,0))
-#		print('2 max=', np.array(raw_image).max())
-		imx_t = np.array(raw_image, dtype=np.float32)/255.0
-#		print('3 max=', imx_t.max())
-#		print('image shape:%s' % (imx_t.shape,))
-		return imx_t
+		sample['mask'] = torch.LongTensor(gt_mask)
+		return sample
 
 	def load_mask(self, raw_image):
 		raw_image = raw_image.resize(self.img_size, resample=Image.NEAREST)
@@ -72,8 +60,8 @@ class SegmentTrainDataset(Dataset):
 
 		max_label = 0
 
-		for name in self.bnames:
-			mask_path = os.path.join(self.mask_root_dir, name + self.mask_extension)
+		for bname in self.bnames:
+			mask_path = os.path.join(self.mask_root_dir, os.path.splitext(bname)[0] + self.mask_extension)
 
 			raw_image = Image.open(mask_path)
 			imx_t = self.load_mask(raw_image)
