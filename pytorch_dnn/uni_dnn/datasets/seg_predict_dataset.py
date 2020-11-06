@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import cv2
 
-class PredictImageDataset(Dataset):
+class SegPredictImageDataset(Dataset):
 
 	def __init__(self, input_dir, img_size):
 		self.img_size = img_size

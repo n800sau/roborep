@@ -19,9 +19,6 @@ TRAINING_PARAMS = \
 	},
 	"img_h": 416,
 	"img_w": 416,
-	"iou_thres": 0.5,
 	"parallels": [0],						 #  config GPU device
-	"evaluate_type": "",
-	"try": 0,
-	"confidence_threshold": 0.5,
+	"confidence_threshold": 0.80,
 }

@@ -21,7 +21,8 @@ from data.yolo3_params import TRAINING_PARAMS
 
 C = Config('yolo3')
 C.BACKBONE_WNAME = 'weights/darknet53_weights_pytorch.pth'
-C.BATCH_SIZE = 16
+C.BATCH_SIZE = 32
+C.NUM_EPOCHS = 200
 
 def train(train_dataset):
 	pass
@@ -66,8 +67,8 @@ def _get_optimizer(net):
 
 	return optimizer
 
-def _save_checkpoint(model, loss_f):
-	save_model_state(model, C.DS_BASE_DIR, '%s_%.4f' % (C.SAVE_WNAME, loss_f), C.INITIAL_WNAME)
+def _save_checkpoint(model, loss_f, epoch):
+	save_model_state(model, C.DS_BASE_DIR, '%s_%.4f_ep%s' % (C.SAVE_WNAME, loss_f, epoch), C.INITIAL_WNAME)
 
 if __name__ == "__main__":
 
@@ -159,12 +160,12 @@ if __name__ == "__main__":
 			if loss_f < prev_loss:
 				prev_loss = loss_f
 				m.train(False)
-				_save_checkpoint(m, loss_f)
+				_save_checkpoint(m, loss_f, epoch)
 				m.train(True)
 
 			lr_scheduler.step()
 
 		m.train(False)
-		_save_checkpoint(m, loss_f)
+		_save_checkpoint(m, loss_f, 'last')
 		m.train(True)
 	print('Finished')

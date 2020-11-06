@@ -32,8 +32,7 @@ class YOLOLoss(nn.Module):
 		stride_w = self.img_size[0] / in_w
 		scaled_anchors = [(a_w / stride_w, a_h / stride_h) for a_w, a_h in self.anchors]
 
-		prediction = input.view(bs,  self.num_anchors,
-								self.bbox_attrs, in_h, in_w).permute(0, 1, 3, 4, 2).contiguous()
+		prediction = input.view(bs,  self.num_anchors, self.bbox_attrs, in_h, in_w).permute(0, 1, 3, 4, 2).contiguous()
 
 		# Get outputs
 		x = torch.sigmoid(prediction[..., 0])		  # Center x

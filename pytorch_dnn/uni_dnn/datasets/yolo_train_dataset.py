@@ -5,25 +5,22 @@ import cv2
 import csv
 
 import torch
-from torch.utils.data import Dataset
+from .yolo_image_dataset import YoloImageDataset
 
 from utils import data_transforms
 
 
-class YoloTrainDataset(Dataset):
+class YoloTrainDataset(YoloImageDataset):
 	def __init__(self, img_dir, label_dir, img_size, is_debug=False):
+		YoloImageDataset.__init__(self, img_dir, img_size, is_debug=is_debug)
 		self._labels = []
-		self.image_root_dir = img_dir
 		self.label_root_dir = label_dir
-		self.img_size = img_size
-		self.max_objects = 50
-		self.is_debug = is_debug
-		self.bnames = []
 		self.label_data = []
-		for bname in [os.path.basename(fname) for fname in (glob.glob(os.path.join(img_dir, '*.png')) + glob.glob(os.path.join(img_dir, '*.jpg')))]:
+		clean_bnames = []
+		for bname in self.bnames:
 			lbname = os.path.join(self.label_root_dir, bname + '.csv')
 			if os.path.exists(lbname):
-				self.bnames.append(bname)
+				clean_bnames.append(bname)
 				labels = []
 				for line in csv.reader(open(lbname, 'rt')):
 					if line:
@@ -37,32 +34,24 @@ class YoloTrainDataset(Dataset):
 				self.label_data.append(np.array(labels))
 			else:
 				print("no label found. skip it: {}".format(lbname))
-		print("Total images: {}".format(len(self.bnames)))
-
-		#  transforms and augmentation
-		self.transforms = data_transforms.Compose()
-		self.transforms.add(data_transforms.ImageBaseAug())
-		# self.transforms.add(data_transforms.KeepAspect())
-		self.transforms.add(data_transforms.ResizeImage(self.img_size))
-		self.transforms.add(data_transforms.ToTensor(self.max_objects, self.is_debug))
+		self.bnames = clean_bnames
+		print("Total labelled images: {}".format(len(self.bnames)))
 
 	def __len__(self):
 		return len(self.bnames)
 
-	def __getitem__(self, index):
+	def make_sample(self, index):
+		sample = YoloImageDataset.make_sample(self, index)
 		bname = self.bnames[index % len(self.bnames)]
-		img_path = os.path.join(self.image_root_dir, bname)
-		img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-		if img is None:
-			raise Exception("Read image error: {}".format(img_path))
-		ori_h, ori_w = img.shape[:2]
-		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-		sample = {'image': img, 'label': self.label_data[index % len(self.bnames)]}
-		if self.transforms is not None:
-			sample = self.transforms(sample)
-		sample["image_path"] = img_path
-		sample["origin_size"] = [ori_w, ori_h]
+		label_data = self.label_data[index % len(self.bnames)]
+		filled_labels = np.zeros((self.max_objects, 5), np.float32)
+		filled_labels[range(len(label_data))[:self.max_objects]] = label_data[:self.max_objects]
+		sample['label'] = torch.from_numpy(filled_labels)
 		return sample
+
+	def transform(self, sample):
+#		data_transforms.ImageBaseAug()(sample)
+		YoloImageDataset.transform(self, sample)
 
 	def labels(self):
 		return self._labels
