@@ -18,7 +18,7 @@ C = Config('segnet')
 
 def train(train_dataset):
 
-	train_dataloader = DataLoader(train_dataset, batch_size=C.BATCH_SIZE, shuffle=True, num_workers=2)
+	train_dataloader = DataLoader(train_dataset, batch_size=C.BATCH_SIZE, shuffle=True, num_workers=0)
 
 	model = SegNet(input_channels=C.NUM_INPUT_CHANNELS, output_channels=C.NUM_CLASSES)
 	if C.is_cuda():

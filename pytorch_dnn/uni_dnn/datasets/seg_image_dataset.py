@@ -44,10 +44,10 @@ class SegImageDataset(Dataset):
 
 class SegVideoDataset(SegImageDataset):
 
-	def __init__(self, vid_path, frame_shape):
+	def __init__(self, vid_path, frame_size):
+		self.img_size = frame_size
 		self.input_path = vid_path
 		self.bname = os.path.basename(self.input_path)
-		self.frame_shape = frame_shape
 		self.video_reader = cv2.VideoCapture(vid_path)
 		self.frame_h = int(self.video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
 		self.frame_w = int(self.video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -62,7 +62,7 @@ class SegVideoDataset(SegImageDataset):
 	def __getitem__(self, index):
 		loaded, image = self.video_reader.read()
 #		print('frame', index, loaded)
-		image = self.load_image(Image.fromarray(image if loaded else np.zeros((100, 100, 3), dtype=np.uint8)))
+		image = self.load_image(Image.fromarray(image if loaded else np.zeros((1, 1, 3), dtype=np.uint8)))
 		rs = {
 			'loaded': loaded,
 			'frame': index,
