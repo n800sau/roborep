@@ -1,0 +1,3 @@
+[submodule "external/uni_dnn"]
+	path = external/uni_dnn
+	url = https://n800s@bitbucket.org/n800s/uni_dnn
