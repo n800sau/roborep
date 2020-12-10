@@ -1,0 +1,11 @@
+https://github.com/arpruss/USBComposite_stm32f1/issues/55
+
+cd ~/.platformio/packages/
+mv framework-arduinoststm32-maple junk
+git clone https://github.com/rogerclarkmelbourne/Arduino_STM32.git
+mv Arduino_STM32 framework-arduinoststm32-maple
+cd framework-arduinoststm32-maple
+cp ../junk/package.json .    
+cd tools
+cp ../../junk/tools/plat*py .
+rm -rf ../../junk
