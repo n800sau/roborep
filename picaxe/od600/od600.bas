@@ -75,7 +75,7 @@ measurement:
 		LOW  RS                ' commandmode
 		senddata = 202 :       GOSUB Send              ' (192-211) Line 2 Cursor Position
 		HIGH RS                ' charactermode
-		FOR  index = 0 TO 5                                                           ' sending characters
+		FOR  index = 0 TO 6                                                           ' sending characters
 			LOOKUP index,(" ",b8,b7,".",b6,b5,b4),senddata :          GOSUB Send
 		NEXT index
 	endif
