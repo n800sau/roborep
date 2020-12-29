@@ -1,2 +1,3 @@
-ino build &> build.log && ./upload.sh &> upload.log
+#platformio run -v
+platformio run -e arduino &>build.log
 echo $?
