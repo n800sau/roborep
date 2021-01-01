@@ -16,63 +16,57 @@ SYMBOL CALIB_BTN = pinC.4
 
 SYMBOL senddata  = b0
 SYMBOL index     = b1
-SYMBOL REF_V = w1
 
-Symbol Exponent = 4
-Symbol Result = w9
-
-Symbol Numerator = w10
-Symbol Divisor = w11
-
-Symbol Holder = w12
-Symbol N = b0
-Symbol Factor = w13
-
+SYMBOL REF_V = w8
+Symbol Value = w9
+Symbol Divisor = w10
+Symbol Holder = w11
+Symbol ZeroValue = 50
 
 	'value of count    = W1    ' b3,b2
 	'display  count    = b4,b5,b6,b7,b8
 
 
-	EEPROM 25,("Picaxe20M2")
 ' with freq it does not work
 '	SETFREQ M32
 	dirsB = %11111111
 	dirsC = %11001111
-
-Initialise:
 	REF_V = 0
+	pullup %0000100000000000 ' C.3 - pullup
+	LOW  RS                                ' commandmode
 	FOR  index = 0 to 6
 	LOOKUP index, ($33,$32,$28,$0C,$01,$02,$06),senddata : GOSUB Send    ' Initialise LCD/OLED
 		'(WakeUp)*3(Set4Bit)(4Bit/2Line)(DisplayOn)(Clear Display)(Return Home)(Entry Mode Set)
 	NEXT index : PAUSE 10
-	pullup %0000100000000000
-
-DisplayHello:
-	LOW  RS                                ' commandmode
-	senddata = 132 :           GOSUB Send  ' (128-147) Line 1 Cursor Position
+	senddata = 128 :           GOSUB Send  ' (128-147) Line 1 Cursor Position
 	HIGH RS                                ' charactermode
-	senddata = "H" :           GOSUB Send
-	senddata = "e" :           GOSUB Send
-	senddata = "l" :           GOSUB Send
-	senddata = "l" :           GOSUB Send
-	senddata = "o" :           GOSUB Send
+	EEPROM 25,("OD600")
+	FOR index = 25 to 29
+		READ index, senddata : GOSUB Send
+'		sertxd("char:", #senddata, 13, 10)
+	NEXT index
 	LOW  RS                                            ' commandmode
-	senddata = $01 :           GOSUB Send : PAUSE 10   ' Clear Display
-	senddata = 192 :           GOSUB Send              ' (192-211) Line 2 Cursor Position
-	HIGH RS                                             ' charactermode
-'	FOR  index = 25 to 34
-'	READ index, senddata :      GOSUB Send              ' sending character
-'	NEXT index
+	PAUSE 1000
 
 measurement:
-	HIGH OUT_LED
-	PAUSE 200                                                                    ' 1 second (M32)
-	readadc10 INP_V,Divisor
-	LOW OUT_LED
+	gosub collect_measurement
+	sertxd("Value:", #Value)
+	LOW  RS                ' commandmode
+	senddata = 200 :       GOSUB Send              ' (192-211) Line 2 Cursor Position
+	HIGH RS                ' charactermode
+	BinToAscii Value,b8,b7,b6,b5,b4
+	FOR  index = 0 TO 5                                                           ' sending characters
+		LOOKUP index,(" ",b8,b7,b6,b5,b4),senddata :          GOSUB Send
+	NEXT index
+	IF Value < ZeroValue THEN
+		Value = 0
+	ELSE
+		Value = Value - ZeroValue
+	ENDIF
 	if CALIB_BTN = 1 or REF_V = 0 then
-		REF_V = Divisor
-		sertxd("calibration:", #REF_V, 13, 10)
-		BinToAscii Divisor,b8,b7,b6,b5,b4
+		REF_V = Value
+		sertxd(", Calibration:", #REF_V)
+		BinToAscii REF_V,b8,b7,b6,b5,b4
 		LOW  RS                ' commandmode
 		senddata = 192 :       GOSUB Send              ' (192-211) Line 2 Cursor Position
 		HIGH RS                ' charactermode
@@ -80,27 +74,36 @@ measurement:
 			LOOKUP index,(" ",b8,b7,b6,b5,b4),senddata :          GOSUB Send
 		NEXT index
 	else
-		w9 = 100 * w8 / REF_V
-		BinToAscii w9,b8,b7,b6,b5,b4
+		Divisor = REF_V / 10
+		sertxd(", ref_v:", #REF_V, ", Divisor:", #Divisor)
+		Value = Value * 10 / Divisor
+		BinToAscii Value,b8,b7,b6,b5,b4
+		sertxd(", ODD:", b8, b7, b6, ".", b5, b4)
 		LOW  RS                ' commandmode
-		senddata = 202 :       GOSUB Send              ' (192-211) Line 2 Cursor Position
+		senddata = 137 :       GOSUB Send              ' (192-211) Line 2 Cursor Position
 		HIGH RS                ' charactermode
-		FOR  index = 0 TO 6                                                           ' sending characters
-			LOOKUP index,(" ",b8,b7,".",b6,b5,b4),senddata :          GOSUB Send
+		FOR  index = 0 TO 4                                                           ' sending characters
+			LOOKUP index,(" ",b6,".",b5,b4),senddata :          GOSUB Send
 		NEXT index
 	endif
-	Numerator = REF_V
-	gosub Divide
-	sertxd("ref_v:", #REF_V, ",v:", #Divisor, ",Result:", #Result, 13, 10)
-	BinToAscii Result,b8,b7,b6,b5,b4
-	LOW  RS                ' commandmode
-	senddata = 200 :       GOSUB Send              ' (192-211) Line 2 Cursor Position
-	HIGH RS                ' charactermode
-	FOR  index = 0 TO 5                                                           ' sending characters
-		LOOKUP index,(" ",b8,".",b7,b6,b5,b4),senddata :          GOSUB Send
-	NEXT index
-	PAUSE 1000                                                                    ' 1 second (M32)
+	sertxd(13, 10)
+	PAUSE 1000
 	goto measurement
+
+collect_measurement:
+	Value = 0
+	HIGH OUT_LED
+	PAUSE 200
+	FOR index = 0 TO 7                  ' 8 times
+		readadc10 INP_V, Holder
+		PAUSE 10
+		Value = Value + Holder
+'		sertxd("collection value:", #Value, 13, 10)
+	NEXT index
+	LOW OUT_LED
+	Value = Value / 8
+	sertxd("final value:", #Value, 13, 10)
+	return
 
 Send:
 '	sertxd("Send:", senddata, 13, 10)
@@ -115,27 +118,3 @@ Send:
 	DB4 =   bit0
 	PULSOUT E,1
 	RETURN
-
-
-Divide:
-	Result = 0
-	Holder = 0
-	For N = 0 to Exponent
-		Result = Result * 10
-		Holder = Numerator / Divisor
-		Result = Holder + Result
-	 	Factor = Divisor * Holder
-		Holder = Numerator - Factor   
-		if Holder > 6553 then
-			Holder = Holder / 10
-			Divisor = Divisor / 10
-		endif
-		Numerator = Holder *10
-	Next
-	'I'm using 5 as a cut off for rounding because it's a simple method.
-	'There are other rounding techniques.
-	Holder = Numerator / Divisor
-	if Holder >=5 then
-		Result = Result + 1
-	endif
-	return
