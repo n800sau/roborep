@@ -1,0 +1,4 @@
+RGB for 600nm
+by using python wavelength_to_rgb lib from https://github.com/rsmith-nl/wavelength_to_rgb.git
+(255, 190, 0)
+ffbe00
