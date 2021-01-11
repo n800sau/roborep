@@ -18,10 +18,11 @@
 #include <Wire.h>
 #include <LiquidCrystal.h>
 
-#define   CONTRAST_PIN   9
-#define   BACKLIGHT_PIN  10
-#define   CONTRAST       80
-#define   LIGHT_PIN      8
+#define CONTRAST_PIN   9
+#define BACKLIGHT_PIN  10
+#define CONTRAST       80
+#define LIGHT_PIN      8
+#define BUTTON_PIN     3
 
 // DAC0 = D4
 
@@ -32,22 +33,8 @@ int min_transmission, max_transmission;
 
 #define VALUE_PIN A0
 
-void setup()
+void calibration()
 {
-	analogReference(DEFAULT); // 5v
-//	analogReference(INTERNAL);
-//	analogReference(INTERNAL4V096);
-	pinMode(VALUE_PIN, ANALOG);
-	pinMode(LIGHT_PIN, OUTPUT);
-	digitalWrite(LIGHT_PIN, LOW);
-	Serial.begin(115200);
-	// set up the LCD's number of columns and rows:
-	lcd.begin(16, 2);
-	// Switch on the backlight and LCD contrast levels
-	pinMode(CONTRAST_PIN, OUTPUT);
-	pinMode(CONTRAST_PIN, OUTPUT);
-	analogWrite(CONTRAST_PIN, CONTRAST);
-	lcd.backlight();
 	// calibration
 	digitalWrite(LIGHT_PIN, LOW);
 	delay(100);
@@ -61,8 +48,31 @@ void setup()
 	Serial.println(min_transmission);
 }
 
+void setup()
+{
+	analogReference(DEFAULT); // 5v
+//	analogReference(INTERNAL);
+//	analogReference(INTERNAL4V096);
+	pinMode(VALUE_PIN, ANALOG);
+	pinMode(LIGHT_PIN, OUTPUT);
+	pinMode(BUTTON_PIN, INPUT_PULLUP);
+	digitalWrite(LIGHT_PIN, LOW);
+	Serial.begin(115200);
+	// set up the LCD's number of columns and rows:
+	lcd.begin(16, 2);
+	// Switch on the backlight and LCD contrast levels
+	pinMode(CONTRAST_PIN, OUTPUT);
+	pinMode(CONTRAST_PIN, OUTPUT);
+	analogWrite(CONTRAST_PIN, CONTRAST);
+	lcd.backlight();
+	calibration();
+}
+
 void loop()
 {
+	if(!digitalRead(BUTTON_PIN)) {
+		calibration();
+	}
 	digitalWrite(LIGHT_PIN, HIGH);
 	lcd.setCursor(0, 0);
 	lcd.print("*");
