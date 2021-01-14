@@ -161,6 +161,7 @@ module tube_block_top() {
 module slit_plate() {
 	translate([(-tube_len-wall-slit_plate_sz_x-gap)/2, gap/2, wall+(tube_sz-gap)/2]) {
 		difference() {
+//echo(slit_plate_sz_x-gap-0.5, tube_sz-gap-0.5, tube_sz-gap-0.5);
 			cube([slit_plate_sz_x-gap-0.5, tube_sz-gap-0.5, tube_sz-gap-0.5], center=true);
 			cube([slit_plate_sz_x-gap, 0.5, 30], center=true);
 		}
@@ -528,7 +529,7 @@ module raspi_box_subst() {
 
 translate([-tube_len/2, 0, 0]) {
 //	color("green")	tube_block();
-	//slit_plate();
+//	slit_plate();
 //	tube_block_top();
 }
 
@@ -549,7 +550,7 @@ translate([cam_block_tube_len, 0, 0]) {
 		}
     //raspi_wall();
     raspi_holder();
-    raspi_box_subst();
+//    raspi_box_subst();
 	}
 
 	translate([31, 40, 24]) {
@@ -563,7 +564,7 @@ translate([cam_block_tube_len, 0, 0]) {
 			// set center in slot center
 			translate([0, -10, 7.5]) {
 				rotate([90, 0, 180]) {
-			//color("blue") cam_holder();
+//			color("blue") cam_holder();
 				}
 			}
 		}

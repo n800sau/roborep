@@ -8,6 +8,4 @@ DEV=/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0
 
 #BOARD=arduino:WAV:lardu_328p
 
-DEV=/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0
-
 #DEV=/dev/serial/by-id/usb-LeafLabs_Maple-if00

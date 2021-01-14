@@ -1,4 +1,4 @@
-maple mini
+maple mini -> maple_mini_origin
 
 serial rx -> 26 (tx1)
        tx -> 25 (rx1)

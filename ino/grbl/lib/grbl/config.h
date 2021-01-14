@@ -121,7 +121,7 @@
 // cycle is still invoked by the $H command. This is disabled by default. It's here only to address
 // users that need to switch between a two-axis and three-axis machine. This is actually very rare.
 // If you have a two-axis machine, DON'T USE THIS. Instead, just alter the homing cycle for two-axes.
-#define HOMING_SINGLE_AXIS_COMMANDS // Default disabled. Uncomment to enable.
+// #define HOMING_SINGLE_AXIS_COMMANDS // Default disabled. Uncomment to enable.
 
 // After homing, Grbl will set by default the entire machine space into negative space, as is typical
 // for professional CNC machines, regardless of where the limit switches are located. Uncomment this
@@ -208,7 +208,7 @@
 // NOTE: If VARIABLE_SPINDLE is enabled(default), this option has no effect as the PWM output and
 // spindle enable are combined to one pin. If you need both this option and spindle speed PWM,
 // uncomment the config option USE_SPINDLE_DIR_AS_ENABLE_PIN below.
-#define INVERT_SPINDLE_ENABLE_PIN // Default disabled. Uncomment to enable.
+// #define INVERT_SPINDLE_ENABLE_PIN // Default disabled. Uncomment to enable.
 
 // Inverts the selected coolant pin from low-disabled/high-enabled to low-enabled/high-disabled. Useful
 // for some pre-built electronic boards.
@@ -227,7 +227,7 @@
 // before initialization. If it detects a problem and the hard limits setting is enabled, Grbl will
 // simply message the user to check the limits and enter an alarm state, rather than idle. Grbl will
 // not throw an alarm message.
-// #define CHECK_LIMITS_AT_INIT
+//#define CHECK_LIMITS_AT_INIT
 
 // ---------------------------------------------------------------------------------------
 // ADVANCED CONFIGURATION OPTIONS:
@@ -336,7 +336,7 @@
 // enable pin will output 5V for maximum RPM with 256 intermediate levels and 0V when disabled.
 // NOTE: IMPORTANT for Arduino Unos! When enabled, the Z-limit pin D11 and spindle enable pin D12 switch!
 // The hardware PWM output on pin D11 is required for variable spindle output voltages.
-//#define VARIABLE_SPINDLE // Default enabled. Comment to disable.
+#define VARIABLE_SPINDLE // Default enabled. Comment to disable.
 
 // Used by variable spindle output only. This forces the PWM output to a minimum duty cycle when enabled.
 // The PWM pin will still read 0V when the spindle is disabled. Most users will not need this option, but
@@ -469,7 +469,7 @@
 // electrical interference on the signal cables from external sources. It's recommended to first
 // use shielded signal cables with their shielding connected to ground (old USB/computer cables 
 // work well and are cheap to find) and wire in a low-pass circuit into each limit pin.
-#define ENABLE_SOFTWARE_DEBOUNCE // Default disabled. Uncomment to enable.
+// #define ENABLE_SOFTWARE_DEBOUNCE // Default disabled. Uncomment to enable.
 
 // Configures the position after a probing cycle during Grbl's check mode. Disabled sets
 // the position to the probe target, when enabled sets the position to the start position.
@@ -641,7 +641,7 @@
 // #define ENABLE_DUAL_AXIS	// Default disabled. Uncomment to enable.
 
 // Select the one axis to mirror another motor. Only X and Y axis is supported at this time.
-#define DUAL_AXIS_SELECT  X_AXIS  // Must be either X_AXIS or Y_AXIS
+#define DUAL_AXIS_SELECT  Y_AXIS  // Must be either X_AXIS or Y_AXIS
 
 // To prevent the homing cycle from racking the dual axis, when one limit triggers before the
 // other due to switch failure or noise, the homing cycle will automatically abort if the second 
@@ -659,7 +659,7 @@
 // NOTE: Protoneer CNC Shield v3.51 has A.STP and A.DIR wired to pins A4 and A3 respectively.
 // The variable spindle (i.e. laser mode) build option works and may be enabled or disabled.
 // Coolant pin A3 is moved to D13, replacing spindle direction.
-#define DUAL_AXIS_CONFIG_PROTONEER_V3_51    // Uncomment to select. Comment other configs.
+//#define DUAL_AXIS_CONFIG_PROTONEER_V3_51    // Uncomment to select. Comment other configs.
 
 // NOTE: Arduino CNC Shield Clone (Originally Protoneer v3.0) has A.STP and A.DIR wired to 
 // D12 and D13, respectively. With the limit pins and stepper enable pin on this same port,
@@ -672,7 +672,7 @@
 // most user setups to accomodate. It would best be implemented by sharing all limit switches
 // on pins D9/D10 (as [X1,Z]/[X2,Y] or [X,Y2]/[Y1,Z]), home each axis independently, and 
 // updating lots of code to ensure everything is running correctly.
-// #define DUAL_AXIS_CONFIG_CNC_SHIELD_CLONE  // Uncomment to select. Comment other configs.
+#define DUAL_AXIS_CONFIG_CNC_SHIELD_CLONE  // Uncomment to select. Comment other configs.
 
 
 /* ---------------------------------------------------------------------------------------
