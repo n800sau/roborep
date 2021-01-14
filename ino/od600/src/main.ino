@@ -20,12 +20,12 @@
 
 #define   CONTRAST_PIN   9
 #define   BACKLIGHT_PIN  10
-#define   CONTRAST       80
+#define   CONTRAST       120
 #define   LIGHT_PIN      8
 
 // DAC0 = D4
 
-const int rs = 12, en = 11, d4 = 7, d5 = 6, d6 = 5, d7 = 3;
+const int rs = 12, en = 11, d4 = 7, d5 = 6, d6 = 5, d7 = 4;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7, BACKLIGHT_PIN, POSITIVE);
 
 int min_transmission, max_transmission;
