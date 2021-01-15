@@ -10,6 +10,12 @@ heater pwm - 3
 
 #include <AM2320.h>
 #include <PID_v1.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define OLED_ADDRESS 0x3c
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
+
 
 AM2320 am2320;
 
@@ -33,6 +39,19 @@ void setup()
 	Serial.begin(115200);
 	am2320.begin();
 	pinMode(HEATER_PIN, OUTPUT);
+	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
+		Serial.println(F("SSD1306 allocation failed"));
+	} else {
+		display.clearDisplay();
+		display.display();
+		// text display tests
+		display.setTextSize(1);
+		display.setTextColor(WHITE);
+		display.setCursor(30, 10);
+		display.print(F("I an a heater"));
+		display.display();
+	}
 }
 
 void loop()
