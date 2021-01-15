@@ -12,6 +12,7 @@ heater pwm - 3
 #include <PID_v1.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Ticker.h>
 
 #define OLED_ADDRESS 0x3c
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
@@ -34,6 +35,36 @@ double Setpoint, Input, Output;
 double Kp=150, Ki=1, Kd=100;
 PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);
 
+const int UNKNOWN_TEMP = -10000;
+float temp = UNKNOWN_TEMP;
+
+void display_status()
+{
+	if(temp != UNKNOWN_TEMP) {
+		display.clearDisplay();
+		display.setCursor(0, 0);
+		display.print(temp);
+		display.print(F(" => "));
+		display.print(temp2set);
+		display.print(F(" C"));
+
+		Serial.print("\n\nHeating val: ");
+		Serial.print(heat_val);
+		if(heat_val > 0) {
+			display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
+		}
+		Serial.print(", ");
+		Serial.print(temp);
+		Serial.print(F(" > "));
+		Serial.print(temp2set);
+		Serial.print(", Humidity: ");
+		Serial.println(am2320.getHumidity());
+		display.display();
+	}
+}
+
+Ticker status_timer(display_status, 1000, 0, MILLIS);
+
 void setup()
 {
 	Serial.begin(115200);
@@ -51,24 +82,18 @@ void setup()
 		display.setCursor(30, 10);
 		display.print(F("I an a heater"));
 		display.display();
+		status_timer.start();
 	}
 }
-
 void loop()
 {
 	if (am2320.measure()) {
-		float temp = am2320.getTemperature();
+		temp = am2320.getTemperature();
 		Input = temp;
 		Setpoint = temp2set;
 		heaterPID.Compute();
 		heat_val = Output < 0 ? 0 : (Output > MAX_HEAT_VAL ? MAX_HEAT_VAL : Output);
 		analogWrite(HEATER_PIN, heat_val);
-		Serial.print("\n\nHeat val: ");
-		Serial.println(heat_val);
-		Serial.print("Temperature: ");
-		Serial.println(temp);
-		Serial.print("Humidity: ");
-		Serial.println(am2320.getHumidity());
 	}
 	else
 	{
@@ -80,5 +105,5 @@ void loop()
 			case 2: Serial.println("ERR: CRC validation failed."); break;
 		}
 	}
-	delay(500);
+	status_timer.update();
 }
