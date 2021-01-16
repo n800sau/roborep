@@ -15,16 +15,17 @@ heater pwm - 3
 #include <Ticker.h>
 
 #define OLED_ADDRESS 0x3c
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
 
 AM2320 am2320;
 
 const int HEATER_PIN = 3;
 
-const int MAX_HEAT_VAL = 100;
+// 80 - 8v
+const int MAX_HEAT_PWM = 80;
 
-int heat_val = MAX_HEAT_VAL;
+int heat_val = MAX_HEAT_PWM;
 
 int temp2set = 37;
 
@@ -32,8 +33,8 @@ int temp2set = 37;
 double Setpoint, Input, Output;
 
 // tuning parameters
-double Kp=150, Ki=1, Kd=100;
-PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);
+double Kp=80, Ki=0, Kd=10;
+PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 const int UNKNOWN_TEMP = -10000;
 float temp = UNKNOWN_TEMP;
@@ -42,17 +43,21 @@ void display_status()
 {
 	if(temp != UNKNOWN_TEMP) {
 		display.clearDisplay();
-		display.setCursor(0, 0);
+		display.setCursor(18, 0);
+		display.print("T: ");
 		display.print(temp);
 		display.print(F(" => "));
 		display.print(temp2set);
 		display.print(F(" C"));
+		display.setCursor(18, 11);
+		display.print("Heating: ");
+		display.print(heat_val);
+		if(heat_val > 0) {
+			display.fillTriangle(2, 18, 10, 18, 6, 10, INVERSE);
+		}
 
 		Serial.print("\n\nHeating val: ");
 		Serial.print(heat_val);
-		if(heat_val > 0) {
-			display.fillTriangle(2, 12, 12, 2, 22, 12, INVERSE);
-		}
 		Serial.print(", ");
 		Serial.print(temp);
 		Serial.print(F(" > "));
@@ -68,6 +73,7 @@ Ticker status_timer(display_status, 1000, 0, MILLIS);
 void setup()
 {
 	Serial.begin(115200);
+	Serial.println("Incubator...");
 	am2320.begin();
 	pinMode(HEATER_PIN, OUTPUT);
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
@@ -82,6 +88,14 @@ void setup()
 		display.setCursor(30, 10);
 		display.print(F("I an a heater"));
 		display.display();
+
+		//tell the PID to range between 0 and max pwm
+		heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
+
+		//turn the PID on
+		heaterPID.SetMode(AUTOMATIC);
+		heaterPID.SetSampleTime(10);
+
 		status_timer.start();
 	}
 }
@@ -92,7 +106,14 @@ void loop()
 		Input = temp;
 		Setpoint = temp2set;
 		heaterPID.Compute();
-		heat_val = Output < 0 ? 0 : (Output > MAX_HEAT_VAL ? MAX_HEAT_VAL : Output);
+		Serial.print("In:");
+		Serial.print(Input);
+		Serial.print(" Out:");
+		Serial.print(Output);
+		Serial.print(" Set:");
+		Serial.println(Setpoint);
+		heat_val = Output;
+		heat_val = MAX_HEAT_PWM;
 		analogWrite(HEATER_PIN, heat_val);
 	}
 	else
@@ -106,4 +127,5 @@ void loop()
 		}
 	}
 	status_timer.update();
+	delay(500);
 }
