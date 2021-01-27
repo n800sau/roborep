@@ -20,7 +20,12 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
 AM2320 am2320;
 
+
+#if defined(ESP8266)
+const int HEATER_PIN = 4;
+#else
 const int HEATER_PIN = 3;
+#endif
 
 // 80 - 8v
 const int MAX_HEAT_PWM = 80;
@@ -68,7 +73,11 @@ void display_status()
 	}
 }
 
+#if defined(ESP8266)
+Ticker status_timer;
+#else
 Ticker status_timer(display_status, 1000, 0, MILLIS);
+#endif
 
 void setup()
 {
@@ -96,7 +105,11 @@ void setup()
 		heaterPID.SetMode(AUTOMATIC);
 		heaterPID.SetSampleTime(10);
 
+#if defined(ESP8266)
+		status_timer.attach_ms(1000, display_status);
+#else
 		status_timer.start();
+#endif
 	}
 }
 void loop()
@@ -126,6 +139,8 @@ void loop()
 			case 2: Serial.println("ERR: CRC validation failed."); break;
 		}
 	}
+#if !defined(ESP8266)
 	status_timer.update();
+#endif
 	delay(500);
 }
