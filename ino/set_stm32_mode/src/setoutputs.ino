@@ -1,5 +1,5 @@
-const int boot_pin = 11;
-const int reset_pin = 12;
+const int boot_pin = 3;
+const int reset_pin = 2;
 
 // the setup routine runs once when you press reset:
 void setup() {
