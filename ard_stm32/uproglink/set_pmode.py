@@ -15,13 +15,9 @@ ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5)
 
 time.sleep(1)
 
-for i in range(5):
-	if ser.readline().strip() == 'Ready':
-		ser.write('P')
-		ser.flush()
+ser.write('P\n')
+ser.flush()
 
-		print ser.readline()
-#		print ser.readline()
-		break
+print ser.readline()
 
 
