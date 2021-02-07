@@ -1,5 +1,7 @@
 const int boot_pin = 3;
 const int reset_pin = 2;
+const int pin1 = 5;
+const int pin2 = 6;
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -35,6 +37,16 @@ void loop() {
 			delay(300);
 			digitalWrite(reset_pin, HIGH);
 			Serial.println("Reset");
+		} else if (incomingByte == '1') {
+			digitalWrite(pin1, LOW);
+			delay(300);
+			digitalWrite(pin1, HIGH);
+			Serial.println("P1 Reset");
+		} else if (incomingByte == '2') {
+			digitalWrite(pin2, LOW);
+			delay(300);
+			digitalWrite(pin2, HIGH);
+			Serial.println("P2 Reset");
 		} 
 	}
 }
