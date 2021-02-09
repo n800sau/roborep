@@ -13,9 +13,11 @@ s_baud = 115200
 ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5)
 #print s_port, s_baud
 
+time.sleep(1)
+
 for i in range(5):
 	if ser.readline().strip() == 'Ready':
-		ser.write('2')
+		ser.write('P')
 		ser.flush()
 
 		print ser.readline()

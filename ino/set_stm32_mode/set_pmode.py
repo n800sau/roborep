@@ -17,7 +17,7 @@ time.sleep(1)
 
 for i in range(5):
 	if ser.readline().strip() == 'Ready':
-		ser.write('P')
+		ser.write('p')
 		ser.flush()
 
 		print ser.readline()
