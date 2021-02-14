@@ -23,8 +23,12 @@ AM2320 am2320;
 
 #if defined(ESP8266)
 const int HEATER_PIN = 4;
-#else
+const int HEATING_LED_PIN = 5;
+const int FAN_PIN = 11;
+#else // arduino
 const int HEATER_PIN = 3;
+const int HEATING_LED_PIN = 4;
+const int FAN_PIN = 5;
 #endif
 
 // 80 - 8v
@@ -85,6 +89,7 @@ void setup()
 	Serial.println("Incubator...");
 	am2320.begin();
 	pinMode(HEATER_PIN, OUTPUT);
+	pinMode(FAN_PIN, OUTPUT);
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
 	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
 		Serial.println(F("SSD1306 allocation failed"));
