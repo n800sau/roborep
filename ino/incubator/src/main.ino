@@ -46,7 +46,7 @@ float temp = UNKNOWN_TEMP;
 
 void display_status()
 {
-	if(temp != UNKNOWN_TEMP) {
+//	if(temp != UNKNOWN_TEMP) {
 		display.clearDisplay();
 		display.setCursor(18, 0);
 		display.print("T: ");
@@ -70,7 +70,7 @@ void display_status()
 		Serial.print(", Humidity: ");
 		Serial.println(am2320.getHumidity());
 		display.display();
-	}
+//	}
 }
 
 #if defined(ESP8266)
@@ -83,6 +83,7 @@ void setup()
 {
 	Serial.begin(115200);
 	Serial.println("Incubator...");
+	Wire.begin();
 	am2320.begin();
 	pinMode(HEATER_PIN, OUTPUT);
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
@@ -95,7 +96,7 @@ void setup()
 		display.setTextSize(1);
 		display.setTextColor(WHITE);
 		display.setCursor(30, 10);
-		display.print(F("I an a heater"));
+		display.print(F("I am a heater"));
 		display.display();
 
 		//tell the PID to range between 0 and max pwm
