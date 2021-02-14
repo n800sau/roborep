@@ -44,7 +44,7 @@ void stm32_work_mode()
 void esp_reset()
 {
 	digitalWrite(esp_reset_pin, LOW);
-	delay(300);
+	delay(500);
 	digitalWrite(esp_reset_pin, HIGH);
 }
 
