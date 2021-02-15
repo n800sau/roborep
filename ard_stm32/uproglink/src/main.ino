@@ -17,12 +17,28 @@ int pin_status = LOW;
 char command_buffer[32];
 SerialCommands serial_commands(&CommandStream, command_buffer, sizeof(command_buffer), "\n", " ");
 
+int bytes_from_serial = 0, old_bytes_from_serial = -1;
+int bytes_from_usb = 0, old_bytes_from_usb = -1;
+int old_baud = 0;
+
 void display_status()
 {
 //	Serial.print("Tick ");
 //	Serial.println(pin_status);
 	digitalWrite(LED_BUILTIN, pin_status);
 	pin_status = !pin_status;
+}
+
+void sync_bauds()
+{
+	int baud = multi_serial_get_baud(PassthroughStream.getPort());
+	if(baud != old_baud) {
+		old_baud = baud;
+		PassthroughEndPoint.end();
+		PassthroughEndPoint.begin(baud);
+//		Serial.print("B:");
+//		Serial.println(baud);
+	}
 }
 
 void cmd_unrecognized(SerialCommands* sender, const char* cmd)
@@ -50,18 +66,12 @@ void esp_reset()
 void esp_prog_mode()
 {
 	digitalWrite(ESP_IO00_PIN, LOW);
-	delay(200);
-//	PassthroughStream.begin(74880);
-	PassthroughEndPoint.begin(74880);
 	esp_reset();
 }
 
 void esp_work_mode()
 {
 	digitalWrite(ESP_IO00_PIN, HIGH);
-	delay(200);
-//	PassthroughStream.begin(115200);
-	PassthroughEndPoint.begin(115200);
 	esp_reset();
 }
 
@@ -87,32 +97,23 @@ void setup()
 	esp_prog_mode();
 }
 
-int bytes_from_serial = 0, old_bytes_from_serial = -1;
-int bytes_from_usb = 0, old_bytes_from_usb = -1;
-int old_baud = 0;
 
 void loop()
 {
 	serial_commands.ReadSerial();
-	int baud = multi_serial_get_baud(PassthroughStream.getPort());
-	if(baud != old_baud) {
-		old_baud = baud;
-		Serial.println(baud);
-	}
-	while(PassthroughStream.available() || PassthroughEndPoint.available())
+	while(PassthroughEndPoint.available())
 	{
-		if(PassthroughStream.available())
-		{
-			int b = PassthroughStream.read();
-			bytes_from_usb++;
-			PassthroughEndPoint.write(b);
-		} 
-		if(PassthroughEndPoint.available())
-		{
-			int b = PassthroughEndPoint.read();
-			bytes_from_serial++;
-			PassthroughStream.write(b);
-		}
+		int b = PassthroughEndPoint.read();
+		bytes_from_serial++;
+		PassthroughStream.write(b);
+	}
+	PassthroughStream.flush();
+	sync_bauds();
+	while(PassthroughStream.available())
+	{
+		int b = PassthroughStream.read();
+		bytes_from_usb++;
+		PassthroughEndPoint.write(b);
 	}
 	if(old_bytes_from_usb != bytes_from_usb)
 	{

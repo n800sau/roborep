@@ -1,3 +1,9 @@
 [submodule "external/uni_dnn"]
 	path = external/uni_dnn
 	url = https://n800s@bitbucket.org/n800s/uni_dnn
+[submodule "submodules/RemoteDebug"]
+	path = submodules/RemoteDebug
+	url = https://github.com/joaolopesf/RemoteDebug
+[submodule "submodules/IotWebConf"]
+	path = submodules/IotWebConf
+	url = https://github.com/prampec/IotWebConf

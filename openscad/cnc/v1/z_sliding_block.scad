@@ -7,6 +7,7 @@ include <cnc_params.scad>
 include <MCAD/nuts_and_bolts.scad>
 
 $fn = 50;
+insert_d = 5.8;
 
 module vert_rod_holes(d=rod_d, h=top_block_sz_z, z_off=0) {
 	for(xpos=[-1,1]) {
@@ -27,7 +28,7 @@ module nutHoleM4(extra_h=0) {
 module attachment_hole(d=hole_d_m4, nut_hole_sz=0, size=slider_sz_x, insert_hole_mode=false) {
 	rotate([0, 90, 0]) {
 		h = size*2;
-		cylinder(d=insert_hole_mode ? 6 : d, h=h, center=true);
+		cylinder(d=insert_hole_mode ? insert_d : d, h=h, center=true);
 		if(nut_hole_sz > 0 && !insert_hole_mode) {
 			translate([0, 0, -METRIC_NUT_THICKNESS[4]/2]) {
 				nutHoleM4(extra_h=nut_hole_sz);

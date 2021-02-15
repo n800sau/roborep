@@ -1,2 +1,7 @@
 #sudo ./usb_reset /dev/bus/usb/<bus>/<dev>
-sudo ./usb_reset /dev/bus/usb/001/029
+#for b in `find /dev/bus/usb/*/*`
+#do
+#	echo $b
+#	sudo ./usb_reset $b
+#done
+sudo ./usb_reset /dev/bus/usb/008/006
