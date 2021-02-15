@@ -42,24 +42,26 @@ void cmd_unrecognized(SerialCommands* sender, const char* cmd)
 void esp_reset()
 {
 	digitalWrite(ESP_RESET_PIN, LOW);
-	delay(200);
+	delay(500);
 	digitalWrite(ESP_RESET_PIN, HIGH);
-	delay(200);
+	delay(500);
 }
 
 void esp_prog_mode()
 {
 	digitalWrite(ESP_IO00_PIN, LOW);
+	delay(200);
 //	PassthroughStream.begin(74880);
-//	PassthroughEndPoint.begin(74880);
+	PassthroughEndPoint.begin(74880);
 	esp_reset();
 }
 
 void esp_work_mode()
 {
 	digitalWrite(ESP_IO00_PIN, HIGH);
+	delay(200);
 //	PassthroughStream.begin(115200);
-//	PassthroughEndPoint.begin(115200);
+	PassthroughEndPoint.begin(115200);
 	esp_reset();
 }
 
