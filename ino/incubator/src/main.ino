@@ -22,12 +22,10 @@ AM2320 am2320;
 
 
 #if defined(ESP8266)
-const int HEATER_PIN = 14;
-const int HEATING_LED_PIN = 12;
-const int FAN_PIN = 13;
+const int HEATER_PIN = D5;
+const int FAN_PIN = D6;
 #else // arduino
 const int HEATER_PIN = 3;
-const int HEATING_LED_PIN = 4;
 const int FAN_PIN = 5;
 #endif
 
@@ -50,7 +48,7 @@ float temp = UNKNOWN_TEMP;
 
 void display_status()
 {
-//	if(temp != UNKNOWN_TEMP) {
+	if(temp != UNKNOWN_TEMP) {
 		display.clearDisplay();
 		display.setCursor(18, 0);
 		display.print("T: ");
@@ -74,14 +72,10 @@ void display_status()
 		Serial.print(", Humidity: ");
 		Serial.println(am2320.getHumidity());
 		display.display();
-//	}
+	}
 }
 
-#if defined(ESP8266)
-Ticker status_timer;
-#else
 Ticker status_timer(display_status, 1000, 0, MILLIS);
-#endif
 
 void setup()
 {
@@ -110,11 +104,7 @@ void setup()
 		heaterPID.SetMode(AUTOMATIC);
 		heaterPID.SetSampleTime(10);
 
-#if defined(ESP8266)
-//		status_timer.attach_ms(1000, display_status);
-#else
 		status_timer.start();
-#endif
 	}
 }
 void loop()
@@ -144,8 +134,6 @@ void loop()
 			case 2: Serial.println("ERR: CRC validation failed."); break;
 		}
 	}
-#if !defined(ESP8266)
 	status_timer.update();
-#endif
-	delay(500);
+	delay(100);
 }
