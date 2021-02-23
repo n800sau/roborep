@@ -7,3 +7,9 @@
 [submodule "submodules/IotWebConf"]
 	path = submodules/IotWebConf
 	url = https://github.com/prampec/IotWebConf
+[submodule "submodules/Ticker"]
+	path = submodules/Ticker
+	url = https://github.com/sstaub/Ticker
+[submodule "submodules/ESPUI"]
+	path = submodules/ESPUI
+	url = https://github.com/s00500/ESPUI.git
