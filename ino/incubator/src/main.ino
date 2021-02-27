@@ -188,7 +188,9 @@ void setup()
 	Serial.setDebugOutput(true);
 	Serial.println("Incubator...");
 	pinMode(HEATER_PIN, OUTPUT);
+	analogWrite(HEATER_PIN, 0);
 	pinMode(FAN_PIN, OUTPUT);
+	analogWrite(FAN_PIN, 0);
 	memset(&t_data, 0, sizeof(t_data));
 	am2320.begin();
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
