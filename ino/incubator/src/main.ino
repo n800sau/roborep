@@ -9,13 +9,8 @@ heater pwm - 3
 */
 
 #include <PID_v1.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <Ticker.h>
 #include <LiquidCrystal_I2C.h>
-
-#define OLED_ADDRESS 0x3c
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
 LiquidCrystal_I2C lcd(0x38);  // Set the LCD I2C address
 
@@ -88,20 +83,18 @@ void notFound(AsyncWebServerRequest *request)
 void display_status()
 {
 	if(temp != UNKNOWN_TEMP) {
-		display.clearDisplay();
-		display.setCursor(18, 0);
-		display.print("T: ");
-		display.print(temp);
-		display.print(F(" => "));
-		display.print(temp2set);
-		display.print(F(" C"));
-		display.setCursor(18, 11);
-		display.print("Heating: ");
-		display.print(heat_val);
+		lcd.home();
+		lcd.print("T: ");
+		lcd.print(temp);
+		lcd.print(F(" => "));
+		lcd.print(temp2set);
+		lcd.print(F(" C"));
+		lcd.setCursor(0, 1);
+		lcd.print("Heating: ");
+		lcd.print(heat_val);
 		if(heat_val > 0) {
-			display.fillTriangle(2, 18, 10, 18, 6, 10, INVERSE);
+			lcd.print("^");
 		}
-		display.display();
 	}
 }
 
@@ -201,61 +194,48 @@ void setup()
 	lcd.setCursor(0, 1);
 	lcd.print(" FORUM - fm   ");
 	am2320.begin();
-	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
-		Serial.println(F("SSD1306 allocation failed"));
-	} else {
-		display.clearDisplay();
-		display.display();
-		// text display tests
-		display.setTextSize(1);
-		display.setTextColor(WHITE);
-		display.setCursor(30, 10);
-		display.print(F("I am a heater"));
-		display.display();
 
-		//tell the PID to range between 0 and max pwm
-		heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
+	//tell the PID to range between 0 and max pwm
+	heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
 
-		//turn the PID on
-		heaterPID.SetMode(AUTOMATIC);
-		heaterPID.SetSampleTime(10);
+	//turn the PID on
+	heaterPID.SetMode(AUTOMATIC);
+	heaterPID.SetSampleTime(10);
 
-		WiFi.mode(WIFI_STA);
-		WiFi.begin(ssid, password);
+	WiFi.mode(WIFI_STA);
+	WiFi.begin(ssid, password);
 
-		while (WiFi.status() != WL_CONNECTED) {
-			delay(500);
-			Serial.print(".");
-		}
-
-		Serial.println("");
-		Serial.println("WiFi connected");
-		Serial.println("IP address: ");
-		Serial.println(WiFi.localIP());
-
-		display_timer.start();
-		chart_timer.start();
-		measurement_timer.start();
-		print_timer.start();
-
-		t_chart.updateX(XAxis, X_COUNT);
-		slider.update(temp2set);
-		/* Attach Slider Callback */
-		slider.attachCallback([&](int value){
-			/* Print our new slider value received from dashboard */
-			Serial.println("Slider Triggered: "+String(value));
-			temp2set = value;
-			/* Make sure we update our slider's value and send update to dashboard */
-			slider.update(value);
-			dashboard.sendUpdates();
-		});
-
-		webserver.onNotFound(notFound);
-		/* Start AsyncWebServer */
-		webserver.begin();
-
+	while (WiFi.status() != WL_CONNECTED) {
+		delay(500);
+		Serial.print(".");
 	}
+
+	Serial.println("");
+	Serial.println("WiFi connected");
+	Serial.println("IP address: ");
+	Serial.println(WiFi.localIP());
+
+	display_timer.start();
+	chart_timer.start();
+	measurement_timer.start();
+	print_timer.start();
+
+	t_chart.updateX(XAxis, X_COUNT);
+	slider.update(temp2set);
+	/* Attach Slider Callback */
+	slider.attachCallback([&](int value){
+		/* Print our new slider value received from dashboard */
+		Serial.println("Slider Triggered: "+String(value));
+		temp2set = value;
+		/* Make sure we update our slider's value and send update to dashboard */
+		slider.update(value);
+		dashboard.sendUpdates();
+	});
+
+	webserver.onNotFound(notFound);
+	/* Start AsyncWebServer */
+	webserver.begin();
+
 }
 void loop()
 {
