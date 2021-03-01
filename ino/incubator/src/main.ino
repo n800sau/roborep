@@ -10,9 +10,10 @@ heater pwm - 3
 
 #include <PID_v1.h>
 #include <Ticker.h>
-#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal_PCF8574.h>
+#include <Wire.h>
 
-LiquidCrystal_I2C lcd(0x38);  // Set the LCD I2C address
+LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
@@ -83,6 +84,7 @@ void notFound(AsyncWebServerRequest *request)
 void display_status()
 {
 	if(temp != UNKNOWN_TEMP) {
+Serial.println("display");
 		lcd.home();
 		lcd.print("T: ");
 		lcd.print(temp);
@@ -188,6 +190,22 @@ void setup()
 	pinMode(FAN_PIN, OUTPUT);
 	analogWrite(FAN_PIN, 0);
 	memset(&t_data, 0, sizeof(t_data));
+
+  // See http://playground.arduino.cc/Main/I2cScanner how to test for a I2C device.
+  Wire.begin();
+  Wire.beginTransmission(0x27);
+  int error = Wire.endTransmission();
+  Serial.print("Error: ");
+  Serial.print(error);
+
+  if (error == 0) {
+    Serial.println(": LCD found.");
+    lcd.begin(16, 2); // initialize the lcd
+
+  } else {
+    Serial.println(": LCD not found.");
+  } // if
+
 	lcd.begin(16,2);
 	lcd.home();
 	lcd.print("Hello, ARDUINO ");
