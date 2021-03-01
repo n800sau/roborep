@@ -12,9 +12,12 @@ heater pwm - 3
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Ticker.h>
+#include <LiquidCrystal_I2C.h>
 
 #define OLED_ADDRESS 0x3c
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
+
+LiquidCrystal_I2C lcd(0x38);  // Set the LCD I2C address
 
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
@@ -192,6 +195,11 @@ void setup()
 	pinMode(FAN_PIN, OUTPUT);
 	analogWrite(FAN_PIN, 0);
 	memset(&t_data, 0, sizeof(t_data));
+	lcd.begin(16,2);
+	lcd.home();
+	lcd.print("Hello, ARDUINO ");
+	lcd.setCursor(0, 1);
+	lcd.print(" FORUM - fm   ");
 	am2320.begin();
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
 	if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) { // Address 0x3D for 128x64
