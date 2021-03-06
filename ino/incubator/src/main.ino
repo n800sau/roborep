@@ -9,7 +9,7 @@ heater pwm - 3
 */
 
 #include <PID_v1.h>
-#include <Ticker.h>
+#include <TaskScheduler.h>
 #include <LiquidCrystal_PCF8574.h>
 #include <Wire.h>
 
@@ -18,6 +18,12 @@ LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars a
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+//#include <TimeLib.h>
+//#include <NtpClientLib.h>
+//#include <ArduinoOTA.h>
+//#include <ArduinoJson.h>
+//#include <FSWebServerLib.h>
+//#include <Hash.h>
 
 #include "local_config.h"
 
@@ -26,8 +32,6 @@ const char* password = WIFI_PASSWORD;
 
 /* Start Webserver */
 AsyncWebServer webserver(80);
-//AsyncWebSocket ws("/ws");
-//AsyncEventSource events("/events");
 
 #include <ESPDash.h>
 
@@ -51,8 +55,11 @@ AM2320 am2320;
 
 
 #if defined(ESP8266)
-const int HEATER_PIN = D5;
-const int FAN_PIN = D6;
+const int HEATER_PIN = D3;
+const int FAN_PIN = D5;
+const int ROTARY_KEY = D4; // must be not pressed on flash
+const int ROTARY_S1 = D6;
+const int ROTARY_S2 = D7;
 #else // arduino
 const int HEATER_PIN = 3;
 const int FAN_PIN = 5;
@@ -84,7 +91,6 @@ void notFound(AsyncWebServerRequest *request)
 void display_status()
 {
 	if(temp != UNKNOWN_TEMP) {
-Serial.println("display");
 		lcd.home();
 		lcd.print("T: ");
 		lcd.print(temp);
@@ -174,10 +180,17 @@ void measurement()
 	}
 }
 
-Ticker measurement_timer(measurement, 100, 0, MILLIS);
-Ticker display_timer(display_status, 1000, 0, MILLIS);
-Ticker print_timer(print_status, 10000, 0, MILLIS);
-Ticker chart_timer(update_chart_data, 1000 * T_DATA_COLLECTION_STEP, 0, MILLIS);
+Task measurement_timer(100, TASK_FOREVER, &measurement);
+Task display_timer(1000, TASK_FOREVER, &display_status);
+Task print_timer(10000, TASK_FOREVER, &print_status);
+Task chart_timer(1000 * T_DATA_COLLECTION_STEP, TASK_FOREVER, &update_chart_data);
+
+//Ticker measurement_timer(measurement, 100, 0, MILLIS);
+//Ticker display_timer(display_status, 1000, 0, MILLIS);
+//Ticker print_timer(print_status, 10000, 0, MILLIS);
+//Ticker chart_timer(update_chart_data, 1000 * T_DATA_COLLECTION_STEP, 0, MILLIS);
+
+Scheduler runner;
 
 void setup()
 {
@@ -191,8 +204,13 @@ void setup()
 	analogWrite(FAN_PIN, 0);
 	memset(&t_data, 0, sizeof(t_data));
 
+    // WiFi is started inside library
+//    SPIFFS.begin(); // Not really needed, checked inside library and started if needed
+//    ESPHTTPServer.begin(&SPIFFS);
+
+	am2320.begin();
   // See http://playground.arduino.cc/Main/I2cScanner how to test for a I2C device.
-  Wire.begin();
+//  Wire.begin();
   Wire.beginTransmission(0x27);
   int error = Wire.endTransmission();
   Serial.print("Error: ");
@@ -204,14 +222,15 @@ void setup()
 
   } else {
     Serial.println(": LCD not found.");
-  } // if
+  }
 
 	lcd.begin(16,2);
+    lcd.setBacklight(255);
+	lcd.clear();
 	lcd.home();
 	lcd.print("Hello, ARDUINO ");
 	lcd.setCursor(0, 1);
 	lcd.print(" FORUM - fm   ");
-	am2320.begin();
 
 	//tell the PID to range between 0 and max pwm
 	heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
@@ -233,10 +252,21 @@ void setup()
 	Serial.println("IP address: ");
 	Serial.println(WiFi.localIP());
 
-	display_timer.start();
-	chart_timer.start();
-	measurement_timer.start();
-	print_timer.start();
+	runner.init();
+	runner.addTask(display_timer);
+	runner.addTask(chart_timer);
+	runner.addTask(measurement_timer);
+	runner.addTask(print_timer);
+
+	display_timer.enable();
+	chart_timer.enable();
+	measurement_timer.enable();
+	print_timer.enable();
+
+//	display_timer.start();
+//	chart_timer.start();
+//	measurement_timer.start();
+//	print_timer.start();
 
 	t_chart.updateX(XAxis, X_COUNT);
 	slider.update(temp2set);
@@ -257,8 +287,10 @@ void setup()
 }
 void loop()
 {
-	measurement_timer.update();
-	display_timer.update();
-	chart_timer.update();
-	print_timer.update();
+	runner.execute();
+//	measurement_timer.update();
+//	display_timer.update();
+//	chart_timer.update();
+//	print_timer.update();
+//	ESPHTTPServer.handle();
 }
