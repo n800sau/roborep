@@ -50,28 +50,27 @@ int YAxis[X_COUNT] = {0, 0, 0, 0, 0, 0, 0};
 #define T_DATA_COUNT (X_COUNT * 60 / T_DATA_COLLECTION_STEP)
 int t_data[T_DATA_COUNT];
 
-#include <AM2320.h>
-AM2320 am2320;
+#include <SI7021.h>
+SI7021 si;
+
+//#include <AM2320.h>
+//AM2320 am2320;
 
 
 #if defined(ESP8266)
-const int HEATER_PIN = D3;
-const int FAN_PIN = D5;
-const int ROTARY_KEY = D4; // must be not pressed on flash
-const int ROTARY_S1 = D6;
-const int ROTARY_S2 = D7;
+const int HEATER_PIN = D5;
+const int FAN_PIN = D6;
+const int ROTARY_KEY = D7;
+const int ROTARY_S1 = D3;
+const int ROTARY_S2 = D4;
 #else // arduino
 const int HEATER_PIN = 3;
 const int FAN_PIN = 5;
 #endif
 
-#include <RotaryEncoder.h>
-int16_t position = 0;
-RotaryEncoder encoder(ROTARY_S1, ROTARY_S2, ROTARY_KEY);
-
 // 80 - 8v
 const int MAX_HEAT_PWM = 80;
-const int MAX_FAN_PWM = 200;
+const int MAX_FAN_PWM = 70;
 
 int heat_val = MAX_HEAT_PWM;
 
@@ -89,7 +88,7 @@ float temp = UNKNOWN_TEMP;
 
 void notFound(AsyncWebServerRequest *request)
 {
-		request->send(404, "text/plain", "Not found");
+    request->send(404, "text/plain", "Not found");
 }
 
 void display_status()
@@ -107,20 +106,22 @@ void display_status()
 		if(heat_val > 0) {
 			lcd.print("^");
 		}
+		lcd.print("  ");
 	}
 }
 
 void print_status()
 {
 	if(temp != UNKNOWN_TEMP) {
-		Serial.print("Heating val: ");
+		Serial.print("\n\nHeating val: ");
 		Serial.print(heat_val);
 		Serial.print(", ");
 		Serial.print(temp);
 		Serial.print(F(" > "));
 		Serial.print(temp2set);
 		Serial.print(", Humidity: ");
-		Serial.println(am2320.getHumidity());
+//		Serial.println(am2320.getHumidity());
+		Serial.println(si.getHumidityPercent());
 	}
 }
 
@@ -154,9 +155,10 @@ void update_chart_data()
 
 void measurement()
 {
-	if (am2320.measure()) {
-		Serial.println("am2320 is ok");
-		temp = am2320.getTemperature();
+	if(si.sensorExists()) {
+//	if (am2320.measure()) {
+//		temp = am2320.getTemperature();
+		temp = si.getCelsiusHundredths()/100.;
 		t.update(temp);
 		Input = temp;
 		Setpoint = temp2set;
@@ -168,60 +170,33 @@ void measurement()
 //		Serial.print(" Set:");
 //		Serial.println(Setpoint);
 		heat_val = Output;
-		heat_val = MAX_HEAT_PWM;
+//		heat_val = MAX_HEAT_PWM;
 		analogWrite(HEATER_PIN, heat_val);
 		analogWrite(FAN_PIN, MAX_FAN_PWM);
-		display_status();
-		print_status();
-	}
-	else
-	{
+	} else {
+		Serial.println("SI found");
 		analogWrite(HEATER_PIN, 0);
-		analogWrite(FAN_PIN, 128);
-		int errorCode = am2320.getErrorCode();
-		switch (errorCode)
-		{
-			case 1: Serial.println("ERR: am2320 is offline"); break;
-			case 2: Serial.println("ERR: CRC validation failed."); break;
-		}
+		analogWrite(FAN_PIN, 0);
+//		int errorCode = am2320.getErrorCode();
+//		switch (errorCode)
+//		{
+//			case 1: Serial.println("ERR: am2320 is offline"); break;
+//			case 2: Serial.println("ERR: CRC validation failed."); break;
+//		}
 	}
 }
 
-int buttonCounter = 0;
-int old_position = 0;
-
-void process_encoder()
-{
-	if(old_position != encoder.getPosition())
-	{
-		Serial.print("position: ");
-		Serial.println(encoder.getPosition());
-	}
-	if(encoder.getPushButton())
-	{
-		Serial.print("btn counter: ");
-		Serial.println(buttonCounter++);
-	}
-}
-
-Task measurement_timer(5000, TASK_FOREVER, &measurement);
-//Task display_timer(1000, TASK_FOREVER, &display_status);
-//Task print_timer(10000, TASK_FOREVER, &print_status);
+Task measurement_timer(100, TASK_FOREVER, &measurement);
+Task display_timer(1000, TASK_FOREVER, &display_status);
+Task print_timer(10000, TASK_FOREVER, &print_status);
 Task chart_timer(1000 * T_DATA_COLLECTION_STEP, TASK_FOREVER, &update_chart_data);
-Task encoder_timer(1000, TASK_FOREVER, &process_encoder);
+
+//Ticker measurement_timer(measurement, 100, 0, MILLIS);
+//Ticker display_timer(display_status, 1000, 0, MILLIS);
+//Ticker print_timer(print_status, 10000, 0, MILLIS);
+//Ticker chart_timer(update_chart_data, 1000 * T_DATA_COLLECTION_STEP, 0, MILLIS);
 
 Scheduler runner;
-
-void ICACHE_RAM_ATTR encoderISR()
-{
-  encoder.readAB();
-}
-
-void ICACHE_RAM_ATTR encoderButtonISR()
-{
-  encoder.readPushButton();
-}
-
 
 void setup()
 {
@@ -229,37 +204,36 @@ void setup()
 	Serial.println();
 	Serial.setDebugOutput(true);
 	Serial.println("Incubator...");
+	analogWriteRange(100);
 	pinMode(HEATER_PIN, OUTPUT);
 	analogWrite(HEATER_PIN, 0);
 	pinMode(FAN_PIN, OUTPUT);
 	analogWrite(FAN_PIN, 0);
 	memset(&t_data, 0, sizeof(t_data));
-	encoder.begin();
-	attachInterrupt(digitalPinToInterrupt(ROTARY_S1), encoderISR, CHANGE);
-	attachInterrupt(digitalPinToInterrupt(ROTARY_KEY), encoderButtonISR, FALLING);
 
-		// WiFi is started inside library
+    // WiFi is started inside library
 //    SPIFFS.begin(); // Not really needed, checked inside library and started if needed
 //    ESPHTTPServer.begin(&SPIFFS);
 
-	// See http://playground.arduino.cc/Main/I2cScanner how to test for a I2C device.
-	Wire.begin();
-	Wire.setClock(100000);
-	Wire.beginTransmission(0x27);
-	int error = Wire.endTransmission();
-	Serial.print("Error: ");
-	Serial.print(error);
+//	am2320.begin();
+	si.begin();
+  // See http://playground.arduino.cc/Main/I2cScanner how to test for a I2C device.
+//  Wire.begin();
+  Wire.beginTransmission(0x27);
+  int error = Wire.endTransmission();
+  Serial.print("Error: ");
+  Serial.print(error);
 
-	if (error == 0) {
-		Serial.println(": LCD found.");
-		lcd.begin(16, 2); // initialize the lcd
-	} else {
-		Serial.println(": LCD not found.");
-	}
+  if (error == 0) {
+    Serial.println(": LCD found.");
+    lcd.begin(16, 2); // initialize the lcd
 
-	am2320.begin();
+  } else {
+    Serial.println(": LCD not found.");
+  }
+
 	lcd.begin(16,2);
-	lcd.setBacklight(10);
+    lcd.setBacklight(255);
 	lcd.clear();
 	lcd.home();
 	lcd.print("Hello, ARDUINO ");
@@ -287,17 +261,20 @@ void setup()
 	Serial.println(WiFi.localIP());
 
 	runner.init();
-//	runner.addTask(display_timer);
+	runner.addTask(display_timer);
 	runner.addTask(chart_timer);
 	runner.addTask(measurement_timer);
-//	runner.addTask(print_timer);
-	runner.addTask(encoder_timer);
+	runner.addTask(print_timer);
 
-//	display_timer.enable();
-//	chart_timer.enable();
+	display_timer.enable();
+	chart_timer.enable();
 	measurement_timer.enable();
-//	print_timer.enable();
-//	encoder_timer.enable();
+	print_timer.enable();
+
+//	display_timer.start();
+//	chart_timer.start();
+//	measurement_timer.start();
+//	print_timer.start();
 
 	t_chart.updateX(XAxis, X_COUNT);
 	slider.update(temp2set);
@@ -319,5 +296,9 @@ void setup()
 void loop()
 {
 	runner.execute();
+//	measurement_timer.update();
+//	display_timer.update();
+//	chart_timer.update();
+//	print_timer.update();
 //	ESPHTTPServer.handle();
 }
