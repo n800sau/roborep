@@ -50,16 +50,19 @@ int YAxis[X_COUNT] = {0, 0, 0, 0, 0, 0, 0};
 #define T_DATA_COUNT (X_COUNT * 60 / T_DATA_COLLECTION_STEP)
 int t_data[T_DATA_COUNT];
 
-#include <AM2320.h>
-AM2320 am2320;
+#include <SI7021.h>
+SI7021 si;
+
+//#include <AM2320.h>
+//AM2320 am2320;
 
 
 #if defined(ESP8266)
-const int HEATER_PIN = D3;
-const int FAN_PIN = D5;
-const int ROTARY_KEY = D4; // must be not pressed on flash
-const int ROTARY_S1 = D6;
-const int ROTARY_S2 = D7;
+const int HEATER_PIN = D5;
+const int FAN_PIN = D6;
+const int ROTARY_KEY = D7;
+const int ROTARY_S1 = D3;
+const int ROTARY_S2 = D4;
 #else // arduino
 const int HEATER_PIN = 3;
 const int FAN_PIN = 5;
@@ -67,7 +70,7 @@ const int FAN_PIN = 5;
 
 // 80 - 8v
 const int MAX_HEAT_PWM = 80;
-const int MAX_FAN_PWM = 200;
+const int MAX_FAN_PWM = 70;
 
 int heat_val = MAX_HEAT_PWM;
 
@@ -103,6 +106,7 @@ void display_status()
 		if(heat_val > 0) {
 			lcd.print("^");
 		}
+		lcd.print("  ");
 	}
 }
 
@@ -116,7 +120,8 @@ void print_status()
 		Serial.print(F(" > "));
 		Serial.print(temp2set);
 		Serial.print(", Humidity: ");
-		Serial.println(am2320.getHumidity());
+//		Serial.println(am2320.getHumidity());
+		Serial.println(si.getHumidityPercent());
 	}
 }
 
@@ -150,8 +155,10 @@ void update_chart_data()
 
 void measurement()
 {
-	if (am2320.measure()) {
-		temp = am2320.getTemperature();
+	if(si.sensorExists()) {
+//	if (am2320.measure()) {
+//		temp = am2320.getTemperature();
+		temp = si.getCelsiusHundredths()/100.;
 		t.update(temp);
 		Input = temp;
 		Setpoint = temp2set;
@@ -163,20 +170,19 @@ void measurement()
 //		Serial.print(" Set:");
 //		Serial.println(Setpoint);
 		heat_val = Output;
-		heat_val = MAX_HEAT_PWM;
+//		heat_val = MAX_HEAT_PWM;
 		analogWrite(HEATER_PIN, heat_val);
 		analogWrite(FAN_PIN, MAX_FAN_PWM);
-	}
-	else
-	{
+	} else {
+		Serial.println("SI found");
 		analogWrite(HEATER_PIN, 0);
 		analogWrite(FAN_PIN, 0);
-		int errorCode = am2320.getErrorCode();
-		switch (errorCode)
-		{
-			case 1: Serial.println("ERR: am2320 is offline"); break;
-			case 2: Serial.println("ERR: CRC validation failed."); break;
-		}
+//		int errorCode = am2320.getErrorCode();
+//		switch (errorCode)
+//		{
+//			case 1: Serial.println("ERR: am2320 is offline"); break;
+//			case 2: Serial.println("ERR: CRC validation failed."); break;
+//		}
 	}
 }
 
@@ -198,6 +204,7 @@ void setup()
 	Serial.println();
 	Serial.setDebugOutput(true);
 	Serial.println("Incubator...");
+	analogWriteRange(100);
 	pinMode(HEATER_PIN, OUTPUT);
 	analogWrite(HEATER_PIN, 0);
 	pinMode(FAN_PIN, OUTPUT);
@@ -208,7 +215,8 @@ void setup()
 //    SPIFFS.begin(); // Not really needed, checked inside library and started if needed
 //    ESPHTTPServer.begin(&SPIFFS);
 
-	am2320.begin();
+//	am2320.begin();
+	si.begin();
   // See http://playground.arduino.cc/Main/I2cScanner how to test for a I2C device.
 //  Wire.begin();
   Wire.beginTransmission(0x27);
