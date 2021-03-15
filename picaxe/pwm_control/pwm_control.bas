@@ -22,12 +22,8 @@ symbol PWM_4 = B.1
 
 symbol PWM_PERIOD = 128
 
-get_val:
-	serin [200, no_cmd],SERIN_PIN,SER_MODE,b2
-	return
-
 main:
-	serin [100, no_cmd],SERIN_PIN,SER_MODE,("CMD"), b1
+	serin [100, no_cmd],SERIN_PIN,SER_MODE,("Pwm Command"), b1
 	select b1
 	case P1
 		gosub get_val
@@ -66,4 +62,8 @@ sertxd ("CMD S4 ", #b1,CR,LF)
 	endselect
 no_cmd:
 	goto main
+
+get_val:
+	serin [200, no_cmd],SERIN_PIN,SER_MODE,b2
+	return
 
