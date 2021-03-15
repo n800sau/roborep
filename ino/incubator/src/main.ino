@@ -12,6 +12,7 @@ heater pwm - 3
 #include <TaskScheduler.h>
 #include <LiquidCrystal_PCF8574.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
 
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
@@ -58,11 +59,15 @@ SI7021 si;
 
 
 #if defined(ESP8266)
-const int HEATER_PIN = D5;
-const int FAN_PIN = D6;
+const int HEATER_PIN = -100;
+const int FAN_PIN = -200;
+//const int HEATER_PIN = D5;
+//const int FAN_PIN = D6;
 const int ROTARY_KEY = D7;
-const int ROTARY_S1 = D3;
-const int ROTARY_S2 = D4;
+const int ROTARY_S1 = D5;
+const int ROTARY_S2 = D6;
+const int RX_PIN = D3;
+const int TX_PIN = -1;
 #else // arduino
 const int HEATER_PIN = 3;
 const int FAN_PIN = 5;
@@ -71,6 +76,8 @@ const int FAN_PIN = 5;
 // 80 - 8v
 const int MAX_HEAT_PWM = 80;
 const int MAX_FAN_PWM = 70;
+
+const char *pwm_command_prefix = "Pwm Command";
 
 int heat_val = MAX_HEAT_PWM;
 
@@ -85,6 +92,8 @@ PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 const int UNKNOWN_TEMP = -10000;
 float temp = UNKNOWN_TEMP;
+
+SoftwareSerial swSer;
 
 void notFound(AsyncWebServerRequest *request)
 {
@@ -171,12 +180,12 @@ void measurement()
 //		Serial.println(Setpoint);
 		heat_val = Output;
 //		heat_val = MAX_HEAT_PWM;
-		analogWrite(HEATER_PIN, heat_val);
-		analogWrite(FAN_PIN, MAX_FAN_PWM);
+		setPwm(HEATER_PIN, heat_val);
+		setPwm(FAN_PIN, MAX_FAN_PWM);
 	} else {
-		Serial.println("SI found");
-		analogWrite(HEATER_PIN, 0);
-		analogWrite(FAN_PIN, 0);
+		Serial.println("SI not found");
+		setPwm(HEATER_PIN, 0);
+		setPwm(FAN_PIN, 0);
 //		int errorCode = am2320.getErrorCode();
 //		switch (errorCode)
 //		{
@@ -184,6 +193,28 @@ void measurement()
 //			case 2: Serial.println("ERR: CRC validation failed."); break;
 //		}
 	}
+}
+
+void setPwm(int pin, int val)
+{
+//	analogWrite(pin, val);
+	swSer.flush();
+	swSer.enableTx(true);
+	swSer.write(pwm_command_prefix, 3);
+	swSer.write(pin == HEATER_PIN ? 0x81 : 0x82);
+	swSer.write((uint8_t)float(val)/100*255);
+	swSer.enableTx(false);
+
+}
+
+void setupPwm()
+{
+	swSer.begin(115200, SWSERIAL_8N1, RX_PIN, TX_PIN, false, 64);
+//	analogWriteRange(100);
+//	pinMode(HEATER_PIN, OUTPUT);
+	setPwm(HEATER_PIN, 0);
+//	pinMode(FAN_PIN, OUTPUT);
+	setPwm(FAN_PIN, 0);
 }
 
 Task measurement_timer(100, TASK_FOREVER, &measurement);
@@ -204,11 +235,7 @@ void setup()
 	Serial.println();
 	Serial.setDebugOutput(true);
 	Serial.println("Incubator...");
-	analogWriteRange(100);
-	pinMode(HEATER_PIN, OUTPUT);
-	analogWrite(HEATER_PIN, 0);
-	pinMode(FAN_PIN, OUTPUT);
-	analogWrite(FAN_PIN, 0);
+	setupPwm();
 	memset(&t_data, 0, sizeof(t_data));
 
     // WiFi is started inside library
@@ -236,9 +263,9 @@ void setup()
     lcd.setBacklight(255);
 	lcd.clear();
 	lcd.home();
-	lcd.print("Hello, ARDUINO ");
+	lcd.print("Thermo");
 	lcd.setCursor(0, 1);
-	lcd.print(" FORUM - fm   ");
+	lcd.print(" chambre");
 
 	//tell the PID to range between 0 and max pwm
 	heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
