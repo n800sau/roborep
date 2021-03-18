@@ -59,8 +59,8 @@ float temp = UNKNOWN_TEMP;
 #include <SoftwareSerial.h>
 SoftwareSerial swSer;
 
-#include <RemoteDebug.h>
-RemoteDebug Debug;
+//#include <RemoteDebug.h>
+//RemoteDebug Debug;
 
 void display_status()
 {
@@ -150,7 +150,8 @@ Scheduler runner;
 
 void callbackJSON(AsyncWebServerRequest *request)
 {
-	//its possible to test the url and do different things, 
+Serial.print("json:");
+Serial.println(request->url());
 	if (request->url() == "/json/temp")
 	{
 		String json = "{";
@@ -220,10 +221,10 @@ void setup() {
 	measurement_timer.enable();
 	print_timer.enable();
 
-	Debug.begin(wifi_station_get_hostname());
-	Debug.setResetCmdEnabled(true); // Enable the reset command
-	Debug.showProfiler(true); // Profiler (Good to measure times, to optimize codes)
-	Debug.showColors(true); // Colors
+//	Debug.begin(wifi_station_get_hostname());
+//	Debug.setResetCmdEnabled(true); // Enable the reset command
+//	Debug.showProfiler(true); // Profiler (Good to measure times, to optimize codes)
+//	Debug.showColors(true); // Colors
 
 	Serial.println("* Arduino RemoteDebug Library");
 	Serial.println("*");
@@ -239,6 +240,6 @@ void loop() {
 	runner.execute();
 	// DO NOT REMOVE. Attend OTA update from Arduino IDE
 	ESPHTTPServer.handle();
-	Debug.handle();
-	yield();
+//	Debug.handle();
+//	yield();
 }
