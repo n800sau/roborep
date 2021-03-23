@@ -38,7 +38,7 @@ const int TX_PIN = -1;
 const int MAX_HEAT_PWM = 80;
 const int MAX_FAN_PWM = 70;
 
-const char *pwm_command_prefix = "Pwm Command";
+const char *pwm_command_prefix = "PWM";
 
 int heat_val = MAX_HEAT_PWM;
 
@@ -125,9 +125,15 @@ void setPwm(int pin, int val)
 //	analogWrite(pin, val);
 	swSer.flush();
 	swSer.enableTx(true);
-	swSer.write(pwm_command_prefix, 3);
-	swSer.write(pin == HEATER_PIN ? 0x81 : 0x82);
-	swSer.write((uint8_t)float(val)/100*255);
+	if(val == 0) {
+		swSer.write(pwm_command_prefix, sizeof(pwm_command_prefix)-1);
+		swSer.write(pin == HEATER_PIN ? "S1\n" : "S2\n");
+	} else {
+		swSer.write(pwm_command_prefix, sizeof(pwm_command_prefix)-1);
+		swSer.write(pin == HEATER_PIN ? "P1\n" : "P2\n");
+		swSer.write("PER128\nDUT");
+		swSer.write("%d\n", int(float(val)/100)*1023);
+	}
 	swSer.enableTx(false);
 
 }
@@ -155,7 +161,9 @@ Serial.println(request->url());
 	if (request->url() == "/json/temp")
 	{
 		String json = "{";
-		json += "\"temp\":" + String(temp);
+		json += "\"temp\":" + String(temp) + ",";
+		json += "\"heating\":" + String(heat_val) + ",";
+		json += "\"temp2set\":" + String(temp2set);
 		json += "}";
 		request->send(200, "text/json", json);
 	}

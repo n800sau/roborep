@@ -1,0 +1,7 @@
+{
+	"ssid": "Slow Internet Connection",
+	"pass": "1,tpGfhjkz2",
+	"ntp": "time.nist.gov",
+	"deviceName": "testdevice",
+	"timeZone": -11
+}

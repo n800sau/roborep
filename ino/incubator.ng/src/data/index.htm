@@ -3,9 +3,10 @@
 <head>
 	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 	<title>Thermo Monitor</title>
+	<link rel="stylesheet" href="index.css" type="text/css" />
 	<script type="text/javascript" src="graphs.js"></script>
 	<script type="text/javascript">
-		var temp;
+		var temp, heating, temp2set;
 		var reloadPeriod = 10000;
 		var running = false;
 		
@@ -17,6 +18,11 @@
 					if(xh.status == 200) {
 						var res = JSON.parse(xh.responseText);
 						temp.add(res.temp);
+						document.getElementById("cur-temp").innerHTML = 'Temp:<br>' + res.temp + '&deg;C';
+						heating.add(res.heating);
+						document.getElementById("cur-heating").innerHTML = 'Heating:<br>' + res.heating;
+						temp2set.add(res.temp2set);
+						document.getElementById("cur-temp2set").innerHTML = 'To reach:<br>' + res.temp2set + '&deg;C';
 						if(running) {
 							setTimeout(loadValues, reloadPeriod);
 						}
@@ -51,24 +57,26 @@
 				run();
 			}
 			
-//			anal = createGraph(document.getElementById("analog"), "Analog Input", 100, 128, 0, 1023, false, "cyan");
-//			heap = createGraph(document.getElementById("heap"), "Current Heap", 100, 125, 0, 30000, true, "orange");
 //			digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
+			temp2set = createGraph(document.getElementById("temp2set"), "Temp to set", 100, 146, 0, 60, true, "orange");
+			heating = createGraph(document.getElementById("heating"), "Heating", 100, 128, 0, 100, false, "cyan");
 			temp = createGraph(document.getElementById("temp"), "Si7120", 100, 146, 0, 80, false, "blue");
 			run();
 		}
 	</script>
 </head>
 <body id="index" style="margin:0; padding:0;" onload="onBodyLoad()">
-	<div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; width: 362px; background-color: rgb(238, 238, 238);">
+	<div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; background-color: rgb(238, 238, 238);">
 		<label>Period (ms):</label>
 		<input type="number" id="refresh-rate"/>
 		<input type="button" id="start-button" value="Start"/>
 		<input type="button" id="stop-button" value="Stop"/>
 	</div>
+	<div id="cur-temp" class="chip"></div>
+	<div id="cur-temp2set" class="chip"></div>
+	<div id="cur-heating" class="chip"></div>
 	<div id="temp"></div>
-	<div id="heap"></div>
-	<div id="analog"></div>
-	<div id="digital"></div>
+	<div id="heating"></div>
+	<div id="temp2set"></div>
 </body>
 </html>
