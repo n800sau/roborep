@@ -1,6 +1,10 @@
 #include <SoftwareSerial.h>
 
+#if defined(ESP8266)
+SoftwareSerial sSer(D3, -1); // RX, TX
+#else
 SoftwareSerial sSer(10, 7); // RX, TX
+#endif
 
 void setup() {
 	// Open serial communications and wait for port to open:
