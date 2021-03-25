@@ -5,8 +5,10 @@
 	<title>Thermo Monitor</title>
 	<link rel="stylesheet" href="index.css" type="text/css" />
 	<script type="text/javascript" src="graphs.js"></script>
+	<script type="text/javascript" src="gauge.min.js"></script>
 	<script type="text/javascript">
-		var temp, heating, temp2set;
+		var temp, heater, target;
+		var gauge_temp, gauge_heater, gauge_target;
 		var reloadPeriod = 10000;
 		var running = false;
 		
@@ -18,11 +20,14 @@
 					if(xh.status == 200) {
 						var res = JSON.parse(xh.responseText);
 						temp.add(res.temp);
-						document.getElementById("cur-temp").innerHTML = 'Temp:<br>' + res.temp + '&deg;C';
-						heating.add(res.heating);
-						document.getElementById("cur-heating").innerHTML = 'Heating:<br>' + res.heating;
-						temp2set.add(res.temp2set);
-						document.getElementById("cur-temp2set").innerHTML = 'To reach:<br>' + res.temp2set + '&deg;C';
+						gauge_temp.set(res.temp);
+						document.getElementById("cur-temp").innerHTML = res.temp + '&deg;C';
+						heater.add(res.heater);
+						gauge_heater.set(res.heater);
+						document.getElementById("cur-heater").innerHTML = res.heater;
+						target.add(res.target);
+						gauge_target.set(res.target);
+						document.getElementById("cur-target").innerHTML = res.target + '&deg;C';
 						if(running) {
 							setTimeout(loadValues, reloadPeriod);
 						}
@@ -58,9 +63,34 @@
 			}
 			
 //			digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
-			temp2set = createGraph(document.getElementById("temp2set"), "Temp to set", 100, 146, 0, 60, true, "orange");
-			heating = createGraph(document.getElementById("heating"), "Heating", 100, 128, 0, 100, false, "cyan");
+			target = createGraph(document.getElementById("target"), "Temp to set", 100, 146, 0, 60, true, "orange");
+			heater = createGraph(document.getElementById("heater"), "heater", 100, 128, 0, 100, false, "cyan");
 			temp = createGraph(document.getElementById("temp"), "Si7120", 100, 146, 0, 80, false, "blue");
+
+			var opts = {
+			angle: 0.15, /// The span of the gauge arc
+			lineWidth: 0.44, // The line thickness
+			pointer: {
+				length: 0.9, // Relative to gauge radius
+				strokeWidth: 0.035 // The thickness
+			},
+			colorStart: '#6FADCF',	 // Colors
+			colorStop: '#8FC0DA',		// just experiment with them
+			strokeColor: '#E0E0E0'	 // to see which ones work best for you
+			};
+
+			gauge_temp = new Gauge(document.getElementById('gauge-temp')).setOptions(opts);
+			gauge_temp.maxValue = 50;
+			gauge_temp.setMinValue(0);
+
+			gauge_heater = new Gauge(document.getElementById('gauge-heater')).setOptions(opts);
+			gauge_heater.maxValue = 100;
+			gauge_heater.setMinValue(0);
+
+			gauge_target = new Gauge(document.getElementById('gauge-target')).setOptions(opts);
+			gauge_target.maxValue = 50;
+			gauge_target.setMinValue(0);
+
 			run();
 		}
 	</script>
@@ -72,11 +102,37 @@
 		<input type="button" id="start-button" value="Start"/>
 		<input type="button" id="stop-button" value="Stop"/>
 	</div>
-	<div id="cur-temp" class="chip"></div>
-	<div id="cur-temp2set" class="chip"></div>
-	<div id="cur-heating" class="chip"></div>
-	<div id="temp"></div>
-	<div id="heating"></div>
-	<div id="temp2set"></div>
+	<table>
+		<tr>
+			<td>Temp</td>
+			<td><div id="cur-temp" class="chip"></div></td>
+			<td rowspan="2">
+				<div id="temp"></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2"><canvas id="gauge-temp" width="50" height="50"></canvas></td>
+		</tr>
+		<tr>
+			<td>Target</td>
+			<td><div id="cur-target" class="chip"></div></td>
+			<td rowspan="2">
+				<div id="target"></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2"><canvas id="gauge-target" width="50" height="50"></canvas></td>
+		</tr>
+		<tr>
+			<td>Heater</td>
+			<td><div id="cur-heater" class="chip"></div></td>
+			<td rowspan="2">
+				<div id="heater"></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2"><canvas id="gauge-heater" width="50" height="50"></canvas></td>
+		</tr>
+	</table>
 </body>
 </html>

@@ -40,9 +40,9 @@ const int MAX_FAN_PWM = 70;
 
 const char *pwm_command_prefix = "PWM";
 
-int heat_val = MAX_HEAT_PWM;
+int heater = MAX_HEAT_PWM;
 
-int temp2set = 37;
+int target = 37;
 
 //Variables PID'll be connected
 double Setpoint, Input, Output;
@@ -69,12 +69,12 @@ void display_status()
 		lcd.print("T: ");
 		lcd.print(temp);
 		lcd.print(F(" => "));
-		lcd.print(temp2set);
+		lcd.print(target);
 		lcd.print(F(" C"));
 		lcd.setCursor(0, 1);
 		lcd.print("Heating: ");
-		lcd.print(heat_val);
-		if(heat_val > 0) {
+		lcd.print(heater);
+		if(heater > 0) {
 			lcd.print("^");
 		}
 		lcd.print("  ");
@@ -85,11 +85,11 @@ void print_status()
 {
 	if(temp != UNKNOWN_TEMP) {
 		Serial.print("\n\nHeating val: ");
-		Serial.print(heat_val);
+		Serial.print(heater);
 		Serial.print(", ");
 		Serial.print(temp);
 		Serial.print(F(" > "));
-		Serial.print(temp2set);
+		Serial.print(target);
 		Serial.print(", Humidity: ");
 //		Serial.println(am2320.getHumidity());
 		Serial.println(si.getHumidityPercent());
@@ -101,7 +101,7 @@ void measurement()
 	if(si.sensorExists()) {
 		temp = si.getCelsiusHundredths()/100.;
 		Input = temp;
-		Setpoint = temp2set;
+		Setpoint = target;
 		heaterPID.Compute();
 //		Serial.print("In:");
 //		Serial.print(Input);
@@ -109,9 +109,9 @@ void measurement()
 //		Serial.print(Output);
 //		Serial.print(" Set:");
 //		Serial.println(Setpoint);
-		heat_val = Output;
-//		heat_val = MAX_HEAT_PWM;
-		setPwm(HEATER_PIN, heat_val);
+		heater = Output;
+//		heater = MAX_HEAT_PWM;
+		setPwm(HEATER_PIN, heater);
 		setPwm(FAN_PIN, MAX_FAN_PWM);
 	} else {
 		Serial.println("SI not found");
@@ -140,7 +140,7 @@ void setPwm(int pin, int val)
 
 void setupPwm()
 {
-	swSer.begin(115200, SWSERIAL_8N1, RX_PIN, TX_PIN, false, 64);
+	swSer.begin(4800, SWSERIAL_8N1, RX_PIN, TX_PIN, false, 64);
 //	analogWriteRange(100);
 //	pinMode(HEATER_PIN, OUTPUT);
 	setPwm(HEATER_PIN, 0);
@@ -162,8 +162,8 @@ Serial.println(request->url());
 	{
 		String json = "{";
 		json += "\"temp\":" + String(temp) + ",";
-		json += "\"heating\":" + String(heat_val) + ",";
-		json += "\"temp2set\":" + String(temp2set);
+		json += "\"heater\":" + String(heater) + ",";
+		json += "\"target\":" + String(target);
 		json += "}";
 		request->send(200, "text/json", json);
 	}
