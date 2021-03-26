@@ -12,14 +12,17 @@
 		var gauge_temp, gauge_heater, gauge_target;
 		var reloadPeriod = 10000;
 		var running = false;
-		
-		function loadValues(){
+
+		function loadValues()
+		{
+			debounceLoadValuesTimer = undefined;
 			if(!running) return;
 			var new_target = document.getElementById("temp-target-val").value;
 			var xh = new XMLHttpRequest();
 			xh.onreadystatechange = function(){
 				if (xh.readyState == 4){
 					if(xh.status == 200) {
+						document.getElementById("status").classList.remove('error');
 						var res = JSON.parse(xh.responseText);
 						temp.add(res.temp);
 						gauge_temp.set(res.temp);
@@ -37,22 +40,37 @@
 						if(running) {
 							setTimeout(loadValues, reloadPeriod);
 						}
-					} else running = false;
+					} else {
+						document.getElementById("status").classList.add('error');
+						running = false;
+					}
 				}
 			}
 			var q = new_target === last_new_target ? '' : ('?new_target=' + new_target);
 			xh.open("GET", '/json/temp' + q, true);
 			xh.send(null);
 		};
-		
-		function run(){
+
+		var debounceLoadValuesTimer;
+
+		function debounceLoadValues()
+		{
+			if(debounceLoadValuesTimer) {
+				clearTimeout(debounceLoadValuesTimer);
+			}
+			debounceLoadValuesTimer = setTimeout(loadValues, 1000);
+		}
+
+		function run()
+		{
 			if(!running){
 				running = true;
 				loadValues();
 			}
 		}
 		
-		function onBodyLoad(){
+		function onBodyLoad()
+		{
 			var refreshInput = document.getElementById("refresh-rate");
 			refreshInput.value = reloadPeriod;
 			refreshInput.onchange = function(e){
@@ -129,6 +147,9 @@
 	</script>
 </head>
 <body id="index" style="margin:0; padding:0;" onload="onBodyLoad()">
+	<div id="status">
+		STATUS
+	</div>
 	<div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; background-color: rgb(238, 238, 238);">
 		<label>Period (ms):</label>
 		<input type="number" id="refresh-rate"/>
@@ -144,11 +165,11 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-temp" width="100" height="80"></canvas></td>
+			<td colspan="2"><canvas id="gauge-temp" width="100" height="70"></canvas></td>
 		</tr>
 		<tr>
 			<td colspan="3">
-				<input type="range" id="temp-target-val" min="10" max="50"></input>
+				<input type="range" id="temp-target-val" min="10" max="50" onchange="debounceLoadValues()"></input>
 			</td>
 		</tr>
 		<tr>
@@ -159,7 +180,7 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-target" width="100" height="80"></canvas></td>
+			<td colspan="2"><canvas id="gauge-target" width="100" height="70"></canvas></td>
 		</tr>
 		<tr>
 			<td>Heater</td>
@@ -169,7 +190,7 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-heater" width="100" height="80"></canvas></td>
+			<td colspan="2"><canvas id="gauge-heater" width="100" height="70"></canvas></td>
 		</tr>
 	</table>
 </body>
