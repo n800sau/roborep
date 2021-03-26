@@ -154,15 +154,21 @@ Task print_timer(10000, TASK_FOREVER, &print_status);
 
 Scheduler runner;
 
+#define NEW_TARGET_PARAM "new_target"
+
 void callbackJSON(AsyncWebServerRequest *request)
 {
 Serial.print("json:");
 Serial.println(request->url());
+
 	if (request->url() == "/json/temp")
 	{
+		if(request->hasParam(NEW_TARGET_PARAM)) {
+			target = String(request->getParam(NEW_TARGET_PARAM)->value()).toInt();
+		}
 		String json = "{";
-		json += "\"temp\":" + String(temp) + ",";
-		json += "\"heater\":" + String(heater) + ",";
+		json += "\"temp\":" + String(temp > 0 ? temp : 0) + ",";
+		json += "\"heater\":" + String(::map(heater, 0, MAX_HEAT_PWM, 0, 100)) + ",";
 		json += "\"target\":" + String(target);
 		json += "}";
 		request->send(200, "text/json", json);
@@ -197,7 +203,7 @@ void setup() {
 	}
 
 	lcd.begin(16,2);
-	lcd.setBacklight(0);
+	lcd.setBacklight(0); //0-1
 	lcd.clear();
 	lcd.home();
 	lcd.print("Thermo");

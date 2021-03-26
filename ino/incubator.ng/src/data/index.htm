@@ -8,12 +8,14 @@
 	<script type="text/javascript" src="gauge.min.js"></script>
 	<script type="text/javascript">
 		var temp, heater, target;
+		var last_new_target;
 		var gauge_temp, gauge_heater, gauge_target;
 		var reloadPeriod = 10000;
 		var running = false;
 		
 		function loadValues(){
 			if(!running) return;
+			var new_target = document.getElementById("temp-target-val").value;
 			var xh = new XMLHttpRequest();
 			xh.onreadystatechange = function(){
 				if (xh.readyState == 4){
@@ -28,13 +30,18 @@
 						target.add(res.target);
 						gauge_target.set(res.target);
 						document.getElementById("cur-target").innerHTML = res.target + '&deg;C';
+						if(last_new_target === undefined) {
+							last_new_target = res.target;
+							document.getElementById("temp-target-val").value = res.target;
+						}
 						if(running) {
 							setTimeout(loadValues, reloadPeriod);
 						}
 					} else running = false;
 				}
 			}
-			xh.open("GET", "/json/temp", true);
+			var q = new_target === last_new_target ? '' : ('?new_target=' + new_target);
+			xh.open("GET", '/json/temp' + q, true);
 			xh.send(null);
 		};
 		
@@ -67,27 +74,53 @@
 			heater = createGraph(document.getElementById("heater"), "heater", 100, 128, 0, 100, false, "cyan");
 			temp = createGraph(document.getElementById("temp"), "Si7120", 100, 146, 0, 80, false, "blue");
 
-			var opts = {
-			angle: 0.15, /// The span of the gauge arc
-			lineWidth: 0.44, // The line thickness
-			pointer: {
-				length: 0.9, // Relative to gauge radius
-				strokeWidth: 0.035 // The thickness
-			},
-			colorStart: '#6FADCF',	 // Colors
-			colorStop: '#8FC0DA',		// just experiment with them
-			strokeColor: '#E0E0E0'	 // to see which ones work best for you
-			};
+			var opts = {};
+			['temp', 'heater', 'target'].forEach(function(nm) {
+				opts[nm] = {
+					angle: 0.15, /// The span of the gauge arc
+					lineWidth: 0.44, // The line thickness
+					pointer: {
+						length: 0.9, // Relative to gauge radius
+						strokeWidth: 0.035 // The thickness
+					},
+					colorStart: '#6FADCF',	 // Colors
+					colorStop: '#8FC0DA',		// just experiment with them
+					strokeColor: '#E0E0E0',	 // to see which ones work best for you
+					renderTicks: {
+						divisions: 5,
+						subDivisions: 5,
+					},
+					staticLabels: {
+						font: "10px sans-serif",  // Specifies font
+						labels: [10, 20, 30, 40, 50],  // Print labels at these values
+						color: "#000000",  // Optional: Label text color
+						fractionDigits: 0  // Optional: Numerical precision. 0=round off.
+					},
+					percentColors: [[0.0, "#a9d70b" ], [0.5, "#f9c802"], [10, "#ff0000"]],
+					staticZones: [
+						{strokeStyle: "#30B32D", min: 0, max: 30}, // Green
+						{strokeStyle: "#FFDD00", min: 30, max: 40}, // Yellow
+						{strokeStyle: "#F03E3E", min: 40, max: 50}  // Red
+					],
+				};
+			});
 
-			gauge_temp = new Gauge(document.getElementById('gauge-temp')).setOptions(opts);
+			gauge_temp = new Gauge(document.getElementById('gauge-temp')).setOptions(opts['temp']);
 			gauge_temp.maxValue = 50;
 			gauge_temp.setMinValue(0);
 
-			gauge_heater = new Gauge(document.getElementById('gauge-heater')).setOptions(opts);
+			opts['heater'].staticZones = [
+				{strokeStyle: "#30B32D", min: 0, max: 60}, // Green
+				{strokeStyle: "#FFDD00", min: 60, max: 90}, // Yellow
+				{strokeStyle: "#F03E3E", min: 90, max: 100}  // Red
+			];
+
+			opts['heater'].staticLabels.labels = [20, 40, 60, 80, 100];
+			gauge_heater = new Gauge(document.getElementById('gauge-heater')).setOptions(opts['heater']);
 			gauge_heater.maxValue = 100;
 			gauge_heater.setMinValue(0);
 
-			gauge_target = new Gauge(document.getElementById('gauge-target')).setOptions(opts);
+			gauge_target = new Gauge(document.getElementById('gauge-target')).setOptions(opts['target']);
 			gauge_target.maxValue = 50;
 			gauge_target.setMinValue(0);
 
@@ -111,7 +144,12 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-temp" width="50" height="50"></canvas></td>
+			<td colspan="2"><canvas id="gauge-temp" width="100" height="80"></canvas></td>
+		</tr>
+		<tr>
+			<td colspan="3">
+				<input type="range" id="temp-target-val" min="10" max="50"></input>
+			</td>
 		</tr>
 		<tr>
 			<td>Target</td>
@@ -121,7 +159,7 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-target" width="50" height="50"></canvas></td>
+			<td colspan="2"><canvas id="gauge-target" width="100" height="80"></canvas></td>
 		</tr>
 		<tr>
 			<td>Heater</td>
@@ -131,7 +169,7 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-heater" width="50" height="50"></canvas></td>
+			<td colspan="2"><canvas id="gauge-heater" width="100" height="80"></canvas></td>
 		</tr>
 	</table>
 </body>
