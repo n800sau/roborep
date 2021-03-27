@@ -24,15 +24,19 @@ SI7021 si;
 
 #define VERSION "0.1a"
 
-const int HEATER_PIN = -100;
-const int FAN_PIN = -200;
-//const int HEATER_PIN = D5;
-//const int FAN_PIN = D6;
-const int ROTARY_KEY = D7;
+const int HEATER_PIN = D7;
+const int FAN_PIN = D8;
+
+const int ROTARY_KEY = D0;
 const int ROTARY_S1 = D5;
 const int ROTARY_S2 = D6;
-const int RX_PIN = D3;
-const int TX_PIN = -1;
+
+const int CLICKS_PER_STEP = 4;   // this number depends on your rotary encoder 
+
+#include "Button2.h"
+#include "ESPRotary.h"
+ESPRotary rotary = ESPRotary(ROTARY_S1, ROTARY_S2, CLICKS_PER_STEP);
+Button2 button = Button2(ROTARY_KEY);
 
 // 80 - 8v
 const int MAX_HEAT_PWM = 80;
@@ -56,11 +60,33 @@ PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 const int UNKNOWN_TEMP = -10000;
 float temp = UNKNOWN_TEMP;
 
-#include <SoftwareSerial.h>
-SoftwareSerial swSer;
-
 //#include <RemoteDebug.h>
 //RemoteDebug Debug;
+
+// on change
+void rotate(ESPRotary& r)
+{
+	 Serial.println(r.getPosition());
+}
+
+// on left or right rotation
+void showDirection(ESPRotary& r)
+{
+	Serial.println(r.directionToString(r.getDirection()));
+}
+ 
+// single click
+void click(Button2& btn)
+{
+	Serial.println("Click!");
+}
+
+// long click
+void resetPosition(Button2& btn)
+{
+	rotary.resetPosition();
+	Serial.println("Reset!");
+}
 
 void display_status()
 {
@@ -116,35 +142,21 @@ void measurement()
 	} else {
 		Serial.println("SI not found");
 		setPwm(HEATER_PIN, 0);
-		setPwm(FAN_PIN, 0);
+		setPwm(FAN_PIN, 50);
 	}
 }
 
 void setPwm(int pin, int val)
 {
-//	analogWrite(pin, val);
-	swSer.flush();
-	swSer.enableTx(true);
-	if(val == 0) {
-		swSer.write(pwm_command_prefix, sizeof(pwm_command_prefix)-1);
-		swSer.write(pin == HEATER_PIN ? "S1\n" : "S2\n");
-	} else {
-		swSer.write(pwm_command_prefix, sizeof(pwm_command_prefix)-1);
-		swSer.write(pin == HEATER_PIN ? "P1\n" : "P2\n");
-		swSer.write("PER128\nDUT");
-		swSer.write("%d\n", int(float(val)/100)*1023);
-	}
-	swSer.enableTx(false);
-
+	analogWrite(pin, val);
 }
 
 void setupPwm()
 {
-	swSer.begin(4800, SWSERIAL_8N1, RX_PIN, TX_PIN, false, 64);
-//	analogWriteRange(100);
-//	pinMode(HEATER_PIN, OUTPUT);
+	analogWriteRange(100);
+	pinMode(HEATER_PIN, OUTPUT);
 	setPwm(HEATER_PIN, 0);
-//	pinMode(FAN_PIN, OUTPUT);
+	pinMode(FAN_PIN, OUTPUT);
 	setPwm(FAN_PIN, 0);
 }
 
@@ -188,6 +200,13 @@ void setup() {
 	Serial.setDebugOutput(true);
 	Serial.println("Incubator...");
 	setupPwm();
+
+	rotary.setChangedHandler(rotate);
+	rotary.setLeftRotationHandler(showDirection);
+	rotary.setRightRotationHandler(showDirection);
+
+	button.setTapHandler(click);
+	button.setLongClickHandler(resetPosition);
 
 	si.begin();
 
@@ -249,7 +268,10 @@ void setup() {
 
 }
 
-void loop() {
+void loop()
+{
+	rotary.loop();
+	button.loop();
 
 	runner.execute();
 	// DO NOT REMOVE. Attend OTA update from Arduino IDE
