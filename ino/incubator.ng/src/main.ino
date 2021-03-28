@@ -11,6 +11,7 @@
 #include <ArduinoJson.h>
 #include <FSWebServerLib.h>
 #include <Hash.h>
+#include <LittleFS.h>
 
 #include <TaskScheduler.h>
 
@@ -24,8 +25,8 @@ SI7021 si;
 
 #define VERSION "0.5b"
 
-const int HEATER_PIN = D7;
-const int FAN_PIN = D8;
+const int HEATER_PIN = D8;
+const int FAN_PIN = D7;
 
 const int ROTARY_KEY = D0;
 const int ROTARY_S1 = D5;
@@ -40,7 +41,7 @@ Button2 button = Button2(ROTARY_KEY);
 
 // 80 - 8v
 const int MAX_HEAT_PWM = 80;
-const int MAX_FAN_PWM = 70;
+const int MAX_FAN_PWM = 50;
 
 const char *pwm_command_prefix = "PWM";
 
@@ -244,8 +245,8 @@ void setup() {
 	lcd.print(" chambre");
 
 	// WiFi is started inside library
-	SPIFFS.begin(); // Not really needed, checked inside library and started if needed
-	ESPHTTPServer.begin(&SPIFFS);
+	LittleFS.begin(); // Not really needed, checked inside library and started if needed
+	ESPHTTPServer.begin(&LittleFS);
 
 	//set optioanl callback
 	ESPHTTPServer.setJSONCallback(callbackJSON);
