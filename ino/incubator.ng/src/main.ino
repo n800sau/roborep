@@ -22,7 +22,7 @@ LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars a
 #include <SI7021.h>
 SI7021 si;
 
-#define VERSION "0.1a"
+#define VERSION "0.5b"
 
 const int HEATER_PIN = D7;
 const int FAN_PIN = D8;
@@ -31,7 +31,7 @@ const int ROTARY_KEY = D0;
 const int ROTARY_S1 = D5;
 const int ROTARY_S2 = D6;
 
-const int CLICKS_PER_STEP = 4;   // this number depends on your rotary encoder 
+const int CLICKS_PER_STEP = 2;   // this number depends on your rotary encoder 
 
 #include "Button2.h"
 #include "ESPRotary.h"
@@ -46,6 +46,7 @@ const char *pwm_command_prefix = "PWM";
 
 int heater = MAX_HEAT_PWM;
 
+// degreese
 int target = 37;
 
 //Variables PID'll be connected
@@ -146,6 +147,13 @@ void measurement()
 	}
 }
 
+void led_blink()
+{
+	setPwm(LED_BUILTIN, 97);
+	delay(30);
+	digitalWrite(LED_BUILTIN, HIGH);
+}
+
 void setPwm(int pin, int val)
 {
 	analogWrite(pin, val);
@@ -153,7 +161,6 @@ void setPwm(int pin, int val)
 
 void setupPwm()
 {
-	analogWriteRange(100);
 	pinMode(HEATER_PIN, OUTPUT);
 	setPwm(HEATER_PIN, 0);
 	pinMode(FAN_PIN, OUTPUT);
@@ -163,6 +170,7 @@ void setupPwm()
 Task measurement_timer(100, TASK_FOREVER, &measurement);
 Task display_timer(1000, TASK_FOREVER, &display_status);
 Task print_timer(10000, TASK_FOREVER, &print_status);
+Task heart_beat(1000, TASK_FOREVER, &led_blink);
 
 Scheduler runner;
 
@@ -195,10 +203,16 @@ void  callbackUSERVERSION(AsyncWebServerRequest *request)
 }
 
 void setup() {
+	// setup pwm range 0-100
+	analogWriteRange(100);
 	Serial.begin(115200);
 	Serial.println();
 	Serial.setDebugOutput(true);
 	Serial.println("Incubator...");
+
+	pinMode(LED_BUILTIN, OUTPUT);
+	digitalWrite(LED_BUILTIN, LOW); // turn on
+
 	setupPwm();
 
 	rotary.setChangedHandler(rotate);
@@ -222,7 +236,7 @@ void setup() {
 	}
 
 	lcd.begin(16,2);
-	lcd.setBacklight(0); //0-1
+	lcd.setBacklight(1); //0-1
 	lcd.clear();
 	lcd.home();
 	lcd.print("Thermo");
@@ -249,10 +263,12 @@ void setup() {
 	runner.addTask(display_timer);
 	runner.addTask(measurement_timer);
 	runner.addTask(print_timer);
+	runner.addTask(heart_beat);
 
 	display_timer.enable();
 	measurement_timer.enable();
 	print_timer.enable();
+	heart_beat.enable();
 
 //	Debug.begin(wifi_station_get_hostname());
 //	Debug.setResetCmdEnabled(true); // Enable the reset command
