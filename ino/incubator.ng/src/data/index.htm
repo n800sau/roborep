@@ -6,11 +6,15 @@
 	<link rel="stylesheet" href="index.css" type="text/css" />
 	<script type="text/javascript" src="graphs.js"></script>
 	<script type="text/javascript" src="gauge.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 	<script type="text/javascript">
 		var temp, heater, target;
+		var chart;
+		var temp_history, heater_history, target_history;
 		var last_new_target;
 		var gauge_temp, gauge_heater, gauge_target;
 		var reloadPeriod = 10000;
+		var reloadHistoryPeriod = 10000;
 		var running = false;
 
 		function loadValues()
@@ -36,6 +40,7 @@
 						if(last_new_target === undefined) {
 							last_new_target = res.target;
 							document.getElementById("temp-target-val").value = res.target;
+							document.getElementById("range-val").innerText = res.target;
 						}
 						if(running) {
 							setTimeout(loadValues, reloadPeriod);
@@ -47,11 +52,53 @@
 				}
 			}
 			var q = new_target === last_new_target ? '' : ('?new_target=' + new_target);
-			xh.open("GET", '/json/temp' + q, true);
+			xh.open("GET", '/json/now' + q, true);
+			xh.send(null);
+		};
+
+		function loadHistory()
+		{
+			var xh = new XMLHttpRequest();
+			xh.onreadystatechange = function(){
+				if (xh.readyState == 4){
+					if(xh.status == 200) {
+						document.getElementById("status").classList.remove('error');
+						var res = JSON.parse(xh.responseText);
+						temp_history = res.temp;
+						heater_history = res.heater;
+						target_history = res.target;
+						chart.updateSeries([
+							{
+								name: 'Temp',
+								data: prepareSeries(temp_history, 20, { min: 0, max: 50}),
+							},
+							{
+								name: 'Heater',
+								data: prepareSeries(heater_history, 20, { min: 0, max: 100}),
+							},
+							{
+								name: 'Target',
+								data: prepareSeries(target_history, 20, { min: 0, max: 50}),
+							},
+						]);
+						if(running) {
+							setTimeout(loadHistory, reloadHistoryPeriod);
+						}
+					} else {
+						document.getElementById("status").classList.add('error');
+					}
+				}
+			}
+			xh.open("GET", '/json/history', true);
 			xh.send(null);
 		};
 
 		var debounceLoadValuesTimer;
+
+		function on_range_change(value)
+		{
+			document.getElementById('range-val').innerText = value;
+		}
 
 		function debounceLoadValues()
 		{
@@ -66,9 +113,22 @@
 			if(!running){
 				running = true;
 				loadValues();
+				loadHistory();
 			}
 		}
-		
+
+		var prepareSeries = function(history, count, yrange)
+		{
+			var hcount = history.length;
+			var series = [];
+			for(var i=0; i < count; i++) {
+				var x = hcount - i;
+				var y = history[hcount - 1 - i];
+				series.push([x, y]);
+			}
+			return series;
+		}
+
 		function onBodyLoad()
 		{
 			var refreshInput = document.getElementById("refresh-rate");
@@ -109,7 +169,7 @@
 						subDivisions: 5,
 					},
 					staticLabels: {
-						font: "10px sans-serif",  // Specifies font
+						font: "10px sans-serif",// Specifies font
 						labels: [10, 20, 30, 40, 50],  // Print labels at these values
 						color: "#000000",  // Optional: Label text color
 						fractionDigits: 0  // Optional: Numerical precision. 0=round off.
@@ -142,21 +202,77 @@
 			gauge_target.maxValue = 50;
 			gauge_target.setMinValue(0);
 
+			var options = {
+				series: [
+					{
+						name: 'Temp',
+						data: [],
+					},
+					{
+						name: 'Heater',
+						data: [],
+					},
+					{
+						name: 'Target',
+						data: [],
+					}
+				],
+				chart: {
+					type: 'area',
+					height: 350,
+					stacked: true,
+					events: {
+						selection: function (chart, e) {
+							console.log(e.xaxis.min)
+						}
+					},
+				},
+				colors: ['#008FFB', '#00E396', '#CED4DC'],
+				dataLabels: {
+					enabled: false
+				},
+				stroke: {
+					curve: 'smooth'
+				},
+				fill: {
+					type: 'gradient',
+					gradient: {
+						opacityFrom: 0.6,
+						opacityTo: 0.8,
+					}
+				},
+				legend: {
+					position: 'top',
+					horizontalAlign: 'left'
+				},
+				xaxis: {
+					type: 'numeric'
+				},
+			};
+			chart = new ApexCharts(document.querySelector("#chart"), options);
+			chart.render();
+
+
 			run();
 		}
+
 	</script>
 </head>
-<body id="index" style="margin:0; padding:0;" onload="onBodyLoad()">
+<body id="index" onload="onBodyLoad()">
 	<div id="status">
 		STATUS
 	</div>
-	<div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; background-color: rgb(238, 238, 238);">
-		<label>Period (ms):</label>
-		<input type="number" id="refresh-rate"/>
-		<input type="button" id="start-button" value="Start"/>
-		<input type="button" id="stop-button" value="Stop"/>
-	</div>
 	<table>
+		<tr>
+			<td colspan="3">
+				<div id="controls">
+					<label>Period (ms):</label>
+					<input type="number" id="refresh-rate"/>
+					<input type="button" id="start-button" value="Start"/>
+					<input type="button" id="stop-button" value="Stop"/>
+				</div>
+			</td>
+		</tr>
 		<tr>
 			<td>Temp</td>
 			<td><div id="cur-temp" class="chip"></div></td>
@@ -165,11 +281,12 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-temp" width="100" height="70"></canvas></td>
+			<td colspan="2"><canvas id="gauge-temp" width="100" height="80"></canvas></td>
 		</tr>
 		<tr>
 			<td colspan="3">
-				<input type="range" id="temp-target-val" min="10" max="50" onchange="debounceLoadValues()"></input>
+				<span id="range-val"></span>
+				<span><input type="range" id="temp-target-val" min="10" max="50" oninput="on_range_change(value)" onchange="debounceLoadValues()"></input></span>
 			</td>
 		</tr>
 		<tr>
@@ -180,7 +297,7 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-target" width="100" height="70"></canvas></td>
+			<td colspan="2"><canvas id="gauge-target" width="100" height="80"></canvas></td>
 		</tr>
 		<tr>
 			<td>Heater</td>
@@ -190,7 +307,12 @@
 			</td>
 		</tr>
 		<tr>
-			<td colspan="2"><canvas id="gauge-heater" width="100" height="70"></canvas></td>
+			<td colspan="2"><canvas id="gauge-heater" width="100" height="80"></canvas></td>
+		</tr>
+		<tr>
+			<td colspan="4">
+				<div id="chart"></div>
+			</td>
 		</tr>
 	</table>
 </body>

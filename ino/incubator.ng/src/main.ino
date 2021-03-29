@@ -3,11 +3,11 @@
 #include <WiFiClient.h>
 #include <TimeLib.h>
 #include <NtpClientLib.h>
-#include <ESPAsyncTCP.h>
+//#include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <ESP8266mDNS.h>
 #include <Ticker.h>
-#include <ArduinoOTA.h>
+//#include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include <FSWebServerLib.h>
 #include <Hash.h>
@@ -61,6 +61,13 @@ PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 const int UNKNOWN_TEMP = -10000;
 float temp = UNKNOWN_TEMP;
+
+#define HISTORY_SIZE 100
+int history_count = 0;
+uint8_t temp_history[HISTORY_SIZE];
+uint8_t heater_history[HISTORY_SIZE];
+uint8_t target_history[HISTORY_SIZE];
+
 
 //#include <RemoteDebug.h>
 //RemoteDebug Debug;
@@ -148,6 +155,24 @@ void measurement()
 	}
 }
 
+void history_collector()
+{
+	if(temp != UNKNOWN_TEMP) {
+		if(history_count >= HISTORY_SIZE) {
+			for(int i=1; i<HISTORY_SIZE; i++) {
+				temp_history[i-1] = temp_history[i];
+				heater_history[i-1] = heater_history[i];
+				target_history[i-1] = target_history[i];
+			}
+			history_count--;
+		}
+		temp_history[history_count] = (uint8_t)temp;
+		heater_history[history_count] = (uint8_t)::map(heater, 0, MAX_HEAT_PWM, 0, 100);
+		target_history[history_count] = (uint8_t)target;
+		history_count++;
+	}
+}
+
 void led_blink()
 {
 	setPwm(LED_BUILTIN, 97);
@@ -169,6 +194,7 @@ void setupPwm()
 }
 
 Task measurement_timer(100, TASK_FOREVER, &measurement);
+Task history_timer(6000, TASK_FOREVER, &history_collector);
 Task display_timer(1000, TASK_FOREVER, &display_status);
 Task print_timer(10000, TASK_FOREVER, &print_status);
 Task heart_beat(1000, TASK_FOREVER, &led_blink);
@@ -177,12 +203,25 @@ Scheduler runner;
 
 #define NEW_TARGET_PARAM "new_target"
 
+String history2json(uint8_t h[])
+{
+	String json = "[";
+	for(int i=0; i<history_count; i++) {
+		if(i>0) {
+			json += ",";
+		}
+		json += String(h[i]);
+	}
+	json += "]";
+	return json;
+}
+
 void callbackJSON(AsyncWebServerRequest *request)
 {
 Serial.print("json:");
 Serial.println(request->url());
 
-	if (request->url() == "/json/temp")
+	if (request->url() == "/json/now")
 	{
 		if(request->hasParam(NEW_TARGET_PARAM)) {
 			target = String(request->getParam(NEW_TARGET_PARAM)->value()).toInt();
@@ -191,6 +230,13 @@ Serial.println(request->url());
 		json += "\"temp\":" + String(temp > 0 ? temp : 0) + ",";
 		json += "\"heater\":" + String(::map(heater, 0, MAX_HEAT_PWM, 0, 100)) + ",";
 		json += "\"target\":" + String(target);
+		json += "}";
+		request->send(200, "text/json", json);
+	} else if (request->url() == "/json/history") {
+		String json = "{";
+		json += "\"temp\":" + history2json(temp_history) + ",";
+		json += "\"heater\":" + history2json(heater_history) + ",";
+		json += "\"target\":" + history2json(target_history);
 		json += "}";
 		request->send(200, "text/json", json);
 	}
@@ -203,7 +249,8 @@ void  callbackUSERVERSION(AsyncWebServerRequest *request)
 	values = "";
 }
 
-void setup() {
+void setup()
+{
 	// setup pwm range 0-100
 	analogWriteRange(100);
 	Serial.begin(115200);
@@ -237,7 +284,7 @@ void setup() {
 	}
 
 	lcd.begin(16,2);
-	lcd.setBacklight(1); //0-1
+	lcd.setBacklight(0); //0-1
 	lcd.clear();
 	lcd.home();
 	lcd.print("Thermo");
@@ -265,11 +312,13 @@ void setup() {
 	runner.addTask(measurement_timer);
 	runner.addTask(print_timer);
 	runner.addTask(heart_beat);
+	runner.addTask(history_timer);
 
 	display_timer.enable();
 	measurement_timer.enable();
 	print_timer.enable();
 	heart_beat.enable();
+	history_timer.enable();
 
 //	Debug.begin(wifi_station_get_hostname());
 //	Debug.setResetCmdEnabled(true); // Enable the reset command
