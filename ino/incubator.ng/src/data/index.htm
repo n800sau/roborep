@@ -10,7 +10,6 @@
 	<script type="text/javascript">
 		var temp, heater, target;
 		var chart;
-		var temp_history, heater_history, target_history;
 		var last_new_target;
 		var gauge_temp, gauge_heater, gauge_target;
 		var reloadPeriod = 10000;
@@ -64,21 +63,18 @@
 					if(xh.status == 200) {
 						document.getElementById("status").classList.remove('error');
 						var res = JSON.parse(xh.responseText);
-						temp_history = res.temp;
-						heater_history = res.heater;
-						target_history = res.target;
 						chart.updateSeries([
 							{
 								name: 'Temp',
-								data: prepareSeries(temp_history, 20, { min: 0, max: 50}),
+								data: prepareSeries(res.temp),
 							},
 							{
 								name: 'Heater',
-								data: prepareSeries(heater_history, 20, { min: 0, max: 100}),
+								data: prepareSeries(res.heater),
 							},
 							{
 								name: 'Target',
-								data: prepareSeries(target_history, 20, { min: 0, max: 50}),
+								data: prepareSeries(res.target),
 							},
 						]);
 						if(running) {
@@ -117,15 +113,12 @@
 			}
 		}
 
-		var prepareSeries = function(history, count, yrange)
+		var prepareSeries = function(history)
 		{
-			var hcount = history.length;
 			var series = [];
-			for(var i=0; i < count; i++) {
-				var x = hcount - i;
-				var y = history[hcount - 1 - i];
+			history.forEach(function(y, x) {
 				series.push([x, y]);
-			}
+			});
 			return series;
 		}
 
@@ -218,14 +211,22 @@
 					}
 				],
 				chart: {
-					type: 'area',
+					type: 'line',
 					height: 350,
-					stacked: true,
+//					stacked: true,
 					events: {
 						selection: function (chart, e) {
 							console.log(e.xaxis.min)
 						}
 					},
+					animations: {
+						enabled: true,
+						easing: 'linear',
+						dynamicAnimation: {
+							speed: 1000
+						}
+					},
+
 				},
 				colors: ['#008FFB', '#00E396', '#CED4DC'],
 				dataLabels: {
@@ -234,24 +235,37 @@
 				stroke: {
 					curve: 'smooth'
 				},
-				fill: {
-					type: 'gradient',
-					gradient: {
-						opacityFrom: 0.6,
-						opacityTo: 0.8,
-					}
-				},
+//				fill: {
+//					type: 'gradient',
+//					gradient: {
+//						opacityFrom: 0.6,
+//						opacityTo: 0.8,
+//					}
+//				},
 				legend: {
 					position: 'top',
 					horizontalAlign: 'left'
 				},
+				yaxis: {
+					max: 100,
+					min: 0,
+				},
 				xaxis: {
-					type: 'numeric'
+					type: 'integer',
+					tickAmount: 10,
+				},
+				subtitle: {
+					text: '20',
+					floating: true,
+					align: 'right',
+					offsetY: 0,
+					style: {
+						fontSize: '22px'
+					}
 				},
 			};
 			chart = new ApexCharts(document.querySelector("#chart"), options);
 			chart.render();
-
 
 			run();
 		}
