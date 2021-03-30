@@ -72,6 +72,78 @@ uint8_t target_history[HISTORY_SIZE];
 //#include <RemoteDebug.h>
 //RemoteDebug Debug;
 
+enum DISPLAY_MODE {
+	DM_STATE,
+	DM_MENU,
+	DM_NETWORK,
+	DM_WIFI
+};
+
+DISPLAY_MODE dmode = DM_STATE;
+
+#include <MenuSystem.h>
+class menuRenderer : public MenuComponentRenderer {
+public:
+	void render(Menu const& menu) const
+	{
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print(menu.get_name());
+		lcd.setCursor(0,1);
+		menu.get_current_component()->render(*this);
+	}
+
+	void render_menu_item(MenuItem const& menu_item) const
+	{
+		lcd.print(menu_item.get_name());
+	}
+
+	void render_back_menu_item(BackMenuItem const& menu_item) const
+	{
+		lcd.print(menu_item.get_name());
+	}
+
+	void render_numeric_menu_item(NumericMenuItem const& menu_item) const
+	{
+		lcd.print(menu_item.get_name());
+	}
+
+	void render_menu(Menu const& menu) const
+	{
+		lcd.print(menu.get_name());
+	}
+};
+menuRenderer menu_renderer;
+
+MenuSystem ms(menu_renderer);
+
+void on_show_process(MenuComponent* p_menu_component)
+{
+	dmode = DM_STATE;
+	update_display();
+	Serial.println("Show Process");
+}
+
+void on_show_ip(MenuComponent* p_menu_component)
+{
+	dmode = DM_NETWORK;
+	update_display();
+	Serial.println("Show IP");
+}
+
+void on_show_wifi(MenuComponent* p_menu_component)
+{
+	dmode = DM_WIFI;
+	update_display();
+	Serial.println("Show Wifi");
+}
+
+MenuItem mm_mi1("Show Process", &on_show_process);
+Menu mu2("Show Network");
+MenuItem mu2_mi1("Show IP", &on_show_ip);
+MenuItem mu2_mi2("Show Wifi", &on_show_wifi);
+
+
 // on change
 void rotate(ESPRotary& r)
 {
@@ -82,25 +154,85 @@ void rotate(ESPRotary& r)
 void showDirection(ESPRotary& r)
 {
 	Serial.println(r.directionToString(r.getDirection()));
+	if(dmode == DM_MENU) {
+		if(r.getDirection() == RE_RIGHT) {
+			ms.next();
+		} else {
+			ms.prev();
+		}
+		update_display();
+	}
 }
  
 // single click
 void click(Button2& btn)
 {
 	Serial.println("Click!");
+	if(dmode == DM_MENU) {
+		// menu select
+		ms.select();
+		update_display();
+	}
 }
 
 // long click
 void resetPosition(Button2& btn)
 {
-	rotary.resetPosition();
+//	rotary.resetPosition();
+	if(dmode == DM_MENU) {
+		// reset and show menu
+		ms.reset();
+	} else {
+		dmode = DM_MENU;
+	}
+	update_display();
 	Serial.println("Reset!");
 }
 
-void display_status()
+void update_display()
 {
-	if(temp != UNKNOWN_TEMP) {
-		lcd.home();
+	switch(dmode) {
+		case DM_STATE:
+			display_state();
+			break;
+		case DM_MENU:
+			ms.display();
+			break;
+		case DM_NETWORK:
+			display_network();
+			break;
+		case DM_WIFI:
+			break;
+	}
+}
+
+void display_network()
+{
+	lcd.clear();
+	lcd.home();
+	lcd.print(WiFi.localIP());
+	lcd.setCursor(0, 1);
+	lcd.print(wifi_station_get_hostname());
+}
+
+void display_wifi()
+{
+	lcd.clear();
+	lcd.home();
+	const char* const modes[] = { "NULL", "STA", "AP", "STA+AP" };
+	lcd.print(wifi_station_get_current_ap_id());
+	lcd.setCursor(0, 1);
+	lcd.print("Mode: ");
+	lcd.print(modes[wifi_get_opmode()]);
+}
+
+void display_state()
+{
+	lcd.home();
+	if(temp == UNKNOWN_TEMP) {
+		lcd.clear();
+		lcd.print("Waiting...");
+	} else {
 		lcd.print("T: ");
 		lcd.print(temp);
 		lcd.print(F(" => "));
@@ -195,7 +327,7 @@ void setupPwm()
 
 Task measurement_timer(100, TASK_FOREVER, &measurement);
 Task history_timer(6000, TASK_FOREVER, &history_collector);
-Task display_timer(1000, TASK_FOREVER, &display_status);
+Task display_timer(1000, TASK_FOREVER, &display_state);
 Task print_timer(10000, TASK_FOREVER, &print_status);
 Task heart_beat(1000, TASK_FOREVER, &led_blink);
 
@@ -263,6 +395,11 @@ void setup()
 
 	setupPwm();
 
+	ms.get_root_menu().add_item(&mm_mi1);
+	ms.get_root_menu().add_menu(&mu2);
+	mu2.add_item(&mu2_mi1);
+	mu2.add_item(&mu2_mi2);
+
 	rotary.setChangedHandler(rotate);
 	rotary.setLeftRotationHandler(showDirection);
 	rotary.setRightRotationHandler(showDirection);
@@ -325,12 +462,14 @@ void setup()
 //	Debug.showProfiler(true); // Profiler (Good to measure times, to optimize codes)
 //	Debug.showColors(true); // Colors
 
-	Serial.println("* Arduino RemoteDebug Library");
-	Serial.println("*");
+//	Serial.println("* Arduino RemoteDebug Library");
+//	Serial.println("*");
 	Serial.print("* WiFI connected. IP address: ");
 	Serial.print(WiFi.localIP());
 	Serial.print(", Hostname: ");
 	Serial.println(wifi_station_get_hostname());
+
+	update_display();
 
 }
 
