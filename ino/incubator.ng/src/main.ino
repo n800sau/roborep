@@ -18,6 +18,7 @@
 #include <Wire.h>
 
 #include <LiquidCrystal_PCF8574.h>
+#define BACKLIGHT_ON false
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #include <SI7021.h>
@@ -49,6 +50,8 @@ int heater = MAX_HEAT_PWM;
 
 // degreese
 int target = 37;
+#define MAX_TEMP 50
+#define MIN_TEMP 10
 
 //Variables PID'll be connected
 double Setpoint, Input, Output;
@@ -154,13 +157,28 @@ void rotate(ESPRotary& r)
 void showDirection(ESPRotary& r)
 {
 	Serial.println(r.directionToString(r.getDirection()));
-	if(dmode == DM_MENU) {
-		if(r.getDirection() == RE_RIGHT) {
-			ms.next();
-		} else {
-			ms.prev();
-		}
-		update_display();
+	switch(dmode)
+	{
+		case DM_MENU:
+			if(r.getDirection() == RE_RIGHT) {
+				ms.next();
+			} else {
+				ms.prev();
+			}
+			update_display();
+			break;
+		case DM_STATE:
+			if(r.getDirection() == RE_RIGHT) {
+				if(target<MAX_TEMP) {
+					target++;
+				}
+			} else {
+				if(target>MIN_TEMP) {
+					target--;
+				}
+			}
+			update_display();
+			break;
 	}
 }
  
@@ -421,7 +439,7 @@ void setup()
 	}
 
 	lcd.begin(16,2);
-	lcd.setBacklight(0); //0-1
+	lcd.setBacklight(BACKLIGHT_ON ? 255 : 0); //0-1
 	lcd.clear();
 	lcd.home();
 	lcd.print("Thermo");
