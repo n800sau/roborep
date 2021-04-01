@@ -18,7 +18,7 @@
 #include <Wire.h>
 
 #include <LiquidCrystal_PCF8574.h>
-#define BACKLIGHT_ON false
+#define BACKLIGHT_ON true
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #include <SI7021.h>
@@ -33,7 +33,7 @@ const int ROTARY_KEY = D0;
 const int ROTARY_S1 = D5;
 const int ROTARY_S2 = D6;
 
-const int CLICKS_PER_STEP = 2;   // this number depends on your rotary encoder 
+const int CLICKS_PER_STEP = 4;   // this number depends on your rotary encoder 
 
 #include "Button2.h"
 #include "ESPRotary.h"
@@ -98,22 +98,22 @@ public:
 
 	void render_menu_item(MenuItem const& menu_item) const
 	{
-		lcd.print(menu_item.get_name());
+		lcd.print(String(menu_item.is_current() ? "* " : "  ") + menu_item.get_name());
 	}
 
 	void render_back_menu_item(BackMenuItem const& menu_item) const
 	{
-		lcd.print(menu_item.get_name());
+		lcd.print(String("<<") + menu_item.get_name());
 	}
 
 	void render_numeric_menu_item(NumericMenuItem const& menu_item) const
 	{
-		lcd.print(menu_item.get_name());
+		lcd.print(String(menu_item.is_current() ? "* " : "  ") + menu_item.get_name());
 	}
 
 	void render_menu(Menu const& menu) const
 	{
-		lcd.print(menu.get_name());
+		lcd.print(String(menu.is_current() ? "* " : "  ") + menu.get_name());
 	}
 };
 menuRenderer menu_renderer;
@@ -122,30 +122,28 @@ MenuSystem ms(menu_renderer);
 
 void on_show_process(MenuComponent* p_menu_component)
 {
+	Serial.println("Show Process");
 	dmode = DM_STATE;
 	update_display();
-	Serial.println("Show Process");
 }
 
 void on_show_ip(MenuComponent* p_menu_component)
 {
+	Serial.println("Show IP");
 	dmode = DM_NETWORK;
 	update_display();
-	Serial.println("Show IP");
 }
 
 void on_show_wifi(MenuComponent* p_menu_component)
 {
+	Serial.println("Show Wifi");
 	dmode = DM_WIFI;
 	update_display();
-	Serial.println("Show Wifi");
 }
 
 MenuItem mm_mi1("Show Process", &on_show_process);
-Menu mu2("Show Network");
-MenuItem mu2_mi1("Show IP", &on_show_ip);
-MenuItem mu2_mi2("Show Wifi", &on_show_wifi);
-
+MenuItem mm_mi2("Show IP", &on_show_ip);
+MenuItem mm_mi3("Show Wifi", &on_show_wifi);
 
 // on change
 void rotate(ESPRotary& r)
@@ -179,6 +177,8 @@ void showDirection(ESPRotary& r)
 			}
 			update_display();
 			break;
+		default:
+			break;
 	}
 }
  
@@ -188,38 +188,42 @@ void click(Button2& btn)
 	Serial.println("Click!");
 	if(dmode == DM_MENU) {
 		// menu select
+		Serial.println("Select item");
 		ms.select();
-		update_display();
+	} else {
+		dmode = DM_MENU;
 	}
+	update_display();
 }
 
 // long click
 void resetPosition(Button2& btn)
 {
+	Serial.println("Reset!");
 //	rotary.resetPosition();
 	if(dmode == DM_MENU) {
 		// reset and show menu
 		ms.reset();
-	} else {
-		dmode = DM_MENU;
+		update_display();
 	}
-	update_display();
-	Serial.println("Reset!");
 }
 
 void update_display()
 {
 	switch(dmode) {
 		case DM_STATE:
+Serial.println("display state");
 			display_state();
 			break;
 		case DM_MENU:
+Serial.println("display menu");
 			ms.display();
 			break;
 		case DM_NETWORK:
 			display_network();
 			break;
 		case DM_WIFI:
+			display_wifi();
 			break;
 	}
 }
@@ -238,7 +242,7 @@ void display_wifi()
 	lcd.clear();
 	lcd.home();
 	const char* const modes[] = { "NULL", "STA", "AP", "STA+AP" };
-	lcd.print(wifi_station_get_current_ap_id());
+	lcd.print(WiFi.SSID());
 	lcd.setCursor(0, 1);
 	lcd.print("Mode: ");
 	lcd.print(modes[wifi_get_opmode()]);
@@ -246,23 +250,25 @@ void display_wifi()
 
 void display_state()
 {
-	lcd.home();
-	if(temp == UNKNOWN_TEMP) {
-		lcd.clear();
-		lcd.print("Waiting...");
-	} else {
-		lcd.print("T: ");
-		lcd.print(temp);
-		lcd.print(F(" => "));
-		lcd.print(target);
-		lcd.print(F(" C"));
-		lcd.setCursor(0, 1);
-		lcd.print("Heating: ");
-		lcd.print(heater);
-		if(heater > 0) {
-			lcd.print("^");
+	if(dmode == DM_STATE) {
+		lcd.home();
+		if(temp == UNKNOWN_TEMP) {
+			lcd.clear();
+			lcd.print("Waiting for sensor...");
+		} else {
+			lcd.print("T: ");
+			lcd.print(temp);
+			lcd.print(F(" => "));
+			lcd.print(target);
+			lcd.print(F(" C"));
+			lcd.setCursor(0, 1);
+			lcd.print("Heating: ");
+			lcd.print(heater);
+			if(heater > 0) {
+				lcd.print("^");
+			}
+			lcd.print("  ");
 		}
-		lcd.print("  ");
 	}
 }
 
@@ -283,7 +289,9 @@ void print_status()
 
 void measurement()
 {
+	static bool si_found = true;
 	if(si.sensorExists()) {
+		si_found = true;
 		temp = si.getCelsiusHundredths()/100.;
 		Input = temp;
 		Setpoint = target;
@@ -299,7 +307,10 @@ void measurement()
 		setPwm(HEATER_PIN, heater);
 		setPwm(FAN_PIN, MAX_FAN_PWM);
 	} else {
-		Serial.println("SI not found");
+		if(si_found) {
+			Serial.println("SI not found");
+			si_found = false;
+		}
 		setPwm(HEATER_PIN, 0);
 		setPwm(FAN_PIN, 50);
 	}
@@ -414,15 +425,16 @@ void setup()
 	setupPwm();
 
 	ms.get_root_menu().add_item(&mm_mi1);
-	ms.get_root_menu().add_menu(&mu2);
-	mu2.add_item(&mu2_mi1);
-	mu2.add_item(&mu2_mi2);
+	ms.get_root_menu().add_item(&mm_mi2);
+	ms.get_root_menu().add_item(&mm_mi3);
 
 	rotary.setChangedHandler(rotate);
 	rotary.setLeftRotationHandler(showDirection);
 	rotary.setRightRotationHandler(showDirection);
 
 	button.setTapHandler(click);
+	button.setDebounceTime(100);
+	button.setLongClickTime(1000);
 	button.setLongClickHandler(resetPosition);
 
 	si.begin();
@@ -498,7 +510,7 @@ void loop()
 
 	runner.execute();
 	// DO NOT REMOVE. Attend OTA update from Arduino IDE
-	ESPHTTPServer.handle();
+//	ESPHTTPServer.handle();
 //	Debug.handle();
 //	yield();
 }
