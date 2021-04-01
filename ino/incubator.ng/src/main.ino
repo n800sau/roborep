@@ -84,66 +84,91 @@ enum DISPLAY_MODE {
 
 DISPLAY_MODE dmode = DM_STATE;
 
-#include <MenuSystem.h>
-class menuRenderer : public MenuComponentRenderer {
-public:
-	void render(Menu const& menu) const
-	{
-		lcd.clear();
-		lcd.setCursor(0,0);
-		lcd.print(menu.get_name());
-		lcd.setCursor(0,1);
-		menu.get_current_component()->render(*this);
-	}
-
-	void render_menu_item(MenuItem const& menu_item) const
-	{
-		lcd.print(String(menu_item.is_current() ? "* " : "  ") + menu_item.get_name());
-	}
-
-	void render_back_menu_item(BackMenuItem const& menu_item) const
-	{
-		lcd.print(String("<<") + menu_item.get_name());
-	}
-
-	void render_numeric_menu_item(NumericMenuItem const& menu_item) const
-	{
-		lcd.print(String(menu_item.is_current() ? "* " : "  ") + menu_item.get_name());
-	}
-
-	void render_menu(Menu const& menu) const
-	{
-		lcd.print(String(menu.is_current() ? "* " : "  ") + menu.get_name());
-	}
+enum SMenuItemTypes {
+	MI_PROCESS,
+	MI_NETWORK,
+	MI_WIFI,
+	MI_COUNT
 };
-menuRenderer menu_renderer;
 
-MenuSystem ms(menu_renderer);
+void on_show_process();
+void on_show_ip();
+void on_show_wifi();
 
-void on_show_process(MenuComponent* p_menu_component)
+struct sMenuItem {
+	uint8_t id;
+	String title;
+	void (*select_fn)();
+} menu_items[MI_COUNT] = {
+	{ MI_PROCESS, "Show Process", on_show_process },
+	{ MI_NETWORK, "Show Network", on_show_ip },
+	{ MI_WIFI, "Show WiFi", on_show_wifi }
+};
+
+const uint8_t MENU_LINE_COUNT = 2;
+uint8_t menu_top = 0;
+uint8_t menu_pos = 0;
+
+void menu_render()
+{
+	lcd.clear();
+	for(int i=0; i<min(2, MI_COUNT-menu_top); i++) {
+		if(menu_top+i == menu_pos) {
+			lcd.setCursor(0, i);
+			lcd.print("*");
+		}
+		lcd.setCursor(2, i);
+		lcd.print(menu_items[menu_top+i].title);
+	}
+}
+
+void menu_prev()
+{
+	if(menu_pos > 0) {
+		menu_pos--;
+		if(menu_top > menu_pos) {
+			menu_top = menu_pos;
+		}
+	}
+}
+
+void menu_next()
+{
+	if(menu_pos < MI_COUNT-1) {
+		menu_pos++;
+		if(menu_pos - menu_top >= MENU_LINE_COUNT) {
+			menu_top++;
+		}
+	}
+}
+
+void menu_select()
+{
+	if(menu_items[menu_pos].select_fn) {
+		menu_items[menu_pos].select_fn();
+	}
+}
+
+void on_show_process()
 {
 	Serial.println("Show Process");
 	dmode = DM_STATE;
 	update_display();
 }
 
-void on_show_ip(MenuComponent* p_menu_component)
+void on_show_ip()
 {
 	Serial.println("Show IP");
 	dmode = DM_NETWORK;
 	update_display();
 }
 
-void on_show_wifi(MenuComponent* p_menu_component)
+void on_show_wifi()
 {
 	Serial.println("Show Wifi");
 	dmode = DM_WIFI;
 	update_display();
 }
-
-MenuItem mm_mi1("Show Process", &on_show_process);
-MenuItem mm_mi2("Show IP", &on_show_ip);
-MenuItem mm_mi3("Show Wifi", &on_show_wifi);
 
 // on change
 void rotate(ESPRotary& r)
@@ -159,9 +184,9 @@ void showDirection(ESPRotary& r)
 	{
 		case DM_MENU:
 			if(r.getDirection() == RE_RIGHT) {
-				ms.next();
+				menu_prev();
 			} else {
-				ms.prev();
+				menu_next();
 			}
 			update_display();
 			break;
@@ -189,7 +214,7 @@ void click(Button2& btn)
 	if(dmode == DM_MENU) {
 		// menu select
 		Serial.println("Select item");
-		ms.select();
+		menu_select();
 	} else {
 		dmode = DM_MENU;
 	}
@@ -203,7 +228,8 @@ void resetPosition(Button2& btn)
 //	rotary.resetPosition();
 	if(dmode == DM_MENU) {
 		// reset and show menu
-		ms.reset();
+		menu_top = 0;
+		menu_pos = 0;
 		update_display();
 	}
 }
@@ -217,7 +243,7 @@ Serial.println("display state");
 			break;
 		case DM_MENU:
 Serial.println("display menu");
-			ms.display();
+			menu_render();
 			break;
 		case DM_NETWORK:
 			display_network();
@@ -423,10 +449,6 @@ void setup()
 	digitalWrite(LED_BUILTIN, LOW); // turn on
 
 	setupPwm();
-
-	ms.get_root_menu().add_item(&mm_mi1);
-	ms.get_root_menu().add_item(&mm_mi2);
-	ms.get_root_menu().add_item(&mm_mi3);
 
 	rotary.setChangedHandler(rotate);
 	rotary.setLeftRotationHandler(showDirection);
