@@ -50,7 +50,7 @@
 					}
 				}
 			}
-			var q = new_target === last_new_target ? '' : ('?new_target=' + new_target);
+			var q = last_new_target ? ('?new_target=' + new_target) : '';
 			xh.open("GET", '/json/now' + q, true);
 			xh.send(null);
 		};
