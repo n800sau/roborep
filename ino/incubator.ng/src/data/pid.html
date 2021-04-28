@@ -3,24 +3,24 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <a href="admin.html"  class="btn btn--s">&lt;</a>&nbsp;&nbsp;<strong>General Settings</strong>
 	<hr>
-	<form action="/post/user" method="post">
-        <input type="hidden" name="afterpost" value="/user.html">
+	<form action="/post/pid" method="post">
+        <input type="hidden" name="afterpost" value="/pid.html">
 		<table border="0"  cellspacing="0" cellpadding="3" >
 			<tr>
-				<td align="right">Sample User Data 1</td>
+				<td align="right">Kp</td>
 				<td>
-				<input type="text" id="user1" name="user1" value=""></td>
+				<input type="text" id="kp" name="kp" value=""></td>
 			</tr>
             <tr>
-                <td align="right">Sample User Data 2</td>
+                <td align="right">Kd</td>
                 <td>
-                    <input type="text" id="user2" name="user2" value="">
+                    <input type="text" id="kd" name="kd" value="">
                 </td>
             </tr>
             <tr>
-                <td align="right">Sample User Data 3</td>
+                <td align="right">Ki</td>
                 <td>
-                    <input type="text" id="user3" name="user3" value="">
+                    <input type="text" id="ki" name="ki" value="">
                 </td>
             </tr>
 			<tr>
@@ -39,7 +39,7 @@
 				{
 					load("microajax.js","js", function()
 					{
-						setValues("/rest/userdemo");
+						setValues("/rest/pid");
 					});
 				});
 			}
