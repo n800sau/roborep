@@ -11,3 +11,14 @@ To tune a PID use the following steps:
     Set P and D to the last stable values.
     Increase the I gain until it brings you to the setpoint with the number of oscillations desired (normally zero but a quicker response can be had if you don't mind a couple oscillations of overshoot)
 
+-------------------
+
+    Set all gains to 0.
+    Increase Kd until the system oscillates.
+    Reduce Kd by a factor of 2-4.
+    Set Kp to about 1% of Kd.
+    Increase Kp until oscillations start.
+    Decrease Kp by a factor of 2-4.
+    Set Ki to about 1% of Kp.
+    Increase Ki until oscillations start.
+    Decrease Ki by a factor of 2-4.

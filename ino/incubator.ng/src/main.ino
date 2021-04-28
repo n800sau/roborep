@@ -41,8 +41,8 @@ ESPRotary rotary = ESPRotary(ROTARY_S1, ROTARY_S2, CLICKS_PER_STEP);
 Button2 button = Button2(ROTARY_KEY);
 
 // 80 - 8v
-const int MAX_HEAT_PWM = 80;
-const int MAX_FAN_PWM = 50;
+const int MAX_HEAT_PWM = 90;
+const int MAX_FAN_PWM = 80;
 
 const char *pwm_command_prefix = "PWM";
 
@@ -57,7 +57,7 @@ int target = 37;
 double Setpoint, Input, Output;
 
 // tuning parameters
-double Kp=80, Ki=0, Kd=10;
+double Kp=300, Ki=0, Kd=0;
 
 #include <PID_v1.h>
 PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
