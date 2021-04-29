@@ -1,333 +1,98 @@
+<!-- 
+  FSWebServer - Example Index Page
+  Copyright (c) 2015 Hristo Gochkov. All rights reserved.
+  This file is part of the ESP8266WebServer library for Arduino environment.
+ 
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
 <!DOCTYPE html>
 <html>
 <head>
-	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-	<title>Thermo Monitor</title>
-	<link rel="stylesheet" href="index.css" type="text/css" />
-	<script type="text/javascript" src="graphs.js"></script>
-	<script type="text/javascript" src="gauge.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-	<script type="text/javascript">
-		var temp, heater, target;
-		var chart;
-		var last_new_target;
-		var gauge_temp, gauge_heater, gauge_target;
-		var reloadPeriod = 10000;
-		var reloadHistoryPeriod = 10000;
-		var running = false;
-
-		function loadValues()
-		{
-			debounceLoadValuesTimer = undefined;
-			if(!running) return;
-			var new_target = document.getElementById("temp-target-val").value;
-			var xh = new XMLHttpRequest();
-			xh.onreadystatechange = function(){
-				if (xh.readyState == 4){
-					if(xh.status == 200) {
-						document.getElementById("status").classList.remove('error');
-						var res = JSON.parse(xh.responseText);
-						temp.add(res.temp);
-						gauge_temp.set(res.temp);
-						document.getElementById("cur-temp").innerHTML = res.temp + '&deg;C';
-						heater.add(res.heater);
-						gauge_heater.set(res.heater);
-						document.getElementById("cur-heater").innerHTML = res.heater;
-						target.add(res.target);
-						gauge_target.set(res.target);
-						document.getElementById("cur-target").innerHTML = res.target + '&deg;C';
-						if(last_new_target === undefined) {
-							last_new_target = res.target;
-							document.getElementById("temp-target-val").value = res.target;
-							document.getElementById("range-val").innerText = res.target;
-						}
-						if(running) {
-							setTimeout(loadValues, reloadPeriod);
-						}
-					} else {
-						document.getElementById("status").classList.add('error');
-						running = false;
-					}
-				}
-			}
-			var q = last_new_target ? ('?new_target=' + new_target) : '';
-			xh.open("GET", '/json/now' + q, true);
-			xh.send(null);
-		};
-
-		function loadHistory()
-		{
-			var xh = new XMLHttpRequest();
-			xh.onreadystatechange = function(){
-				if (xh.readyState == 4){
-					if(xh.status == 200) {
-						document.getElementById("status").classList.remove('error');
-						var res = JSON.parse(xh.responseText);
-						chart.updateSeries([
-							{
-								name: 'Temp',
-								data: prepareSeries(res.temp),
-							},
-							{
-								name: 'Heater',
-								data: prepareSeries(res.heater),
-							},
-							{
-								name: 'Target',
-								data: prepareSeries(res.target),
-							},
-						]);
-						if(running) {
-							setTimeout(loadHistory, reloadHistoryPeriod);
-						}
-					} else {
-						document.getElementById("status").classList.add('error');
-					}
-				}
-			}
-			xh.open("GET", '/json/history', true);
-			xh.send(null);
-		};
-
-		var debounceLoadValuesTimer;
-
-		function on_range_change(value)
-		{
-			document.getElementById('range-val').innerText = value;
-		}
-
-		function debounceLoadValues()
-		{
-			if(debounceLoadValuesTimer) {
-				clearTimeout(debounceLoadValuesTimer);
-			}
-			debounceLoadValuesTimer = setTimeout(loadValues, 1000);
-		}
-
-		function run()
-		{
-			if(!running){
-				running = true;
-				loadValues();
-				loadHistory();
-			}
-		}
-
-		var prepareSeries = function(history)
-		{
-			var series = [];
-			history.forEach(function(y, x) {
-				series.push([x, y]);
-			});
-			return series;
-		}
-
-		function onBodyLoad()
-		{
-			var refreshInput = document.getElementById("refresh-rate");
-			refreshInput.value = reloadPeriod;
-			refreshInput.onchange = function(e){
-				var value = parseInt(e.target.value);
-				reloadPeriod = (value > 0)?value:0;
-				e.target.value = reloadPeriod;
-			}
-			var stopButton = document.getElementById("stop-button");
-			stopButton.onclick = function(e){
-				running = false;
-			}
-			var startButton = document.getElementById("start-button");
-			startButton.onclick = function(e){
-				run();
-			}
-			
-//			digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
-			target = createGraph(document.getElementById("target"), "Temp to set", 100, 146, 0, 60, true, "orange");
-			heater = createGraph(document.getElementById("heater"), "heater", 100, 128, 0, 100, false, "cyan");
-			temp = createGraph(document.getElementById("temp"), "Si7120", 100, 146, 0, 80, false, "blue");
-
-			var opts = {};
-			['temp', 'heater', 'target'].forEach(function(nm) {
-				opts[nm] = {
-					angle: 0.15, /// The span of the gauge arc
-					lineWidth: 0.44, // The line thickness
-					pointer: {
-						length: 0.9, // Relative to gauge radius
-						strokeWidth: 0.035 // The thickness
-					},
-					colorStart: '#6FADCF',	 // Colors
-					colorStop: '#8FC0DA',		// just experiment with them
-					strokeColor: '#E0E0E0',	 // to see which ones work best for you
-					renderTicks: {
-						divisions: 5,
-						subDivisions: 5,
-					},
-					staticLabels: {
-						font: "10px sans-serif",// Specifies font
-						labels: [10, 20, 30, 40, 50],  // Print labels at these values
-						color: "#000000",  // Optional: Label text color
-						fractionDigits: 0  // Optional: Numerical precision. 0=round off.
-					},
-					percentColors: [[0.0, "#a9d70b" ], [0.5, "#f9c802"], [10, "#ff0000"]],
-					staticZones: [
-						{strokeStyle: "#30B32D", min: 0, max: 30}, // Green
-						{strokeStyle: "#FFDD00", min: 30, max: 40}, // Yellow
-						{strokeStyle: "#F03E3E", min: 40, max: 50}  // Red
-					],
-				};
-			});
-
-			gauge_temp = new Gauge(document.getElementById('gauge-temp')).setOptions(opts['temp']);
-			gauge_temp.maxValue = 50;
-			gauge_temp.setMinValue(0);
-
-			opts['heater'].staticZones = [
-				{strokeStyle: "#30B32D", min: 0, max: 60}, // Green
-				{strokeStyle: "#FFDD00", min: 60, max: 90}, // Yellow
-				{strokeStyle: "#F03E3E", min: 90, max: 100}  // Red
-			];
-
-			opts['heater'].staticLabels.labels = [20, 40, 60, 80, 100];
-			gauge_heater = new Gauge(document.getElementById('gauge-heater')).setOptions(opts['heater']);
-			gauge_heater.maxValue = 100;
-			gauge_heater.setMinValue(0);
-
-			gauge_target = new Gauge(document.getElementById('gauge-target')).setOptions(opts['target']);
-			gauge_target.maxValue = 50;
-			gauge_target.setMinValue(0);
-
-			var options = {
-				series: [
-					{
-						name: 'Temp',
-						data: [],
-					},
-					{
-						name: 'Heater',
-						data: [],
-					},
-					{
-						name: 'Target',
-						data: [],
-					}
-				],
-				chart: {
-					type: 'line',
-					height: 350,
-//					stacked: true,
-					events: {
-						selection: function (chart, e) {
-							console.log(e.xaxis.min)
-						}
-					},
-					animations: {
-						enabled: true,
-						easing: 'linear',
-						dynamicAnimation: {
-							speed: 1000
-						}
-					},
-
-				},
-				colors: ['#008FFB', '#00E396', '#CED4DC'],
-				dataLabels: {
-					enabled: false
-				},
-				stroke: {
-					curve: 'smooth'
-				},
-//				fill: {
-//					type: 'gradient',
-//					gradient: {
-//						opacityFrom: 0.6,
-//						opacityTo: 0.8,
-//					}
-//				},
-				legend: {
-					position: 'top',
-					horizontalAlign: 'left'
-				},
-				yaxis: {
-					max: 100,
-					min: 0,
-				},
-				xaxis: {
-					type: 'integer',
-					tickAmount: 10,
-				},
-				subtitle: {
-					text: '20',
-					floating: true,
-					align: 'right',
-					offsetY: 0,
-					style: {
-						fontSize: '22px'
-					}
-				},
-			};
-			chart = new ApexCharts(document.querySelector("#chart"), options);
-			chart.render();
-
-			run();
-		}
-
-	</script>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <title>ESP Monitor</title>
+  <script type="text/javascript" src="graphs.js"></script>
+  <script type="text/javascript">
+    var heap,temp,digi;
+    var reloadPeriod = 1000;
+    var running = false;
+    
+    function loadValues(){
+      if(!running) return;
+      var xh = new XMLHttpRequest();
+      xh.onreadystatechange = function(){
+        if (xh.readyState == 4){
+          if(xh.status == 200) {
+            var res = JSON.parse(xh.responseText);
+            heap.add(res.heap);
+            temp.add(res.analog);
+            digi.add(res.gpio);
+            if(running) 
+              setTimeout(loadValues, reloadPeriod);
+          } else running = false;
+        }
+      };
+      xh.open("GET", "/all", true);
+      xh.send(null);
+    };
+    
+    function run(){
+      if(!running){
+        running = true;
+        loadValues();
+      }
+    }
+    
+    function onBodyLoad(){
+      var refreshInput = document.getElementById("refresh-rate");
+      refreshInput.value = reloadPeriod;
+      refreshInput.onchange = function(e){
+        var value = parseInt(e.target.value);
+        reloadPeriod = (value > 0)?value:0;
+        e.target.value = reloadPeriod;
+      }
+      var stopButton = document.getElementById("stop-button");
+      stopButton.onclick = function(e){
+        running = false;
+      }
+      var startButton = document.getElementById("start-button");
+      startButton.onclick = function(e){
+        run();
+      }
+      
+      // Example with 10K thermistor
+      //function calcThermistor(v) {
+      //  var t = Math.log(((10230000 / v) - 10000));
+      //  t = (1/(0.001129148+(0.000234125*t)+(0.0000000876741*t*t*t)))-273.15;
+      //  return (t>120)?0:Math.round(t*10)/10;
+      //}
+      //temp = createGraph(document.getElementById("analog"), "Temperature", 100, 128, 10, 40, false, "cyan", calcThermistor);
+      
+      temp = createGraph(document.getElementById("analog"), "Analog Input", 100, 128, 0, 1023, false, "cyan");
+      heap = createGraph(document.getElementById("heap"), "Current Heap", 100, 125, 0, 30000, true, "orange");
+      digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
+      run();
+    }
+  </script>
 </head>
-<body id="index" onload="onBodyLoad()">
-	<div id="status">
-		STATUS
-	</div>
-	<table>
-		<tr>
-			<td colspan="3">
-				<div id="controls">
-					<label>Period (ms):</label>
-					<input type="number" id="refresh-rate"/>
-					<input type="button" id="start-button" value="Start"/>
-					<input type="button" id="stop-button" value="Stop"/>
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td>Temp</td>
-			<td><div id="cur-temp" class="chip"></div></td>
-			<td rowspan="2">
-				<div id="temp"></div>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="2"><canvas id="gauge-temp" width="100" height="80"></canvas></td>
-		</tr>
-		<tr>
-			<td colspan="3">
-				<span id="range-val"></span>
-				<span><input type="range" id="temp-target-val" min="10" max="50" oninput="on_range_change(value)" onchange="debounceLoadValues()"></input></span>
-			</td>
-		</tr>
-		<tr>
-			<td>Target</td>
-			<td><div id="cur-target" class="chip"></div></td>
-			<td rowspan="2">
-				<div id="target"></div>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="2"><canvas id="gauge-target" width="100" height="80"></canvas></td>
-		</tr>
-		<tr>
-			<td>Heater</td>
-			<td><div id="cur-heater" class="chip"></div></td>
-			<td rowspan="2">
-				<div id="heater"></div>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="2"><canvas id="gauge-heater" width="100" height="80"></canvas></td>
-		</tr>
-		<tr>
-			<td colspan="4">
-				<div id="chart"></div>
-			</td>
-		</tr>
-	</table>
+<body id="index" style="margin:0; padding:0;" onload="onBodyLoad()">
+  <div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; width: 362px; background-color: rgb(238, 238, 238);">
+    <label>Period (ms):</label>
+    <input type="number" id="refresh-rate"/>
+    <input type="button" id="start-button" value="Start"/>
+    <input type="button" id="stop-button" value="Stop"/>
+  </div>
+  <div id="heap"></div>
+  <div id="analog"></div>
+  <div id="digital"></div>
 </body>
 </html>

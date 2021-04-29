@@ -18,7 +18,7 @@
 #include <Wire.h>
 
 #include <LiquidCrystal_PCF8574.h>
-#define BACKLIGHT_ON true
+#define BACKLIGHT_ON false
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #include <SI7021.h>
@@ -436,6 +436,86 @@ void  callbackUSERVERSION(AsyncWebServerRequest *request)
 	values = "";
 }
 
+void  callbackREST(AsyncWebServerRequest *request)
+{
+	//its possible to test the url and do different things, 
+	//test you rest URL
+	if (request->url() == "/rest/pid")
+	{
+		//contruct and send and desired repsonse
+		// get sample data from json file
+		String data = "";
+
+		ESPHTTPServer.load_user_config("kp", data);
+		if(!data[0]) {
+			data = String(Kp);
+		}
+		String values = "kp|"+ data +"|input\n";
+
+		ESPHTTPServer.load_user_config("ki", data);
+		if(!data[0]) {
+			data = String(Ki);
+		}
+		values += "ki|" + data + "|input\n";
+
+		ESPHTTPServer.load_user_config("kd", data);
+		if(!data[0]) {
+			data = String(Kd);
+		}
+		values += "kd|" + data + "|input\n";
+
+		request->send(200, "text/plain", values);
+		values = "";
+	}
+	else
+	{ 
+		String values = "404 Not Found\nurl:" + request->url() + "\n";
+		request->send(404, "text/plain", values);
+		values = "";
+	}
+}
+
+void pidTunings()
+{
+	String data = "";
+	double v;
+	ESPHTTPServer.load_user_config("kp", data);
+	v = data.toFloat();
+	if(v > 0) {
+		Kp = v;
+	}
+	ESPHTTPServer.load_user_config("ki", data);
+	v = data.toFloat();
+	if(v > 0) {
+		Ki = v;
+	}
+	ESPHTTPServer.load_user_config("kd", data);
+	v = data.toFloat();
+	if(v > 0) {
+		Kd = v;
+	}
+	heaterPID.SetTunings(Kp, Ki, Kd);
+}
+
+void  callbackPOST(AsyncWebServerRequest *request)
+{
+	//its possible to test the url and do different things, 
+	if (request->url() == "/post/pid")
+	{
+		ESPHTTPServer.save_user_config("kp", request->arg("kp"));
+		ESPHTTPServer.save_user_config("ki", request->arg("ki"));
+		ESPHTTPServer.save_user_config("kd", request->arg("kd"));
+		pidTunings();
+		request->redirect(request->arg("afterpost"));
+	}
+	else
+	{
+		String values = "404 Not Found\nurl:" + request->url() + "\n";
+		request->send(200, "text/plain", values);
+		values = "";
+	}
+}
+
 void setup()
 {
 	// setup pwm range 0-100
@@ -484,12 +564,19 @@ void setup()
 	LittleFS.begin(); // Not really needed, checked inside library and started if needed
 	ESPHTTPServer.begin(&LittleFS);
 
-	//set optioanl callback
+	//set json callback
 	ESPHTTPServer.setJSONCallback(callbackJSON);
 
-	//set optioanl callback for user version
+	//set rest callback
+	ESPHTTPServer.setRESTCallback(callbackREST);
+
+	//set POST callback
+	ESPHTTPServer.setPOSTCallback(callbackPOST);
+
+	//set callback for user version
 	ESPHTTPServer.setUSERVERSION(VERSION);
 
+	pidTunings();
 	//tell the PID to range between 0 and max pwm
 	heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
 	//turn the PID on

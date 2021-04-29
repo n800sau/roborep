@@ -696,10 +696,11 @@ void AsyncFSWebServer::handleFileList(AsyncWebServerRequest *request) {
 			if (output != "[")
 				output += ',';
 			bool isDir = false;
+			String fname = entry.name()[0] == '/' ? entry.name()+1 : entry.name();
 			output += "{\"type\":\"";
 			output += (isDir) ? "dir" : "file";
 			output += "\",\"name\":\"";
-			output += String(entry.name()).substring(1);
+			output += fname;
 			output += "\"}";
 		}
 		entry.close();
