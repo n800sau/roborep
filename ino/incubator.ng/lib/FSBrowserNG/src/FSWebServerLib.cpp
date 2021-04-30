@@ -361,6 +361,11 @@ bool AsyncFSWebServer::load_user_config(String name, String &value) {
 	Serial.println(temp);
 #endif
 
+	if(!json.containsKey(name)) {
+		DEBUGLOG("Has no \"%s\" in config file\r\n", name);
+		return false;
+	}
+
 	value = json[name].asString();
 
 	DEBUGLOG("Data initialized.\r\n");
