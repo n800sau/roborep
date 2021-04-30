@@ -41,12 +41,12 @@ ESPRotary rotary = ESPRotary(ROTARY_S1, ROTARY_S2, CLICKS_PER_STEP);
 Button2 button = Button2(ROTARY_KEY);
 
 // 80 - 8v
-const int MAX_HEAT_PWM = 100;
-const int MAX_FAN_PWM = 70;
+int max_heat_pwm = 100;
+int max_fan_pwm = 70;
 
 const char *pwm_command_prefix = "PWM";
 
-int heater = MAX_HEAT_PWM;
+int heater = max_heat_pwm;
 
 // degreese
 int target = 37;
@@ -329,16 +329,16 @@ void measurement()
 //		Serial.print(" Set:");
 //		Serial.println(Setpoint);
 		heater = Output;
-//		heater = MAX_HEAT_PWM;
+//		heater = max_heat_pwm;
 		setPwm(HEATER_PIN, heater);
-		setPwm(FAN_PIN, MAX_FAN_PWM);
+		setPwm(FAN_PIN, max_fan_pwm);
 	} else {
 		if(si_found) {
 			Serial.println("SI not found");
 			si_found = false;
 		}
 		setPwm(HEATER_PIN, 0);
-		setPwm(FAN_PIN, 50);
+		setPwm(FAN_PIN, max_fan_pwm/2);
 	}
 }
 
@@ -354,10 +354,38 @@ void history_collector()
 			history_count--;
 		}
 		temp_history[history_count] = (uint8_t)temp;
-		heater_history[history_count] = (uint8_t)::map(heater, 0, MAX_HEAT_PWM, 0, 100);
+		heater_history[history_count] = (uint8_t)::map(heater, 0, max_heat_pwm, 0, 100);
 		target_history[history_count] = (uint8_t)target;
 		history_count++;
 	}
+}
+
+void update_config()
+{
+	float v;
+	if(ESPHTTPServer.load_user_config("kp", v))
+		Kp = v;
+	else
+		ESPHTTPServer.save_user_config("kp", (float)Kp);
+	if(ESPHTTPServer.load_user_config("ki", v))
+		Ki = v;
+	else
+		ESPHTTPServer.save_user_config("ki", (float)Ki);
+	if(ESPHTTPServer.load_user_config("kd", v))
+		Kd = v;
+	else
+		ESPHTTPServer.save_user_config("kd", (float)Kd);
+	heaterPID.SetTunings(Kp, Ki, Kd);
+	if(ESPHTTPServer.load_user_config("max_heat", v))
+		max_heat_pwm = v;
+	else
+		ESPHTTPServer.save_user_config("max_heat", max_heat_pwm);
+	if(ESPHTTPServer.load_user_config("max_fan", v))
+		max_fan_pwm = v;
+	else
+		ESPHTTPServer.save_user_config("max_fan", max_fan_pwm);
+	//tell the PID to range between 0 and max pwm
+	heaterPID.SetOutputLimits(0, max_heat_pwm);
 }
 
 void led_blink()
@@ -385,6 +413,7 @@ Task history_timer(6000, TASK_FOREVER, &history_collector);
 Task display_timer(1000, TASK_FOREVER, &display_state);
 Task print_timer(10000, TASK_FOREVER, &print_status);
 Task heart_beat(1000, TASK_FOREVER, &led_blink);
+Task read_and_update_config(1000, TASK_FOREVER, &update_config);
 
 Scheduler runner;
 
@@ -415,7 +444,7 @@ Serial.println(request->url());
 		}
 		String json = "{";
 		json += "\"temp\":" + String(temp > 0 ? temp : 0) + ",";
-		json += "\"heater\":" + String(::map(heater, 0, MAX_HEAT_PWM, 0, 100)) + ",";
+		json += "\"heater\":" + String(::map(heater, 0, max_heat_pwm, 0, 100)) + ",";
 		json += "\"target\":" + String(target);
 		json += "}";
 		request->send(200, "text/json", json);
@@ -434,86 +463,6 @@ void  callbackUSERVERSION(AsyncWebServerRequest *request)
 	String values = VERSION;
 	request->send(200, "text/plain", values);
 	values = "";
-}
-
-void  callbackREST(AsyncWebServerRequest *request)
-{
-	//its possible to test the url and do different things, 
-	//test you rest URL
-	if (request->url() == "/rest/pid")
-	{
-		//contruct and send and desired repsonse
-		// get sample data from json file
-		String data = "";
-
-		ESPHTTPServer.load_user_config("kp", data);
-		if(!data[0]) {
-			data = String(Kp);
-		}
-		String values = "kp|"+ data +"|input\n";
-
-		ESPHTTPServer.load_user_config("ki", data);
-		if(!data[0]) {
-			data = String(Ki);
-		}
-		values += "ki|" + data + "|input\n";
-
-		ESPHTTPServer.load_user_config("kd", data);
-		if(!data[0]) {
-			data = String(Kd);
-		}
-		values += "kd|" + data + "|input\n";
-
-		request->send(200, "text/plain", values);
-		values = "";
-	}
-	else
-	{ 
-		String values = "404 Not Found\nurl:" + request->url() + "\n";
-		request->send(404, "text/plain", values);
-		values = "";
-	}
-}
-
-void pidTunings()
-{
-	String data = "";
-	double v;
-	ESPHTTPServer.load_user_config("kp", data);
-	v = data.toFloat();
-	if(v > 0) {
-		Kp = v;
-	}
-	ESPHTTPServer.load_user_config("ki", data);
-	v = data.toFloat();
-	if(v > 0) {
-		Ki = v;
-	}
-	ESPHTTPServer.load_user_config("kd", data);
-	v = data.toFloat();
-	if(v > 0) {
-		Kd = v;
-	}
-	heaterPID.SetTunings(Kp, Ki, Kd);
-}
-
-void  callbackPOST(AsyncWebServerRequest *request)
-{
-	//its possible to test the url and do different things, 
-	if (request->url() == "/post/pid")
-	{
-		ESPHTTPServer.save_user_config("kp", request->arg("kp"));
-		ESPHTTPServer.save_user_config("ki", request->arg("ki"));
-		ESPHTTPServer.save_user_config("kd", request->arg("kd"));
-		pidTunings();
-		request->redirect(request->arg("afterpost"));
-	}
-	else
-	{
-		String values = "404 Not Found\nurl:" + request->url() + "\n";
-		request->send(200, "text/plain", values);
-		values = "";
-	}
 }
 
 void setup()
@@ -567,18 +516,12 @@ void setup()
 	//set json callback
 	ESPHTTPServer.setJSONCallback(callbackJSON);
 
-	//set rest callback
-	ESPHTTPServer.setRESTCallback(callbackREST);
-
-	//set POST callback
-	ESPHTTPServer.setPOSTCallback(callbackPOST);
-
 	//set callback for user version
 	ESPHTTPServer.setUSERVERSION(VERSION);
 
-	pidTunings();
+	update_config();
 	//tell the PID to range between 0 and max pwm
-	heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
+	heaterPID.SetOutputLimits(0, max_heat_pwm);
 	//turn the PID on
 	heaterPID.SetMode(AUTOMATIC);
 	heaterPID.SetSampleTime(10);
@@ -589,12 +532,14 @@ void setup()
 	runner.addTask(print_timer);
 	runner.addTask(heart_beat);
 	runner.addTask(history_timer);
+	runner.addTask(read_and_update_config);
 
 	display_timer.enable();
 	measurement_timer.enable();
 	print_timer.enable();
 	heart_beat.enable();
 	history_timer.enable();
+	read_and_update_config.enable();
 
 //	Debug.begin(wifi_station_get_hostname());
 //	Debug.setResetCmdEnabled(true); // Enable the reset command
