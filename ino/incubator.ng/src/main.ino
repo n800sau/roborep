@@ -47,9 +47,10 @@ int max_fan_pwm = 70;
 const char *pwm_command_prefix = "PWM";
 
 int heater = max_heat_pwm;
+int default_temp = 37;
 
 // degreese
-int target = 37;
+int target = 0;
 #define MAX_TEMP 50
 #define MIN_TEMP 10
 
@@ -363,6 +364,7 @@ void history_collector()
 void update_config()
 {
 	float v;
+	int iv;
 	if(ESPHTTPServer.load_user_config("kp", v))
 		Kp = v;
 	else
@@ -375,17 +377,29 @@ void update_config()
 		Kd = v;
 	else
 		ESPHTTPServer.save_user_config("kd", (float)Kd);
+	if(ESPHTTPServer.load_user_config("default_temp", iv))
+		default_temp = iv;
+	else
+		ESPHTTPServer.save_user_config("default_temp", default_temp);
+	if(target == 0) {
+		target = default_temp;
+	}
 	heaterPID.SetTunings(Kp, Ki, Kd);
-	if(ESPHTTPServer.load_user_config("max_heat", v))
+	if(ESPHTTPServer.load_user_config("max_heat_pwm", v))
 		max_heat_pwm = v;
 	else
-		ESPHTTPServer.save_user_config("max_heat", max_heat_pwm);
-	if(ESPHTTPServer.load_user_config("max_fan", v))
+		ESPHTTPServer.save_user_config("max_heat_pwm", max_heat_pwm);
+	if(ESPHTTPServer.load_user_config("max_fan_pwm", v))
 		max_fan_pwm = v;
 	else
-		ESPHTTPServer.save_user_config("max_fan", max_fan_pwm);
+		ESPHTTPServer.save_user_config("max_fan_pwm", max_fan_pwm);
 	//tell the PID to range between 0 and max pwm
 	heaterPID.SetOutputLimits(0, max_heat_pwm);
+	if(!ESPHTTPServer.load_user_config("lcd_on", iv)) {
+		iv = BACKLIGHT_ON;
+		ESPHTTPServer.save_user_config("lcd_on", BACKLIGHT_ON);
+	}
+	lcd.setBacklight(iv ? 255 : 0); //0-1
 }
 
 void led_blink()
@@ -502,7 +516,7 @@ void setup()
 	}
 
 	lcd.begin(16,2);
-	lcd.setBacklight(BACKLIGHT_ON ? 255 : 0); //0-1
+	lcd.setBacklight(0); //0-1
 	lcd.clear();
 	lcd.home();
 	lcd.print("Thermo");
@@ -520,6 +534,7 @@ void setup()
 	ESPHTTPServer.setUSERVERSION(VERSION);
 
 	update_config();
+
 	//tell the PID to range between 0 and max pwm
 	heaterPID.SetOutputLimits(0, max_heat_pwm);
 	//turn the PID on

@@ -29,6 +29,15 @@
                         "min": 0,
                         "required": "1"
                     }
+                },
+                {
+                    "name": "default_temp",
+                    "title": "Default Temperature",
+                    "attributes": {
+                        "type": "number",
+                        "min": 20,
+                        "required": "1"
+                    }
                 }
             ]
         },
@@ -53,6 +62,18 @@
                         "min": 50,
                         "max": 100,
                         "required": "1"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "Hardware",
+            "entities": [
+                {
+                    "name": "lcd_on",
+                    "title": "Lcd backlight",
+                    "attributes": {
+                        "type": "checkbox"
                     }
                 }
             ]
