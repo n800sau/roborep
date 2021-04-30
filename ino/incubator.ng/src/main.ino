@@ -48,6 +48,7 @@ const char *pwm_command_prefix = "PWM";
 
 int heater = max_heat_pwm;
 int default_temp = 37;
+unsigned long initial_millis = 0;
 
 // degreese
 int target = 0;
@@ -446,6 +447,11 @@ String history2json(uint8_t h[])
 	return json;
 }
 
+int timer_value()
+{
+	return (millis() - initial_millis)/1000;
+}
+
 void callbackJSON(AsyncWebServerRequest *request)
 {
 Serial.print("json:");
@@ -459,7 +465,8 @@ Serial.println(request->url());
 		String json = "{";
 		json += "\"temp\":" + String(temp > 0 ? temp : 0) + ",";
 		json += "\"heater\":" + String(::map(heater, 0, max_heat_pwm, 0, 100)) + ",";
-		json += "\"target\":" + String(target);
+		json += "\"target\":" + String(target) + ",";
+		json += "\"timer_value\":" + String(timer_value());
 		json += "}";
 		request->send(200, "text/json", json);
 	} else if (request->url() == "/json/history") {
@@ -469,6 +476,9 @@ Serial.println(request->url());
 		json += "\"target\":" + history2json(target_history);
 		json += "}";
 		request->send(200, "text/json", json);
+	} else if (request->url() == "/json/reset_timer") {
+		initial_millis = millis();
+		request->send(200, "text/json", "{\"timer_value\": 0}");
 	}
 }
 
