@@ -41,6 +41,10 @@
 							document.getElementById("temp-target-val").value = res.target;
 							document.getElementById("range-val").innerText = res.target;
 						}
+						document.getElementById("timer-value").innerText = Math.floor(res.timer_value/60/60/24) + "d " +
+							("0" + Math.floor(res.timer_value/60/60)%24).slice(-2) +
+							':' +  ("0" + Math.floor(res.timer_value/60)%60).slice(-2) +
+							':' + ("0" + res.timer_value%60).slice(-2);
 						if(running) {
 							setTimeout(loadValues, reloadPeriod);
 						}
@@ -77,6 +81,7 @@
 								data: prepareSeries(res.target),
 							},
 						]);
+
 						if(running) {
 							setTimeout(loadHistory, reloadHistoryPeriod);
 						}
@@ -130,6 +135,22 @@
 				var value = parseInt(e.target.value);
 				reloadPeriod = (value > 0)?value:0;
 				e.target.value = reloadPeriod;
+			}
+			var timerResetButton = document.getElementById("timer-reset-button");
+			timerResetButton.onclick = function(e){
+				var xh = new XMLHttpRequest();
+				xh.onreadystatechange = function() {
+					if (xh.readyState == 4){
+						document.getElementById("timer-value").innerText = 0;
+						if(xh.status == 200) {
+							document.getElementById("timer-value").classList.remove('error')
+						} else {
+							document.getElementById("timer-value").classList.add('error')
+						}
+					}
+				}
+				xh.open("GET", '/json/reset_timer', true);
+				xh.send(null);
 			}
 			var stopButton = document.getElementById("stop-button");
 			stopButton.onclick = function(e){
@@ -273,6 +294,13 @@
 	</script>
 </head>
 <body id="index" onload="onBodyLoad()">
+	<div>
+		<label style="text-align: right;">Timer</label>
+		<span style="width:11ch;display:inline-block;text-align: right;margin-right: 3ch">
+			<span id="timer-value"></span>
+		</span>
+		<button id="timer-reset-button">Reset</button>
+	</div>
 	<div id="status">
 		STATUS
 	</div>

@@ -18,7 +18,7 @@
 #include <Wire.h>
 
 #include <LiquidCrystal_PCF8574.h>
-#define BACKLIGHT_ON true
+#define BACKLIGHT_ON false
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #include <SI7021.h>
@@ -41,15 +41,17 @@ ESPRotary rotary = ESPRotary(ROTARY_S1, ROTARY_S2, CLICKS_PER_STEP);
 Button2 button = Button2(ROTARY_KEY);
 
 // 80 - 8v
-const int MAX_HEAT_PWM = 100;
-const int MAX_FAN_PWM = 70;
+int max_heat_pwm = 100;
+int max_fan_pwm = 70;
 
 const char *pwm_command_prefix = "PWM";
 
-int heater = MAX_HEAT_PWM;
+int heater = max_heat_pwm;
+int default_temp = 37;
+unsigned long initial_millis = 0;
 
 // degreese
-int target = 37;
+int target = 0;
 #define MAX_TEMP 50
 #define MIN_TEMP 10
 
@@ -329,16 +331,16 @@ void measurement()
 //		Serial.print(" Set:");
 //		Serial.println(Setpoint);
 		heater = Output;
-//		heater = MAX_HEAT_PWM;
+//		heater = max_heat_pwm;
 		setPwm(HEATER_PIN, heater);
-		setPwm(FAN_PIN, MAX_FAN_PWM);
+		setPwm(FAN_PIN, max_fan_pwm);
 	} else {
 		if(si_found) {
 			Serial.println("SI not found");
 			si_found = false;
 		}
 		setPwm(HEATER_PIN, 0);
-		setPwm(FAN_PIN, 50);
+		setPwm(FAN_PIN, max_fan_pwm/2);
 	}
 }
 
@@ -354,10 +356,51 @@ void history_collector()
 			history_count--;
 		}
 		temp_history[history_count] = (uint8_t)temp;
-		heater_history[history_count] = (uint8_t)::map(heater, 0, MAX_HEAT_PWM, 0, 100);
+		heater_history[history_count] = (uint8_t)::map(heater, 0, max_heat_pwm, 0, 100);
 		target_history[history_count] = (uint8_t)target;
 		history_count++;
 	}
+}
+
+void update_config()
+{
+	float v;
+	int iv;
+	if(ESPHTTPServer.load_user_config("kp", v))
+		Kp = v;
+	else
+		ESPHTTPServer.save_user_config("kp", (float)Kp);
+	if(ESPHTTPServer.load_user_config("ki", v))
+		Ki = v;
+	else
+		ESPHTTPServer.save_user_config("ki", (float)Ki);
+	if(ESPHTTPServer.load_user_config("kd", v))
+		Kd = v;
+	else
+		ESPHTTPServer.save_user_config("kd", (float)Kd);
+	if(ESPHTTPServer.load_user_config("default_temp", iv))
+		default_temp = iv;
+	else
+		ESPHTTPServer.save_user_config("default_temp", default_temp);
+	if(target == 0) {
+		target = default_temp;
+	}
+	heaterPID.SetTunings(Kp, Ki, Kd);
+	if(ESPHTTPServer.load_user_config("max_heat_pwm", v))
+		max_heat_pwm = v;
+	else
+		ESPHTTPServer.save_user_config("max_heat_pwm", max_heat_pwm);
+	if(ESPHTTPServer.load_user_config("max_fan_pwm", v))
+		max_fan_pwm = v;
+	else
+		ESPHTTPServer.save_user_config("max_fan_pwm", max_fan_pwm);
+	//tell the PID to range between 0 and max pwm
+	heaterPID.SetOutputLimits(0, max_heat_pwm);
+	if(!ESPHTTPServer.load_user_config("lcd_on", iv)) {
+		iv = BACKLIGHT_ON;
+		ESPHTTPServer.save_user_config("lcd_on", BACKLIGHT_ON);
+	}
+	lcd.setBacklight(iv ? 255 : 0); //0-1
 }
 
 void led_blink()
@@ -385,6 +428,7 @@ Task history_timer(6000, TASK_FOREVER, &history_collector);
 Task display_timer(1000, TASK_FOREVER, &display_state);
 Task print_timer(10000, TASK_FOREVER, &print_status);
 Task heart_beat(1000, TASK_FOREVER, &led_blink);
+Task read_and_update_config(1000, TASK_FOREVER, &update_config);
 
 Scheduler runner;
 
@@ -403,6 +447,11 @@ String history2json(uint8_t h[])
 	return json;
 }
 
+int timer_value()
+{
+	return (millis() - initial_millis)/1000;
+}
+
 void callbackJSON(AsyncWebServerRequest *request)
 {
 Serial.print("json:");
@@ -415,8 +464,9 @@ Serial.println(request->url());
 		}
 		String json = "{";
 		json += "\"temp\":" + String(temp > 0 ? temp : 0) + ",";
-		json += "\"heater\":" + String(::map(heater, 0, MAX_HEAT_PWM, 0, 100)) + ",";
-		json += "\"target\":" + String(target);
+		json += "\"heater\":" + String(::map(heater, 0, max_heat_pwm, 0, 100)) + ",";
+		json += "\"target\":" + String(target) + ",";
+		json += "\"timer_value\":" + String(timer_value());
 		json += "}";
 		request->send(200, "text/json", json);
 	} else if (request->url() == "/json/history") {
@@ -426,6 +476,9 @@ Serial.println(request->url());
 		json += "\"target\":" + history2json(target_history);
 		json += "}";
 		request->send(200, "text/json", json);
+	} else if (request->url() == "/json/reset_timer") {
+		initial_millis = millis();
+		request->send(200, "text/json", "{\"timer_value\": 0}");
 	}
 }
 
@@ -473,7 +526,7 @@ void setup()
 	}
 
 	lcd.begin(16,2);
-	lcd.setBacklight(BACKLIGHT_ON ? 255 : 0); //0-1
+	lcd.setBacklight(0); //0-1
 	lcd.clear();
 	lcd.home();
 	lcd.print("Thermo");
@@ -484,14 +537,16 @@ void setup()
 	LittleFS.begin(); // Not really needed, checked inside library and started if needed
 	ESPHTTPServer.begin(&LittleFS);
 
-	//set optioanl callback
+	//set json callback
 	ESPHTTPServer.setJSONCallback(callbackJSON);
 
-	//set optioanl callback for user version
+	//set callback for user version
 	ESPHTTPServer.setUSERVERSION(VERSION);
 
+	update_config();
+
 	//tell the PID to range between 0 and max pwm
-	heaterPID.SetOutputLimits(0, MAX_HEAT_PWM);
+	heaterPID.SetOutputLimits(0, max_heat_pwm);
 	//turn the PID on
 	heaterPID.SetMode(AUTOMATIC);
 	heaterPID.SetSampleTime(10);
@@ -502,12 +557,14 @@ void setup()
 	runner.addTask(print_timer);
 	runner.addTask(heart_beat);
 	runner.addTask(history_timer);
+	runner.addTask(read_and_update_config);
 
 	display_timer.enable();
 	measurement_timer.enable();
 	print_timer.enable();
 	heart_beat.enable();
 	history_timer.enable();
+	read_and_update_config.enable();
 
 //	Debug.begin(wifi_station_get_hostname());
 //	Debug.setResetCmdEnabled(true); // Enable the reset command

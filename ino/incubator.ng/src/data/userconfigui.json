@@ -1,48 +1,80 @@
 {
     "groups": [
         {
-            "title": "First group",
+            "title": "PID",
             "entities": [
                 {
-                    "name": "value1",
-                    "title": "This is the first value"
+                    "name": "kp",
+                    "title": "Kp",
+                    "attributes": {
+                        "type": "number",
+                        "min": 0,
+                        "required": "1"
+                    }
                 },
                 {
-                    "name": "value2",
-                    "title": "This is the second value",
+                    "name": "ki",
+                    "title": "Ki",
                     "attributes": {
-                        "type": "input",
-                        "maxlength": 10,
-                        "pattern": "^[a-zA-Z0-9]*$",
+                        "type": "number",
+                        "min": 0,
+                        "required": "1"
+                    }
+                },
+                {
+                    "name": "kd",
+                    "title": "Kd",
+                    "attributes": {
+                        "type": "number",
+                        "min": 0,
+                        "required": "1"
+                    }
+                },
+                {
+                    "name": "default_temp",
+                    "title": "Default Temperature",
+                    "attributes": {
+                        "type": "number",
+                        "min": 20,
                         "required": "1"
                     }
                 }
             ]
         },
         {
-            "title": "Second Group",
+            "title": "Limits",
             "entities": [
                 {
-                    "name": "value3",
-                    "title": "This is the third value",
+                    "name": "max_fan_pwm",
+                    "title": "Fan (30-100)",
+                    "attributes": {
+                        "type": "number",
+                        "min": 30,
+                        "max": 100,
+                        "required": "1"
+                    }
+                },
+                {
+                    "name": "max_heat_pwm",
+                    "title": "Heat (50-100)",
+                    "attributes": {
+                        "type": "number",
+                        "min": 50,
+                        "max": 100,
+                        "required": "1"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "Hardware",
+            "entities": [
+                {
+                    "name": "lcd_on",
+                    "title": "Lcd backlight",
                     "attributes": {
                         "type": "checkbox"
                     }
-                },
-                {
-                    "name": "value4",
-                    "title": "This is the forth value",
-                    "attributes": {
-                        "type": "number",
-                        "min": 10,
-                        "max": 99
-                    }
-                },
-                {
-                    "name": "value5",
-                    "title": "This is the fith value",
-                    "tag": "select",
-                    "options": ["opt1", "opt2", "opt3"]
                 }
             ]
         }
