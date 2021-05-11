@@ -69,14 +69,14 @@ PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 const int UNKNOWN_TEMP = -10000;
 float temp = UNKNOWN_TEMP;
-float bottom_temp = 0;
+float secondary_temp = 0;
 
 #define HISTORY_SIZE 100
 int history_count = 0;
 uint8_t temp_history[HISTORY_SIZE];
 uint8_t heater_history[HISTORY_SIZE];
 uint8_t target_history[HISTORY_SIZE];
-uint8_t bottom_temp_history[HISTORY_SIZE];
+uint8_t secondary_temp_history[HISTORY_SIZE];
 
 
 //#include <RemoteDebug.h>
@@ -296,7 +296,7 @@ void display_state()
 			lcd.print(F(" C"));
 			lcd.setCursor(0, 1);
 			lcd.print("BT: ");
-			lcd.print((int)bottom_temp);
+			lcd.print((int)secondary_temp);
 			lcd.print(" Heat: ");
 			lcd.print(heater);
 			if(heater > 0) {
@@ -320,37 +320,31 @@ void print_status()
 //		Serial.println(am2320.getHumidity());
 		Serial.print(si.getHumidityPercent());
 		Serial.print(", Bottom temp:");
-		Serial.println(bottom_temp);
+		Serial.println(secondary_temp);
 	}
 }
 
-void measurement()
+void pid_compute()
 {
-	static bool si_found = true;
-	if(si.sensorExists()) {
-		si_found = true;
-		temp = si.getCelsiusHundredths()/100.;
-		Input = temp;
-		Setpoint = target;
-		heaterPID.Compute();
-//		Serial.print("In:");
-//		Serial.print(Input);
-//		Serial.print(" Out:");
-//		Serial.print(Output);
-//		Serial.print(" Set:");
-//		Serial.println(Setpoint);
-		heater = Output;
-//		heater = max_heat_pwm;
-		setPwm(HEATER_PIN, heater);
-		setPwm(FAN_PIN, max_fan_pwm);
-	} else {
-		if(si_found) {
-			Serial.println("SI not found");
-			si_found = false;
-		}
-		setPwm(HEATER_PIN, 0);
-		setPwm(FAN_PIN, max_fan_pwm/2);
-	}
+	Input = temp;
+	Setpoint = target;
+	heaterPID.Compute();
+//	Serial.print("In:");
+//	Serial.print(Input);
+//	Serial.print(" Out:");
+//	Serial.print(Output);
+//	Serial.print(" Set:");
+//	Serial.println(Setpoint);
+	heater = Output;
+//	heater = max_heat_pwm;
+	setPwm(HEATER_PIN, heater);
+	setPwm(FAN_PIN, max_fan_pwm);
+}
+
+float read_primary_temp()
+{
+	float rs = 0;
+	static bool bmp_found = true;
 	char result = bmp.startMeasurment();
 	if(result!=0){
 		delay(result);
@@ -358,17 +352,56 @@ void measurement()
 		result = bmp.getTemperatureAndPressure(T,P);
 		if(result!=0)
 		{
-			bottom_temp = T;
+			rs = T;
 		}
 		else
 		{
-			bottom_temp = 0;
+			if(bmp_found) {
+				Serial.println("BMP not found");
+				bmp_found = false;
+			}
 		}
 	}
 	else
 	{
-		bottom_temp = 0;
+		if(bmp_found) {
+			Serial.println("BMP not found");
+			bmp_found = false;
+		}
 	}
+	return rs;
+}
+
+float read_secondary_temp()
+{
+	float rs = 0;
+	static bool si_found = true;
+	if(si.sensorExists()) {
+		si_found = true;
+		rs = si.getCelsiusHundredths()/100.;
+	} else {
+		if(si_found) {
+			Serial.println("SI not found");
+			si_found = false;
+		}
+	}
+	return rs;
+}
+
+void measurement()
+{
+	temp = read_primary_temp();
+	if(temp > 0)
+	{
+		pid_compute();
+	}
+	else
+	{
+		// error temp reading
+		setPwm(HEATER_PIN, 0);
+		setPwm(FAN_PIN, max_fan_pwm/2);
+	}
+	secondary_temp = read_secondary_temp();
 }
 
 void history_collector()
@@ -385,7 +418,7 @@ void history_collector()
 		temp_history[history_count] = (uint8_t)temp;
 		heater_history[history_count] = (uint8_t)::map(heater, 0, max_heat_pwm, 0, 100);
 		target_history[history_count] = (uint8_t)target;
-		bottom_temp_history[history_count] = (uint8_t)bottom_temp;
+		secondary_temp_history[history_count] = (uint8_t)secondary_temp;
 		history_count++;
 	}
 }
@@ -495,7 +528,7 @@ void callbackJSON(AsyncWebServerRequest *request)
 		json += "\"heater\":" + String(::map(heater, 0, max_heat_pwm, 0, 100)) + ",";
 		json += "\"target\":" + String(target) + ",";
 		json += "\"timer_value\":" + String(timer_value()) + ",";
-		json += "\"bottom_temp\":" + String(bottom_temp);
+		json += "\"secondary_temp\":" + String(secondary_temp);
 		json += "}";
 		request->send(200, "text/json", json);
 	} else if (request->url() == "/json/history") {
@@ -503,7 +536,7 @@ void callbackJSON(AsyncWebServerRequest *request)
 		json += "\"temp\":" + history2json(temp_history) + ",";
 		json += "\"heater\":" + history2json(heater_history) + ",";
 		json += "\"target\":" + history2json(target_history) + ",";
-		json += "\"bottom_temp\":" + history2json(bottom_temp_history);
+		json += "\"secondary_temp\":" + history2json(secondary_temp_history);
 		json += "}";
 		request->send(200, "text/json", json);
 	} else if (request->url() == "/json/reset_timer") {
