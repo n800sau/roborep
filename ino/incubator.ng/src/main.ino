@@ -50,7 +50,7 @@ int max_fan_pwm = 70;
 const char *pwm_command_prefix = "PWM";
 
 int heater = max_heat_pwm;
-int default_temp = 37;
+int default_temp = 32;
 unsigned long initial_millis = 0;
 
 // degreese
@@ -295,7 +295,7 @@ void display_state()
 			lcd.print(target);
 			lcd.print(F(" C"));
 			lcd.setCursor(0, 1);
-			lcd.print("BT: ");
+			lcd.print("Up: ");
 			lcd.print((int)secondary_temp);
 			lcd.print(" Heat: ");
 			lcd.print(heater);
@@ -319,7 +319,7 @@ void print_status()
 		Serial.print(", Humidity: ");
 //		Serial.println(am2320.getHumidity());
 		Serial.print(si.getHumidityPercent());
-		Serial.print(", Bottom temp:");
+		Serial.print(", Top temp:");
 		Serial.println(secondary_temp);
 	}
 }
