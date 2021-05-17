@@ -24,7 +24,10 @@ LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars a
 #include <SI7021.h>
 SI7021 si;
 
-#define VERSION "0.5b"
+#include "BMP280.h"
+BMP280 bmp;
+
+#define VERSION "0.6b"
 
 const int HEATER_PIN = D8;
 const int FAN_PIN = D7;
@@ -47,7 +50,7 @@ int max_fan_pwm = 70;
 const char *pwm_command_prefix = "PWM";
 
 int heater = max_heat_pwm;
-int default_temp = 37;
+int default_temp = 32;
 unsigned long initial_millis = 0;
 
 // degreese
@@ -66,12 +69,14 @@ PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 const int UNKNOWN_TEMP = -10000;
 float temp = UNKNOWN_TEMP;
+float secondary_temp = 0;
 
 #define HISTORY_SIZE 100
 int history_count = 0;
 uint8_t temp_history[HISTORY_SIZE];
 uint8_t heater_history[HISTORY_SIZE];
 uint8_t target_history[HISTORY_SIZE];
+uint8_t secondary_temp_history[HISTORY_SIZE];
 
 
 //#include <RemoteDebug.h>
@@ -290,7 +295,9 @@ void display_state()
 			lcd.print(target);
 			lcd.print(F(" C"));
 			lcd.setCursor(0, 1);
-			lcd.print("Heating: ");
+			lcd.print("Up: ");
+			lcd.print((int)secondary_temp);
+			lcd.print(" Heat: ");
 			lcd.print(heater);
 			if(heater > 0) {
 				lcd.print("^");
@@ -311,37 +318,90 @@ void print_status()
 		Serial.print(target);
 		Serial.print(", Humidity: ");
 //		Serial.println(am2320.getHumidity());
-		Serial.println(si.getHumidityPercent());
+		Serial.print(si.getHumidityPercent());
+		Serial.print(", Top temp:");
+		Serial.println(secondary_temp);
 	}
 }
 
-void measurement()
+void pid_compute()
 {
+	Input = temp;
+	Setpoint = target;
+	heaterPID.Compute();
+//	Serial.print("In:");
+//	Serial.print(Input);
+//	Serial.print(" Out:");
+//	Serial.print(Output);
+//	Serial.print(" Set:");
+//	Serial.println(Setpoint);
+	heater = Output;
+//	heater = max_heat_pwm;
+	setPwm(HEATER_PIN, heater);
+	setPwm(FAN_PIN, max_fan_pwm);
+}
+
+float read_primary_temp()
+{
+	float rs = 0;
+	static bool bmp_found = true;
+	char result = bmp.startMeasurment();
+	if(result!=0){
+		delay(result);
+		double T, P;
+		result = bmp.getTemperatureAndPressure(T,P);
+		if(result!=0)
+		{
+			rs = T;
+		}
+		else
+		{
+			if(bmp_found) {
+				Serial.println("BMP not found");
+				bmp_found = false;
+			}
+		}
+	}
+	else
+	{
+		if(bmp_found) {
+			Serial.println("BMP not found");
+			bmp_found = false;
+		}
+	}
+	return rs;
+}
+
+float read_secondary_temp()
+{
+	float rs = 0;
 	static bool si_found = true;
 	if(si.sensorExists()) {
 		si_found = true;
-		temp = si.getCelsiusHundredths()/100.;
-		Input = temp;
-		Setpoint = target;
-		heaterPID.Compute();
-//		Serial.print("In:");
-//		Serial.print(Input);
-//		Serial.print(" Out:");
-//		Serial.print(Output);
-//		Serial.print(" Set:");
-//		Serial.println(Setpoint);
-		heater = Output;
-//		heater = max_heat_pwm;
-		setPwm(HEATER_PIN, heater);
-		setPwm(FAN_PIN, max_fan_pwm);
+		rs = si.getCelsiusHundredths()/100.;
 	} else {
 		if(si_found) {
 			Serial.println("SI not found");
 			si_found = false;
 		}
+	}
+	return rs;
+}
+
+void measurement()
+{
+	temp = read_primary_temp();
+	if(temp > 0)
+	{
+		pid_compute();
+	}
+	else
+	{
+		// error temp reading
 		setPwm(HEATER_PIN, 0);
 		setPwm(FAN_PIN, max_fan_pwm/2);
 	}
+	secondary_temp = read_secondary_temp();
 }
 
 void history_collector()
@@ -358,6 +418,7 @@ void history_collector()
 		temp_history[history_count] = (uint8_t)temp;
 		heater_history[history_count] = (uint8_t)::map(heater, 0, max_heat_pwm, 0, 100);
 		target_history[history_count] = (uint8_t)target;
+		secondary_temp_history[history_count] = (uint8_t)secondary_temp;
 		history_count++;
 	}
 }
@@ -454,8 +515,8 @@ int timer_value()
 
 void callbackJSON(AsyncWebServerRequest *request)
 {
-Serial.print("json:");
-Serial.println(request->url());
+//Serial.print("json:");
+//Serial.println(request->url());
 
 	if (request->url() == "/json/now")
 	{
@@ -466,14 +527,16 @@ Serial.println(request->url());
 		json += "\"temp\":" + String(temp > 0 ? temp : 0) + ",";
 		json += "\"heater\":" + String(::map(heater, 0, max_heat_pwm, 0, 100)) + ",";
 		json += "\"target\":" + String(target) + ",";
-		json += "\"timer_value\":" + String(timer_value());
+		json += "\"timer_value\":" + String(timer_value()) + ",";
+		json += "\"secondary_temp\":" + String(secondary_temp);
 		json += "}";
 		request->send(200, "text/json", json);
 	} else if (request->url() == "/json/history") {
 		String json = "{";
 		json += "\"temp\":" + history2json(temp_history) + ",";
 		json += "\"heater\":" + history2json(heater_history) + ",";
-		json += "\"target\":" + history2json(target_history);
+		json += "\"target\":" + history2json(target_history) + ",";
+		json += "\"secondary_temp\":" + history2json(secondary_temp_history);
 		json += "}";
 		request->send(200, "text/json", json);
 	} else if (request->url() == "/json/reset_timer") {
@@ -513,6 +576,10 @@ void setup()
 	button.setLongClickHandler(resetPosition);
 
 	si.begin();
+	if(!bmp.begin())
+	{
+		Serial.println("BMP init failed!");
+	}
 
 	Wire.begin();
 	Wire.beginTransmission(0x27);

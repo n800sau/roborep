@@ -46,10 +46,10 @@
             "entities": [
                 {
                     "name": "max_fan_pwm",
-                    "title": "Fan (30-100)",
+                    "title": "Fan (0-100)",
                     "attributes": {
                         "type": "number",
-                        "min": 30,
+                        "min": 0,
                         "max": 100,
                         "required": "1"
                     }

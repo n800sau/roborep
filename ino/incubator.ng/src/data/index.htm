@@ -8,10 +8,10 @@
 	<script type="text/javascript" src="gauge.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 	<script type="text/javascript">
-		var temp, heater, target;
+		var temp, heater, target, secondary_temp;
 		var chart;
 		var last_new_target;
-		var gauge_temp, gauge_heater, gauge_target;
+		var gauge_temp, gauge_heater, gauge_target, gauge_secondary_temp;
 		var reloadPeriod = 10000;
 		var reloadHistoryPeriod = 10000;
 		var running = false;
@@ -36,6 +36,9 @@
 						target.add(res.target);
 						gauge_target.set(res.target);
 						document.getElementById("cur-target").innerHTML = res.target + '&deg;C';
+						secondary_temp.add(res.secondary_temp);
+						gauge_secondary_temp.set(res.secondary_temp);
+						document.getElementById("cur-secondary-temp").innerHTML = res.secondary_temp + '&deg;C';
 						if(last_new_target === undefined) {
 							last_new_target = res.target;
 							document.getElementById("temp-target-val").value = res.target;
@@ -79,6 +82,10 @@
 							{
 								name: 'Target',
 								data: prepareSeries(res.target),
+							},
+							{
+								name: 'Top Temp',
+								data: prepareSeries(res.secondary_temp),
 							},
 						]);
 
@@ -165,9 +172,10 @@
 			target = createGraph(document.getElementById("target"), "Temp to set", 100, 146, 0, 60, true, "orange");
 			heater = createGraph(document.getElementById("heater"), "heater", 100, 128, 0, 100, false, "cyan");
 			temp = createGraph(document.getElementById("temp"), "Si7120", 100, 146, 0, 80, false, "blue");
+			secondary_temp = createGraph(document.getElementById("secondary-temp"), "BMP280", 100, 146, 0, 80, false, "green");
 
 			var opts = {};
-			['temp', 'heater', 'target'].forEach(function(nm) {
+			['temp', 'heater', 'target', 'secondary_temp'].forEach(function(nm) {
 				opts[nm] = {
 					angle: 0.15, /// The span of the gauge arc
 					lineWidth: 0.44, // The line thickness
@@ -216,6 +224,10 @@
 			gauge_target.maxValue = 50;
 			gauge_target.setMinValue(0);
 
+			gauge_secondary_temp = new Gauge(document.getElementById('gauge-secondary-temp')).setOptions(opts['secondary_temp']);
+			gauge_secondary_temp.maxValue = 50;
+			gauge_secondary_temp.setMinValue(0);
+
 			var options = {
 				series: [
 					{
@@ -249,7 +261,7 @@
 					},
 
 				},
-				colors: ['#008FFB', '#00E396', '#CED4DC'],
+				colors: ['#008FFB', '#00E396', '#CED4DC', '#00D4FF'],
 				dataLabels: {
 					enabled: false
 				},
@@ -294,6 +306,7 @@
 	</script>
 </head>
 <body id="index" onload="onBodyLoad()">
+	<a href="admin.html">Admin</a>
 	<div>
 		<label style="text-align: right;">Timer</label>
 		<span style="width:11ch;display:inline-block;text-align: right;margin-right: 3ch">
@@ -330,6 +343,16 @@
 				<span id="range-val"></span>
 				<span><input type="range" id="temp-target-val" min="10" max="50" oninput="on_range_change(value)" onchange="debounceLoadValues()"></input></span>
 			</td>
+		</tr>
+		<tr>
+			<td>Top Temp</td>
+			<td><div id="cur-secondary-temp" class="chip"></div></td>
+			<td rowspan="2">
+				<div id="secondary-temp"></div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2"><canvas id="gauge-secondary-temp" width="100" height="80"></canvas></td>
 		</tr>
 		<tr>
 			<td>Target</td>
