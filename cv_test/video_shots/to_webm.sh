@@ -12,7 +12,9 @@ SCALE=360
 #flist="`find ~/work/roborep/cv_test/timelapse/ -type f -name '*.avi' | sort -R`"
 #flist="`find  ~/work/spectra/*.avi | sort -R`"
 #flist="`find  ~/'panorama_jpg/Panorama-Stiching/videos/'*.mp4 | sort -R`"
-flist="`find  ~/work/roborep/pytorch_dnn/uni_dnn/data/output_vids/*.mp4 | sort -R`"
+flist="`find  ~/work/selivan/bitbucket/uni_dnn/data/output_vids.segnet/*.mp4 | sort -R`"
+#flist="`find ~/work/selivan/bitbucket/drobilka_t/image-segmentation-keras/output/*.mp4 | sort -R`"
+#flist="`find ~/tmp/vids/*.mp4 | sort -R`"
 
 
 rm file.lst

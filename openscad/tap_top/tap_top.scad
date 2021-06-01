@@ -30,4 +30,4 @@ module tap_top(disk_only=false) {
   }
 }
 
-tap_top(true);
+tap_top(false);

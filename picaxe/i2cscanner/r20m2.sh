@@ -1,1 +1,1 @@
-picaxe20m2 -t i2cscanner.bas -c 
+./picaxe20m2 -t -c/dev/ttyUSB2 i2cscanner.bas
