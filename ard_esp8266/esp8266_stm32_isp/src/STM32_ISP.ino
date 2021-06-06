@@ -115,7 +115,9 @@ uint8_t cmd_generic(uint8_t command) {
 	cmd[0] = command;
 	cmd[1] = command ^ 0xFF;
 	isp_serial_write(cmd,2);
-	return wait_for_ack("cmd_generic");
+	char buf[128];
+	snprintf(buf, sizeof(buf), "cmd_generic(0x%02X)", command);
+	return wait_for_ack(buf);
 }
 
 uint8_t cmd_get() {
