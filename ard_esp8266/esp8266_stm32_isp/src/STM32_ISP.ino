@@ -290,7 +290,7 @@ void setup() {
 //		delay(1000);
 //		debugSerial.printf("press key to start.\n");
 //	}
-	esp8266_write_file("/stm32f030c8_db_led.bin");
+	esp8266_write_file("firmware.bin");
 }
 
 void loop() {
