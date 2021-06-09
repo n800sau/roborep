@@ -4,10 +4,14 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/n800s/.platformio/packages/tool-
 
 #../../ino/set_stm32_mode/set_pmode.py
 
-#DEV=/dev/ttyUSB1
-#platformio run -t upload --upload-port $DEV -e maple
+~/stuff/work/roborep/ard_esp8266/io/isp_mode.sh
+
+#DEV=/dev/ttyUSB0
+platformio run -t upload --upload-port `readlink "$DEV"` -e maple &>upload.log
+
+~/stuff/work/roborep/ard_esp8266/io/work_mode.sh
 #platformio run -t upload --upload-port $DEV
-platformio run -t upload --upload-port $DEV -e demo_f030f4
+#platformio run -t upload --upload-port $DEV -e demo_f030f4
 #platformio run -v -t upload
 #stm32flash -g 0x08000000 -b 115200 -w ".pio/build/maple/firmware.bin" "/dev/ttyUSB1"
 #/usr/bin/stm32flash -g 0x08000000 -i 'rts,-dtr,dtr' -b 115200 -w ".pio/build/maple/firmware.bin" "$DEV"
