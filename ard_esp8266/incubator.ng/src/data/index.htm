@@ -39,7 +39,7 @@
 						secondary_temp.add(res.secondary_temp);
 						gauge_secondary_temp.set(res.secondary_temp);
 						document.getElementById("cur-secondary-temp").innerHTML = res.secondary_temp + '&deg;C';
-						if(last_new_target === undefined) {
+						if(last_new_target === undefined || last_new_target != res.target) {
 							last_new_target = res.target;
 							document.getElementById("temp-target-val").value = res.target;
 							document.getElementById("range-val").innerText = res.target;
@@ -57,7 +57,7 @@
 					}
 				}
 			}
-			var q = last_new_target ? ('?new_target=' + new_target) : '';
+			var q = (last_new_target && last_new_target != new_target) ? ('?new_target=' + new_target) : '';
 			xh.open("GET", '/json/now' + q, true);
 			xh.send(null);
 		};
