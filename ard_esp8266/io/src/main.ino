@@ -3,9 +3,10 @@
 #include <DNSServer.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
 #include <aREST.h>
+#include <aREST_UI.h>
 
 // Create aREST instance
-aREST rest = aREST();
+aREST_UI rest = aREST_UI();
 
 // WiFi parameters
 //const char* ssid = "your_wifi_network_name";
@@ -31,11 +32,21 @@ void setup(void)
   // Start Serial
   Serial.begin(115200);
 
+
+  // Set the title
+  rest.title("ESP8266 Rest UI");
+
+  // Create button to control pin 5
+  rest.button(5);
   // Init variables and expose them to REST API
   temperature = 24;
   humidity = 40;
   rest.variable("temperature",&temperature);
   rest.variable("humidity",&humidity);
+
+  // Labels
+  rest.label("temperature");
+  rest.label("humidity");
 
   // Function to be exposed
   rest.function("led",ledControl);
