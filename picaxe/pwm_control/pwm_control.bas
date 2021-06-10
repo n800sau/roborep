@@ -16,12 +16,14 @@ symbol TIMEOUT_BEFORE_OFF = 65535 ' ~ 17 sec (65*4/16, for 16Mhz)
 setfreq m16
 
 main:
-	' b1 - command type (P or S)
-	' b2 - pwm index
+	' b1 - command type (P(pwm) or S(off) or B(bit))
+	' b2 - pwm index or pin index
 	serin [TIMEOUT_BEFORE_OFF, turn_off],SERIN_PIN,SER_MODE,("PWM"), b1, #b2
 'sertxd ("Received", b1,#b2,CR,LF)
 	select case b1
 		case "P"
+			' PER <period>
+			' DUT <duty>
 			serin [200, turn_off],SERIN_PIN,SER_MODE,("PER"),#b3
 'sertxd ("Period", #b3,CR,LF)
 			serin [200, turn_off],SERIN_PIN,SER_MODE,("DUT"),#w8
@@ -49,6 +51,30 @@ sertxd ("CMD S", #b2,CR,LF)
 				case 4
 					pwmout PWM_4,off
 			endselect
+		case "B"
+			' ST <0-low,1-high>
+sertxd ("CMD B", #b2,CR,LF)
+			serin [200, turn_off],SERIN_PIN,SER_MODE,("ST"),#b3
+			select case b2
+				case 1
+					b2 = PWM_1
+				case 2
+					b2 = PWM_2
+				case 3
+					b2 = PWM_3
+				case 4
+					b2 = PWM_4
+				default:
+					b2 = 0
+			endselect
+			if b2 <> 0 then
+				select case b3
+					case 0
+						LOW b2
+					case 1
+						HIGH b2
+				endselect
+			end if
 	endselect
 	goto main
 turn_off:
