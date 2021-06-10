@@ -1,19 +1,15 @@
 #include <SoftwareSerial.h>
 
 #if defined(ESP8266)
-<<<<<<< HEAD
-SoftwareSerial sSer(D7, -1); // RX, TX
-#else
-//SoftwareSerial sSer(10, 7); // RX, TX
-=======
 SoftwareSerial sSer(D0, D0); // RX, TX
-#else
-SoftwareSerial sSer(10, 10); // RX, TX
->>>>>>> b4a3fd92906e721d0c73cb94073d697d9c451abc
-#endif
-
 #define PWM_PIN D8
 #define PWM_PIN1 D7
+#else
+SoftwareSerial sSer(10, 10); // RX, TX
+#define PWM_PIN 8
+#define PWM_PIN1 7
+#endif
+
 
 void setup() {
 	// Open serial communications and wait for port to open:
@@ -83,7 +79,7 @@ void loop2()
 	for(int i=1; i<=4; i++) {
 		Serial.print("pwm on:");
 		Serial.println(i);
-		sSer.print("PWMP");
+		sSer.print("XX:P");
 		sSer.println(i);
 		delay(10);
 		sSer.println("PER128");
@@ -92,9 +88,17 @@ void loop2()
 //		delay(2000);
 		Serial.print("pwm off:");
 		Serial.println(i);
-		sSer.print("PWMS");
+		sSer.print("XX:S");
 		sSer.println(i);
 //		delay(2000);
+		Serial.print("bit on:");
+		Serial.println(i);
+		sSer.print("XX:BST1");
+		delay(1000);
+		Serial.print("bit off:");
+		sSer.println(i);
+		sSer.print("XX:BST0");
+		delay(1000);
 	}
 
 }

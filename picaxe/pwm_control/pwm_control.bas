@@ -18,7 +18,7 @@ setfreq m16
 main:
 	' b1 - command type (P(pwm) or S(off) or B(bit))
 	' b2 - pwm index or pin index
-	serin [TIMEOUT_BEFORE_OFF, turn_off],SERIN_PIN,SER_MODE,("PWM"), b1, #b2
+	serin [TIMEOUT_BEFORE_OFF, turn_off],SERIN_PIN,SER_MODE,("XX"), b1, #b2
 'sertxd ("Received", b1,#b2,CR,LF)
 	select case b1
 		case "P"
