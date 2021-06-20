@@ -2,7 +2,8 @@
 
 symbol SERIN_PIN  = B.6
 symbol SEROUT_PIN = C.0
-symbol SER_MODE = T4800_16 ' for 16Mhz
+symbol SER_MODE = T19200_16 ' for 16Mhz
+'symbol SER_MODE = T4800_16 ' for 16Mhz
 'symbol SER_MODE = T4800_4 ' for 4Mhz
 
 symbol PWM_1 = B.1
@@ -13,15 +14,16 @@ symbol B_5 = C.1
 symbol B_6 = C.4
 symbol B_7 = C.7
 symbol B_8 = B.0
-symbol B_9 = B.1
-symbol B_10 = B.2
-symbol B_11 = B.3
-symbol B_12 = B.4
-symbol B_13 = B.5
+symbol B_9 = B.2
+symbol B_10 = B.3
+symbol B_11 = B.4
+symbol B_12 = B.5
+symbol B_13 = B.6
 symbol B_14 = B.7
 
 
-symbol TIMEOUT_BEFORE_OFF = 65535 ' ~ 17 sec (65*4/16, for 16Mhz)
+'symbol SERIAL_TIMEOUT = 65535 ' ~ 17 sec (65*4/16, for 16Mhz)
+symbol SERIAL_TIMEOUT = 3855 ' ~ 1 sec (3*4/16, for 16Mhz)
 
 ' if changing freq then change SER_MODE
 ' also debug serial output rate (for m16 - 19200, for m32 - 38400 etc)
@@ -38,18 +40,18 @@ main:
 	' pwm off: 'XXS<index> '
 	' pin on: 'XXB<index> L1 '
 	' pin off: 'XXB<index> L0 '
-	' between each symbol 50ms is required
-	serin [TIMEOUT_BEFORE_OFF, timeout],SERIN_PIN,SER_MODE,("XX"), b1, #b2
+	' between each symbol 5-50ms is required
+	serin [SERIAL_TIMEOUT, timeout],SERIN_PIN,SER_MODE,("XX"), b1, #b2
 'sertxd ("Received", b1,#b2,CR,LF)
 	select case b1
 		case "P"
 			' PER <period>
 			' DUT <duty>
-			serin [1000, timeout],SERIN_PIN,SER_MODE,("PER"),#b3
+			serin [SERIAL_TIMEOUT, timeout],SERIN_PIN,SER_MODE,("PER"),#b3
 'sertxd ("Period", #b3,CR,LF)
-			serin [1000, timeout],SERIN_PIN,SER_MODE,("DUT"),#w8
+			serin [SERIAL_TIMEOUT, timeout],SERIN_PIN,SER_MODE,("DUT"),#w8
 'sertxd ("Duty", #w8,CR,LF)
-sertxd ("CMD P", #b2,":",#b3,":",#w8,CR,LF)
+'sertxd ("CMD P", #b2,":",#b3,":",#w8,CR,LF)
 			select case b2
 				case 1
 					pwmout PWM_1,b3,w8
@@ -61,21 +63,25 @@ sertxd ("CMD P", #b2,":",#b3,":",#w8,CR,LF)
 					pwmout PWM_4,b3,w8
 			endselect
 		case "S"
-sertxd ("CMD S", #b2,CR,LF)
+'sertxd ("CMD S", #b2,CR,LF)
 			select case b2
 				case 1
 					pwmout PWM_1,off
+					LOW PWM_1
 				case 2
 					pwmout PWM_2,off
+					LOW PWM_2
 				case 3
 					pwmout PWM_3,off
+					LOW PWM_3
 				case 4
 					pwmout PWM_4,off
+					LOW PWM_4
 			endselect
 		case "B"
 			' L<0-low,1-high>
-			serin [1000, timeout],SERIN_PIN,SER_MODE,("L"),#b3
-sertxd ("CMD B", #b2,":",#b3,CR,LF)
+			serin [SERIAL_TIMEOUT, timeout],SERIN_PIN,SER_MODE,("L"),#b3
+'sertxd ("CMD B", #b2,":",#b3,CR,LF)
 			select case b2
 				case 1
 					select case b3
