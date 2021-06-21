@@ -30,6 +30,13 @@ symbol SERIAL_TIMEOUT = 3855 ' ~ 1 sec (3*4/16, for 16Mhz)
 setfreq m16
 'setfreq m4
 
+' PWM period = (period + 1) x 4 x resonator speed (resonator speed for 4MHz = 1/4000000)
+' PWM duty cycle = (duty) x resonator speed
+' Note that the period and duty values are linked by the above equations. If you wish to
+' maintain a 50:50 mark-space ratio whilst increasing the period, you must also increase
+' the duty cycle value appropriately. A change in resonator will change the formula.
+' If you wish to know the frequency, PWM frequency = 1 / (the PWM period)
+
 main:
 '	sertxd ("Main", CR,LF)
 	' b1 - command type (P(pwm) or S(off) or B(bit))
