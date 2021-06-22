@@ -41,6 +41,8 @@ SoftwareSerial PicaxeSerial;
 
 const int HEATER_PIN = 0;
 const int FAN_PIN = 1;
+const int SHAKER_LEFT_PIN = 2;
+const int SHAKER_RIGHT_PIN = 3;
 #else //PicaxeSerial
 const int HEATER_PIN = D8;
 const int FAN_PIN = D7;
@@ -513,6 +515,18 @@ void setupPwm()
 	setPwm(FAN_PIN, 0);
 }
 
+void pin_on(int pindex)
+{
+	snprintf(cmdbuf, sizeof(cmdbuf), "XXB%d L1 ", pindex);
+	send_picaxe_cmd(cmdbuf);
+}
+
+void pin_off(int pindex)
+{
+	snprintf(cmdbuf, sizeof(cmdbuf), "XXB%d L0 ", pindex);
+	send_picaxe_cmd(cmdbuf);
+}
+
 #else // PicaxeSerial
 
 void setPwm(int pin, int val)
@@ -588,6 +602,16 @@ void callbackJSON(AsyncWebServerRequest *request)
 	} else if (request->url() == "/json/reset_timer") {
 		initial_millis = millis();
 		request->send(200, "text/json", "{\"timer_value\": 0}");
+#ifdef PicaxeSerial
+	} else if (request->url() == "json/shake/left") {
+		setPwm(SHAKER_LEFT_PIN, 100);
+		pin_on(SHAKER_RIGHT_PIN);
+		request->send(200, "text/json", "{\"shaker_value\": 0}");
+	} else if (request->url() == "json/shake/right") {
+		setPwm(SHAKER_RIGHT_PIN, 100);
+		pin_on(SHAKER_LEFT_PIN);
+		request->send(200, "text/json", "{\"shaker_value\": 0}");
+#endif // PicaxeSerial
 	}
 }
 

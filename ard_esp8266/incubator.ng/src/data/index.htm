@@ -159,6 +159,36 @@
 				xh.open("GET", '/json/reset_timer', true);
 				xh.send(null);
 			}
+			var shakeLeftButton = document.getElementById("circlearrowleft");
+			shakeLeftButton.onclick = function(e){
+				var xh = new XMLHttpRequest();
+				xh.onreadystatechange = function() {
+					if (xh.readyState == 4){
+						if(xh.status == 200) {
+							document.getElementById("shaker-value").classList.remove('error')
+						} else {
+							document.getElementById("shaker-value").classList.add('error')
+						}
+					}
+				}
+				xh.open("GET", '/json/shake/left/' + document.getElementById("shaker-value").value, true);
+				xh.send();
+			}
+			var shakeRightButton = document.getElementById("circlearrowright");
+			shakeRightButton.onclick = function(e){
+				var xh = new XMLHttpRequest();
+				xh.onreadystatechange = function() {
+					if (xh.readyState == 4){
+						if(xh.status == 200) {
+							document.getElementById("shaker-value").classList.remove('error')
+						} else {
+							document.getElementById("shaker-value").classList.add('error')
+						}
+					}
+				}
+				xh.open("GET", '/json/shake/right/' + document.getElementById("shaker-value").value, true);
+				xh.send();
+			}
 			var stopButton = document.getElementById("stop-button");
 			stopButton.onclick = function(e){
 				running = false;
@@ -377,6 +407,20 @@
 		<tr>
 			<td colspan="4">
 				<div id="chart"></div>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Shaker
+			</td>
+			<td>
+				<button id="shake-left">&circlearrowleft;</button>
+			</td>
+			<td>
+				<input type="range" id="shaker-value" min="0" max="100"></input>
+			</td>
+			<td>
+				<button id="shake-right">&circlearrowright;</button>
 			</td>
 		</tr>
 	</table>
