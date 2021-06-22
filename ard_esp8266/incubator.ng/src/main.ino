@@ -29,8 +29,22 @@ BMP280 bmp;
 
 #define VERSION "0.6b"
 
+#define PicaxeSerial swSerial
+
+#ifdef PicaxeSerial
+#include <SoftwareSerial.h>
+
+SoftwareSerial PicaxeSerial;
+
+#define PICAXE_SERIAL_TX_PIN D8
+#define PICAXE_BAUD_RATE 19200
+
+const int HEATER_PIN = 0;
+const int FAN_PIN = 1;
+#else //PicaxeSerial
 const int HEATER_PIN = D8;
 const int FAN_PIN = D7;
+#endif //PicaxeSerial
 
 const int ROTARY_KEY = D0;
 const int ROTARY_S1 = D5;
@@ -46,8 +60,6 @@ Button2 button = Button2(ROTARY_KEY);
 // 80 - 8v
 int max_heat_pwm = 100;
 int max_fan_pwm = 70;
-
-const char *pwm_command_prefix = "PWM";
 
 int heater = max_heat_pwm;
 int default_temp = 32;
@@ -471,6 +483,38 @@ void led_blink()
 	digitalWrite(LED_BUILTIN, HIGH);
 }
 
+#ifdef PicaxeSerial
+
+char cmdbuf[128];
+
+void send_picaxe_cmd(const char *cmd)
+{
+	for(size_t i=0;i<strlen(cmd); i++) {
+		PicaxeSerial.write(cmd[i]);
+		delay(5);
+	}
+}
+
+// val - 0-100
+void setPwm(int pin, int val)
+{
+	if(val) {
+		val = ::map(val, 0, 100, 0, 400);
+		snprintf(cmdbuf, sizeof(cmdbuf), "XXP%d PER%d DUT%d ", pin, 100, val);
+	} else {
+		snprintf(cmdbuf, sizeof(cmdbuf), "XXS%d ", pin);
+	}
+	send_picaxe_cmd(cmdbuf);
+}
+
+void setupPwm()
+{
+	setPwm(HEATER_PIN, 0);
+	setPwm(FAN_PIN, 0);
+}
+
+#else // PicaxeSerial
+
 void setPwm(int pin, int val)
 {
 	analogWrite(pin, val);
@@ -483,6 +527,8 @@ void setupPwm()
 	pinMode(FAN_PIN, OUTPUT);
 	setPwm(FAN_PIN, 0);
 }
+
+#endif // PicaxeSerial
 
 Task measurement_timer(100, TASK_FOREVER, &measurement);
 Task history_timer(6000, TASK_FOREVER, &history_collector);
@@ -560,6 +606,10 @@ void setup()
 	Serial.println();
 	Serial.setDebugOutput(true);
 	Serial.println("Incubator...");
+
+#ifdef PicaxeSerial
+	PicaxeSerial.begin(PICAXE_BAUD_RATE, SWSERIAL_8N1, -1, PICAXE_SERIAL_TX_PIN);
+#endif
 
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, LOW); // turn on
