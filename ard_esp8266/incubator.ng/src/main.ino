@@ -30,19 +30,20 @@ BMP280 bmp;
 #define VERSION "0.6b"
 
 #define PicaxeSerial swSerial
+//#define PicaxeSerial Serial
 
 #ifdef PicaxeSerial
 #include <SoftwareSerial.h>
 
-SoftwareSerial PicaxeSerial;
+SoftwareSerial swSerial;
 
 #define PICAXE_SERIAL_TX_PIN D8
 #define PICAXE_BAUD_RATE 19200
 
-const int HEATER_PIN = 0;
-const int FAN_PIN = 1;
-const int SHAKER_LEFT_PIN = 2;
-const int SHAKER_RIGHT_PIN = 3;
+const int HEATER_PIN = 1;
+const int FAN_PIN = 2;
+const int SHAKER_LEFT_PIN = 3;
+const int SHAKER_RIGHT_PIN = 4;
 #else //PicaxeSerial
 const int HEATER_PIN = D8;
 const int FAN_PIN = D7;
@@ -338,6 +339,54 @@ void print_status()
 	}
 }
 
+int old_heater_val = -1;
+void setHeaterPwm(int val)
+{
+//	if(old_heater_val != val) {
+//		old_heater_val = val;
+//		val = 100 - val;
+//		Serial.print("heater val:");
+//		Serial.println(val);
+		setPwm(HEATER_PIN, val);
+//	}
+}
+
+int old_fan_val = -1;
+void setFanPwm(int val)
+{
+//	if(old_fan_val != val)
+//	{
+//		old_fan_val = val;
+//	Serial.print("fan val:");
+//	Serial.println(val);
+		setPwm(FAN_PIN, val);
+//	}
+}
+
+#ifdef PicaxeSerial
+
+int old_shaker_left_val = -1;
+void setShakerLeftPwm(int val)
+{
+	if(old_shaker_left_val != val)
+	{
+		old_shaker_left_val = val;
+		setPwm(SHAKER_LEFT_PIN, val);
+	}
+}
+
+int old_shaker_right_val = -1;
+void setShakerRightPwm(int val)
+{
+	if(old_shaker_right_val != val)
+	{
+		old_shaker_right_val = val;
+		setPwm(SHAKER_RIGHT_PIN, val);
+	}
+}
+
+#endif //PicaxeSerial
+
 void pid_compute()
 {
 	Input = temp;
@@ -351,8 +400,8 @@ void pid_compute()
 //	Serial.println(Setpoint);
 	heater = Output;
 //	heater = max_heat_pwm;
-	setPwm(HEATER_PIN, heater);
-	setPwm(FAN_PIN, max_fan_pwm);
+	setHeaterPwm(heater);
+	setFanPwm(max_fan_pwm);
 }
 
 float read_primary_temp()
@@ -412,8 +461,8 @@ void measurement()
 	else
 	{
 		// error temp reading
-		setPwm(HEATER_PIN, 0);
-		setPwm(FAN_PIN, max_fan_pwm/2);
+		setHeaterPwm(0);
+		setFanPwm(max_fan_pwm/2);
 	}
 	secondary_temp = read_secondary_temp();
 }
@@ -480,7 +529,7 @@ void update_config()
 
 void led_blink()
 {
-	setPwm(LED_BUILTIN, 97);
+	analogWrite(LED_BUILTIN, 97);
 	delay(30);
 	digitalWrite(LED_BUILTIN, HIGH);
 }
@@ -488,13 +537,23 @@ void led_blink()
 #ifdef PicaxeSerial
 
 char cmdbuf[128];
+long last_cmd_ts = 0;
 
 void send_picaxe_cmd(const char *cmd)
 {
+	long delay_ms = 100 - (millis() - last_cmd_ts);
+	if(delay_ms > 0) {
+	Serial.print("Delay:");
+	Serial.println(delay_ms);
+		delay(delay_ms);
+	}
+	Serial.print("AXE CMD:");
+	Serial.println(cmd);
 	for(size_t i=0;i<strlen(cmd); i++) {
 		PicaxeSerial.write(cmd[i]);
-		delay(5);
+		delay(10);
 	}
+	Serial.println("SENT");
 }
 
 // val - 0-100
@@ -511,8 +570,8 @@ void setPwm(int pin, int val)
 
 void setupPwm()
 {
-	setPwm(HEATER_PIN, 0);
-	setPwm(FAN_PIN, 0);
+	setHeaterPwm(0);
+	setFanPwm(0);
 }
 
 void pin_on(int pindex)
@@ -537,9 +596,9 @@ void setPwm(int pin, int val)
 void setupPwm()
 {
 	pinMode(HEATER_PIN, OUTPUT);
-	setPwm(HEATER_PIN, 0);
+	setHeaterPwm(0);
 	pinMode(FAN_PIN, OUTPUT);
-	setPwm(FAN_PIN, 0);
+	setFanPwm(0);
 }
 
 #endif // PicaxeSerial
@@ -604,11 +663,11 @@ void callbackJSON(AsyncWebServerRequest *request)
 		request->send(200, "text/json", "{\"timer_value\": 0}");
 #ifdef PicaxeSerial
 	} else if (request->url() == "json/shake/left") {
-		setPwm(SHAKER_LEFT_PIN, 100);
+		setShakerLeftPwm(100);
 		pin_on(SHAKER_RIGHT_PIN);
 		request->send(200, "text/json", "{\"shaker_value\": 0}");
 	} else if (request->url() == "json/shake/right") {
-		setPwm(SHAKER_RIGHT_PIN, 100);
+		setShakerRightPwm(100);
 		pin_on(SHAKER_LEFT_PIN);
 		request->send(200, "text/json", "{\"shaker_value\": 0}");
 #endif // PicaxeSerial
@@ -626,14 +685,15 @@ void setup()
 {
 	// setup pwm range 0-100
 	analogWriteRange(100);
-	Serial.begin(115200);
-	Serial.println();
-	Serial.setDebugOutput(true);
-	Serial.println("Incubator...");
-
 #ifdef PicaxeSerial
-	PicaxeSerial.begin(PICAXE_BAUD_RATE, SWSERIAL_8N1, -1, PICAXE_SERIAL_TX_PIN);
-#endif
+	Serial.begin(PICAXE_BAUD_RATE);
+	swSerial.begin(PICAXE_BAUD_RATE, SWSERIAL_8N1, -1, PICAXE_SERIAL_TX_PIN);
+#else
+	Serial.begin(115200);
+	Serial.setDebugOutput(true);
+#endif // PicaxeSerial
+	Serial.println();
+	Serial.println("Incubator...");
 
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, LOW); // turn on
