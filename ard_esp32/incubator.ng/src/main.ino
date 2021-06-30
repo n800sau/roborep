@@ -30,11 +30,11 @@ BMP280 bmp;
 
 #define VERSION "0.6b"
 
-const int HEATER_PIN = 23;
-const int FAN_PIN = 24;
-const int SHAKER_LEFT_PIN = 25;
-const int SHAKER_RIGHT_PIN = 26;
-const int LED_PIN = 27;
+const int HEATER_PIN = 18;
+const int FAN_PIN = 35;
+const int SHAKER_LEFT_PIN = 19;
+const int SHAKER_RIGHT_PIN = 33;
+const int LED_PIN = 2; // esp32 mini
 
 const int ROTARY_KEY = 28;
 const int ROTARY_S1 = 29;
@@ -556,6 +556,7 @@ Task read_and_update_config(1000, TASK_FOREVER, &update_config);
 Scheduler runner;
 
 #define NEW_TARGET_PARAM "new_target"
+#define VALUE_PARAM "val"
 
 String history2json(uint8_t h[])
 {
@@ -605,13 +606,21 @@ void callbackJSON(AsyncWebServerRequest *request)
 		initial_millis = millis();
 		request->send(200, "text/json", "{\"timer_value\": 0}");
 	} else if (request->url() == "json/shake/left") {
-		setShakerLeftPwm(100);
-		digitalWrite(SHAKER_RIGHT_PIN, HIGH);
-		request->send(200, "text/json", "{\"shaker_value\": 0}");
+		int val;
+		if(request->hasParam(VALUE_PARAM)) {
+			val = String(request->getParam(VALUE_PARAM)->value()).toInt();
+			setShakerLeftPwm(100);
+			digitalWrite(SHAKER_RIGHT_PIN, HIGH);
+		}
+		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + "}");
 	} else if (request->url() == "json/shake/right") {
-		setShakerRightPwm(100);
-		digitalWrite(SHAKER_LEFT_PIN, HIGH);
-		request->send(200, "text/json", "{\"shaker_value\": 0}");
+		int val;
+		if(request->hasParam(VALUE_PARAM)) {
+			val = String(request->getParam(VALUE_PARAM)->value()).toInt();
+			setShakerRightPwm(100);
+			digitalWrite(SHAKER_LEFT_PIN, HIGH);
+		}
+		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + "}");
 	}
 }
 
