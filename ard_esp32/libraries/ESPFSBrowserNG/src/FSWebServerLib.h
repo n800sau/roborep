@@ -33,7 +33,7 @@
 //#endif
 
 #define CONNECTION_LED -1 // Connection LED pin (Built in). -1 to disable
-#define AP_ENABLE_BUTTON 5 // Button pin to enable AP during startup for configuration. -1 to disable
+#define AP_ENABLE_BUTTON -1 // Button pin to enable AP during startup for configuration. -1 to disable
 
 // #define HIDE_CONFIG
 #define CONFIG_FILE "/config.json"
