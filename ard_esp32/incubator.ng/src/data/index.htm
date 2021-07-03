@@ -159,7 +159,7 @@
 				xh.open("GET", '/json/reset_timer', true);
 				xh.send(null);
 			}
-			var shakeLeftButton = document.getElementById("circlearrowleft");
+			var shakeLeftButton = document.getElementById("shake-left");
 			shakeLeftButton.onclick = function(e){
 				var xh = new XMLHttpRequest();
 				xh.onreadystatechange = function() {
@@ -174,7 +174,7 @@
 				xh.open("GET", '/json/shake/left/?val=' + document.getElementById("shaker-value").value, true);
 				xh.send();
 			}
-			var shakeRightButton = document.getElementById("circlearrowright");
+			var shakeRightButton = document.getElementById("shake-right");
 			shakeRightButton.onclick = function(e){
 				var xh = new XMLHttpRequest();
 				xh.onreadystatechange = function() {

@@ -30,15 +30,15 @@ BMP280 bmp;
 
 #define VERSION "0.6b"
 
-const int HEATER_PIN = 18;
+const int HEATER_PIN = 26;
 const int FAN_PIN = 35;
-const int SHAKER_LEFT_PIN = 19;
+const int SHAKER_LEFT_PIN = 34;
 const int SHAKER_RIGHT_PIN = 33;
 const int LED_PIN = 2; // esp32 mini
 
-const int ROTARY_KEY = 28;
-const int ROTARY_S1 = 29;
-const int ROTARY_S2 = 30;
+const int ROTARY_KEY = 32;
+const int ROTARY_S1 = 25;
+const int ROTARY_S2 = 27;
 
 const int CLICKS_PER_STEP = 4;   // this number depends on your rotary encoder 
 
@@ -260,6 +260,7 @@ void update_display()
 		case DM_STATE:
 Serial.println("display state");
 			display_state();
+//Serial.println("display state done");
 			break;
 		case DM_MENU:
 Serial.println("display menu");
@@ -518,11 +519,12 @@ void update_config()
 	lcd.setBacklight(iv ? 255 : 0); //0-1
 }
 
+bool led_on = false;
+
 void led_blink()
 {
-	setPwm(LED_PIN, 97);
-	delay(30);
-	digitalWrite(LED_PIN, HIGH);
+	led_on = !led_on;
+	setPwm(LED_PIN, led_on ? 20 : 0);
 }
 
 void setPwm(int pin, int val)
@@ -638,8 +640,8 @@ void setup()
 	Serial.println();
 	Serial.println("Incubator...");
 
-	pinMode(LED_PIN, OUTPUT);
-	digitalWrite(LED_PIN, LOW); // turn on
+//	pinMode(LED_PIN, OUTPUT);
+//	digitalWrite(LED_PIN, HIGH); // turn on
 
 	setupPwm();
 
@@ -728,10 +730,10 @@ void setup()
 
 void loop()
 {
-//	rotary.loop();
-//	button.loop();
+	rotary.loop();
+	button.loop();
 
-//	runner.execute();
+	runner.execute();
 	// DO NOT REMOVE. Attend OTA update from Arduino IDE
 //	ESPHTTPServer.handle();
 //	Debug.handle();
