@@ -32,8 +32,8 @@ BMP280 bmp;
 
 const int HEATER_PIN = 26;
 const int FAN_PIN = 35;
-const int SHAKER_LEFT_PIN = 34;
-const int SHAKER_RIGHT_PIN = 33;
+const int SHAKER_LEFT_PIN = 19;
+const int SHAKER_RIGHT_PIN = 23;
 const int LED_PIN = 2; // esp32 mini
 
 const int ROTARY_KEY = 32;
@@ -362,9 +362,14 @@ void setFanPwm(int val)
 int old_shaker_left_val = -1;
 void setShakerLeftPwm(int val)
 {
+Serial.print("LEFT ABOUT TO SET ");
+Serial.println(val);
 	if(old_shaker_left_val != val)
 	{
 		old_shaker_left_val = val;
+Serial.print("LEFT SET ");
+Serial.println(val);
+//		digitalWrite(SHAKER_LEFT_PIN, HIGH);
 		setPwm(SHAKER_LEFT_PIN, val);
 	}
 }
@@ -372,9 +377,14 @@ void setShakerLeftPwm(int val)
 int old_shaker_right_val = -1;
 void setShakerRightPwm(int val)
 {
+Serial.print("RIGHT ABOUT TO SET ");
+Serial.println(val);
 	if(old_shaker_right_val != val)
 	{
 		old_shaker_right_val = val;
+Serial.print("RIGHT SET ");
+Serial.println(val);
+//		digitalWrite(SHAKER_RIGHT_PIN, HIGH);
 		setPwm(SHAKER_RIGHT_PIN, val);
 	}
 }
@@ -544,8 +554,14 @@ void setupPwm()
 		ledcAttachPin(pwm_map[i].pin, pwm_map[i].chan);
 		ledcSetup(pwm_map[i].chan, 12000, 8); // 12 kHz PWM, 8-bit resolution 
 	}
+	pinMode(HEATER_PIN, OUTPUT);
+	pinMode(FAN_PIN, OUTPUT);
+	pinMode(SHAKER_LEFT_PIN, OUTPUT);
+	pinMode(SHAKER_RIGHT_PIN, OUTPUT);
 	setHeaterPwm(0);
 	setFanPwm(0);
+	setShakerRightPwm(0);
+	setShakerLeftPwm(0);
 }
 
 Task measurement_timer(100, TASK_FOREVER, &measurement);
@@ -607,20 +623,21 @@ void callbackJSON(AsyncWebServerRequest *request)
 	} else if (request->url() == "/json/reset_timer") {
 		initial_millis = millis();
 		request->send(200, "text/json", "{\"timer_value\": 0}");
-	} else if (request->url() == "json/shake/left") {
+	} else if (request->url() == "/json/shake/left") {
 		int val;
 		if(request->hasParam(VALUE_PARAM)) {
 			val = String(request->getParam(VALUE_PARAM)->value()).toInt();
-			setShakerLeftPwm(100);
-			digitalWrite(SHAKER_RIGHT_PIN, HIGH);
+			setShakerLeftPwm(val);
+			setShakerRightPwm(0);
 		}
 		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + "}");
-	} else if (request->url() == "json/shake/right") {
+	} else if (request->url() == "/json/shake/right") {
 		int val;
 		if(request->hasParam(VALUE_PARAM)) {
 			val = String(request->getParam(VALUE_PARAM)->value()).toInt();
-			setShakerRightPwm(100);
-			digitalWrite(SHAKER_LEFT_PIN, HIGH);
+			setShakerRightPwm(val);
+			setShakerLeftPwm(0);
+//			digitalWrite(SHAKER_LEFT_PIN, HIGH);
 		}
 		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + "}");
 	}

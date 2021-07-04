@@ -171,7 +171,7 @@
 						}
 					}
 				}
-				xh.open("GET", '/json/shake/left/?val=' + document.getElementById("shaker-value").value, true);
+				xh.open("GET", '/json/shake/left?val=' + document.getElementById("shaker-value").value, true);
 				xh.send();
 			}
 			var shakeRightButton = document.getElementById("shake-right");
@@ -186,7 +186,7 @@
 						}
 					}
 				}
-				xh.open("GET", '/json/shake/right/?val=' + document.getElementById("shaker-value").value, true);
+				xh.open("GET", '/json/shake/right?val=' + document.getElementById("shaker-value").value, true);
 				xh.send();
 			}
 			var stopButton = document.getElementById("stop-button");
