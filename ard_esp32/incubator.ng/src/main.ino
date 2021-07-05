@@ -40,6 +40,10 @@ const int ROTARY_KEY = 32;
 const int ROTARY_S1 = 25;
 const int ROTARY_S2 = 27;
 
+#define FORCE_STOP_FAN
+#define FORCE_STOP_HEATER
+#define FORCE_STOP_SHAKER
+
 const int CLICKS_PER_STEP = 4;   // this number depends on your rotary encoder 
 
 #include "Button2.h"
@@ -345,7 +349,13 @@ void setHeaterPwm(int val)
 		old_heater_val = val;
 //		Serial.print("heater val:");
 //		Serial.println(val);
+#ifdef FORCE_STOP_HEATER
+Serial.println("Force stop heater");
+		digitalWrite(HEATER_PIN, LOW);
+//		setPwm(HEATER_PIN, 0);
+#else
 		setPwm(HEATER_PIN, val);
+#endif
 	}
 }
 
@@ -355,7 +365,13 @@ void setFanPwm(int val)
 	if(old_fan_val != val)
 	{
 		old_fan_val = val;
+#ifdef FORCE_STOP_FAN
+Serial.println("Force stop fan");
+		digitalWrite(FAN_PIN, HIGH);
+//		setPwm(FAN_PIN, 0);
+#else
 		setPwm(FAN_PIN, val);
+#endif
 	}
 }
 
@@ -369,8 +385,13 @@ Serial.println(val);
 		old_shaker_left_val = val;
 Serial.print("LEFT SET ");
 Serial.println(val);
-//		digitalWrite(SHAKER_LEFT_PIN, HIGH);
+#ifdef FORCE_STOP_SHAKER
+Serial.println("Force stop left shaker pin");
+		digitalWrite(SHAKER_LEFT_PIN, LOW);
+//		setPwm(SHAKER_LEFT_PIN, 0);
+#else
 		setPwm(SHAKER_LEFT_PIN, val);
+#endif
 	}
 }
 
@@ -384,8 +405,13 @@ Serial.println(val);
 		old_shaker_right_val = val;
 Serial.print("RIGHT SET ");
 Serial.println(val);
-//		digitalWrite(SHAKER_RIGHT_PIN, HIGH);
+#ifdef FORCE_STOP_SHAKER
+Serial.println("Force stop right shaker pin");
+		digitalWrite(SHAKER_RIGHT_PIN, LOW);
+//		setPwm(SHAKER_RIGHT_PIN, 0);
+#else
 		setPwm(SHAKER_RIGHT_PIN, val);
+#endif
 	}
 }
 
@@ -630,7 +656,7 @@ void callbackJSON(AsyncWebServerRequest *request)
 			setShakerLeftPwm(val);
 			setShakerRightPwm(0);
 		}
-		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + "}");
+		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + ", \"shaker_dir\": -1}");
 	} else if (request->url() == "/json/shake/right") {
 		int val;
 		if(request->hasParam(VALUE_PARAM)) {
@@ -639,7 +665,11 @@ void callbackJSON(AsyncWebServerRequest *request)
 			setShakerLeftPwm(0);
 //			digitalWrite(SHAKER_LEFT_PIN, HIGH);
 		}
-		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + "}");
+		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + ", \"shaker_dir\": 1}");
+	} else if (request->url() == "/json/shake/stop") {
+		setShakerLeftPwm(0);
+		setShakerRightPwm(0);
+		request->send(200, "text/json", "{\"shaker_value\": 0, \"shaker_dir\": 0}");
 	}
 }
 
