@@ -22,6 +22,10 @@
 #define BACKLIGHT_ON false
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
+//#define FORCE_STOP_FAN
+//#define FORCE_STOP_HEATER
+//#define FORCE_STOP_SHAKER
+
 #include <SI7021.h>
 SI7021 si;
 
@@ -31,7 +35,7 @@ BMP280 bmp;
 #define VERSION "0.6b"
 
 const int HEATER_PIN = 26;
-const int FAN_PIN = 35;
+const int FAN_PIN = 5;
 const int SHAKER_LEFT_PIN = 19;
 const int SHAKER_RIGHT_PIN = 23;
 const int LED_PIN = 2; // esp32 mini
@@ -39,10 +43,6 @@ const int LED_PIN = 2; // esp32 mini
 const int ROTARY_KEY = 32;
 const int ROTARY_S1 = 25;
 const int ROTARY_S2 = 27;
-
-#define FORCE_STOP_FAN
-#define FORCE_STOP_HEATER
-#define FORCE_STOP_SHAKER
 
 const int CLICKS_PER_STEP = 4;   // this number depends on your rotary encoder 
 
@@ -54,6 +54,8 @@ Button2 button = Button2(ROTARY_KEY);
 // 80 - 8v
 int max_heat_pwm = 100;
 int max_fan_pwm = 70;
+
+int min_shaker_pwm = 70;
 
 struct pwm_map_t {
 	uint8_t chan;
@@ -349,11 +351,7 @@ void setHeaterPwm(int val)
 		old_heater_val = val;
 //		Serial.print("heater val:");
 //		Serial.println(val);
-#ifdef FORCE_STOP_HEATER
-Serial.println("Force stop heater");
-		digitalWrite(HEATER_PIN, LOW);
-//		setPwm(HEATER_PIN, 0);
-#else
+#ifndef FORCE_STOP_HEATER
 		setPwm(HEATER_PIN, val);
 #endif
 	}
@@ -365,11 +363,7 @@ void setFanPwm(int val)
 	if(old_fan_val != val)
 	{
 		old_fan_val = val;
-#ifdef FORCE_STOP_FAN
-Serial.println("Force stop fan");
-		digitalWrite(FAN_PIN, HIGH);
-//		setPwm(FAN_PIN, 0);
-#else
+#ifndef FORCE_STOP_FAN
 		setPwm(FAN_PIN, val);
 #endif
 	}
@@ -385,12 +379,8 @@ Serial.println(val);
 		old_shaker_left_val = val;
 Serial.print("LEFT SET ");
 Serial.println(val);
-#ifdef FORCE_STOP_SHAKER
-Serial.println("Force stop left shaker pin");
-		digitalWrite(SHAKER_LEFT_PIN, LOW);
-//		setPwm(SHAKER_LEFT_PIN, 0);
-#else
-		setPwm(SHAKER_LEFT_PIN, val);
+#ifndef FORCE_STOP_SHAKER
+		setPwm(SHAKER_LEFT_PIN, val ? min_shaker_pwm + ::map(val, 0, 100, 0, 100 - min_shaker_pwm) : 0);
 #endif
 	}
 }
@@ -405,12 +395,8 @@ Serial.println(val);
 		old_shaker_right_val = val;
 Serial.print("RIGHT SET ");
 Serial.println(val);
-#ifdef FORCE_STOP_SHAKER
-Serial.println("Force stop right shaker pin");
-		digitalWrite(SHAKER_RIGHT_PIN, LOW);
-//		setPwm(SHAKER_RIGHT_PIN, 0);
-#else
-		setPwm(SHAKER_RIGHT_PIN, val);
+#ifndef FORCE_STOP_SHAKER
+		setPwm(SHAKER_RIGHT_PIN, val ? min_shaker_pwm + ::map(val, 0, 100, 0, 100 - min_shaker_pwm) : 0);
 #endif
 	}
 }
@@ -568,6 +554,10 @@ void setPwm(int pin, int val)
 	for(int i=0; i<sizeof(pwm_map)/sizeof(pwm_map[0]); i++) {
 		if(pwm_map[i].pin == pin) {
 			val = ::map(val, 0, 100, 0, 255);
+//			Serial.print("PWM ");
+//			Serial.print(pin);
+//			Serial.print(" = ");
+//			Serial.println(val);
 			ledcWrite(pwm_map[i].chan, val);
 			break;
 		}
@@ -576,18 +566,40 @@ void setPwm(int pin, int val)
 
 void setupPwm()
 {
-	for(int i=0; i<sizeof(pwm_map)/sizeof(pwm_map[0]); i++) {
-		ledcAttachPin(pwm_map[i].pin, pwm_map[i].chan);
-		ledcSetup(pwm_map[i].chan, 12000, 8); // 12 kHz PWM, 8-bit resolution 
-	}
+#ifdef FORCE_STOP_HEATER
+	Serial.println("Force stop heater");
 	pinMode(HEATER_PIN, OUTPUT);
+	digitalWrite(HEATER_PIN, LOW);
+#else
+	ledcAttachPin(HEATER_PIN, 0);
+	ledcSetup(0, 12000, 8); // 12 kHz PWM, 8-bit resolution 
+	setHeaterPwm(0);
+#endif
+#ifdef FORCE_STOP_FAN
+	Serial.println("Force stop fan");
 	pinMode(FAN_PIN, OUTPUT);
+	digitalWrite(FAN_PIN, LOW);
+#else
+	ledcAttachPin(FAN_PIN, 1);
+	ledcSetup(1, 12000, 8); // 12 kHz PWM, 8-bit resolution 
+	setFanPwm(0);
+#endif
+#ifdef FORCE_STOP_SHAKER
+	Serial.println("Force stop shaker");
 	pinMode(SHAKER_LEFT_PIN, OUTPUT);
 	pinMode(SHAKER_RIGHT_PIN, OUTPUT);
-	setHeaterPwm(0);
-	setFanPwm(0);
+	digitalWrite(SHAKER_LEFT_PIN, LOW);
+	digitalWrite(SHAKER_RIGHT_PIN, LOW);
+#else
+	ledcAttachPin(SHAKER_LEFT_PIN, 2);
+	ledcSetup(2, 12000, 8); // 12 kHz PWM, 8-bit resolution 
+	ledcAttachPin(SHAKER_RIGHT_PIN, 3);
+	ledcSetup(3, 12000, 8); // 12 kHz PWM, 8-bit resolution 
 	setShakerRightPwm(0);
 	setShakerLeftPwm(0);
+#endif
+	ledcAttachPin(LED_PIN, 4);
+	ledcSetup(4, 12000, 8); // 12 kHz PWM, 8-bit resolution 
 }
 
 Task measurement_timer(100, TASK_FOREVER, &measurement);
@@ -686,9 +698,6 @@ void setup()
 	Serial.setDebugOutput(true);
 	Serial.println();
 	Serial.println("Incubator...");
-
-//	pinMode(LED_PIN, OUTPUT);
-//	digitalWrite(LED_PIN, HIGH); // turn on
 
 	setupPwm();
 

@@ -201,7 +201,7 @@
 						}
 					}
 				}
-				xh.open("GET", '/json/shake/stop, true);
+				xh.open("GET", '/json/shake/stop', true);
 				xh.send();
 			}
 			var stopButton = document.getElementById("stop-button");
@@ -424,23 +424,23 @@
 				<div id="chart"></div>
 			</td>
 		</tr>
+	</table>
+	<table>
 		<tr>
-			<td rowspan="2">
+			<td>
 				Shaker
 			</td>
-			<td rowspan="2">
-				<button id="shake-left">&circlearrowleft;</button>
+			<td>
+				<button id="shake-stop" title="Stop shaker">&#9209;</button>
 			</td>
 			<td>
-				<input type="range" id="shaker-value" min="0" max="100"></input>
+				<button id="shake-left" title="Shaker anticlockwise">&circlearrowleft;</button>
 			</td>
-			<td rowspan="2">
-				<button id="shake-right">&circlearrowright;</button>
-			</td>
-		</tr>
-		<tr>
 			<td>
-				<button id="shake-stop">&#9209;</button>
+				<button id="shake-right" title="Shaker clockwise">&circlearrowright;</button>
+			</td>
+			<td>
+				<input type="range" id="shaker-value" min="0" max="100" value="0"></input>
 			</td>
 		</tr>
 	</table>
