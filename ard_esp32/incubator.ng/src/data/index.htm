@@ -189,6 +189,21 @@
 				xh.open("GET", '/json/shake/right?val=' + document.getElementById("shaker-value").value, true);
 				xh.send();
 			}
+			var shakeStopButton = document.getElementById("shake-stop");
+			shakeStopButton.onclick = function(e){
+				var xh = new XMLHttpRequest();
+				xh.onreadystatechange = function() {
+					if (xh.readyState == 4){
+						if(xh.status == 200) {
+							document.getElementById("shaker-value").classList.remove('error')
+						} else {
+							document.getElementById("shaker-value").classList.add('error')
+						}
+					}
+				}
+				xh.open("GET", '/json/shake/stop, true);
+				xh.send();
+			}
 			var stopButton = document.getElementById("stop-button");
 			stopButton.onclick = function(e){
 				running = false;
@@ -410,17 +425,22 @@
 			</td>
 		</tr>
 		<tr>
-			<td>
+			<td rowspan="2">
 				Shaker
 			</td>
-			<td>
+			<td rowspan="2">
 				<button id="shake-left">&circlearrowleft;</button>
 			</td>
 			<td>
 				<input type="range" id="shaker-value" min="0" max="100"></input>
 			</td>
-			<td>
+			<td rowspan="2">
 				<button id="shake-right">&circlearrowright;</button>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<button id="shake-stop">&#9209;</button>
 			</td>
 		</tr>
 	</table>
