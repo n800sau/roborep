@@ -13,6 +13,7 @@
 #include <FSWebServerLib.h>
 #include <Hash.h>
 #include <ETH.h>
+#include <esp_wifi.h>
 
 #include <TaskScheduler.h>
 
@@ -26,8 +27,21 @@ LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars a
 //#define FORCE_STOP_HEATER
 //#define FORCE_STOP_SHAKER
 
+#define USE_AHT10
+//#define USE_SI7021
+
+//#include <Adafruit_AHTX0.h>
+//Adafruit_AHTX0 aht;
+
+#ifdef USE_AHT10
+#include <AHT10.h>
+AHT10 myAHT10(AHT10_ADDRESS_0X38);
+#endif
+
+#ifdef USE_SI7021
 #include <SI7021.h>
 SI7021 si;
+#endif
 
 #include "BMP280.h"
 BMP280 bmp;
@@ -89,6 +103,7 @@ PID heaterPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 const int UNKNOWN_TEMP = -10000;
 float temp = UNKNOWN_TEMP;
 float secondary_temp = 0;
+float secondary_humidity = 0;
 
 #define HISTORY_SIZE 100
 int history_count = 0;
@@ -294,11 +309,14 @@ void display_wifi()
 {
 	lcd.clear();
 	lcd.home();
-	const char* const modes[] = { "NULL", "STA", "AP", "STA+AP" };
+	const char* const modes[] = { "NULL", "STA", "AP", "STA+AP", "MAX" };
 	lcd.print(WiFi.SSID());
 	lcd.setCursor(0, 1);
 	lcd.print("Mode: ");
-//	lcd.print(modes[wifi_get_opmode()]);
+	wifi_mode_t mode;
+	if(esp_wifi_get_mode(&mode) == ESP_OK) {
+		lcd.print(modes[mode]);
+	}
 }
 
 void display_state()
@@ -336,11 +354,10 @@ void print_status()
 		Serial.print(temp);
 		Serial.print(F(" > "));
 		Serial.print(target);
-		Serial.print(", Humidity: ");
-//		Serial.println(am2320.getHumidity());
-		Serial.print(si.getHumidityPercent());
 		Serial.print(", Top temp:");
 		Serial.println(secondary_temp);
+		Serial.print(", Top humidity:");
+		Serial.println(secondary_humidity);
 	}
 }
 
@@ -449,20 +466,29 @@ float read_primary_temp()
 	return rs;
 }
 
-float read_secondary_temp()
+void read_secondary_temp()
 {
-	float rs = 0;
+#ifdef USE_SI7021
 	static bool si_found = true;
 	if(si.sensorExists()) {
 		si_found = true;
-		rs = si.getCelsiusHundredths()/100.;
+		secondary_temp = si.getCelsiusHundredths()/100.;
 	} else {
 		if(si_found) {
 			Serial.println("SI not found");
 			si_found = false;
 		}
 	}
-	return rs;
+	secondary_humidity = si.getHumidityPercent();
+#endif // USE_SI7021
+//	sensors_event_t humidity, temp;
+//	aht.getEvent(&humidity, &temp);// populate temp and humidity objects with fresh data
+//	secondary_temp = temp.temperature;
+//	secondary_humidity = humidity.relative_humidity;
+#ifdef USE_AHT10
+	secondary_temp = myAHT10.readTemperature();
+	secondary_humidity = myAHT10.readHumidity();
+#endif
 }
 
 void measurement()
@@ -478,7 +504,7 @@ void measurement()
 		setHeaterPwm(0);
 		setFanPwm(max_fan_pwm/2);
 	}
-	secondary_temp = read_secondary_temp();
+	read_secondary_temp();
 }
 
 void history_collector()
@@ -662,7 +688,7 @@ void callbackJSON(AsyncWebServerRequest *request)
 		initial_millis = millis();
 		request->send(200, "text/json", "{\"timer_value\": 0}");
 	} else if (request->url() == "/json/shake/left") {
-		int val;
+		int val=0;
 		if(request->hasParam(VALUE_PARAM)) {
 			val = String(request->getParam(VALUE_PARAM)->value()).toInt();
 			setShakerLeftPwm(val);
@@ -670,7 +696,7 @@ void callbackJSON(AsyncWebServerRequest *request)
 		}
 		request->send(200, "text/json", "{\"shaker_value\": " + String(val) + ", \"shaker_dir\": -1}");
 	} else if (request->url() == "/json/shake/right") {
-		int val;
+		int val=0;
 		if(request->hasParam(VALUE_PARAM)) {
 			val = String(request->getParam(VALUE_PARAM)->value()).toInt();
 			setShakerRightPwm(val);
@@ -710,7 +736,28 @@ void setup()
 	button.setLongClickTime(1000);
 	button.setLongClickHandler(resetPosition);
 
+	Wire.begin();
+	Wire.setClock(100000);
+
+//	if (! aht.begin()) {
+//		Serial.println("Could not find AHT10? Check wiring");
+//	} else {
+//		Serial.println("AHT10 found");
+//	}
+
+#ifdef USE_SI7021
 	si.begin();
+#endif // USE_SI7021
+
+#ifdef USE_AHT10
+	if(myAHT10.begin() != true)
+	{
+		Serial.println("AHT10 not connected or fail to load calibration coefficient");
+	} else {
+		Serial.println("AHT10 found");
+	}
+#endif // USE_AHT10
+
 	if(!bmp.begin())
 	{
 		Serial.println("BMP init failed!");
