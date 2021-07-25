@@ -216,8 +216,8 @@
 //			digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
 			target = createGraph(document.getElementById("target"), "Temp to set", 100, 146, 0, 60, true, "orange");
 			heater = createGraph(document.getElementById("heater"), "heater", 100, 128, 0, 100, false, "cyan");
-			temp = createGraph(document.getElementById("temp"), "Si7120", 100, 146, 0, 80, false, "blue");
-			secondary_temp = createGraph(document.getElementById("secondary-temp"), "BMP280", 100, 146, 0, 80, false, "green");
+			temp = createGraph(document.getElementById("temp"), "Bottom sensor", 100, 146, 0, 80, false, "blue");
+			secondary_temp = createGraph(document.getElementById("secondary-temp"), "Top sensor", 100, 146, 0, 80, false, "green");
 
 			var opts = {};
 			['temp', 'heater', 'target', 'secondary_temp'].forEach(function(nm) {

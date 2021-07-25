@@ -9,8 +9,10 @@ source vars.sh
 
 #python3 "/home/n800s/.platformio/packages/tool-esptoolpy/esptool.py" --chip esp8266 --port "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0" --baud 115200 write_flash 0x0 .pio/build/esp/firmware.bin
 
-platformio run -t upload -e esp --upload-port $DEV &>upload.log
+#platformio run -t upload -e esp --upload-port $DEV &>upload.log
 #platformio run -t upload -e esp --upload-port $DEV
+platformio run -t upload -e esp --upload-port 192.168.1.165
+
 #~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp8266 --port $DEV erase_flash
 echo $?
 

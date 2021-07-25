@@ -112,6 +112,11 @@ uint8_t heater_history[HISTORY_SIZE];
 uint8_t target_history[HISTORY_SIZE];
 uint8_t secondary_temp_history[HISTORY_SIZE];
 
+// display reinitialization counter
+// reinitializing counter
+const int reinit_counter_max = 10;
+int reinit_counter = 0;
+
 
 //#include <RemoteDebug.h>
 //RemoteDebug Debug;
@@ -275,6 +280,7 @@ void resetPosition(Button2& btn)
 	}
 }
 
+
 void update_display()
 {
 	switch(dmode) {
@@ -321,6 +327,11 @@ void display_wifi()
 
 void display_state()
 {
+	if(++reinit_counter > reinit_counter_max) {
+		Serial.println("Reinitializing...");
+		lcd.initialize();
+		reinit_counter = 0;
+	}
 	if(dmode == DM_STATE) {
 		lcd.home();
 		if(temp == UNKNOWN_TEMP) {
@@ -355,7 +366,7 @@ void print_status()
 		Serial.print(F(" > "));
 		Serial.print(target);
 		Serial.print(", Top temp:");
-		Serial.println(secondary_temp);
+		Serial.print(secondary_temp);
 		Serial.print(", Top humidity:");
 		Serial.println(secondary_humidity);
 	}
@@ -389,13 +400,13 @@ void setFanPwm(int val)
 int old_shaker_left_val = -1;
 void setShakerLeftPwm(int val)
 {
-Serial.print("LEFT ABOUT TO SET ");
-Serial.println(val);
+//Serial.print("LEFT ABOUT TO SET ");
+//Serial.println(val);
 	if(old_shaker_left_val != val)
 	{
 		old_shaker_left_val = val;
-Serial.print("LEFT SET ");
-Serial.println(val);
+//Serial.print("LEFT SET ");
+//Serial.println(val);
 #ifndef FORCE_STOP_SHAKER
 		setPwm(SHAKER_LEFT_PIN, val ? min_shaker_pwm + ::map(val, 0, 100, 0, 100 - min_shaker_pwm) : 0);
 #endif
@@ -405,13 +416,13 @@ Serial.println(val);
 int old_shaker_right_val = -1;
 void setShakerRightPwm(int val)
 {
-Serial.print("RIGHT ABOUT TO SET ");
-Serial.println(val);
+//Serial.print("RIGHT ABOUT TO SET ");
+//Serial.println(val);
 	if(old_shaker_right_val != val)
 	{
 		old_shaker_right_val = val;
-Serial.print("RIGHT SET ");
-Serial.println(val);
+//Serial.print("RIGHT SET ");
+//Serial.println(val);
 #ifndef FORCE_STOP_SHAKER
 		setPwm(SHAKER_RIGHT_PIN, val ? min_shaker_pwm + ::map(val, 0, 100, 0, 100 - min_shaker_pwm) : 0);
 #endif
@@ -815,13 +826,6 @@ void setup()
 	history_timer.enable();
 	read_and_update_config.enable();
 
-//	Debug.begin(ETH.getHostname());
-//	Debug.setResetCmdEnabled(true); // Enable the reset command
-//	Debug.showProfiler(true); // Profiler (Good to measure times, to optimize codes)
-//	Debug.showColors(true); // Colors
-
-//	Serial.println("* Arduino RemoteDebug Library");
-//	Serial.println("*");
 	Serial.print("* WiFI connected. IP address: ");
 	Serial.print(WiFi.localIP());
 	Serial.print(", Hostname: ");
@@ -838,7 +842,6 @@ void loop()
 
 	runner.execute();
 	// DO NOT REMOVE. Attend OTA update from Arduino IDE
-//	ESPHTTPServer.handle();
-//	Debug.handle();
-//	yield();
+	ESPHTTPServer.handle();
+	yield();
 }
