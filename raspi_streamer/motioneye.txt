@@ -1,0 +1,9 @@
+https://github.com/ccrisan/motioneye/wiki/Installation
+
+Remark: slow
+
+systemctl enable motioneye
+service motioneye start
+http://<host>:8765/
+
+systemctl disable motioneye
