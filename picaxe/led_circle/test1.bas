@@ -1,9 +1,10 @@
 ' 19 steps only
 SYMBOL LED_COUNT = 20
 SYMBOL LED_BLOCK_SIZE = 5
+SYMBOL LED_BLOCK_COUNT = LED_COUNT / LED_BLOCK_SIZE
 SYMBOL LED_PIN_COUNT = 5
 SYMBOL PWM_PIN_COUNT = 4
-SYMBOL TICK_PAUSE = 50
+SYMBOL TICK_PAUSE = 100
 
 SYMBOL LED_STATE = b1
 SYMBOL ADDR = b2
@@ -15,7 +16,8 @@ SYMBOL LED_PIN_INDEX = b8
 SYMBOL ACC = b9
 SYMBOL ACC_ITEM = b10
 SYMBOL I = b11
-SYMBOL PWM_DUTY = w6
+SYMBOL J = b12
+SYMBOL PWM_DUTY = w7
 
 SYMBOL LED_PIN_BASE = 0
 SYMBOL LED_PIN_END = LED_PIN_BASE + LED_PIN_COUNT
@@ -46,6 +48,41 @@ main:
 	loop
 
 again:
+	let LED_INDEX = 0
+	do while LED_INDEX < LED_COUNT
+		for J=1 to LED_BLOCK_SIZE
+			let LED_STATE = 1
+			for I=1 to J
+				gosub set_led
+				pause TICK_PAUSE
+				inc LED_INDEX
+			next I
+			let LED_INDEX = LED_INDEX - J
+			let LED_STATE = 0
+			for I=1 to J
+				gosub set_led
+				pause TICK_PAUSE
+				inc LED_INDEX
+			next I
+			let LED_INDEX = LED_INDEX - 1
+			let LED_STATE = 1
+			for I=1 to J
+				gosub set_led
+				pause TICK_PAUSE
+				dec LED_INDEX
+			next I
+			let LED_INDEX = LED_INDEX + J
+			let LED_STATE = 0
+			for I=1 to J
+				gosub set_led
+				pause TICK_PAUSE
+				dec LED_INDEX
+			next I
+			let LED_INDEX = LED_INDEX + 1
+		next J
+		let LED_INDEX = LED_INDEX + LED_BLOCK_SIZE
+	loop
+'	goto again
 	let LED_INDEX = 1
 	do while LED_INDEX < LED_COUNT
 		for I=0 to 3
