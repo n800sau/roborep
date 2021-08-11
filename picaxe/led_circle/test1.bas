@@ -1,10 +1,15 @@
+#picaxe 20m2
+
+setfreq m16
+'setfreq m4
+
 ' 19 steps only
 SYMBOL LED_COUNT = 20
 SYMBOL LED_BLOCK_SIZE = 5
 SYMBOL LED_BLOCK_COUNT = LED_COUNT / LED_BLOCK_SIZE
 SYMBOL LED_PIN_COUNT = 5
 SYMBOL PWM_PIN_COUNT = 4
-SYMBOL TICK_PAUSE = 100
+SYMBOL TICK_PAUSE = 400
 
 SYMBOL LED_STATE = b1
 SYMBOL ADDR = b2
@@ -17,6 +22,7 @@ SYMBOL ACC = b9
 SYMBOL ACC_ITEM = b10
 SYMBOL I = b11
 SYMBOL J = b12
+SYMBOL K = b13
 SYMBOL PWM_DUTY = w7
 
 SYMBOL LED_PIN_BASE = 0
@@ -52,30 +58,31 @@ again:
 	do while LED_INDEX < LED_COUNT
 		for J=1 to LED_BLOCK_SIZE
 			let LED_STATE = 1
+			let K = TICK_PAUSE / J
 			for I=1 to J
 				gosub set_led
-				pause TICK_PAUSE
+				pause K
 				inc LED_INDEX
 			next I
 			let LED_INDEX = LED_INDEX - J
 			let LED_STATE = 0
 			for I=1 to J
 				gosub set_led
-				pause TICK_PAUSE
+				pause K
 				inc LED_INDEX
 			next I
 			let LED_INDEX = LED_INDEX - 1
 			let LED_STATE = 1
 			for I=1 to J
 				gosub set_led
-				pause TICK_PAUSE
+				pause K
 				dec LED_INDEX
 			next I
 			let LED_INDEX = LED_INDEX + J
 			let LED_STATE = 0
 			for I=1 to J
 				gosub set_led
-				pause TICK_PAUSE
+				pause K
 				dec LED_INDEX
 			next I
 			let LED_INDEX = LED_INDEX + 1
