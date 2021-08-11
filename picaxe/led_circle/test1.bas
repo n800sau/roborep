@@ -1,8 +1,11 @@
+' 19 steps only
+SYMBOL LED_COUNT = 20
 SYMBOL LED_BLOCK_SIZE = 5
 SYMBOL LED_PIN_COUNT = 5
 SYMBOL PWM_PIN_COUNT = 4
-SYMBOL TICK_PAUSE = 20
+SYMBOL TICK_PAUSE = 50
 
+SYMBOL LED_STATE = b1
 SYMBOL ADDR = b2
 SYMBOL IO_REF = b4
 SYMBOL PWM_REF = b5
@@ -11,6 +14,7 @@ SYMBOL PWM_PIN_INDEX = b7
 SYMBOL LED_PIN_INDEX = b8
 SYMBOL ACC = b9
 SYMBOL ACC_ITEM = b10
+SYMBOL I = b11
 SYMBOL PWM_DUTY = w6
 
 SYMBOL LED_PIN_BASE = 0
@@ -42,37 +46,34 @@ main:
 	loop
 
 again:
-	let PWM_PIN_INDEX = 0
-	do while PWM_PIN_INDEX < PWM_PIN_COUNT
-'sertxd("PWM PIN INDEX:",#PWM_PIN_INDEX, CR, LF)
-		let LED_INDEX = 0
-		do while LED_INDEX < LED_BLOCK_SIZE
-			gosub turn_on
+	let LED_INDEX = 1
+	do while LED_INDEX < LED_COUNT
+		for I=0 to 3
+			let LED_STATE = 1
+			gosub set_led
 			pause TICK_PAUSE
-			inc LED_INDEX
-		loop
-		let LED_INDEX = 0
-		do while LED_INDEX < LED_BLOCK_SIZE
+			let LED_STATE = 0
+			gosub set_led
+			dec LED_INDEX
+			let LED_STATE = 1
+			gosub set_led
 			pause TICK_PAUSE
-			gosub turn_off
+			let LED_STATE = 0
+			gosub set_led
 			inc LED_INDEX
-		loop
-		inc PWM_PIN_INDEX
+		next I
+		inc LED_INDEX
 	loop
 '	gosub play_tune
 	goto again
 
-turn_on:
-	let ADDR = LED_ARRAY_BASE+LED_INDEX
+set_led:
+	let ADDR = LED_INDEX % LED_BLOCK_SIZE
+	let ADDR = ADDR + LED_ARRAY_BASE
+	let PWM_PIN_INDEX = LED_INDEX / LED_BLOCK_SIZE
+'sertxd("PWM PIN INDEX:",#PWM_PIN_INDEX, CR, LF)
 'sertxd ("SET ADDR:",#ADDR, CR, LF)
-	write ADDR, 1
-	gosub update_leds
-	return
-
-turn_off:
-	let ADDR = LED_ARRAY_BASE+LED_INDEX
-'sertxd ("UNSET ADDR:",#ADDR, CR, LF)
-	write ADDR, 0
+	write ADDR, LED_STATE
 	gosub update_leds
 	return
 
