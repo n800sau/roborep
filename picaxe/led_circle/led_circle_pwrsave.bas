@@ -24,6 +24,7 @@ SYMBOL I = b11
 SYMBOL J = b12
 SYMBOL K = b13
 SYMBOL PWM_DUTY = w7
+SYMBOL TIMEVAL = w8
 
 SYMBOL LED_PIN_BASE = 0
 SYMBOL LED_PIN_END = LED_PIN_BASE + LED_PIN_COUNT
@@ -31,12 +32,34 @@ SYMBOL PWM_PIN_BASE = 10
 SYMBOL PWM_PIN_END = PWM_PIN_BASE + PWM_PIN_COUNT
 SYMBOL LED_ARRAY_BASE = 15
 
-main:
+SYMBOL BTN = pinC.6
+
+
 ' led pins
-	eeprom LED_PIN_BASE,(C.1, C.0, B.7, B.6, B.5)
+eeprom LED_PIN_BASE,(C.1, C.0, B.7, B.6, B.5)
 ' pwm pins
-	eeprom PWM_PIN_BASE,(C.5, B.1, C.2, C.3)
+eeprom PWM_PIN_BASE,(C.5, B.1, C.2, C.3)
 ' led_states cleaned on start
+gosub reset_leds
+	pullup %0100000000000000 ' C.6 - pullup
+
+main:
+	if BTN = 0 then
+sertxd("BTN == 0",CR, LF)
+		let TIMEVAL = 0
+		gosub run_timer
+		gosub play_tune
+		gosub reset_leds
+	else
+sertxd("BTN == 1",CR, LF)
+	endif
+' sleep consumption 0.07
+	disablebod
+	sleep 1
+	enablebod
+	goto main
+
+reset_leds:
 ' turn off pins
 	let ADDR = LED_PIN_BASE
 	do while ADDR < LED_PIN_END
@@ -52,8 +75,9 @@ main:
 		high PWM_REF
 		inc ADDR
 	loop
+	return
 
-again:
+run_timer:
 	let LED_INDEX = 0
 	do while LED_INDEX < LED_COUNT
 		for J=1 to LED_BLOCK_SIZE
@@ -89,8 +113,7 @@ again:
 		next J
 		let LED_INDEX = LED_INDEX + LED_BLOCK_SIZE
 	loop
-'	gosub play_tune
-	goto again
+	return
 	let LED_INDEX = 1
 	do while LED_INDEX < LED_COUNT
 		for I=0 to 3
@@ -109,8 +132,7 @@ again:
 		next I
 		inc LED_INDEX
 	loop
-'	gosub play_tune
-	goto again
+	return
 
 set_led:
 	let ADDR = LED_INDEX % LED_BLOCK_SIZE
@@ -123,7 +145,6 @@ set_led:
 	return
 
 update_leds:
-'	gosub play_tune
 	let ACC = 0
 	let LED_PIN_INDEX = 0
 	do while LED_PIN_INDEX < LED_PIN_COUNT
