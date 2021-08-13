@@ -9,7 +9,6 @@ SYMBOL LED_BLOCK_SIZE = 5
 SYMBOL LED_BLOCK_COUNT = LED_COUNT / LED_BLOCK_SIZE
 SYMBOL LED_PIN_COUNT = 5
 SYMBOL PWM_PIN_COUNT = 4
-SYMBOL TICK_PAUSE = 400
 
 SYMBOL LED_STATE = b1
 SYMBOL ADDR = b2
@@ -22,9 +21,12 @@ SYMBOL ACC = b9
 SYMBOL ACC_ITEM = b10
 SYMBOL I = b11
 SYMBOL J = b12
-SYMBOL K = b13
-SYMBOL PWM_DUTY = w7
-SYMBOL TIMEVAL = w8
+SYMBOL L = b13
+SYMBOL J1 = b14
+SYMBOL PWM_DUTY = w8
+SYMBOL TIMEVAL = w9
+SYMBOL K = w10
+SYMBOL REAL_TIME = w11
 
 SYMBOL LED_PIN_BASE = 0
 SYMBOL LED_PIN_END = LED_PIN_BASE + LED_PIN_COUNT
@@ -34,6 +36,17 @@ SYMBOL LED_ARRAY_BASE = 15
 
 SYMBOL BTN = pinC.6
 
+' 2 min
+' depends on frequency 120000 * (16mHz/4mHz) = 480000
+symbol REPEAT_COUNT = 10
+symbol STAGE_SIZE = REPEAT_COUNT * LED_BLOCK_SIZE
+symbol NUM_OF_STAGES = 4 * STAGE_SIZE
+' millis
+
+' 16 MHz (120 - 37) * 4000 = 332000
+symbol TICK_PAUSE = 332000 / NUM_OF_STAGES
+' 4 MHz (120) * 1000 = 120000
+'symbol TICK_PAUSE = 120000 / NUM_OF_STAGES
 
 ' led pins
 eeprom LED_PIN_BASE,(C.1, C.0, B.7, B.6, B.5)
@@ -44,14 +57,17 @@ gosub reset_leds
 	pullup %0100000000000000 ' C.6 - pullup
 
 main:
+'sertxd("TICK_PAUSE = ", #TICK_PAUSE, " START", CR, LF)
+'	pause TICK_PAUSE
+'sertxd("TICK_PAUSE END", CR, LF)
 	if BTN = 0 then
-sertxd("BTN == 0",CR, LF)
+'sertxd("BTN == 0",CR, LF)
 		let TIMEVAL = 0
 		gosub run_timer
-		gosub play_tune
 		gosub reset_leds
+		gosub play_tune
 	else
-sertxd("BTN == 1",CR, LF)
+'sertxd("BTN == 1",CR, LF)
 	endif
 ' sleep consumption 0.07
 	disablebod
@@ -64,7 +80,7 @@ reset_leds:
 	let ADDR = LED_PIN_BASE
 	do while ADDR < LED_PIN_END
 		read ADDR, IO_REF
-		low IO_REF
+		high IO_REF
 		inc ADDR
 	loop
 ' turn off pwm
@@ -78,42 +94,66 @@ reset_leds:
 	return
 
 run_timer:
+	let REAL_TIME = time + 120
 	let LED_INDEX = 0
 	do while LED_INDEX < LED_COUNT
 		for J=1 to LED_BLOCK_SIZE
-			let LED_STATE = 1
-			let K = TICK_PAUSE / J
-			for I=1 to J
-				gosub set_led
-				pause K
-				inc LED_INDEX
-			next I
-			let LED_INDEX = LED_INDEX - J
-			let LED_STATE = 0
-			for I=1 to J
-				gosub set_led
-				pause K
-				inc LED_INDEX
-			next I
-			let LED_INDEX = LED_INDEX - 1
-			let LED_STATE = 1
-			for I=1 to J
-				gosub set_led
-				pause K
+			if J = 1 then
+				J1 = 1
+			else
+				' led off except the last in the block
+				J1 = 2
+			endif
+			let K = J + J - J1 + 1 + J - J1 + 1 + J
+	sertxd("J SUM=", #K, CR, LF)
+			let K = TICK_PAUSE / K
+	sertxd(#TICK_PAUSE, ",", #J, "=>", #K, CR, LF)
+			for L=1 to REPEAT_COUNT
+				let LED_STATE = 1
+				' led on
+				for I=1 to J
+					gosub set_led
+					inc LED_INDEX
+					pause K
+				next I
+				let LED_INDEX = LED_INDEX - J
+				let LED_STATE = 0
+				for I=J1 to J
+					gosub set_led
+					inc LED_INDEX
+					pause K
+				next I
 				dec LED_INDEX
-			next I
-			let LED_INDEX = LED_INDEX + J
-			let LED_STATE = 0
-			for I=1 to J
-				gosub set_led
-				pause K
-				dec LED_INDEX
-			next I
-			let LED_INDEX = LED_INDEX + 1
+				let LED_STATE = 1
+				' led on, reversed from the second
+				for I=J1 to J
+					gosub set_led
+					dec LED_INDEX
+					pause K
+				next I
+				let LED_INDEX = LED_INDEX + J
+				let LED_STATE = 0
+				' led off
+				for I=1 to J
+					gosub set_led
+					dec LED_INDEX
+					pause K
+				next I
+				inc LED_INDEX
+			next L
 		next J
 		let LED_INDEX = LED_INDEX + LED_BLOCK_SIZE
 	loop
+	if REAL_TIME > time then
+		let REAL_TIME = REAL_TIME - time
+		sertxd("TIMER ENDS ", #REAL_TIME, " seconds ealier", CR, LF)
+	else
+		let REAL_TIME = time - REAL_TIME
+		sertxd("TIMER ENDS ", #REAL_TIME, " seconds later", CR, LF)
+	end if
 	return
+
+run_timer_1:
 	let LED_INDEX = 1
 	do while LED_INDEX < LED_COUNT
 		for I=0 to 3
@@ -135,6 +175,7 @@ run_timer:
 	return
 
 set_led:
+'sertxd ("LED_INDEX:",#LED_INDEX, " STATE:", #LED_STATE, CR, LF)
 	let ADDR = LED_INDEX % LED_BLOCK_SIZE
 	let ADDR = ADDR + LED_ARRAY_BASE
 	let PWM_PIN_INDEX = LED_INDEX / LED_BLOCK_SIZE
