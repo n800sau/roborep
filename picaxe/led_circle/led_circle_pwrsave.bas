@@ -48,13 +48,20 @@ symbol TICK_PAUSE = 332000 / NUM_OF_STAGES
 ' 4 MHz (120) * 1000 = 120000
 'symbol TICK_PAUSE = 120000 / NUM_OF_STAGES
 
+symbol REPEAT_COUNT_1 = 10
+symbol STAGE_SIZE_1 = REPEAT_COUNT_1 * 2
+symbol NUM_OF_STAGES_1 = 19 * STAGE_SIZE_1
+
+' 16 MHz (120 - 23) * 4000 = 388000
+symbol TICK_PAUSE_1 = 388000 / NUM_OF_STAGES_1
+
 ' led pins
 eeprom LED_PIN_BASE,(C.1, C.0, B.7, B.6, B.5)
 ' pwm pins
 eeprom PWM_PIN_BASE,(C.5, B.1, C.2, C.3)
 ' led_states cleaned on start
 gosub reset_leds
-	pullup %0100000000000000 ' C.6 - pullup
+pullup %0100000000000000 ' C.6 - pullup
 
 main:
 'sertxd("TICK_PAUSE = ", #TICK_PAUSE, " START", CR, LF)
@@ -63,7 +70,7 @@ main:
 	if BTN = 0 then
 'sertxd("BTN == 0",CR, LF)
 		let TIMEVAL = 0
-		gosub run_timer
+		gosub run_timer_1
 		gosub reset_leds
 		gosub play_tune
 	else
@@ -144,6 +151,33 @@ run_timer:
 		next J
 		let LED_INDEX = LED_INDEX + LED_BLOCK_SIZE
 	loop
+	gosub check_time
+	return
+
+run_timer_1:
+	let REAL_TIME = time + 120
+	let LED_INDEX = 1
+	do while LED_INDEX < LED_COUNT
+		for I=0 to REPEAT_COUNT_1
+			let LED_STATE = 1
+			gosub set_led
+			pause TICK_PAUSE_1
+			let LED_STATE = 0
+			gosub set_led
+			dec LED_INDEX
+			let LED_STATE = 1
+			gosub set_led
+			pause TICK_PAUSE_1
+			let LED_STATE = 0
+			gosub set_led
+			inc LED_INDEX
+		next I
+		inc LED_INDEX
+	loop
+	gosub check_time
+	return
+
+check_time:
 	if REAL_TIME > time then
 		let REAL_TIME = REAL_TIME - time
 		sertxd("TIMER ENDS ", #REAL_TIME, " seconds ealier", CR, LF)
@@ -151,27 +185,6 @@ run_timer:
 		let REAL_TIME = time - REAL_TIME
 		sertxd("TIMER ENDS ", #REAL_TIME, " seconds later", CR, LF)
 	end if
-	return
-
-run_timer_1:
-	let LED_INDEX = 1
-	do while LED_INDEX < LED_COUNT
-		for I=0 to 3
-			let LED_STATE = 1
-			gosub set_led
-			pause TICK_PAUSE
-			let LED_STATE = 0
-			gosub set_led
-			dec LED_INDEX
-			let LED_STATE = 1
-			gosub set_led
-			pause TICK_PAUSE
-			let LED_STATE = 0
-			gosub set_led
-			inc LED_INDEX
-		next I
-		inc LED_INDEX
-	loop
 	return
 
 set_led:
@@ -218,3 +231,8 @@ update_leds:
 play_tune:
 	tune C.7, 7,($4C,$42,$43)
 	return 
+
+play_tune_1:
+	tune C.7, 7,($4C,$42,$43,$42,$43,$42,$43,$42,$43,$42,$42,$43,$44,$45,$46,$47,$47,$4C,$47,$4C,$4A,$4C,$40,$4C,$47,$4C,$47,$4C,$45,$4C,$46,$4C,$47,$4C,$47,$4C,$4A,$4C,$40,$4C,$47,$4C,$47,$4C,$45,$4C,$46,$4C,$4A,$47,$C2,$4C,$4A,$47,$C1,$4C,$4A,$47,$C0,$4C,$6A,$40)
+	return
+
