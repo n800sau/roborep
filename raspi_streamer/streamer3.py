@@ -24,6 +24,9 @@ def awb_gains_set(data):
 
 
 CAMERA_ATTRIBUTES = {
+	'annotate_text': {
+		'type': str
+	},
 	'brightness': {
 		'type': int
 	},
