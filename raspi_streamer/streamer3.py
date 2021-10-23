@@ -10,7 +10,8 @@ import redis
 import json
 
 REDIS_KEY = 'raspicam_settings'
-RESOLUTION = "1920x1080"
+#RESOLUTION = "1920x1080"
+RESOLUTION = "800x600"
 #RESOLUTION = '640x480'
 
 def awb_gains_get(val):
@@ -93,8 +94,10 @@ class StreamingOutput(object):
 						self.old_settings[k] = inf['type'](getattr(self.camera, k))
 				else:
 					self.old_settings[k] = getattr(self.camera, k)
-		print('old setttings', self.old_settings)
-		redis.Redis().set(REDIS_KEY,json.dumps(self.old_settings))
+#		print('old setttings', self.old_settings)
+		r = redis.Redis()
+		if not r.get(REDIS_KEY):
+			r.set(REDIS_KEY,json.dumps(self.old_settings))
 
 	def update_settings(self):
 		r = redis.Redis()
