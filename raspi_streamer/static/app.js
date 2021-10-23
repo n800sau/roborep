@@ -3,6 +3,16 @@ angular.module('myApp', ['ngMaterial'])
 
 		$scope.settings = [
 				{
+					s_id: 'annotate_text',
+					values: [
+						'4x | 0.1 mm|',
+						'10x |  0.05 mm|',
+						'40x |0.01mm|',
+						'60x |   10 mkm |',
+					],
+					stype: 'select',
+				},
+				{
 					s_id: 'brightness',
 					vmin: 0,
 					vmax: 100,
