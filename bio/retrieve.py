@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 from Bio.PDB import *
@@ -12,7 +12,7 @@ if os.path.exists(fname):
 
 	id_list = [v.strip() for v in open(fname).read().split()]
 
-	print id_list
+	print(id_list)
 	pdbl.download_pdb_files(id_list, pdir=".")
 
 	#parser = PDBParser()
