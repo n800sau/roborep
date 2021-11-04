@@ -116,9 +116,9 @@ module gp_connector() {
   }
 }
 
-//led_wheel_holder();
+led_wheel_holder();
 translate([0, 0, -20]) {
-  //switch_box();
+  switch_box();
 }
 
 translate([27, 2.5, 0]) {

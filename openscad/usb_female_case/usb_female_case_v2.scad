@@ -1,6 +1,6 @@
-show_top = true;
-show_bottom = true;
-show_vtulku = true;
+show_top = 0;
+show_bottom = 0;
+show_vtulku = 1;
 
 wall = 3;
 usb_width = 14;
