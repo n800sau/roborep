@@ -1,7 +1,0 @@
-arduino + uln2003 + vent + heater + dht22 + 12v
-
-uln2003
-+5 power
-+12 -> vent <- A <-CHIP<- IN1
-
-
