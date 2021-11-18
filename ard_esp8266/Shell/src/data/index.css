@@ -1,0 +1,34 @@
+body {
+	margin:0;
+	padding:0;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0 25px;
+  height: 50px;
+  font-size: 16px;
+  line-height: 50px;
+  border-radius: 25px;
+  background-color: #f1f1f1;
+}
+
+.chip img {
+  float: left;
+  margin: 0 10px 0 -25px;
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+}
+
+#status.error {
+	color: red;
+}
+
+#controls {
+	display: block;
+	border: 1px solid rgb(68, 68, 68);
+	padding: 5px;
+	margin: 5px;
+	background-color: rgb(238, 238, 238);
+}
