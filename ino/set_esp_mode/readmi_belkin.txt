@@ -1,0 +1,11 @@
+arduino side
+1  - +5v
+2  - GND
+3  - --- left pin - blue - tx
+4  - --- right pin - green - rx
+5  - D9
+6  - D10
+7  - +3.3v
+8  - GND
+9  - D11
+10 - D12
