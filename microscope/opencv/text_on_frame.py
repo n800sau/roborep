@@ -9,6 +9,10 @@ IFNAME = '/dev/video0'
 IFNAME = 'test.mp4'
 OSIZE = (640, 480)
 PREVIEW_SIZE = (960, 720)
+EXT = 'avi'
+#FORMAT = 'XVID'
+#FORMAT = 'VP90'
+FORMAT = 'MJPG'
 
 MAX_MODE = 4
 mode_labels = [
@@ -35,14 +39,16 @@ def capture(fname):
 	mode = 0
 	do_write = False
 
+	fps = 30
 #	vs = cv2.VideoCapture(fname)
 	vs = cv2.VideoCapture(0)
-	fps = vs.get(cv2.CAP_PROP_FPS)
+	vs.set(cv2.CAP_PROP_FPS, fps)
+	vs.set(cv2.CAP_PROP_FOURCC , cv2.VideoWriter_fourcc(*'MJPG'));
+#	fps = vs.get(cv2.CAP_PROP_FPS)
 
 	time.sleep(1.0)
 
-	#fourcc = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
-	fourcc = cv2.VideoWriter_fourcc(*'VP90')
+	fourcc = cv2.VideoWriter_fourcc(*FORMAT)
 	out = None
 
 	while True:
@@ -84,7 +90,7 @@ def capture(fname):
 					mode = 3
 			if do_write:
 				if out is None:
-					ofname = 'cap_{}.webm'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H_%M'))
+					ofname = 'cap_{}.{}'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H_%M'), EXT)
 					out = cv2.VideoWriter(ofname, fourcc, fps, OSIZE)
 					fcount = 0
 					tstart = time.time()
