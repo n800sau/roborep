@@ -334,7 +334,7 @@ time_t NTPClient::getTime () {
 
 }
 
-void dumpNTPPacket (byte *data, size_t length) {
+void dumpNTPPacket (uint8_t *data, size_t length) {
     //byte *data = packet.data ();
     //size_t length = packet.length ();
 
@@ -652,7 +652,7 @@ time_t NTPClient::getFirstSync () {
     return _firstSync;
 }
 
-bool NTPClient::summertime (int year, byte month, byte day, byte hour, byte weekday, byte tzHours)
+bool NTPClient::summertime (int year, uint8_t month, uint8_t day, uint8_t hour, uint8_t weekday, uint8_t tzHours)
 // input parameters: "normal time" for year, month, day, hour, weekday and tzHours (0=UTC, 1=MEZ)
 {
     if (DST_ZONE_EU == _dstZone) {
