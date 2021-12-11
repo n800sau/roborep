@@ -14,3 +14,9 @@ Section "Device"
   Option "fbdev" "/dev/fb1"
 EndSection
 
+mplayer -nolirc -vo fbdev2:/dev/fb0 -fs  "$1"
+
+mplayer -nolirc -vo fbdev2:/dev/fb1 -vf scale=320:-3
+
+mplayer -nolirc -vo fbdev2:/dev/fb1 -vf scale=320:-3 -vfm ffmpeg -lavdopts lowres=1:fast:skiploopfilter=all "$1"
+
