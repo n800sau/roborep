@@ -18,7 +18,7 @@ const char wifiInitialApPassword[] = "proniknovenie";
 #define CONFIG_FILE_NAME "config.json"
 
 // -- Configuration specific key. The value should be modified if config structure was changed.
-#define CONFIG_VERSION "mqt1"
+#define CONFIG_VERSION "mqt2"
 
 void handleRoot();
 void configSaved();
@@ -81,6 +81,10 @@ HADevice device;
 HAMqtt mqtt(client, device);
 HASwitch led("led", false); // "led" is unique ID of the switch. You should define your own ID.
 HASensor gas("gas"); // "gas" is unique ID of the sensor. You should define your own ID.
+
+// RCWL-0516
+#define MRM_PIN 5
+HABinarySensor mrm("RCWL-0516", "motion", false);
 
 void onBeforeSwitchStateChanged(bool state, HASwitch* s)
 {
@@ -155,6 +159,7 @@ void setup() {
 	iotWebConf.addParameterGroup(&sensorGroup);
 	iotWebConf.setConfigSavedCallback(&configSaved);
 	iotWebConf.setFormValidator(&formValidator);
+	iotWebConf.setWifiConnectionTimeoutMs(10000);
 
 	multipleWifiAddition.init();
 
@@ -186,6 +191,8 @@ void setup() {
 	gas.setIcon("mdi:home");
 	gas.setName("Home pollution");
 
+	mrm.setName("MRM sensor");
+
 	mqtt.begin(mqttServerValue, mqttUserNameValue, mqttUserPasswordValue);
 
 //	IPAddress broker_addr;
@@ -201,6 +208,7 @@ void setup() {
 
 unsigned long lastSentAt = millis();
 double lastValue = 0;
+bool lastMRM = false;
 
 void loop() {
 	// -- doLoop should be called as frequently as possible.
@@ -208,8 +216,11 @@ void loop() {
 	mqtt.loop();
 	if ((millis() - lastSentAt) >= 5000) {
 		lastSentAt = millis();
-		lastValue = lastValue + 0.5;
-		gas.setValue(lastValue + analogRead(A0));
+		lastValue = analogRead(A0);
+		gas.setValue(lastValue);
+		lastMRM = digitalRead(MRM_PIN);
+		Serial.println(lastMRM ? "Found": "Clear");
+		mrm.setState(lastMRM);
 
 		// Supported data types:
 		// uint32_t (uint16_t, uint8_t)
@@ -238,6 +249,8 @@ void handleRoot()
 	s += mqttServerValue;
 	s += "</ul>";
 	s += "Go to <a href='config'>configure page</a> to change values.";
+	s += "<br>Current val is " + String(lastValue);
+	s += "<br>Current mrm is " + String(lastMRM);
 	s += "</body></html>\n";
 
 	server.send(200, "text/html", s);
