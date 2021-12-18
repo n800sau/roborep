@@ -16,16 +16,21 @@ ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5)
 for i in range(5):
 	if ser.readline().strip() == 'Ready':
 
-		val = raw_input('Input:')
-		if not val:
-			val = "#"
-		ser.write(val)
-		ser.flush()
+		while True:
+			val = raw_input('Input:')
+			if val.upper() == 'X':
+				print('Exit')
+				break
+			if not val:
+				val = "#"
+			ser.write(val)
+			ser.flush()
 
-		print ser.readline()
-		print ser.readline()
+			for i in range(100):
+				line = ser.readline().strip()
+				print(line)
+				if line == 'end':
+					break
 		break
 	else:
 		time.sleep(1)
-
-
