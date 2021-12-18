@@ -20,8 +20,11 @@ for i in range(5):
 		ser.write('p')
 		ser.flush()
 
-		print ser.readline()
-#		print ser.readline()
+		for i in range(100):
+			line = ser.readline().strip()
+			print(line)
+			if line == 'end':
+				break
 		break
 
 
