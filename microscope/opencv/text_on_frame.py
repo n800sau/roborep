@@ -17,19 +17,23 @@ FORMAT = 'MJPG'
 MAX_MODE = 4
 mode_labels = [
 	{
-		'label': '0.1mm (4x)',
+		'label': '0.1mm (x4)',
+		'x': 'x4',
 		'sz': 59
 	},
 	{
-		'label': '0.1mm (10x)',
+		'label': '0.1mm (x10)',
+		'x': 'x10',
 		'sz': 140
 	},
 	{
-		'label': '10 mkm (40x)',
+		'label': '10 mkm (x40)',
+		'x': 'x40',
 		'sz': 55
 	},
 	{
-		'label': '10 mkm (60x)',
+		'label': '10 mkm (x60)',
+		'x': 'x60',
 		'sz': 88
 	},
 ]
@@ -88,6 +92,10 @@ def capture(fname):
 				elif k == 52: # 4
 					print('mode 4')
 					mode = 3
+				elif k == 105: # i
+					ofname = 'shot_{}_{}.{}'.format(mode_labels[mode]['x'], datetime.datetime.now().strftime('%Y-%m-%d_%H_%M'), 'png')
+					print('screenshort')
+					cv2.imwrite(ofname, oframe)
 			if do_write:
 				if out is None:
 					ofname = 'cap_{}.{}'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H_%M'), EXT)

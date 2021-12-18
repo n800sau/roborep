@@ -61,24 +61,50 @@ void pin_off(int pindex)
 
 void loop()
 {
-
-	for(int i=1; i<=4; i++) {
-		for(int j=10; j<200; j+=10) {
+	pwm_on(1, 100, 400);
+		Serial.println("1 400");
+			delay(1000);
+	pwm_on(1, 100, 0);
+		Serial.println("1 0");
+			delay(1000);
+	pwm_on(1, 100, 300);
+		Serial.println("1 300");
+			delay(1000);
+	pwm_on(2, 100, 100);
+		Serial.println("2 100");
+			delay(1000);
+	pwm_on(2, 100, 300);
+		Serial.println("2 300");
+			delay(1000);
+	
+/*
+	for(int i=1; i<=2; i++) {
+		Serial.print(i);
+		Serial.println(" up");
+		for(int j=10; j<400; j+=10) {
 			pwm_on(i, 100, j);
 			delay(10);
 		}
-		for(int j=200; j>=0; j-=10) {
+		Serial.print(i);
+		Serial.println(" down");
+		for(int j=400; j>=0; j-=10) {
 			pwm_on(i, 100, j);
 			delay(10);
 		}
 		pwm_off(i);
-		delay(10);
+		delay(1000);
 	}
-
-	for(int i=1; i<=15; i++) {
+*/
+/*
+	for(int i=1; i<=2; i++) {
 		pin_on(i);
+		Serial.print(i);
+		Serial.println(" up");
 		delay(1000);
 		pin_off(i);
-		delay(10);
+		Serial.print(i);
+		Serial.println(" down");
+		delay(1000);
 	}
+*/
 }
