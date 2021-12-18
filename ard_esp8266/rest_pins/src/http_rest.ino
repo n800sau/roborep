@@ -18,8 +18,10 @@
 
 #include "local_config.h"
 
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASSWORD;
+const char *ssid = WIFI_SSID;
+const char *password = WIFI_PASSWORD;
+
+const char *ap_password = WIFI_PASSWORD;
 
 ESP8266WebServer server(80);
 
@@ -155,7 +157,7 @@ void setup()
 	Serial.print("APname:");
 	Serial.println(APname);
 
-	if(!(force_manager ? wifiManager.startConfigPortal(APname.c_str()) : wifiManager.autoConnect(APname.c_str()))) {
+	if(!(force_manager ? wifiManager.startConfigPortal(APname.c_str()) : wifiManager.autoConnect(APname.c_str(), ap_password))) {
 		Serial.println("failed to connect and hit timeout");
 		delay(3000);
 		//reset and try again, or maybe put it to deep sleep

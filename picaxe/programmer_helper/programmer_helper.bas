@@ -19,7 +19,7 @@ main:
 	button reset_btn,1,200,100,b2,1,reset_pushed
 	button prog_btn,1,200,100,b2,1,prog_pushed
 	sertxd ("PASS")
-	pause 10
+	pause 10 ' 10ms
 reset_pushed:
 	low RESET_LED_PIN
 	low RESET_PIN

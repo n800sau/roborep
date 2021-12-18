@@ -15,8 +15,10 @@ SCALE=360
 #flist="`find  ~/work/selivan/bitbucket/uni_dnn/data/output_vids.segnet/*.mp4 | sort -R`"
 #flist="`find ~/work/selivan/bitbucket/drobilka_t/image-segmentation-keras/output -type f -name '*.mp4' -o -name '*.avi' | sort -R`"
 flist="`find ~/work/selivan/bitbucket/drobilka_t/image-segmentation-keras/dpt_output -type f -name '*.mp4' -o -name '*.avi' | sort -R`"
+#flist="`find ~/work/selivan/bitbucket/drobilka_t/image-segmentation-keras/output/*.mp4 | sort -R`"
 #flist="`find ~/tmp/vids/*.mp4 | sort -R`"
-
+#flist="`find  ~/work/opencv/*.webm | sort -R`"
+flist="`find  ~/tmp/output/output_drobilka_pspnet_50/*.mp4 | sort -R`"
 
 rm file.lst
 

@@ -23,13 +23,13 @@
 
 //#define RELEASE  // Comment to enable debug output
 
-#define DBG_OUTPUT_PORT Serial
+#define DBG_OUTPUT_PORT Serial1
 
-#ifndef RELEASE
-#define DEBUGLOG(...) DBG_OUTPUT_PORT.printf(__VA_ARGS__)
-#else
+//#ifndef RELEASE
+//#define DEBUGLOG(...) DBG_OUTPUT_PORT.printf(__VA_ARGS__)
+//#else
 #define DEBUGLOG(...)
-#endif
+//#endif
 
 #define CONNECTION_LED -1 // Connection LED pin (Built in). -1 to disable
 #define AP_ENABLE_BUTTON 5 // Button pin to enable AP during startup for configuration. -1 to disable
@@ -77,6 +77,7 @@ public:
     void begin(FS* fs);
     void handle();
     const char* getHostName();
+	Stream *p_debug_stream;
 
 	AsyncFSWebServer& setJSONCallback(JSON_CALLBACK_SIGNATURE);
 	AsyncFSWebServer& setRESTCallback(REST_CALLBACK_SIGNATURE);

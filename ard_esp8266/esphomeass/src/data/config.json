@@ -7,7 +7,7 @@
                 "iwcWifiSsid": "TVSlow Internet Connection",
                 "iwcWifiPassword": "1,tpGfhjkz2"
              },
-            "iwcApTimeout": "1",
+            "iwcApTimeout": "3",
             "wifi1": {
               "wifi1-ssid": "Slow Internet Connection",
               "wifi1-pwd": "1,tpGfhjkz2"

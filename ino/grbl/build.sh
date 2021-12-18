@@ -1,3 +1,3 @@
 #platformio run -v
-platformio run -e arduino_uno &>build.log
+platformio run -e arduino &>build.log
 echo $?
