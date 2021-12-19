@@ -14,7 +14,9 @@ ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5)
 #print s_port, s_baud
 
 for i in range(5):
-	if ser.readline().strip() == 'Ready':
+	line = ser.readline().strip()
+	print(line)
+	if line == 'Ready':
 
 		while True:
 			val = raw_input('Input:')
@@ -33,4 +35,5 @@ for i in range(5):
 					break
 		break
 	else:
+		print('No')
 		time.sleep(1)

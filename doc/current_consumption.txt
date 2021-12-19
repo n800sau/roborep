@@ -1,1 +1,8 @@
 RCWL-0516 5v - 2.8ma
+
+esp8266 eps201 light slep and deep sleet both low current from 5v via tiny drow down module
+
+max - 72ma (wifi unconfigured)
+wifi on - 50-68ma
+modem sleep - 19ma
+light sleep with wifi connected - 30 - 65ma

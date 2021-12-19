@@ -11,10 +11,13 @@ void setup() {
 	Serial.begin(115200);
 
 	monitor.begin(64);
+	Serial.println("Here 1");
 	monitor.configure(0, 3, 3, 7);
+	Serial.println("Here 2");
 
 	// test shunt = 115mm of 22AWG solid copper = 0.3 Ohms
 	monitor.calibrate(0.3, 0.2, 6, 0.25);
+	Serial.println("Here 3");
 
 	// initialize the digital pin as input (work mode)
 	pinMode(boot_pin, INPUT_PULLUP);
