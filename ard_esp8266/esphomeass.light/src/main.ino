@@ -14,6 +14,7 @@
 #include <ArduinoHA.h>
 #include <ArduinoJson.h>
 #include <SDFS.h>
+#include <LittleFS.h>
 
 #define SD_CS_PIN 4
 
@@ -21,8 +22,9 @@
 
 const char thingName[] = "homeass_light";
 
+const char flash_fname[] = "/config.json";
 const char fname[] = "config.json";
-File config_file;
+const char fname_installed[] = "config_installed.json";
 
 #ifndef RTC_USER_DATA_SLOT_WIFI_STATE
 #define RTC_USER_DATA_SLOT_WIFI_STATE 33u
@@ -60,30 +62,57 @@ bool getLocalTime(struct tm * info, uint32_t ms) {
 }
 
 #define LED_PIN LED_BUILTIN
+#define RESET_PIN 5
 
 WiFiClient client;
 HADevice device;
 HAMqtt mqtt(client, device);
 HASensor gas("gas"); // "gas" is unique ID of the sensor. You should define your own ID.
 
-#define STRING_LEN 128
+#define STRING_LEN 50
 
-char mqttServerValue[STRING_LEN]="192.168.1.50";
-char mqttUserNameValue[STRING_LEN]="user1";
-char mqttUserPasswordValue[STRING_LEN]="password1";
+char wifi_ssid1[STRING_LEN]=WIFI_SSID;
+char wifi_password1[STRING_LEN]=WIFI_PASSWORD;
+char wifi_ssid2[STRING_LEN]=WIFI_SSID1;
+char wifi_password2[STRING_LEN]=WIFI_PASSWORD1;
+char mqttServer[STRING_LEN]="192.168.1.50";
+char mqttUserName[STRING_LEN]="user1";
+char mqttUserPassword[STRING_LEN]="password1";
 
-void setup() {
+void readConfig()
+{
+	if(!LittleFS.begin()) {
+		Serial.println("LittleFS mount failed");
+	} else {
+		File file = LittleFS.open(flash_fname, "r");
+		if (!file) {
+			Serial.printf("Failed to open flash %s for reading\n", flash_fname);
+		} else {
+			StaticJsonDocument<1024> doc;
+			DeserializationError error = deserializeJson(doc, file);
+			if (error)
+			{
+				Serial.println(F("Failed to read flash configuration file, using default"));
+			} else {
+				strncpy(wifi_ssid1, doc["SSID1"], sizeof(wifi_ssid1));
+				strncpy(wifi_password1, doc["PASSWORD1"], sizeof(wifi_password1));
+				strncpy(wifi_ssid2, doc["SSID2"], sizeof(wifi_ssid2));
+				strncpy(wifi_password2, doc["PASSWORD2"], sizeof(wifi_password2));
+				strncpy(mqttServer, doc["MQTTSERVER"], sizeof(mqttServer));
+				strncpy(mqttUserName, doc["MQTTUSER"], sizeof(mqttUserName));
+				strncpy(mqttUserPassword, doc["MQTTPASSWORD"], sizeof(mqttUserPassword));
+				Serial.println(mqttServer);
+				Serial.println(mqttUserName);
+			}
+			file.close();
+		}
+	}
+}
 
-	Serial.begin(74880);
-//	Serial.setDebugOutput(true);	// If you need debug output
-
-	Serial.println("Trying to resume WiFi connection...");
-
-	// May be necessary after deepSleep. Otherwise you may get "error: pll_cal exceeds 2ms!!!" when trying to connect
-	delay(1);
-
+bool readUpdate()
+{
+	bool rs = false;
 	SDFS.setConfig(SDFSConfig(SD_CS_PIN, SPI_HALF_SPEED));
-
 	if(!SDFS.begin()) {
 		Serial.println("SD initialization failed!");
 	} else {
@@ -94,28 +123,52 @@ void setup() {
 			Serial.print("Free: ");
 			Serial.println(info.totalBytes-info.usedBytes);
 			if(SDFS.exists(fname)) {
-				Serial.printf("%s exists.\n", fname);
-				config_file = SDFS.open(fname, "r");
+				Serial.printf("SD file %s exists.\n", fname);
+				File file = SDFS.open(fname, "r");
 				StaticJsonDocument<1024> doc;
-				DeserializationError error = deserializeJson(doc, config_file);
-				config_file.close();
+				DeserializationError error = deserializeJson(doc, file);
+				file.close();
 				if (error)
 				{
-					Serial.println(F("Failed to read file, using default configuration"));
+					Serial.printf("Failed to read SD file %s\n", fname);
 				} else {
-					const char* j_ssid1 = doc["SSID1"];
-					const char* j_password1 = doc["PASSWORD1"];
-					const char* j_ssid2 = doc["SSID2"];
-					const char* j_password2 = doc["PASSWORD2"];
-					Serial.println(j_ssid1);
-					Serial.println(j_ssid2);
+					file = LittleFS.open(flash_fname, "w");
+					// Serialize JSON to file
+					if(serializeJson(doc, file) == 0) {
+						Serial.printf("Failed to write to flash file %s\n", flash_fname);
+					} else {
+						rs = true;
+						File cfile = SDFS.open(fname_installed, "w");
+						// Serialize JSON to file
+						if(serializeJson(doc, cfile) == 0) {
+							Serial.printf("Failed to write to SD file %s\n", fname_installed);
+						}
+						cfile.close();
+					}
+					file.close();
 				}
 			} else {
-				Serial.printf("%s doesn't exist.\n", fname);
+				Serial.printf("SD file %s doesn't exist.\n", fname);
 			}
 		} else {
 			Serial.println("SD not mounted");
 		}
+	}
+	return rs;
+}
+
+void setup() {
+
+	Serial.begin(74880);
+//	Serial.setDebugOutput(true);	// If you need debug output
+
+	bool force_reconnect = false;
+
+	unsigned long start = millis();
+
+	if(digitalRead(RESET_PIN) == LOW) {
+		Serial.println("Read update");
+		force_reconnect = readUpdate();
 	}
 
 	// ---
@@ -123,8 +176,9 @@ void setup() {
 	// ---
 
 	// Unique ID must be set!
-	byte mac[WL_MAC_ADDR_LENGTH];
+	byte mac[WL_MAC_ADDR_LENGTH+3];
 	WiFi.macAddress(mac);
+	memcpy(mac+WL_MAC_ADDR_LENGTH, "000", 3);
 	device.setUniqueId(mac, sizeof(mac));
 
 	// set device's details (optional)
@@ -137,21 +191,30 @@ void setup() {
 	gas.setIcon("mdi:home");
 	gas.setName("Home pollution");
 
-	mqtt.begin(mqttServerValue, mqttUserNameValue, mqttUserPasswordValue);
+	mqtt.begin(mqttServer, mqttUserName, mqttUserPassword);
 
 	{
 
-		ESP.rtcUserMemoryRead(RTC_USER_DATA_SLOT_WIFI_STATE, reinterpret_cast<uint32_t *>(&state), sizeof(state));
-		unsigned long start = millis();
+		if(!force_reconnect) {
+			Serial.println("Trying to resume WiFi connection...");
 
-		if (!WiFi.resumeFromShutdown(state) || (WiFi.waitForConnectResult(10000) != WL_CONNECTED)) {
-			Serial.println("Cannot resume WiFi connection, connecting via begin...");
+			// May be necessary after deepSleep. Otherwise you may get "error: pll_cal exceeds 2ms!!!" when trying to connect
+			delay(1);
+			ESP.rtcUserMemoryRead(RTC_USER_DATA_SLOT_WIFI_STATE, reinterpret_cast<uint32_t *>(&state), sizeof(state));
+
+		}
+
+		if(force_reconnect || !WiFi.resumeFromShutdown(state) || (WiFi.waitForConnectResult(10000) != WL_CONNECTED)) {
+
+			readConfig();
+
+			Serial.println(force_reconnect ? "Reconnecting ..." : "Cannot resume WiFi connection, connecting via begin...");
 			WiFi.persistent(false);
 
 			WiFi.mode(WIFI_STA);
 			// Register multi WiFi networks
-			wifiMulti.addAP(WIFI_SSID, WIFI_PASSWORD);
-			wifiMulti.addAP(WIFI_SSID1, WIFI_PASSWORD1);
+			wifiMulti.addAP(wifi_ssid1, wifi_password1);
+			wifiMulti.addAP(wifi_ssid2, wifi_password2);
 
 			if (wifiMulti.run(10000) != WL_CONNECTED) {
 				Serial.println("WiFi not connected!");
