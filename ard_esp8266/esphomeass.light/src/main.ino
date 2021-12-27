@@ -67,17 +67,28 @@ bool getLocalTime(struct tm * info, uint32_t ms) {
 WiFiClient client;
 HADevice device;
 HAMqtt mqtt(client, device);
-HASensor gas("gas"); // "gas" is unique ID of the sensor. You should define your own ID.
+HASensor moisture("moisture"); // "" is unique ID of the sensor. You should define your own ID.
 
 #define STRING_LEN 50
 
-char wifi_ssid1[STRING_LEN]=WIFI_SSID;
-char wifi_password1[STRING_LEN]=WIFI_PASSWORD;
-char wifi_ssid2[STRING_LEN]=WIFI_SSID1;
-char wifi_password2[STRING_LEN]=WIFI_PASSWORD1;
-char mqttServer[STRING_LEN]="192.168.1.50";
-char mqttUserName[STRING_LEN]="user1";
-char mqttUserPassword[STRING_LEN]="password1";
+char wifi_ssid1[STRING_LEN] = WIFI_SSID;
+char wifi_password1[STRING_LEN] = WIFI_PASSWORD;
+char wifi_ssid2[STRING_LEN] = WIFI_SSID1;
+char wifi_password2[STRING_LEN] = WIFI_PASSWORD1;
+char mqttServer[STRING_LEN] = "192.168.1.50";
+char mqttUserName[STRING_LEN] = "user1";
+char mqttUserPassword[STRING_LEN] = "password1";
+float sensorLowerLevel = 0;
+float sensorUpperLevel = 100;
+
+#define JSON_READ_STRING(strvar, key) { \
+		if(doc.containsKey(key)) \
+			strncpy(strvar, doc[key], sizeof(strvar)); \
+	}
+#define JSON_READ_NUMBER(numvar, key) { \
+		if(doc.containsKey(key)) \
+			numvar = doc[key]; \
+	}
 
 void readConfig()
 {
@@ -91,15 +102,15 @@ void readConfig()
 		{
 			Serial.println(F("Failed to read flash configuration file, using default"));
 		} else {
-			strncpy(wifi_ssid1, doc["SSID1"], sizeof(wifi_ssid1));
-			strncpy(wifi_password1, doc["PASSWORD1"], sizeof(wifi_password1));
-			strncpy(wifi_ssid2, doc["SSID2"], sizeof(wifi_ssid2));
-			strncpy(wifi_password2, doc["PASSWORD2"], sizeof(wifi_password2));
-			strncpy(mqttServer, doc["MQTTSERVER"], sizeof(mqttServer));
-			strncpy(mqttUserName, doc["MQTTUSER"], sizeof(mqttUserName));
-			strncpy(mqttUserPassword, doc["MQTTPASSWORD"], sizeof(mqttUserPassword));
-			Serial.println(mqttServer);
-			Serial.println(mqttUserName);
+			JSON_READ_STRING(wifi_ssid1, "SSID1")
+			JSON_READ_STRING(wifi_password1, "PASSWORD1")
+			JSON_READ_STRING(wifi_ssid2, "SSID2")
+			JSON_READ_STRING(wifi_password2, "PASSWORD2")
+			JSON_READ_STRING(mqttServer, "MQTTSERVER")
+			JSON_READ_STRING(mqttUserName, "MQTTUSER")
+			JSON_READ_STRING(mqttUserPassword, "MQTTPASSWORD")
+			JSON_READ_NUMBER(sensorLowerLevel, "SENSORLOWERLEVEL")
+			JSON_READ_NUMBER(sensorUpperLevel, "SENSORUPPERLEVEL")
 		}
 		file.close();
 	}
@@ -179,6 +190,7 @@ void setup() {
 		force_reconnect = readUpdate();
 	}
 
+	readConfig();
 	// ---
 	// Here you can do whatever you need to do that doesn't need a WiFi connection.
 	// ---
@@ -194,10 +206,10 @@ void setup() {
 	device.setSoftwareVersion("1.0.1");
 
 	// configure sensor (optional)
-	gas.setUnitOfMeasurement("µg/m³");
-	gas.setDeviceClass("pm1");
-	gas.setIcon("mdi:home");
-	gas.setName("Home pollution");
+	moisture.setUnitOfMeasurement("%");
+	moisture.setDeviceClass("moisture");
+	moisture.setIcon("mdi:home");
+	moisture.setName("Dirt moisture");
 
 	mqtt.begin(mqttServer, mqttUserName, mqttUserPassword);
 
@@ -262,7 +274,7 @@ void setup() {
 	}
 
 
-	gas.setValue(analogRead(A0));
+	moisture.setValue(analogRead(A0));
 	mqtt.loop();
 	yield();
 
