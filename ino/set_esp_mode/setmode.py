@@ -24,6 +24,7 @@ def loop():
 		val = sys.stdin.read(1)
 #		print('CHAR:', val)
 		if val:
+			print()
 			if val.upper() == 'X':
 				print('Exit')
 				break
