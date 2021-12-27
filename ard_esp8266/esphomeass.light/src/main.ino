@@ -230,7 +230,10 @@ void setup() {
 			readConfig();
 			Serial.println("Reading config finished");
 
-			Serial.println(force_reconnect ? "Reconnecting ..." : "Cannot resume WiFi connection, connecting via begin...");
+			if(!force_reconnect) {
+				Serial.println("Cannot resume WiFi connection");
+			}
+			Serial.printf("Connecting to %s or %s...\n", wifi_ssid1, wifi_ssid2);
 			WiFi.persistent(false);
 
 			WiFi.mode(WIFI_STA);
