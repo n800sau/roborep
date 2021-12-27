@@ -81,31 +81,27 @@ char mqttUserPassword[STRING_LEN]="password1";
 
 void readConfig()
 {
-	if(!LittleFS.begin()) {
-		Serial.println("LittleFS mount failed");
+	File file = LittleFS.open(flash_fname, "r");
+	if (!file) {
+		Serial.printf("Failed to open flash %s for reading\n", flash_fname);
 	} else {
-		File file = LittleFS.open(flash_fname, "r");
-		if (!file) {
-			Serial.printf("Failed to open flash %s for reading\n", flash_fname);
+		StaticJsonDocument<1024> doc;
+		DeserializationError error = deserializeJson(doc, file);
+		if (error)
+		{
+			Serial.println(F("Failed to read flash configuration file, using default"));
 		} else {
-			StaticJsonDocument<1024> doc;
-			DeserializationError error = deserializeJson(doc, file);
-			if (error)
-			{
-				Serial.println(F("Failed to read flash configuration file, using default"));
-			} else {
-				strncpy(wifi_ssid1, doc["SSID1"], sizeof(wifi_ssid1));
-				strncpy(wifi_password1, doc["PASSWORD1"], sizeof(wifi_password1));
-				strncpy(wifi_ssid2, doc["SSID2"], sizeof(wifi_ssid2));
-				strncpy(wifi_password2, doc["PASSWORD2"], sizeof(wifi_password2));
-				strncpy(mqttServer, doc["MQTTSERVER"], sizeof(mqttServer));
-				strncpy(mqttUserName, doc["MQTTUSER"], sizeof(mqttUserName));
-				strncpy(mqttUserPassword, doc["MQTTPASSWORD"], sizeof(mqttUserPassword));
-				Serial.println(mqttServer);
-				Serial.println(mqttUserName);
-			}
-			file.close();
+			strncpy(wifi_ssid1, doc["SSID1"], sizeof(wifi_ssid1));
+			strncpy(wifi_password1, doc["PASSWORD1"], sizeof(wifi_password1));
+			strncpy(wifi_ssid2, doc["SSID2"], sizeof(wifi_ssid2));
+			strncpy(wifi_password2, doc["PASSWORD2"], sizeof(wifi_password2));
+			strncpy(mqttServer, doc["MQTTSERVER"], sizeof(mqttServer));
+			strncpy(mqttUserName, doc["MQTTUSER"], sizeof(mqttUserName));
+			strncpy(mqttUserPassword, doc["MQTTPASSWORD"], sizeof(mqttUserPassword));
+			Serial.println(mqttServer);
+			Serial.println(mqttUserName);
 		}
+		file.close();
 	}
 }
 
@@ -133,9 +129,14 @@ bool readUpdate()
 					Serial.printf("Failed to read SD file %s\n", fname);
 				} else {
 					file = LittleFS.open(flash_fname, "w");
+					if(!file) {
+						Serial.printf("Failed to open file %s for writing\n", flash_fname);
+					}
 					// Serialize JSON to file
 					if(serializeJson(doc, file) == 0) {
 						Serial.printf("Failed to write to flash file %s\n", flash_fname);
+						Serial.print(serializeJson(doc, Serial));
+						Serial.println();
 					} else {
 						rs = true;
 						File cfile = SDFS.open(fname_installed, "w");
@@ -144,6 +145,7 @@ bool readUpdate()
 							Serial.printf("Failed to write to SD file %s\n", fname_installed);
 						}
 						cfile.close();
+						Serial.println("Update finished");
 					}
 					file.close();
 				}
@@ -161,6 +163,12 @@ void setup() {
 
 	Serial.begin(74880);
 //	Serial.setDebugOutput(true);	// If you need debug output
+
+	pinMode(RESET_PIN, INPUT_PULLUP);
+
+	if(!LittleFS.begin()) {
+		Serial.println("LittleFS mount failed");
+	}
 
 	bool force_reconnect = false;
 
@@ -206,7 +214,9 @@ void setup() {
 
 		if(force_reconnect || !WiFi.resumeFromShutdown(state) || (WiFi.waitForConnectResult(10000) != WL_CONNECTED)) {
 
+			Serial.println("Reading config");
 			readConfig();
+			Serial.println("Reading config finished");
 
 			Serial.println(force_reconnect ? "Reconnecting ..." : "Cannot resume WiFi connection, connecting via begin...");
 			WiFi.persistent(false);
