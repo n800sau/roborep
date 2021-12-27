@@ -11,7 +11,7 @@ exec(open("vars.sh").read())
 s_port = DEV
 s_baud = 115200
 
-ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5)
+ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5, dsrdtr=None)
 #print s_port, s_baud
 
 ser.write(b'?')
