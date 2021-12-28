@@ -1,0 +1,2 @@
+esphome run main.yaml
+

@@ -1,0 +1,54 @@
+esphome:
+  name: moisturesensor
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: "bc8703eb13c79719d7bf226ebffde8cc"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Moisturesensor Fallback Hotspot"
+    password: "Pa62LH9YbozV"
+
+captive_portal:
+
+font:
+  - file: "DejaVuSansMono-Bold.ttf"
+    id: my_font
+    size: 10
+
+i2c:
+  sda: D3
+  scl: D4
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x32"
+    address: 0x3C
+    rotation: 180
+    lambda: |-
+      it.printf(0, 0, id(my_font),  "%.1f", id(soil).state);
+
+sensor:
+  - platform: adc
+    pin: A0
+    name: "Moisture"
+    id: soil
+    update_interval: 60s
+    filters:
+      - calibrate_linear:
+        # Map 0.0 (from sensor) to 0.0 (true value)
+        - 0.0 -> 1.0
+        - 10.0 -> 12.1
