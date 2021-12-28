@@ -1,0 +1,5 @@
+examples:
+
+convert water.png -negate -background black -flatten water1.png
+
+convert water.png -background white -flatten water1.png
