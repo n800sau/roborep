@@ -1,8 +1,15 @@
 esphome:
   name: moisturesensor
+  on_boot:
+    priority: -100
+    then:
+      - lambda: id(oled).turn_on();
+      - delay: 1s
+      - lambda: id(oled).turn_off();
 
 esp8266:
   board: nodemcuv2
+
 
 # Enable logging
 logger:
@@ -27,7 +34,7 @@ captive_portal:
 font:
   - file: "DejaVuSansMono-Bold.ttf"
     id: my_font
-    size: 10
+    size: 15
 
 i2c:
   sda: D3
@@ -38,17 +45,56 @@ display:
     model: "SSD1306 128x32"
     address: 0x3C
     rotation: 180
+    id: oled
     lambda: |-
-      it.printf(0, 0, id(my_font),  "%.1f", id(soil).state);
+      it.image(0, 0, id(drop_image));
+      it.printf(32, 5, id(my_font),  "%4.0f %%", id(soil).state);
+
+image:
+  - file: "water.png"
+    id: drop_image
+    type: GRAYSCALE
 
 sensor:
   - platform: adc
     pin: A0
     name: "Moisture"
     id: soil
-    update_interval: 60s
+    update_interval: 5s
     filters:
       - calibrate_linear:
         # Map 0.0 (from sensor) to 0.0 (true value)
-        - 0.0 -> 1.0
-        - 10.0 -> 12.1
+        - 0.10840 -> 0
+        - 0.05957 -> 100
+
+binary_sensor:
+  - platform: gpio
+    name: "Display Button"
+    internal: true
+    pin:
+      number: D7
+      mode: INPUT_PULLUP
+    on_press:
+      - lambda: id(oled).turn_on();
+      - delay: 5s
+      - lambda: id(oled).turn_off();
+
+deep_sleep:
+  run_duration: 7s
+  sleep_duration: 10min
+  id: deep_sleep_1
+
+mqtt:
+  broker: 192.168.1.50
+  username: user1
+  password: password1
+  on_message:
+    - topic: moisturesensor/ota_mode
+      payload: 'ON'
+      then:
+        - deep_sleep.prevent: deep_sleep_1
+    - topic: moisturesensor/ota_mode
+      payload: 'OFF'
+      then:
+        - lambda: id(oled).turn_off();
+        - deep_sleep.enter: deep_sleep_1

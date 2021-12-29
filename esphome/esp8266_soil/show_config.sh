@@ -1,0 +1,1 @@
+esphome main.yaml config
