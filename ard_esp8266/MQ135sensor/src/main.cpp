@@ -9,7 +9,9 @@
 #include <blinker.h>
 #include <StreamString.h>
 #include <MQUnifiedsensor.h>
-#include <AM2320.h>
+//#include <AM2320.h>
+#include <AM232X.h>
+#include <ArduinoHA.h>
 
 #include "config.h"
 
@@ -19,6 +21,19 @@ const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 
 #define HOSTNAME "mq135"
+
+const char thingName[] = "md135box";
+const char mqttServer[] = "192.168.1.50";
+const char mqttUserName[] = "user1";
+const char mqttUserPassword[] = "password1";
+
+WiFiClient client;
+HADevice device;
+HAMqtt mqtt(client, device);
+HASensor co2_sensor("co2");
+HASensor t_sensor("temperature");
+HASensor h_sensor("humidity");
+bool ha_send_time = false;
 
 #define LED_PIN 15
 Blinker blinker;
@@ -32,8 +47,8 @@ Ticker send_ticker;
 String sensor_id = "MQ135";
 MQUnifiedsensor mq135("ESP8266", VOLTAGE_RESOLUTION, 10, A0, "MQ-135");
 
-// Create an instance of sensor
-AM2320 th_sensor;
+//AM2320 th_sensor;
+AM232X th_sensor;
 
 #define RatioMQ135CleanAir 3.6 // RS / R0 = 3.6 ppm
 
@@ -223,6 +238,47 @@ String json_data()
 	return rs;
 }
 
+void th_update()
+{
+	// sensor.measure() returns boolean value
+	// - true indicates measurement is completed and success
+	// - false indicates that either sensor is not ready or crc validation failed
+	//	 use getErrorCode() to check for cause of error.
+	int status = th_sensor.read();
+	if(status == AM232X_OK) {
+//	if (th_sensor.measure()) {
+		cur_data.t = th_sensor.getTemperature();
+		cur_data.h = th_sensor.getHumidity();
+	} else {
+		Serial.print("AM2320 ERR: ");
+		Serial.println(status);
+//		int errorCode = th_sensor.getErrorCode();
+//		switch (errorCode) {
+//			case 1:
+//				Serial.println("AM2320 ERR: Sensor is offline");
+//				break;
+//			case 2:
+//				Serial.println("AM2320 ERR: CRC validation failed");
+//				break;
+//			default:
+//				Serial.println("AM2320 ERR: unknown");
+//				break;
+//		}
+	}
+}
+
+void sensor_update()
+{
+	th_update();
+	mq135.setR0(settings.r0);
+	mq135.update();
+	cur_data.r0 = settings.r0;
+	cur_data.raw = mq135.getVoltage();
+	cur_data.ts = time(NULL);
+	mq135.setA(110.47); mq135.setB(-2.862); // Configurate the ecuation values to get CO2 concentration 
+	cur_data.co2 = mq135.readSensor(); // Sensor will read PPM concentration using the model and a and b values setted before or in the setup
+}
+
 void send_data()
 {
 	if(wifiConnected && udpConnected) {
@@ -236,6 +292,8 @@ void send_data()
 			Serial.print("co2=");
 			Serial.println(cur_data.co2);
 			send_udp_string(js);
+			// to let mqtt.loop in the3 mail loop happen
+			ha_send_time = true;
 			blinker.blink(3);
 		}
 	}
@@ -279,7 +337,7 @@ void handleRoot()
 	struct tm tmstruct;
 	StreamString page;
 	localtime_r(&cur_data.ts, &tmstruct);
-	page.printf("co2: %.2f ppm<p>%s<br>ts: %li<br>", cur_data.co2, time2str(cur_data.ts).c_str(), cur_data.ts);
+	page.printf("co2: %.2f ppm<p>%s<br>ts: %lli<br>", cur_data.co2, time2str(cur_data.ts).c_str(), cur_data.ts);
 	printVals(page, "<br>");
 	server.send(200, "text/html", wrap_html(page, reload_script));
 	blinker.blink(3);
@@ -343,39 +401,38 @@ boolean connectUDP()
 	return state;
 }
 
-void th_update()
+void setup_ha()
 {
-	// sensor.measure() returns boolean value
-	// - true indicates measurement is completed and success
-	// - false indicates that either sensor is not ready or crc validation failed
-	//	 use getErrorCode() to check for cause of error.
-	if (th_sensor.measure()) {
-		cur_data.t = th_sensor.getTemperature();
-		cur_data.h = th_sensor.getHumidity();
-	} else {
-		int errorCode = th_sensor.getErrorCode();
-		switch (errorCode) {
-			case 1:
-				Serial.println("ERR: Sensor is offline");
-				break;
-			case 2:
-				Serial.println("ERR: CRC validation failed.");
-				break;
-		}
-	}
+	// Unique ID must be set!
+	byte mac[WL_MAC_ADDR_LENGTH+3];
+	WiFi.macAddress(mac);
+	memcpy(mac+WL_MAC_ADDR_LENGTH, "000", 3);
+	device.setUniqueId(mac, sizeof(mac));
+
+	// set device's details (optional)
+	device.setName(thingName);
+	device.setSoftwareVersion("1.0.1");
+
+	// configure sensors
+	co2_sensor.setUnitOfMeasurement("ppm");
+	co2_sensor.setDeviceClass("carbon_dioxide");
+	co2_sensor.setIcon("mdi:molecule-co2");
+	co2_sensor.setName("Outside CO2");
+
+	t_sensor.setUnitOfMeasurement("C");
+	t_sensor.setDeviceClass("temperature");
+	t_sensor.setIcon("mdi:temperature-celsius");
+	t_sensor.setName("Outside Temperature");
+
+	h_sensor.setUnitOfMeasurement("%");
+	h_sensor.setDeviceClass("humidity");
+	h_sensor.setIcon("mdi:water-percent");
+	h_sensor.setName("Outside Humidity");
+
+	mqtt.begin(mqttServer, mqttUserName, mqttUserPassword);
 }
 
-void sensor_update()
-{
-	th_update();
-	mq135.setR0(settings.r0);
-	mq135.update();
-	cur_data.r0 = settings.r0;
-	cur_data.raw = mq135.getVoltage();
-	cur_data.ts = time(NULL);
-	mq135.setA(110.47); mq135.setB(-2.862); // Configurate the ecuation values to get CO2 concentration 
-	cur_data.co2 = mq135.readSensor(); // Sensor will read PPM concentration using the model and a and b values setted before or in the setup
-}
+unsigned long lastReadAt = millis();
 
 void setup()
 {
@@ -413,6 +470,7 @@ void setup()
 	Serial.print(settings.r0);
 	Serial.print("kohm");
 	Serial.print("\n");
+	setup_ha();
 }
 
 void loop()
@@ -424,6 +482,13 @@ void loop()
 		server.handleClient();
 		if(!udpConnected) {
 			udpConnected = connectUDP();
+		}
+		if(ha_send_time) {
+			ha_send_time = false;
+			t_sensor.setValue(cur_data.t);
+			h_sensor.setValue(cur_data.h);
+			co2_sensor.setValue(cur_data.co2);
+			mqtt.loop();
 		}
 	} else {
 		blinker.stop();
@@ -443,6 +508,9 @@ void loop()
 			}
 		}
 	}
-	sensor_update();
+	if ((millis() - lastReadAt) >= 3000) {
+		lastReadAt = millis();
+		sensor_update();
+	}
 	delay(10);
 }
