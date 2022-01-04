@@ -59,6 +59,7 @@ def capture(fname):
 		(grabbed, frame) = vs.read()
 		if grabbed:
 			oframe = cv2.resize(frame, OSIZE)
+			oframe = cv2.rotate(oframe, cv2.ROTATE_180)
 			x1 = (OSIZE[0] - mode_labels[mode]['sz']) // 2
 			x2 = x1 + mode_labels[mode]['sz']
 			v = mode_labels[mode]['label']
