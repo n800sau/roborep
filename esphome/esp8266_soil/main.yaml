@@ -63,7 +63,8 @@ sensor:
     icon: "mdi:water-percent"
     device_class: humidity
     unit_of_measurement: "%"
-    update_interval: 5s
+    update_interval: 2s
+    force_update: true
     expire_after: 3600s
     filters:
       - calibrate_linear:
@@ -84,7 +85,7 @@ binary_sensor:
       - lambda: id(oled).turn_off();
 
 deep_sleep:
-  run_duration: 20s
+  run_duration: 5s
   sleep_duration: 10min
   id: deep_sleep_1
 
