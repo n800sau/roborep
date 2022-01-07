@@ -63,7 +63,8 @@ sensor:
     icon: "mdi:water-percent"
     device_class: humidity
     unit_of_measurement: "%"
-    update_interval: 3s
+    update_interval: 5s
+    expire_after: 3600s
     filters:
       - calibrate_linear:
         # Map 0.0 (from sensor) to 0.0 (true value)
@@ -83,7 +84,7 @@ binary_sensor:
       - lambda: id(oled).turn_off();
 
 deep_sleep:
-  run_duration: 7s
+  run_duration: 20s
   sleep_duration: 10min
   id: deep_sleep_1
 
@@ -91,6 +92,9 @@ mqtt:
   broker: 192.168.1.50
   username: user1
   password: password1
+# empty birth_message and will_message to avoid homeassistant show unavailable on sensor sleep
+  birth_message:
+  will_message:
   on_message:
     - topic: moisturesensor/ota_mode
       payload: 'ON'
