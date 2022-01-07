@@ -9,3 +9,5 @@ arduino side
 8  - GND
 9  - D11
 10 - D12
+
+stm32 bluepill programming and work mode are switched
