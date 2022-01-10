@@ -1,0 +1,6 @@
+ce - pb4
+csn - pb5
+SPI1
+sck - pb13
+mosi - pb15
+miso - pb14
