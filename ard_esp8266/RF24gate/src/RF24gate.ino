@@ -15,17 +15,20 @@ const char *dest_server = "192.168.2.80";
 const int dest_server_port = 5580;
 const char *dest_path = "/sensors/accept.php";
 
-#include "config.h"
-const char* ssid = SSID;
-const char* password = PASSWORD;
+#include "local_config.h"
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
 const char *ap_ssid = AP_SSID;
 const char *ap_password = AP_PASSWORD;
 
-#define LED_PIN 4
+#define LED_PIN LED_BUILTIN
 
-/* Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins 7 & 8 */
-RF24 radio(5,15);
+#define CE_PIN		D2
+#define CSN_PIN		D8
+
+/* Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins CE & CSN pins */
+RF24 radio(CE_PIN, CSN_PIN);
 
 /**********************************************************/
 
@@ -84,7 +87,7 @@ void blink(int times=1)
 
 void handleRoot() {
 	digitalWrite(LED_PIN, HIGH);
-	server.send(200, "text/plain", "hello from " SSID "!");
+	server.send(200, "text/plain", "hello from " AP_SSID "!");
 	digitalWrite(LED_PIN, LOW);
 }
 
@@ -388,7 +391,7 @@ unsigned long requestTime()
 }
 
 // send an NTP request to the time server at the given address
-unsigned long sendNTPpacket(IPAddress& address)
+void sendNTPpacket(IPAddress& address)
 {
 //	Serial.println("sending NTP packet...");
 	// set all bytes in the buffer to 0
