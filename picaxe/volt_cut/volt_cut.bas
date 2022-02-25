@@ -7,10 +7,10 @@ symbol V_lion = w5
 symbol mosf_out = C.2
 
 ' with divider == 5, 255 == (1.024 * 5)v so 1 of adc == 1.024 * 5 / 255 = 0.02
-' off voltage level 4v / 0.02 = 200
-symbol v_off_level = 200
-' on voltage level 4.6v / 0.02 = 230
-symbol v_on_level = 230
+' off voltage level 3v / 0.02 = 150
+symbol v_off_level = 150
+' on voltage level 3.5v / 0.02 = 175
+symbol v_on_level = 175
 
 
 ' init
