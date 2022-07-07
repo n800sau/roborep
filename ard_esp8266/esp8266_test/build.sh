@@ -1,5 +1,5 @@
 #!/bin/bash
 
-#platformio run &> build.log
-platformio run
+platformio run &> build.log
+#platformio run
 echo $?

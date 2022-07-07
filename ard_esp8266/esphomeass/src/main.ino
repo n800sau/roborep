@@ -34,6 +34,13 @@ iotwebconf::ChainedWifiParameterGroup chainedWifiParameterGroups[] = {
 	iotwebconf::ChainedWifiParameterGroup("wifi2")
 };
 
+#ifndef RTC_USER_DATA_SLOT_WIFI_STATE
+#define RTC_USER_DATA_SLOT_WIFI_STATE 33u
+#endif
+
+#include <include/WiFiState.h> // WiFiState structure details
+WiFiState state;
+
 iotwebconf::MultipleWifiAddition multipleWifiAddition(
 	&iotWebConf,
 	chainedWifiParameterGroups,
@@ -137,6 +144,28 @@ void readConfigFile()
 void setup() {
 	Serial.begin(115200);
 	Serial.println("Starting...");
+	Serial.setDebugOutput(true);  // If you need debug output
+	WiFi.persistent(false);
+
+	// May be necessary after deepSleep. Otherwise you may get "error: pll_cal exceeds 2ms!!!" when trying to connect
+	delay(1);
+
+	ESP.rtcUserMemoryRead(RTC_USER_DATA_SLOT_WIFI_STATE, reinterpret_cast<uint32_t *>(&state), sizeof(state));
+	if(WiFi.shutdownValidCRC(state)) {
+		Serial.print("Trying to resume WiFi connection to ");
+		Serial.println((char*)state.state.fwconfig.ssid);
+	} else {
+		Serial.println("State invalid");
+	}
+	unsigned long start = millis();
+
+	if (!WiFi.resumeFromShutdown(state) || (WiFi.waitForConnectResult(10000) != WL_CONNECTED)) {
+		Serial.println("Cannot resume WiFi connection...");
+	} else {
+		Serial.println("Resumed");
+		unsigned long duration = millis() - start;
+		Serial.printf("Duration: %f", duration * 0.001);
+	}
 
 	// Unique ID must be set!
 	byte mac[WL_MAC_ADDR_LENGTH];
@@ -160,6 +189,7 @@ void setup() {
 	iotWebConf.setConfigSavedCallback(&configSaved);
 	iotWebConf.setFormValidator(&formValidator);
 	iotWebConf.setWifiConnectionTimeoutMs(10000);
+
 
 	multipleWifiAddition.init();
 
@@ -235,6 +265,14 @@ void loop() {
 		iotWebConf.delay(1000);
 		ESP.restart();
 	}
+
+  WiFi.shutdown(state);
+  ESP.rtcUserMemoryWrite(RTC_USER_DATA_SLOT_WIFI_STATE, reinterpret_cast<uint32_t *>(&state), sizeof(state));
+
+  Serial.println("Done.");
+  Serial.flush();
+  ESP.deepSleep(10e6, RF_DISABLED);
+
 }
 
 /**
