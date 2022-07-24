@@ -12,7 +12,8 @@ from credential import cred
 SRCDPATH = '/var/lib/motion'
 
 reg = re.compile('([0-9]{14})-\d+(-\d+)?\.(jpg|avi)')
-BASE_DNAME = 'rus_hard/garage'
+#BASE_DNAME = 'rus_hard/garage'
+BASE_DNAME = 'rus_hard/' + sys.argv[1]
 
 def dbprint(text, nl=True):
 	print(time.strftime('[%Y-%m-%d %H:%M:%S]'), text, end='')
