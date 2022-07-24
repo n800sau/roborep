@@ -25,7 +25,7 @@ const char *ap_password = AP_PASSWORD;
 #define LED_PIN LED_BUILTIN
 
 #define CE_PIN		D2
-#define CSN_PIN		D8
+#define CSN_PIN		D1
 
 /* Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins CE & CSN pins */
 RF24 radio(CE_PIN, CSN_PIN);
@@ -152,7 +152,7 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, LOW);
 	Serial.begin(115200);
-	Serial.setDebugOutput(true);
+//	Serial.setDebugOutput(true);
 	printf("\r\nRF24 gate\r\n");
 
 	WiFi.softAP(ap_ssid, ap_password, 9);

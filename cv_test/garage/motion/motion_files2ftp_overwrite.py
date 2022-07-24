@@ -12,7 +12,9 @@ from credential import cred
 SRCDPATH = '/var/lib/motion'
 
 reg = re.compile('([0-9]{14})-\d+(-\d+)?\.(jpg|avi)')
-BASE_DNAME = 'g750/garage'
+
+#BASE_DNAME = 'g750/garage'
+BASE_DNAME = os.path.join('g750', sys.argv[1])
 
 def dbprint(text, nl=True):
 	print(time.strftime('[%Y-%m-%d %H:%M:%S]'), text, end='')
