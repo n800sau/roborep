@@ -12,7 +12,7 @@ from credential import cred
 SRCDPATH = '/var/lib/motion'
 
 reg = re.compile('([0-9]{14})-\d+(-\d+)?\.(jpg|avi)')
-BASE_DNAME = 'rus_hard/garage'
+BASE_DNAME = 'g750/garage'
 
 def dbprint(text, nl=True):
 	print(time.strftime('[%Y-%m-%d %H:%M:%S]'), text, end='')
@@ -34,7 +34,7 @@ while True:
 			ftp_h = FTP()
 			ftp_h.connect('192.168.1.1', 21, 5)
 			try:
-				ftp_h.login('writer', cred['writer@192.168.1.1'])
+				ftp_h.login('garage', cred['garage@192.168.1.1'])
 				ftp_h.cwd(BASE_DNAME)
 				# to start from the most fresh files
 				for fname in sorted(flist, reverse=True):
