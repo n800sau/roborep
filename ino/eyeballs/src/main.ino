@@ -1,5 +1,7 @@
 #include <Servo.h>
 
+#define STOP true
+
 // eye            s1          eye
 // s2 bottom     s3 middle    s5 bottom
 // s4 top                     s6 top
@@ -35,19 +37,21 @@ void setup()
 
 void loop()
 {
-	for(int i=0; i<SCOUNT; i++)
-	{
-		for(int v=s[i].middle_val; v<s[i].max_val; v++) {
-			s[i].s.write(v);
-			delay(15);
-		}
-		for(int v=s[i].max_val; v>=s[i].min_val; v--) {
-			s[i].s.write(v);
-			delay(15);
-		}
-		for(int v=s[i].min_val; v<s[i].middle_val; v++) {
-			s[i].s.write(v);
-			delay(15);
+	if(!STOP) {
+		for(int i=0; i<SCOUNT; i++)
+		{
+			for(int v=s[i].middle_val; v<s[i].max_val; v++) {
+				s[i].s.write(v);
+				delay(15);
+			}
+			for(int v=s[i].max_val; v>=s[i].min_val; v--) {
+				s[i].s.write(v);
+				delay(15);
+			}
+			for(int v=s[i].min_val; v<s[i].middle_val; v++) {
+				s[i].s.write(v);
+				delay(15);
+			}
 		}
 	}
 }

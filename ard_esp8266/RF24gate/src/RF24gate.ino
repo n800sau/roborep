@@ -25,7 +25,10 @@ const char *ap_password = AP_PASSWORD;
 #define LED_PIN LED_BUILTIN
 
 #define CE_PIN		D2
-#define CSN_PIN		D8
+#define CSN_PIN		D1
+
+//#define CE_PIN		4
+//#define CSN_PIN		15
 
 /* Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins CE & CSN pins */
 RF24 radio(CE_PIN, CSN_PIN);

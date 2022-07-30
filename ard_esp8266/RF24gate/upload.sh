@@ -5,8 +5,12 @@ source vars.sh
 
 #~/work/roborep/ino/set_esp_mode/set_pmode.py
 
-#platformio run -v -t upload --upload-port $DEV
-platformio run -v -t upload --upload-port $DEV &>upload.log
+platformio run -t upload --upload-port $DEV
+#platformio run -v -t upload --upload-port $DEV &>upload.log
+#~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp8266 --port $DEV erase_flash
+#platformio run && \
+#~/.platformio/packages/tool-esptoolpy/esptool.py --before default_reset --chip esp8266 --port $DEV --baud 115200 write_flash 0x0 .pio/build/esp01/firmware.bin
+#esptool -vv -cd ck -cb 115200 -cp $DEV -ca 0x00000 -cf $BIN
 echo $?
 
 #~/work/roborep/ino/set_esp_mode/set_wmode.py

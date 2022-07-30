@@ -24,10 +24,10 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/n800s/.platformio/packages/tool-
 #stm32loader -a 0x08000000 -e -w -f F1 -p "$DEV" ".pio/build/maple/firmware.bin" &>upload.log
 
 #platformio run -e maple && \
-#stm32loader -a 0x08000000 -e -w -f F1 -p "$DEV" ".pio/build/maple/firmware.bin"
+stm32loader -a 0x08000000 -e -w -f F1 -p "$DEV" ".pio/build/maple/firmware.bin"
 
 
-platformio run -e maple -t upload --upload-port $DEV
+#platformio run -e maple -t upload --upload-port $DEV
 
 #platformio run -e maple && \
 #stm32loader -a 0x08000000 -e -w -f F1 -p "$DEV" ".pio/build/maple/firmware.bin"

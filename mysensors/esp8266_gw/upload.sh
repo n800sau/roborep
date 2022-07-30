@@ -5,7 +5,12 @@ source vars.sh
 
 #~/work/roborep/ino/set_esp_mode/set_pmode.py
 
-platformio run -v -t upload --upload-port $DEV
+BIN=.pio/build/esp01/firmware.bin
+
+#platformio run && \
+#python3 "/home/n800s/.platformio/packages/tool-esptoolpy/esptool.py" --chip esp8266 --port $DEV erase_flash && \
+#python3 "/home/n800s/.platformio/packages/tool-esptoolpy/esptool.py" --chip esp8266 --port "$DEV" --baud 115200 write_flash 0x0 "$BIN"
+platformio run -t upload --upload-port $DEV
 #platformio run -v -t upload --upload-port $DEV &>upload.log
 echo $?
 
