@@ -155,7 +155,7 @@ void setup()
 	pinMode(LED_PIN, OUTPUT);
 	digitalWrite(LED_PIN, LOW);
 	Serial.begin(115200);
-	Serial.setDebugOutput(true);
+//	Serial.setDebugOutput(true);
 	printf("\r\nRF24 gate\r\n");
 
 	WiFi.softAP(ap_ssid, ap_password, 9);

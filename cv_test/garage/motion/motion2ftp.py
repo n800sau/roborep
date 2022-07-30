@@ -10,7 +10,7 @@ from credential import cred
 R_QUEUE = 'q.motion_captured'
 
 reg = re.compile('([0-9]{14})-\d+(-\d+)?\.(jpg|avi)')
-BASE_DNAME = 'rus_hard/garage'
+BASE_DNAME = 'g750/garage'
 
 r = redis.Redis()
 
@@ -20,7 +20,7 @@ while True:
 		if r.llen(R_QUEUE) > 0:
 			ftp_h = FTP('192.168.1.1')
 			try:
-				ftp_h.login('writer', cred['writer@192.168.1.1'])
+				ftp_h.login('garage', cred['garage@192.168.1.1'])
 				ftp_h.cwd(BASE_DNAME)
 				if pathlist is None:
 					pathlist = [os.path.basename(dname) for dname in ftp_h.nlst() if re.match(r'^\d+-\d+-\d+_((pics)|(vids))$', os.path.basename(dname))]

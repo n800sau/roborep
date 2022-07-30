@@ -93,21 +93,21 @@ void loop()
 	if (manager.sendtoWait((uint8_t*)&buf, sizeof(buf), RH_BROADCAST_ADDRESS))
 	{
 		// Now wait for a reply from the server
-		uint8_t len = sizeof(buf);
-		uint8_t from;
-		if (manager.recvfromAckTimeout((uint8_t*)&buf, &len, 2000, &from))
-		{
-			Serial.print("got reply from : 0x");
-			Serial.print(from, HEX);
-			Serial.print(": ");
-			Serial.println(buf.obj_id);
-			Serial.print(" => ");
-			Serial.println(buf.str_val);
-		}
-		else
-		{
-			Serial.println("No reply, is nrf24_reliable_datagram_server running?");
-		}
+//		uint8_t len = sizeof(buf);
+//		uint8_t from;
+//		if (manager.recvfromAckTimeout((uint8_t*)&buf, &len, 2000, &from))
+//		{
+//			Serial.print("got reply from : 0x");
+//			Serial.print(from, HEX);
+//			Serial.print(": ");
+//			Serial.println(buf.obj_id);
+//			Serial.print(" => ");
+//			Serial.println(buf.str_val);
+//		}
+//		else
+//		{
+//			Serial.println("No reply, is nrf24_reliable_datagram_server running?");
+//		}
 	}
 	else
 		Serial.println("sendtoWait failed");

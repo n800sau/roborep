@@ -13,7 +13,7 @@ BASE_DNAME = 'rus_hard/garage'
 
 ftp_h = FTP('192.168.1.1')
 try:
-	ftp_h.login('writer', cred['writer@192.168.1.1'])
+	ftp_h.login('garage', cred['garage@192.168.1.1'])
 	ftp_h.cwd(BASE_DNAME)
 	dirlist = [dname for dname in ftp_h.nlst() if re.match(r'^\d+-\d+-\d+_((pics)|(vids))$', os.path.basename(dname))]
 	for dname in dirlist:
