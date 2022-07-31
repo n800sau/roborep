@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 import os, sys, time, traceback, re, glob
@@ -11,7 +11,7 @@ from credential import cred
 
 SRCDPATH = '/var/lib/motion'
 
-reg = re.compile('([0-9]{14})-\d+(-\d+)?\.(jpg|avi)')
+reg = re.compile('([0-9]{14})-\d+(-\d+)?\.(jpg|avi|mp4)')
 
 #BASE_DNAME = 'g750/garage'
 BASE_DNAME = os.path.join('g750', sys.argv[1])
@@ -29,7 +29,8 @@ while True:
 			print('.', end='')
 		else:
 			dbprint('Collecting files ', nl=False)
-		flist =[fname for fname in glob.glob(os.path.join(SRCDPATH, '*.*')) if os.path.splitext(fname)[1] in ('.avi', '.jpg')]
+		now = time.time()
+		flist =[fname for fname in glob.glob(os.path.join(SRCDPATH, '*.*')) if os.path.splitext(fname)[1] in ('.avi', '.jpg', '.mp4') and os.path.getmtime(fname) < (now - 60)]
 		attempt += 1
 		if len(flist) > 0:
 			dbprint('\n%d found' % len(flist))
@@ -46,7 +47,7 @@ while True:
 						if m and m.groups():
 							dt = datetime.strptime(m.groups()[0], '%Y%m%d%H%M%S')
 							dname = dt.strftime('%Y-%m-%d')
-							if os.path.splitext(bname)[-1] == '.avi':
+							if os.path.splitext(bname)[-1] in ('.avi', '.mp4'):
 								dname += '_vids'
 							else:
 								dname += '_pics'
@@ -60,7 +61,7 @@ while True:
 							ftp_h.cwd(dname)
 							ftp_h.cwd('..')
 							dfname = os.path.join(dname, bname)
-							print('Sending %s to %s ...' % (fname, dfname))
+							print('Sending %s (%d kb) to %s ...' % (fname, os.path.getsize(fname)//1000, dfname))
 							f = open(fname, 'rb')
 							ftp_h.storbinary('STOR ' + dfname, f)
 							f.close()
