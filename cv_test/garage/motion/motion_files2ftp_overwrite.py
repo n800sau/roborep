@@ -29,7 +29,8 @@ while True:
 			print('.', end='')
 		else:
 			dbprint('Collecting files ', nl=False)
-		flist =[fname for fname in glob.glob(os.path.join(SRCDPATH, '*.*')) if os.path.splitext(fname)[1] in ('.avi', '.jpg', '.mp4')]
+		now = time.time()
+		flist =[fname for fname in glob.glob(os.path.join(SRCDPATH, '*.*')) if os.path.splitext(fname)[1] in ('.avi', '.jpg', '.mp4') and os.path.getmtime(fname) < (now - 60)]
 		attempt += 1
 		if len(flist) > 0:
 			dbprint('\n%d found' % len(flist))
