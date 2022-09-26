@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Very simple serial terminal
 # (C)2002-2011 Chris Liechti <cliechti@gmx.net>
