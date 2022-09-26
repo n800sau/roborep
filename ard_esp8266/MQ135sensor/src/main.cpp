@@ -31,6 +31,8 @@ WiFiClient client;
 HADevice device;
 HAMqtt mqtt(client, device);
 HASensor co2_sensor("co2");
+HASensor correlation_factor("co2_correlation_factor");
+HASensor co2_sensor_correlated("co2_correlated");
 HASensor t_sensor("temperature");
 HASensor h_sensor("humidity");
 bool ha_send_time = false;
@@ -53,13 +55,13 @@ AM232X th_sensor;
 #define RatioMQ135CleanAir 3.6 // RS / R0 = 3.6 ppm
 
 // Parameters to model temperature and humidity dependence
-#define CORA = 0.00035
-#define CORB = 0.02718
-#define CORC = 1.39538
-#define CORD = 0.0018
-#define CORE = -0.003333333
-#define CORF = -0.001923077
-#define CORG = 1.130128205
+#define CORA 0.00035
+#define CORB 0.02718
+#define CORC 1.39538
+#define CORD 0.0018
+#define CORE -0.003333333
+#define CORF -0.001923077
+#define CORG 1.130128205
 
 // Multicast declarations
 IPAddress ipMulti(239, 0, 0, 57);
@@ -86,9 +88,11 @@ typedef struct {
 	float t;
 	float raw;
 	float r0;
+	float co2_correlated;
+	float correlation_factor;
 } val_t;
 
-val_t cur_data = {.ts=0, .co2=0, .h=0, .t=0, .raw=0, .r0=0};
+val_t cur_data = {.ts=0, .co2=0, .h=0, .t=0, .raw=0, .r0=0, .co2_correlated=0, .correlation_factor=0};
 
 void load_settings()
 {
@@ -267,6 +271,31 @@ void th_update()
 	}
 }
 
+/**************************************************************************/
+/*!
+@brief  Get the correction factor to correct for temperature and humidity
+@param[in] t  The ambient air temperature
+@param[in] h  The relative humidity
+@return The calculated correction factor
+*/
+/**************************************************************************/
+float getCorrectionFactor(float t, float h) {
+  return CORA * t * t - CORB * t + CORC - (h-33.)*CORD;
+}
+
+/**************************************************************************/
+/*!
+@brief  Get the resistance of the sensor, ie. the measurement value corrected
+        for temp/hum
+@param[in] t  The ambient air temperature
+@param[in] h  The relative humidity
+@return The corrected sensor resistance kOhm
+*/
+/**************************************************************************/
+float getCorrectedResistance(long resvalue, float t, float h) {
+  return resvalue/getCorrectionFactor(t, h);
+}
+
 void sensor_update()
 {
 	th_update();
@@ -276,7 +305,10 @@ void sensor_update()
 	cur_data.raw = mq135.getVoltage();
 	cur_data.ts = time(NULL);
 	mq135.setA(110.47); mq135.setB(-2.862); // Configurate the ecuation values to get CO2 concentration 
+	// if you want to apply corelation factor, you will add in this program the temperature and humidity sensor
+	cur_data.correlation_factor = (cur_data.t && cur_data.h) ? getCorrectionFactor(cur_data.t, cur_data.h) : 0;
 	cur_data.co2 = mq135.readSensor(); // Sensor will read PPM concentration using the model and a and b values setted before or in the setup
+	cur_data.co2_correlated = mq135.readSensor(false, cur_data.correlation_factor);
 }
 
 void send_data()
@@ -419,6 +451,14 @@ void setup_ha()
 	co2_sensor.setIcon("mdi:molecule-co2");
 	co2_sensor.setName("Outside CO2");
 
+	co2_sensor_correlated.setUnitOfMeasurement("ppm");
+	co2_sensor_correlated.setDeviceClass("carbon_dioxide");
+	co2_sensor_correlated.setIcon("mdi:molecule-co2");
+	co2_sensor_correlated.setName("Outside CO2 correlated");
+
+	correlation_factor.setIcon("mdi:numeric");
+	correlation_factor.setName("Outside CO2 correlation factor");
+
 	t_sensor.setUnitOfMeasurement("C");
 	t_sensor.setDeviceClass("temperature");
 	t_sensor.setIcon("mdi:temperature-celsius");
@@ -488,6 +528,8 @@ void loop()
 			t_sensor.setValue(cur_data.t);
 			h_sensor.setValue(cur_data.h);
 			co2_sensor.setValue(cur_data.co2);
+			co2_sensor.setValue(cur_data.co2_correlated);
+			correlation_factor.setValue(cur_data.correlation_factor);
 			mqtt.loop();
 		}
 	} else {
@@ -514,3 +556,4 @@ void loop()
 	}
 	delay(10);
 }
+
