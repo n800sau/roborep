@@ -1,0 +1,22 @@
+BOOT0 -> +
+BOOT1 -> -
+
+
+Steppers
+
+stepper right
+dir    A12
+step   A15
+en     B7
+
+stepper left
+dir    B4
+step   B3
+en     B6
+
+------------------
+telnet localhost 4444
+
+reset halt
+#flash write_image erase gen/bin/examples/blink.bin 0x08000000
+flash write_image erase blink.bin 0x08000000
