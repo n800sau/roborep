@@ -1,10 +1,10 @@
 #include <Servo.h>
 
-#define STOP true
+#define STOP false
 
-// eye            s1          eye
-// s2 bottom     s3 middle    s5 bottom
-// s4 top                     s6 top
+// eye left           s1 (2)         eye right
+// s2(1) bottom     s3(0) middle    s5 bottom (4)
+// s4(3) top                     s6 top (5)
 
 
 #define SCOUNT 6
@@ -21,7 +21,7 @@ struct SRV {
 	{5, 50, 90, false},
 	{6, 60, 100, false},
 	{7, 80, 120, false},
-	{8, 60, 100, false},
+	{8, 100, 60, false},
 	{9, 40, 100, false}
 };
 
@@ -33,12 +33,74 @@ void setup()
 		s[i].s.attach(s[i].pin);
 		s[i].s.write(s[i].middle_val);
 	}
+	delay(2000);
+}
+
+void open_left_eye()
+{
+	s[1].s.write(s[1].min_val);
+	s[3].s.write(s[3].min_val);
+}
+
+void close_left_eye()
+{
+	s[1].s.write(s[1].max_val);
+	s[3].s.write(s[3].max_val);
+}
+
+void open_right_eye()
+{
+	s[4].s.write(s[4].min_val);
+	s[5].s.write(s[5].min_val);
+}
+
+void close_right_eye()
+{
+	s[4].s.write(s[4].max_val);
+	s[5].s.write(s[5].max_val);
+}
+
+void look_left()
+{
+	s[0].s.write(s[0].max_val);
+}
+
+void look_right()
+{
+	s[0].s.write(s[0].min_val);
+}
+
+void look_up()
+{
+	s[2].s.write(s[2].max_val);
+}
+
+void look_down()
+{
+	s[2].s.write(s[2].min_val);
 }
 
 void loop()
 {
 	if(!STOP) {
-		for(int i=0; i<SCOUNT; i++)
+		look_up();
+		delay(1000);
+		look_left();
+		delay(1000);
+		open_left_eye();
+		delay(1000);
+		close_left_eye();
+		delay(1000);
+		look_down();
+		delay(1000);
+		look_right();
+		delay(1000);
+		open_right_eye();
+		delay(1000);
+		close_right_eye();
+		delay(1000);
+/*
+		for(int i=4; i<5; i++)
 		{
 			for(int v=s[i].middle_val; v<s[i].max_val; v++) {
 				s[i].s.write(v);
@@ -53,5 +115,6 @@ void loop()
 				delay(15);
 			}
 		}
+*/		delay(5000);
 	}
 }
