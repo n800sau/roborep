@@ -27,66 +27,78 @@ struct SRV {
 
 void setup()
 {
+	Serial.begin(115200);
 	all_attach();
 	delay(2000);
 }
 
 void open_left_eye()
 {
+	Serial.println("Open Left");
 	s[1].s.write(s[1].min_val);
 	s[3].s.write(s[3].min_val);
 }
 
 void close_left_eye()
 {
+	Serial.println("Close Left");
 	s[1].s.write(s[1].max_val);
 	s[3].s.write(s[3].max_val);
 }
 
 void open_right_eye()
 {
+	Serial.println("Open Right");
 	s[4].s.write(s[4].min_val);
 	s[5].s.write(s[5].min_val);
 }
 
 void close_right_eye()
 {
+	Serial.println("Close Right");
 	s[4].s.write(s[4].max_val);
 	s[5].s.write(s[5].max_val);
 }
 
 void look_left()
 {
+	Serial.println("Look Left");
 	s[0].s.write(s[0].max_val);
 }
 
 void look_right()
 {
+	Serial.println("Look Right");
 	s[0].s.write(s[0].min_val);
 }
 
 void look_straight()
 {
+	Serial.println("Look Straight");
 	s[0].s.write(s[0].middle_val);
 }
 
 void look_up()
 {
+	Serial.println("Look Up");
 	s[2].s.write(s[2].max_val);
 }
 
 void look_down()
 {
+	Serial.println("Look Down");
 	s[2].s.write(s[2].min_val);
 }
 
 void look_middle()
 {
+	Serial.println("Look Middle");
 	s[2].s.write(s[2].middle_val);
 }
 
 void all_attach()
 {
+	Serial.println("All Attach");
 	for(int i=0; i<SCOUNT; i++)
 	{
 		s[i].middle_val = s[i].min_val + (s[i].max_val-s[i].min_val)/2;
@@ -97,6 +109,7 @@ void all_attach()
 
 void all_detach()
 {
+	Serial.println("All Detach");
 	for(int i=0; i<SCOUNT; i++)
 	{
 		s[i].s.detach();
