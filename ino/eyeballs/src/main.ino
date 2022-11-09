@@ -27,12 +27,7 @@ struct SRV {
 
 void setup()
 {
-	for(int i=0; i<SCOUNT; i++)
-	{
-		s[i].middle_val = s[i].min_val + (s[i].max_val-s[i].min_val)/2;
-		s[i].s.attach(s[i].pin);
-		s[i].s.write(s[i].middle_val);
-	}
+	all_attach();
 	delay(2000);
 }
 
@@ -70,6 +65,11 @@ void look_right()
 	s[0].s.write(s[0].min_val);
 }
 
+void look_straight()
+{
+	s[0].s.write(s[0].middle_val);
+}
+
 void look_up()
 {
 	s[2].s.write(s[2].max_val);
@@ -80,9 +80,33 @@ void look_down()
 	s[2].s.write(s[2].min_val);
 }
 
+void look_middle()
+{
+	s[2].s.write(s[2].middle_val);
+}
+
+void all_attach()
+{
+	for(int i=0; i<SCOUNT; i++)
+	{
+		s[i].middle_val = s[i].min_val + (s[i].max_val-s[i].min_val)/2;
+		s[i].s.attach(s[i].pin);
+		s[i].s.write(s[i].middle_val);
+	}
+}
+
+void all_detach()
+{
+	for(int i=0; i<SCOUNT; i++)
+	{
+		s[i].s.detach();
+	}
+}
+
 void loop()
 {
 	if(!STOP) {
+		all_attach();
 		look_up();
 		delay(1000);
 		look_left();
@@ -98,6 +122,10 @@ void loop()
 		open_right_eye();
 		delay(1000);
 		close_right_eye();
+		delay(1000);
+		look_straight();
+		delay(1000);
+		look_middle();
 		delay(1000);
 /*
 		for(int i=4; i<5; i++)
@@ -115,6 +143,8 @@ void loop()
 				delay(15);
 			}
 		}
-*/		delay(5000);
+*/
+		all_detach();
+		delay(5000);
 	}
 }
