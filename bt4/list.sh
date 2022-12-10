@@ -1,1 +1,2 @@
 bluetoothctl list
+echo $?
