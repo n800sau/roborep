@@ -1,5 +1,5 @@
-const int stm32_boot_pin = 3;
-const int stm32_reset_pin = 2;
+const int stm32_boot_pin = D11;
+const int stm32_reset_pin = D12;
 const int esp_reset_pin = A0;
 const int esp_io00_pin = A1;
 
