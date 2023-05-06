@@ -25,7 +25,7 @@ module oxlaser5_holder() {
 		union() {
 			h = oxlaser5_sz_z+oxlaser5_pcb_dist+oxlaser5_pcb_sz_z;
 			cube([holder_sz_x+2*wall+1, wall, h], center=true);
-			for(z=[0, 90]) {
+			for(z=[29.5, 104]) {
 				for(x=[-1,1]) {
 					translate([x*(holder_sz_x+wall+1)/2, (17-wall)/2, (-h+28)/2+z]) {
 						cube([wall, 17, 28], center=true);
@@ -80,7 +80,7 @@ module oxlaser5_mockup(holes_only=false) {
 }
 
 
-translate([0, -43, 37]) {
+translate([0, -43, 7]) {
   oxlaser5_holder();
 }
 //color("blue") {
@@ -88,6 +88,6 @@ translate([0, -43, 37]) {
 %slider_z_adapter(extra_sz_y=default_attach_extra_sz_y, extra_sz_z=attach_sz_z+10);
 //}
 
-translate([0, -60, 10]) {
+translate([0, -60, -20]) {
 	%oxlaser5_mockup();
 }

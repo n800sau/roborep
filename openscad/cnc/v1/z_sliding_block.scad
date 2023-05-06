@@ -1,6 +1,6 @@
 show_slider = 0;
 show_part1 = 0;
-show_part2 = 0;
+show_part2 = 1;
 show_part3 = 1;
 
 include <cnc_params.scad>
