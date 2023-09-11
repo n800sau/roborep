@@ -23,9 +23,14 @@
 						$thtime = file_exists($thpath) ? filemtime($thpath) : NULL;
 						if(is_null($thtime) || ($thtime < $ftime)) {
 							// make thumbnail
-							$thumb = new \Imagick($fpath);
-							$thumb->resizeImage($TH_MAXWIDTH, $TH_MAXHEIGHT, imagick::INTERPOLATE_BICUBIC, -1, TRUE);
-							$thumb->writeImage($thpath);
+							try {
+								$thumb = new \Imagick($fpath);
+								$thumb->resizeImage($TH_MAXWIDTH, $TH_MAXHEIGHT, imagick::INTERPOLATE_BICUBIC, -1, TRUE);
+								$thumb->writeImage($thpath);
+							} catch(Exception $e) {
+								error_log($e . "\n(" . $fpath . ')');
+								continue;
+							}
 						}
 						$fpathlist = explode('/', $fpath);
 						$flist[] = array(
