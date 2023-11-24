@@ -1,0 +1,11 @@
+pip3 install esphome
+
+esphome wizard moisture.yaml
+docker run --rm -v "${PWD}":/config -it esphome/esphome wizard moisture.yaml
+
+esphome run moisture.yaml
+docker run --rm -v "${PWD}/config":/config --device=/dev/ttyUSB0 -it esphome/esphome run moisturesensor.yaml
+
+pip3 install tornado esptool
+esphome dashboard config/
+docker run --rm --net=host -v "${PWD}":/config -it esphome/esphome

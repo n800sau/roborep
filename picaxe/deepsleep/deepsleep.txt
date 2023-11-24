@@ -1,0 +1,6 @@
+5v 4 MHz
+
+picaxe 20m2 - 0.16 ma (led off, does not depend of freq)
+(led on - 7ma)
+
+picaxe 08m2 - 0.19 ma (led off, does not depend of freq)

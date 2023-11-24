@@ -1,0 +1,9 @@
+led - PA4
+programming:
+boot0 -> 3.3v
+USB-Serial RX -> PA10
+USB-Serial TX -> PA9
+reset
+
+https://github.com/BLavery/STM32F030F4P6-Arduino
+

@@ -1,0 +1,14 @@
+[Unit]
+Description=IoT server
+After=network.target
+After=redis.service
+
+[Service]
+WorkingDirectory=/home/n800s/stuff/work/roborep/iot_server
+ExecStart=/home/n800s/stuff/work/roborep/iot_server/server.py
+User=n800s
+Group=n800s
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

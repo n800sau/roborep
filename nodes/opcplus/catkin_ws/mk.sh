@@ -1,4 +1,5 @@
 #!/bin/bash
 
-catkin_make &>make.log
+#catkin build --verbose -j1 --mem-limit 70%
+catkin build --verbose -j1 -p1 --mem-limit 70% &>make.log
 echo $?

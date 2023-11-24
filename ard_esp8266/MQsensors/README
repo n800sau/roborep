@@ -1,0 +1,23 @@
+esp8266
+
+io4 - green led
+
+tape recorder socket:
+
+from outside of wall
+
+  d
+c    f
+b e  g
+a    h
+
+    esp          - ft232rl
+a - io0          - dtr
+b - nc
+c - esp rx       - tx
+d - gnd          - gnd
+e - gnd
+f - esp tx       - rx
+g - nc
+e - chp en       - rts
+

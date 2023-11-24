@@ -1,0 +1,9 @@
+led - PB13
+programming:
+boot0 -> 3.3v
+USB-Serial RX -> PA9
+USB-Serial TX -> PA10
+reset
+
+board = genericSTM32F103C8
+

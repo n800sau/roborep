@@ -1,0 +1,38 @@
+esp8266
+
+io15 - green led
+
+
+io4 - am2320
+io5 - am2320
+
+tape recorder socket:
+
+from outside of wall
+
+  d
+c    f
+b e  g
+a    h
+
+    esp          - ft232rl
+a - io0          - dtr
+b - nc
+c - esp rx       - tx
+d - gnd          - gnd
+e - gnd
+f - esp tx       - rx
+g - nc
+e - chp en       - rts
+
+VOLT_RESOLUTION
+1/(10/47) = 4.7
+
+RLmodule = 10
+RL = RLmodule * (47+10)/(RLmodule+47+10)
+
+this->_R0/_RS_Calc with correlation _RS_Calc/getCorrectionFactor(t, h);
+
+_R0/(_RS_Calc/getCorrectionFactor(t, h))
+
+Corrected_RO = _R0 * getCorrectionFactor(t, h)

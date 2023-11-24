@@ -33,8 +33,8 @@ namespace image_motion1_nd
 				image_transport::SubscriberStatusCallback connect_cb = boost::bind(&ImageMotion1Nd::connectCb, this);
 				// Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
 				boost::lock_guard<boost::mutex> lock(connect_mutex);
-				res_pub = it->advertise("/nanaybot/image_motion1_nd", 1, connect_cb, connect_cb);
-				cropped_pub = it->advertise("/nanaybot/cropped_image_motion1_nd", 1, connect_cb, connect_cb);
+				res_pub = it->advertise("/oculus2wd/image_motion1_nd", 1, connect_cb, connect_cb);
+				cropped_pub = it->advertise("/oculus2wd/cropped_image_motion1_nd", 1, connect_cb, connect_cb);
 				// Erode kernel
 				kernel_ero = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2,2));
 			}

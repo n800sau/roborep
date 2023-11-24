@@ -1,0 +1,9 @@
+canvas.chart {
+	width: 500px;
+}
+
+div.value-cards {
+	padding: 16px;
+	display: flex;
+	flex-wrap: wrap;
+}

@@ -1,0 +1,7 @@
+esp201
+
+mosi - D7 - io13
+miso - D6 - io12
+clk  - D5 - io14
+cs   - D8 - io15
+

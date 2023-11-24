@@ -1,0 +1,7 @@
+power 3.3v
+uart to arduino
+usb to pc
+4-6 wires to A4988
+power to A4988
+12v to A4988
+4 wires to stepper

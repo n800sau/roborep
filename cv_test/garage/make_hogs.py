@@ -13,8 +13,9 @@ import numpy as np
 #BASE_DIR = 'cat5'
 #ROOT_PATH = os.path.expanduser('~/work/opencv/cat')
 #BASE_DIR = '2014-10_01'
-BASE_DIR = '2016-03-31'
-ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
+BASE_DIR = '2016-09-10'
+ROOT_PATH = os.path.expanduser('~/work/garage')
+#ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/garage')
 #ROOT_PATH = os.path.expanduser('~/sshfs/asus/root/rus_hard/n800s/mydvd/pics_sony')
 
 def find_orig_file(fn):
@@ -42,11 +43,13 @@ def process_image(fname, mask_proc=None):
 		print ',', image.shape
 		if image.shape[0] * image.shape[1] > 640 * 480:
 			image = imutils.resize(image, height=480)
-		H = _process_image(image)
+		(H, hogImage) = _process_image(image)
 #	(H, hogImage) = _process_image(image)
 #	hogImage = exposure.rescale_intensity(hogImage, out_range=(0, 255))
 #	hogImage = hogImage.astype("uint8")
 #	write_image(hogImage, bname + '_hog.png', fnames)
+#		np.savetxt(file(os.path.join('hog', bname + '.hog'), 'w'), H)
+		print H.shape
 		json.dump(list(H), file(os.path.join('hog', bname + '.hog'), 'w'))
 	return H
 
@@ -59,7 +62,7 @@ def _process_image(image, mask_proc=None):
 			image = cv2.bitwise_and(image, image, mask=mask)
 #		write_image(image, bname + '_image.png', fnames)
 		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-		return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=False)
+		return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), visualise=True)
 #		return feature.hog(gray, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), normalise=True, visualise=True)
 
 if __name__ == '__main__':

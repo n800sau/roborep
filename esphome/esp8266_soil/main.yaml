@@ -1,0 +1,108 @@
+esphome:
+  name: moisturesensor
+  on_boot:
+    priority: -100
+    then:
+      - lambda: id(oled).turn_on();
+      - delay: 1s
+      - lambda: id(oled).turn_off();
+
+esp8266:
+  board: nodemcuv2
+
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: "bc8703eb13c79719d7bf226ebffde8cc"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Moisturesensor Fallback Hotspot"
+    password: "Pa62LH9YbozV"
+
+captive_portal:
+
+font:
+  - file: "DejaVuSansMono-Bold.ttf"
+    id: my_font
+    size: 15
+
+i2c:
+  sda: D3
+  scl: D4
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x32"
+    address: 0x3C
+    rotation: 180
+    id: oled
+    lambda: |-
+      it.image(0, 0, id(drop_image));
+      it.printf(32, 5, id(my_font),  "%4.0f %%", id(soil).state);
+
+image:
+  - file: "water.png"
+    id: drop_image
+    type: GRAYSCALE
+
+sensor:
+  - platform: adc
+    pin: A0
+    name: "Moisture"
+    id: soil
+    icon: "mdi:water-percent"
+    device_class: humidity
+    unit_of_measurement: "%"
+    update_interval: 2s
+    force_update: true
+    expire_after: 3600s
+    filters:
+      - calibrate_linear:
+        # Map 0.0 (from sensor) to 0.0 (true value)
+        - 0.10840 -> 0
+        - 0.05957 -> 100
+
+binary_sensor:
+  - platform: gpio
+    name: "Display Button"
+    internal: true
+    pin:
+      number: D7
+      mode: INPUT_PULLUP
+    on_press:
+      - lambda: id(oled).turn_on();
+      - delay: 5s
+      - lambda: id(oled).turn_off();
+
+deep_sleep:
+  run_duration: 5s
+  sleep_duration: 10min
+  id: deep_sleep_1
+
+mqtt:
+  broker: 192.168.1.50
+  username: user1
+  password: password1
+# empty birth_message and will_message to avoid homeassistant show unavailable on sensor sleep
+  birth_message:
+  will_message:
+  on_message:
+    - topic: moisturesensor/ota_mode
+      payload: 'ON'
+      then:
+        - deep_sleep.prevent: deep_sleep_1
+    - topic: moisturesensor/ota_mode
+      payload: 'OFF'
+      then:
+        - lambda: id(oled).turn_off();
+        - deep_sleep.enter: deep_sleep_1

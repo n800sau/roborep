@@ -1,0 +1,8 @@
+p7 - z-dir
+p4 - z-step
+
+always on - y-dir
+p3 - y-step
+
+always on - x-dir
+p2 - x-step

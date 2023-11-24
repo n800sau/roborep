@@ -1,0 +1,35 @@
+//does not work
+
+#include <RCSwitch.h>
+
+RCSwitch mySwitch = RCSwitch();
+
+void setup() {
+  Serial.begin(9600);
+	Serial.println("TX-RX");
+  mySwitch.enableReceive(0);  // Receiver on interrupt 0 => that is pin #2
+  // Transmitter is connected to Arduino Pin #10  
+  mySwitch.enableTransmit(10);
+}
+
+void loop() {
+  mySwitch.switchOn("11111", "00010");
+  delay(200);
+  mySwitch.switchOff("11111", "00010");
+  delay(200);
+
+  if (mySwitch.available()) {
+    
+    Serial.print("Received ");
+    Serial.print( mySwitch.getReceivedValue() );
+    Serial.print(" / ");
+    Serial.print( mySwitch.getReceivedBitlength() );
+    Serial.print("bit ");
+    Serial.print("Protocol: ");
+    Serial.println( mySwitch.getReceivedProtocol() );
+
+    mySwitch.resetAvailable();
+  }
+
+  delay(1000);
+}

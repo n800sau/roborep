@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="oculus_remnant" type="oculus_base_node.py" name="oculus_base_node">
+	</node>
+</launch>

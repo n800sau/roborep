@@ -3,8 +3,18 @@
 	<node name="master_sync_acer" pkg="master_sync_fkie" type="master_sync">
 	</node>
 
-	<node name="master_discovery_acer" pkg="master_discovery_fkie" type="zeroconf">
+	<node name="master_discovery_acer" pkg="master_discovery_fkie" type="master_discovery">
+		<rosparam param="robot_hosts">[hubee.local, rpi3.local, radxa.local, x64.local]</rosparam>
 	</node>
+
+<!--
+	<node name="master_discovery_acer" pkg="master_discovery_fkie" type="zeroconf">
+		<rosparam param="robot_hosts">[hubee.local, rpi3.local, radxa.local, x64.local]</rosparam>
+	</node>
+-->
+
+  <include file="joy.launch">
+  </include>
 
 </launch>
 

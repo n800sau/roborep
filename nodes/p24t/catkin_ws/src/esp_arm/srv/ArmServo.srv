@@ -1,0 +1,5 @@
+int8    wvalue
+int16   msecs
+---
+int8    rvalue
+bool    detached

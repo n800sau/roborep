@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="oculus_remnant">
+
+	<xacro:include filename="$(find oculus_remnant)/urdf/asus_camera.urdf.xacro"/>
+
+	<xacro:property name="base_length" value="0.28" />
+	<xacro:property name="base_width" value="0.217" />
+	<xacro:property name="base_height" value="0.003" />
+
+	<xacro:property name="second_base_length" value="${base_length}" />
+	<xacro:property name="second_base_width" value="${base_width + 0.02 * 2}" />
+	<xacro:property name="second_base_height" value="${base_height}" />
+
+	<xacro:property name="fwd_wheel_radius" value="0.034" />
+	<xacro:property name="fwd_wheel_width" value="0.008" />
+	<xacro:property name="fwd_wheel_x_offset" value="${base_length / 2 - 0.095}" />
+	<xacro:property name="fwd_wheel_y_offset" value="${base_width / 2 + fwd_wheel_width / 2}" />
+	<xacro:property name="fwd_wheel_z_offset" value="-0.0225" />
+
+	<xacro:property name="rear_wheel_radius" value="0.024" />
+	<xacro:property name="rear_wheel_width" value="0.034" />
+	<xacro:property name="rear_wheel_x_offset" value="${-base_length / 2 + 0.028}" />
+	<xacro:property name="rear_wheel_y_offset" value="${base_width / 2 - rear_wheel_width - 0.016}" />
+	<xacro:property name="rear_wheel_z_offset" value="-0.024" />
+
+	<xacro:property name="imubox_length" value="0.05" />
+	<xacro:property name="imubox_width" value="0.08" />
+	<xacro:property name="imubox_height" value="0.01" />
+
+	<xacro:property name="xtion_x_position" value="0.09" />
+	<xacro:property name="xtion_y_position" value="0" />
+	<xacro:property name="xtion_z_position" value="0.12" />
+	<xacro:property name="xtion_roll_position" value="0" />
+	<xacro:property name="xtion_pitch_position" value="0" />
+	<xacro:property name="xtion_yaw_position" value="0" />
+
+	<material name="gray">
+		<color rgba="0.5 0.5 0.5 0.8"/>
+	</material>
+
+	<material name="white">
+		<color rgba="1 1 1 0.8"/>
+	</material>
+
+	<material name="black">
+		<color rgba="0 0 0 0.8"/>
+	</material>
+
+	<material name="blue">
+		<color rgba="0 0 0.8 0.8"/>
+	</material>
+
+	<xacro:macro name="default_inertial" params="mass">
+		<inertial>
+			<mass value="${mass}" />
+			<inertia ixx="1.0" ixy="0.0" ixz="0.0"
+				 iyy="1.0" iyz="0.0"
+				 izz="1.0" />
+		</inertial>
+	</xacro:macro>
+
+
+	<link name="base_link">
+		<visual>
+			<geometry>
+				<box size="${base_length} ${base_width} ${base_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${base_length} ${base_width} ${base_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<link name="second_base_link">
+		<visual>
+			<geometry>
+				<box size="${second_base_length} ${second_base_width} ${second_base_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${second_base_length} ${second_base_width} ${second_base_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+		<xacro:default_inertial mass="0.15"/>
+	</link>
+
+	<joint name="base_to_second_base" type="fixed">
+		<parent link="base_link"/>
+		<child link="second_base_link"/>
+		<origin xyz="0 0 0.027" rpy="0 0 0"/>
+	</joint>
+
+	<link name="imubox_link">
+		<visual>
+			<geometry>
+				<box size="${imubox_length} ${imubox_width} ${imubox_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="white"/>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${imubox_length} ${imubox_width} ${imubox_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</collision>
+		<xacro:default_inertial mass="0.1"/>
+	</link>
+
+	<joint name="base_to_imubox" type="fixed">
+		<parent link="base_link"/>
+		<child link="imubox_link"/>
+		<origin xyz="${-base_length / 2} 0 0.32" rpy="0 0 0"/>
+	</joint>
+
+	<xacro:macro name="wheel" params="prefix reflect">
+
+		<link name="${prefix}_fwd_wheel">
+			<visual>
+				<geometry>
+					<cylinder length="${fwd_wheel_width}" radius="${fwd_wheel_radius}"/>
+				</geometry>
+				<origin rpy="0 0 0" xyz="0 0 0"/>
+				<material name="blue"/>
+			</visual>
+			<xacro:default_inertial mass="0.03"/>
+		</link>
+
+		<joint name="base_to_${prefix}_fwd_wheel" type="continuous">
+			<parent link="base_link"/>
+			<child link="${prefix}_fwd_wheel"/>
+			<origin xyz="${fwd_wheel_x_offset} ${reflect*fwd_wheel_y_offset} ${fwd_wheel_z_offset}" rpy="${pi / 2} 0 0"/>
+			<axis xyz="0 0 1"/>
+		</joint>
+
+		<link name="${prefix}_rear_wheel">
+			<visual>
+				<geometry>
+					<cylinder length="${rear_wheel_width}" radius="${rear_wheel_radius}"/>
+				</geometry>
+				<origin rpy="0 0 0" xyz="0 0 0"/>
+				<material name="gray"/>
+			</visual>
+			<xacro:default_inertial mass="0.03"/>
+		</link>
+
+		<joint name="base_to_${prefix}_rear_wheel" type="continuous">
+			<parent link="base_link"/>
+			<child link="${prefix}_rear_wheel"/>
+			<origin xyz="${rear_wheel_x_offset} ${reflect*rear_wheel_y_offset} ${rear_wheel_z_offset}" rpy="${pi / 2} 0 0"/>
+			<axis xyz="0 0 1"/>
+		</joint>
+
+	</xacro:macro>
+
+	<xacro:wheel prefix="right" reflect="1" />
+	<xacro:wheel prefix="left" reflect="-1" />
+
+    <xacro:asus_camera_model name="camera" parent="base_link">
+      <origin xyz="${xtion_x_position} ${xtion_y_position}  ${xtion_z_position}" rpy="${xtion_roll_position} ${xtion_pitch_position} ${xtion_yaw_position}"/>
+    </xacro:asus_camera_model>
+
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/</robotNamespace>
+		</plugin>
+	</gazebo>
+
+</robot>

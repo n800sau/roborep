@@ -1,0 +1,14 @@
+D4 - TFT_CS
+D5 - SD_SS
+D18 - TFT_SCK, SD_SCK
+D19 - SD_MISO
+D21 - TFT_A0 (DC)
+D22 - TFT_RST
+D23 - TFT_SDA, SD_MOSI
+
+D27 - K1
+D26 - K2
+D25 - K3
+D33 - K4
+
+TFT LED colnsumption 110 ma

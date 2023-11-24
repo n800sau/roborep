@@ -32,3 +32,10 @@ rosrun image_view image_view image:=/oculus2wd/image_motion_nd
 #rosrun image_view image_view image:=/oculus2wd/signal_image_nd
 
 #rosrun image_view image_view image:=/camera/rgb/image_raw
+#rosrun image_view image_view image:=/oculus2wd/image_motion1_nd
+#rosrun image_view image_view image:=/oculus2wd/signal_image theora
+
+#rosrun image_view image_view image:=/oculus2wd/signal_image_nd
+
+#rosrun image_view image_view image:=/camera/rgb/image_raw
+#rosrun image_view image_view image:=/ot/camera/image_raw _image_transport:=compressed

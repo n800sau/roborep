@@ -1,0 +1,44 @@
+http:
+  # For extra security set this to only accept connections on localhost if NGINX is on the same machine
+  # server_host: 127.0.0.1
+  # Update this line to be your domain
+  base_url: https://n800s.ddns.net:34080
+  use_x_forwarded_for: true
+  # You must set the trusted proxy IP address so that Home Assistant will properly accept connections
+  # Set this to your NGINX machine IP, or localhost if hosted on the same machine.
+  trusted_proxies: 127.0.0.1
+
+mq2_sensor: &mq2_sensor
+  -  platform: mqtt
+     state_topic: "/hass/sensor/mq2/state"
+     unit_of_measurement: 'ppm'
+
+sensor:
+  - <<: *mq2_sensor
+    name: "Mq2 alcohol"
+    unique_id: mq2_alcohol
+    value_template: '{{ value_json.alcohol }}'
+  - <<: *mq2_sensor
+    name: "Mq2 propane"
+    unique_id: mq2_propane
+    value_template: '{{ value_json.propane }}'
+  - <<: *mq2_sensor
+    name: "Mq2 carbon monoxide"
+    unique_id: mq2_carbon_monoxide
+    value_template: '{{ value_json['carbon monoxide'] }}'
+  - <<: *mq2_sensor
+    name: "Mq2 smoke"
+    unique_id: mq2_smoke
+    value_template: '{{ value_json.smoke }}'
+  - <<: *mq2_sensor
+    name: "Mq2 lpg"
+    unique_id: mq2_lpg
+    value_template: '{{ value_json.lpg }}'
+  - <<: *mq2_sensor
+    name: "Mq2 hydrogen"
+    unique_id: mq2_hydrogen
+    value_template: '{{ value_json.hydrogen }}'
+  - <<: *mq2_sensor
+    name: "Mq2 methane"
+    unique_id: mq2_methane
+    value_template: '{{ value_json.methane }}'

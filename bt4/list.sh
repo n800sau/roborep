@@ -1,0 +1,2 @@
+bluetoothctl list
+echo $?

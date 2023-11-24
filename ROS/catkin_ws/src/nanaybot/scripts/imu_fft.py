@@ -79,8 +79,8 @@ def callback(msg):
 
 rospy.init_node('imu_fft', anonymous = True)
 
-rospy.Subscriber("/nanaybot/imu_raw", Imu, callback)
-pub = rospy.Publisher('/nanaybot/imu_005', Imu)
+rospy.Subscriber("/oculus2wd/imu_raw", Imu, callback)
+pub = rospy.Publisher('/oculus2wd/imu_005', Imu)
 
 
 

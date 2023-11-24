@@ -1,0 +1,12 @@
+D3 = GPIO0;
+D10 = GPIO1;
+D4 = GPIO2;
+D9 = GPIO3;
+D2 = GPIO4;
+D1 = GPIO5;
+D6 = GPIO12;
+D7 = GPIO13;
+D5 = GPIO14;
+D8 = GPIO15;
+D0 = GPIO16;
+LED_BUILTIN = GPIO16 (auxiliary constant for the board LED, not a board pin);

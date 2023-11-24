@@ -27,10 +27,13 @@
 
 #include <Wire.h>
 
+#define LED_PIN A0
 
 void setup()
 {
   Wire.begin();
+
+  pinMode(LED_PIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
 
   Serial.begin(115200);
   Serial.println("\nI2C Scanner");
@@ -76,5 +79,10 @@ void loop()
   else
     Serial.println("done\n");
 
-  delay(5000);           // wait 5 seconds for next scan
+  for(int i=0; i<3; i++) {
+    digitalWrite(LED_PIN, LOW);
+    delay(1000);
+    digitalWrite(LED_PIN, HIGH);
+    delay(1000);
+  }
 }

@@ -1,0 +1,30 @@
+<launch>
+
+	<!-- Worker threads for the nodelet manager -->
+	<arg name="num_worker_threads" default="4" />
+
+	<arg name="namespace" value="rpi3" />
+
+	<group ns="$(arg namespace)">
+
+		<arg name="rgb_topic"               default="/$(arg namespace)/camera/rgb/image_rect_color" />
+		<arg name="depth_topic"             default="/$(arg namespace)/camera/depth_registered/image_raw" />
+		<arg name="camera_info_topic"       default="/$(arg namespace)/camera/rgb/camera_info" />
+
+		<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
+			<arg name="rgb_topic"               value="/$(arg namespace)/camera/rgb/image_rect_color" />
+			<arg name="depth_topic"             value="/$(arg namespace)/camera/depth_registered/image_raw" />
+			<arg name="camera_info_topic"       value="/$(arg namespace)/camera/rgb/camera_info" />
+			<arg name="frame_id" value="base_link"/>\
+			<arg name="visual_odometry" value="true"/>\
+			<arg name="rviz" value="false"/>\
+			<arg name="rtabmapviz" value="false"/>\
+			<arg name="localization" value="false"/>\
+		</include>
+
+	</group>
+
+</launch>
+
+
+

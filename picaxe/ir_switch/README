@@ -1,0 +1,56 @@
+picaxe 20m2
+(100mf)
+
+esp32
+(200mf)
+
+picaxe -|< esp32 - diod 1n4148
+
+5 pins
+ 
+keys in
+C.1
+C.2
+C.3
+C.4
+common - GND near C.0
+
+3 pins programmer
+from edge: 
+Serial In - grey wire 
+GND - white wire
+Serial Out - black wire
+
+keys out
+B.1
+B.2
+B.3
+B.4
+
+B.7 - el switch on/off
+
+C.0 - green to esp32 
+B.6 - blue to esp32 - gotosleep pin
+
+ir
+3 pin female
+from esp32
+B.5 sig - green
+gnd - yellow
++5v - orange
+
+vs 1838b
+
+accummulator
+18650
+6000mah
+
+40mm internal height corner
+
+el.switch pnp transistor 2SA1300
+b - 10k - picaxe +
+  - 330 om - picaxe B.7
+e - picaxe +
+k - esp32 +
+gnd - esp32 -
+gnd - picaxe gnd

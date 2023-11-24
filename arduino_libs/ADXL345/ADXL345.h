@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ADXL345_h
 
 #include <inttypes.h>
-#include "../Wire/Wire.h"
+#include "Wire.h"
 
 #define DefaultADXL345_Address 0x1D
 

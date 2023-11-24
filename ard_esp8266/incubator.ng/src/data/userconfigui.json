@@ -1,0 +1,82 @@
+{
+    "groups": [
+        {
+            "title": "PID",
+            "entities": [
+                {
+                    "name": "kp",
+                    "title": "Kp",
+                    "attributes": {
+                        "type": "number",
+                        "min": 0,
+                        "required": "1"
+                    }
+                },
+                {
+                    "name": "ki",
+                    "title": "Ki",
+                    "attributes": {
+                        "type": "number",
+                        "min": 0,
+                        "required": "1"
+                    }
+                },
+                {
+                    "name": "kd",
+                    "title": "Kd",
+                    "attributes": {
+                        "type": "number",
+                        "min": 0,
+                        "required": "1"
+                    }
+                },
+                {
+                    "name": "default_temp",
+                    "title": "Default Temperature",
+                    "attributes": {
+                        "type": "number",
+                        "min": 20,
+                        "required": "1"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "Limits",
+            "entities": [
+                {
+                    "name": "max_fan_pwm",
+                    "title": "Fan (0-100)",
+                    "attributes": {
+                        "type": "number",
+                        "min": 0,
+                        "max": 100,
+                        "required": "1"
+                    }
+                },
+                {
+                    "name": "max_heat_pwm",
+                    "title": "Heat (50-100)",
+                    "attributes": {
+                        "type": "number",
+                        "min": 50,
+                        "max": 100,
+                        "required": "1"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "Hardware",
+            "entities": [
+                {
+                    "name": "lcd_on",
+                    "title": "Lcd backlight",
+                    "attributes": {
+                        "type": "checkbox"
+                    }
+                }
+            ]
+        }
+    ]
+}

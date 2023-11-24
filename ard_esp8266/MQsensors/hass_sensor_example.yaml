@@ -1,0 +1,6 @@
+sensor:
+  - platform: mqtt
+    name: "Mq2 sensor"
+    state_topic: "/hass/sensor/mq2/state"
+    unit_of_measurement: 'ppm'
+    value_template: '{{ value_json.smoke }}'

@@ -1,0 +1,2 @@
+RTS -> CH_EN
+CH01 -> gnd

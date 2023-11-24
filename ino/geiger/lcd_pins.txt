@@ -1,0 +1,16 @@
+gnd - gnd
+vcc - 5v
+contrast - 10k - 5v - gnd
+rs - 12
+rw - gnd
+en - 11
+d0
+d1
+d2
+d3
+d4 - 7
+d5 - 6
+d6 - 5
+d7 - 4
+backlight(+) - 10
+backlight(-) - gnd

@@ -1,0 +1,30 @@
+{
+    "iwcAll": {
+        "iwcSys": {
+            "iwcThingName": "nameFromJSON",
+            "iwcApPassword": "proniknovenie",
+            "iwcWifi0": {
+                "iwcWifiSsid": "TVSlow Internet Connection",
+                "iwcWifiPassword": "1,tpGfhjkz2"
+             },
+            "iwcApTimeout": "3",
+            "wifi1": {
+              "wifi1-ssid": "Slow Internet Connection",
+              "wifi1-pwd": "1,tpGfhjkz2"
+            },
+            "wifi2": {
+              "wifi2-ssid": "TVSlow Internet Connection",
+              "wifi2-pwd": "1,tpGfhjkz2"
+            }
+        },
+        "iwcCustom": {
+            "mqtt": {
+              "mqttServer": "192.168.1.50",
+              "mqttUser": "user1",
+              "mqttPass": "password1"
+            }
+        },
+        "hidden": {
+        }
+    }
+}

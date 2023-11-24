@@ -23,6 +23,7 @@ void stop(bool full)
 {
 	if(full) {
 		full_stopped = true;
+		cmd_vel_mode = false;
 		strncpy(current_command, "", sizeof(current_command));
 	}
 	moving_straight = false;
@@ -54,6 +55,7 @@ void setLeftMotor(int power, bool fwd)
 			analogWrite(LEFT_MOTOR_2, pwm);
 			digitalWrite(LEFT_MOTOR_1, LOW);
 		}
+//		nh.loginfo(("Left power:" + String(pwm) + ", fwd:" + String(fwd)).c_str());
 //		Serial.print("Left:");
 //		Serial.print(pwm);
 //		Serial.println((fwd) ? ", fwd": ", back");
@@ -83,28 +85,58 @@ void setRightMotor(int power, bool fwd)
 			analogWrite(RIGHT_MOTOR_2, pwm);
 			digitalWrite(RIGHT_MOTOR_1, LOW);
 		}
+//		nh.loginfo(("Right power:" + String(pwm) + ", fwd:" + String(fwd)).c_str());
 //		Serial.print("Right:");
 //		Serial.print(pwm);
 //		Serial.println((fwd) ? ", fwd": ", back");
 	}
 }
 
-float getRange_Ultrasound()
+float getRange_Ultrasound(int attempts, int trigPin, int echoPin)
 {
-	long duration = -1; // Duration used to calculate distance
+	float rs = 0;
+	int count = 0, i;
+	float dist = MAX_RANGE + 1;
+	for(i=0; i<min(attempts, 1); i++) {
+		if(i > 0) {
+			// to prevent aftershock reaction
+			delayMicroseconds(10);
+		}
+		long duration = -1; // Duration used to calculate distance
 //	noInterrupts();
-	// The following trigPin/echoPin cycle is used to determine the
-	// distance of the nearest object by bouncing soundwaves off of it.
-	digitalWrite(trigPin, LOW);
-	delayMicroseconds(2);
+		// The following trigPin/echoPin cycle is used to determine the
+		// distance of the nearest object by bouncing soundwaves off of it.
+		digitalWrite(trigPin, LOW);
+		delayMicroseconds(2);
 
-	digitalWrite(trigPin, HIGH);
-	delayMicroseconds(10);
+		digitalWrite(trigPin, HIGH);
+		delayMicroseconds(10);
 
-	digitalWrite(trigPin, LOW);
+		digitalWrite(trigPin, LOW);
 //	interrupts();
-	duration = pulseIn(echoPin, HIGH);
+		duration = pulseIn(echoPin, HIGH);
 
-	//Calculate the distance (in m) based on the speed of sound.
-	return duration / 58.2 / 100;
+		//Calculate the distance (in m) based on the speed of sound.
+		dist = duration / 58.2 / 100;
+		if(dist >= MIN_RANGE && dist <= MAX_RANGE) {
+			rs += dist;
+			count++;
+		}
+	}
+	if(count > 0) {
+		rs = rs / count;
+	} else {
+		rs = dist;
+	}
+	return rs;
+}
+
+float getRange_BackUltrasound(int attempts)
+{
+	return getRange_Ultrasound(attempts, backTrigPin, backEchoPin);
+}
+
+float getRange_HeadUltrasound(int attempts)
+{
+	return getRange_Ultrasound(attempts, headTrigPin, headEchoPin);
 }

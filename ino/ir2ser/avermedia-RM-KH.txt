@@ -1,0 +1,35 @@
+source      201
+power       200
+1           205
+2           206
+3           207
+4           209
+5           20A
+6           20B
+7           20D
+8           20E
+9           20F
+L           212
+0           211
+R           213
+snap        217
+ch up       303
+16CH        210
+vol up      21e
+full screen 20C
+vol down    21F
+speaker     214
+ch down     302
+audio       208
+rec         219
+play        218
+stop        21B
+pause       21A
+<<          21D
+>>          21C
+teletext    293
+wake up     301
+sleep       300
+epg         204
+menu        215
+

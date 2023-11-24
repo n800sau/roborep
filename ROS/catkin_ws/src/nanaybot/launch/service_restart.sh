@@ -1,1 +1,1 @@
-sudo service nanaybot restart
+sudo service oculus2wd restart

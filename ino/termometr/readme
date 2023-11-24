@@ -1,0 +1,26 @@
+LCD
+
+A - 330om -> +5
+K - GND
+D7 - Ard D2
+D6 - Ard D3
+D5 - Ard D4
+D6 - Ard D5
+E - Ard D11
+RW - GND
+RS - Ard D12
+V0 - -> res 10K - +5
+                - GND
+Vdd - +5
+Vss - GND
+
+DS18b20 - red - +5
+          black - GND
+          yellow - Ard D6 - 10k - +5
+
+NTC 3950 - GND
+100K     - 470k - Ard +3.3
+
+NTC 3545 - GND
+10K      - 47k - Ard +3.3
+

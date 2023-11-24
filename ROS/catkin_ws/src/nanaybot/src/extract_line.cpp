@@ -13,7 +13,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <dynamic_reconfigure/server.h>
-#include <nanaybot/extract_lineConfig.h>
+#include <oculus2wd/extract_lineConfig.h>
 //#include <vector>
 
 using namespace std;
@@ -129,7 +129,7 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
 
 }
 
-void reconfigure_callback(nanaybot::extract_lineConfig &config, uint32_t level) {
+void reconfigure_callback(oculus2wd::extract_lineConfig &config, uint32_t level) {
 	ROS_INFO("Reconfigure Request: %d %d %dx%d",
 		config.vertical_level, config.field_height,
 		config.image_width, config.image_height);
@@ -144,11 +144,11 @@ int main(int argc, char ** argv)
 	ros::init(argc, argv, "extract_line");
 	ros::NodeHandle nh;
 	ros::Subscriber sub = nh.subscribe("/camera/depth_registered/points", 5, cloud_cb);
-	pub = nh.advertise<sensor_msgs::PointCloud2> ("/nanaybot/hline", 1);
+	pub = nh.advertise<sensor_msgs::PointCloud2> ("/oculus2wd/hline", 1);
 	image_transport::ImageTransport it(nh);
 	img_pub = it.advertise("/extract_line/image", 1);
-	dynamic_reconfigure::Server<nanaybot::extract_lineConfig> server;
-	dynamic_reconfigure::Server<nanaybot::extract_lineConfig>::CallbackType f;
+	dynamic_reconfigure::Server<oculus2wd::extract_lineConfig> server;
+	dynamic_reconfigure::Server<oculus2wd::extract_lineConfig>::CallbackType f;
 	f = boost::bind(&reconfigure_callback, _1, _2);
 	server.setCallback(f);
 	ros::spin();

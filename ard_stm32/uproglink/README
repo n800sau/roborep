@@ -1,0 +1,5 @@
+to connect to esp201
+A2/A3 - esp rx/tx
+a4 - rst
+a5 - io0
+gnd - 10k - io15

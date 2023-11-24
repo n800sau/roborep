@@ -8,6 +8,7 @@ using namespace std;
 using namespace cv;
 
 extern "C" {
+
 JNIEXPORT void JNICALL Java_au_n800s_cv_CameraView_FindFeatures(JNIEnv* env, jobject thiz, jint width, jint height, jbyteArray yuv, jintArray bgra)
 {
     jbyte* _yuv  = env->GetByteArrayElements(yuv, 0);
@@ -23,10 +24,12 @@ JNIEXPORT void JNICALL Java_au_n800s_cv_CameraView_FindFeatures(JNIEnv* env, job
 
     vector<KeyPoint> v;
 
-    FastFeatureDetector detector(50);
-    detector.detect(mgray, v);
-    for( size_t i = 0; i < v.size(); i++ )
+    Ptr<FeatureDetector> detector = FastFeatureDetector::create(50);
+
+    detector->detect(mgray, v);
+    for( size_t i = 0; i < v.size(); i++ ) {
         circle(mbgra, Point(v[i].pt.x, v[i].pt.y), 10, Scalar(0,0,255,255));
+    }
 
     env->ReleaseIntArrayElements(bgra, _bgra, 0);
     env->ReleaseByteArrayElements(yuv, _yuv, 0);

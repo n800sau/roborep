@@ -1,0 +1,8 @@
+top with button
+1 2 3
+
+1 - GND
+2 - TX
+3 - RX
+
+RX - ~ 2M - gnd

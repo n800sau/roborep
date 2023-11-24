@@ -1,34 +1,66 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys, os, time
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib_py'))
-
-from conf_ino import configure
+import tty, termios
+import argparse
 from serial import Serial
 
-cfgobj = configure(os.path.join(os.path.dirname(__file__)))
+parser = argparse.ArgumentParser(description='Programmer control')
+parser.add_argument('--mode', choices=['esp', 'stm'], default='esp')
+args = parser.parse_args()
 
-cfg = cfgobj.as_dict('serial')
+exec(open("vars.sh").read())
 
-s_port = cfg['serial_port']
-s_baud = int(cfg.get('baud_rate', 115200))
+s_port = DEV
+s_baud = 115200
 
-ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5)
+ser = Serial(s_port, s_baud, timeout=5, writeTimeout=5, dsrdtr=None)
 #print s_port, s_baud
 
-for i in range(5):
-	if ser.readline().strip() == 'Ready':
+ser.write(b'?')
+ser.flush()
 
-		val = raw_input('Input:')
-		if not val:
-			val = "#"
-		ser.write(val)
-		ser.flush()
+def loop():
+	while True:
+		print('Input %s:(p,w,r,i,x)' % args.mode, end='')
+		sys.stdout.flush()
+		val = sys.stdin.read(1)
+#		print('CHAR:', val)
+		if val:
+			print()
+			if val.upper() == 'X':
+				print('Exit')
+				break
+			if not val:
+				val = "#"
+			if args.mode == 'stm':
+				if val.upper() == 'W':
+					val = 'p'
+				elif val.upper() == 'P':
+					val = 'w'
+			ser.write(val.encode('ascii'))
+			ser.flush()
 
-		print ser.readline()
-		print ser.readline()
-		break
-	else:
-		time.sleep(1)
+			for i in range(100):
+				line = ser.readline().decode().strip()
+				print(line)
+				if line == 'end':
+					break
 
+tattr = termios.tcgetattr(sys.stdin)
 
+try:
+	tty.setcbreak(sys.stdin, termios.TCSANOW)
+
+	for i in range(5):
+		line = ser.readline().decode().strip()
+		print(line)
+		if line == 'Ready':
+			loop()
+			break
+		else:
+			time.sleep(1)
+
+finally:
+	termios.tcsetattr(sys.stdin, termios.TCSANOW, tattr)

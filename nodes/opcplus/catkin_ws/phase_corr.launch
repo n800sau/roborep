@@ -1,0 +1,7 @@
+<launch>
+  <node name="phase_corr" pkg="opencv_apps" type="phase_corr" respawn="true">
+    <remap from="image" to="/ow_camera/image_raw" />
+    <param name="use_camera_info" value="false" />
+    <param name="debug_view" value="false" />
+  </node>
+</launch>

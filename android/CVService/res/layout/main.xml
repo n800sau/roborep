@@ -9,5 +9,11 @@
     android:layout_height="wrap_content"
     android:text="Hello World, CameraActivity"
     />
+
+    <au.n800s.cv.CameraView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/surface_view" />
+
 </LinearLayout>
 

@@ -9,9 +9,6 @@ REDIS_PRI_KEY = 'LCD_timed_lines'
 
 r = redis.Redis()
 
-# Initialize the LCD using the pins above.
-lcd = LCD16x2()
-
 old_line = None
 
 while True:
@@ -20,6 +17,8 @@ while True:
 	if not new_line:
 		new_line = r.get(REDIS_KEY)
 	if new_line != old_line:
+		# Initialize the LCD using the pins above.
+		lcd = LCD16x2()
 		if new_line:
 			lcd.message(new_line)
 		else:

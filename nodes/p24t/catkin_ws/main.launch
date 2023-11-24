@@ -1,0 +1,35 @@
+<launch>
+
+<!--
+	<node name="master_sync_p24t" pkg="master_sync_fkie" type="master_sync">
+	</node>
+
+	<node name="master_discovery_p24t" pkg="master_discovery_fkie" type="zeroconf">
+	</node>
+-->
+
+	<!-- Joystick Node -->
+	<arg name="joystick_serial_device" default="/dev/input/js0"/>
+	<node pkg="joy" type="joy_node" name="joy_node" clear_params="true" >
+		<param name="deadzone" value="0.12" />
+		<param name="coalesce_interval" value="0.1" />
+			<!-- INPUT DEVICE -->
+		<param name="dev" value="$(arg joystick_serial_device)" />
+			<!-- OUTPUT TOPICS -->
+		<remap from="joy" to="joy_arm" />
+	</node>
+
+	<node pkg="rosserial_python" type="serial_node.py" name="serial_node">
+		<param name="port" value="tcp"/>
+	</node>
+
+	<node pkg="esp_arm" name="esp_arm_service_client" type="esp_arm_service_client.py" output="screen" >
+	</node>
+
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
+		 <arg name="port" value="9090"/>
+	</include>
+
+</launch>
+
+

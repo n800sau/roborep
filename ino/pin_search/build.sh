@@ -1,0 +1,2 @@
+platformio run -v
+echo $?

@@ -48,13 +48,16 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    mstate.msg
+   AngleRange.msg
 )
 
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
    FCommand.srv
-#   Service2.srv
+   FTwistScan.srv
+   FScannerSwitch.srv
+   FScannerSetDirection.srv
  )
 
 ## Generate actions in the 'action' folder
