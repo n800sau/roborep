@@ -1,0 +1,13 @@
+# P9_19 - SCL
+# P9_20 - SDA
+i2cdetect -y -r 2
+# PWM:
+# BB-PWM0-00A0
+# P9_21
+# P9_22
+#BB-PWM1-00A0
+# P9_14
+# P9_16
+#BB-PWM2-00A0
+# P8_13
+# P8_19
