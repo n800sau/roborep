@@ -168,31 +168,45 @@ public final class R {
         public static final int white=0x7f050000;
         public static final int yellow=0x7f050001;
     }
+    public static final class dimen {
+        /**  Default screen margins, per the Android Design guidelines. 
+         */
+        public static final int activity_horizontal_margin=0x7f060000;
+        public static final int activity_vertical_margin=0x7f060001;
+        public static final int domain_label_font_size=0x7f060004;
+        public static final int domain_tick_label_font_size=0x7f060007;
+        public static final int legend_text_font_size=0x7f060008;
+        public static final int pie_segment_label_font_size=0x7f060002;
+        public static final int range_label_font_size=0x7f060005;
+        public static final int range_tick_label_font_size=0x7f060006;
+        public static final int title_font_size=0x7f060003;
+    }
     public static final class drawable {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int adxl345_xz_heading=0x7f080001;
-        public static final int adxl345_yz_heading=0x7f080002;
-        public static final int adxl345_timestamp=0x7f080000;
-        public static final int b_restart=0x7f08000c;
-        public static final int back_title=0x7f080013;
-        public static final int errormsg=0x7f08000e;
-        public static final int exit_title=0x7f080014;
-        public static final int hmc5883l_heading=0x7f080004;
-        public static final int hmc5883l_timestamp=0x7f080003;
-        public static final int kalman_heading=0x7f080006;
-        public static final int kalman_timestamp=0x7f080005;
-        public static final int lsm303_heading=0x7f080008;
-        public static final int lsm303_timestamp=0x7f080007;
-        public static final int mag3110_heading=0x7f08000a;
-        public static final int mag3110_timestamp=0x7f080009;
-        public static final int mpu6050_xz_degrees=0x7f080010;
-        public static final int mpu6050_yz_degrees=0x7f080011;
-        public static final int mpu6050_timestamp=0x7f08000f;
-        public static final int s_timestamp=0x7f08000d;
-        public static final int server=0x7f08000b;
-        public static final int settings_title=0x7f080012;
+        public static final int adxl345_xz_heading=0x7f090001;
+        public static final int adxl345_yz_heading=0x7f090002;
+        public static final int adxl345_timestamp=0x7f090000;
+        public static final int b_restart=0x7f09000c;
+        public static final int back_title=0x7f090014;
+        public static final int errormsg=0x7f09000e;
+        public static final int exit_title=0x7f090015;
+        public static final int hmc5883l_heading=0x7f090004;
+        public static final int hmc5883l_timestamp=0x7f090003;
+        public static final int kalman_heading=0x7f090006;
+        public static final int kalman_timestamp=0x7f090005;
+        public static final int lsm303_heading=0x7f090008;
+        public static final int lsm303_timestamp=0x7f090007;
+        public static final int mag3110_heading=0x7f09000a;
+        public static final int mag3110_timestamp=0x7f090009;
+        public static final int mpu6050_xz_degrees=0x7f090010;
+        public static final int mpu6050_yz_degrees=0x7f090011;
+        public static final int mpu6050_timestamp=0x7f09000f;
+        public static final int mySimpleXYPlot=0x7f090012;
+        public static final int s_timestamp=0x7f09000d;
+        public static final int server=0x7f09000b;
+        public static final int settings_title=0x7f090013;
     }
     public static final class layout {
         public static final int adxl345=0x7f030000;
@@ -202,18 +216,21 @@ public final class R {
         public static final int mag3110=0x7f030004;
         public static final int main=0x7f030005;
         public static final int mpu6050=0x7f030006;
+        public static final int plot=0x7f030007;
     }
     public static final class menu {
-        public static final int options=0x7f070000;
+        public static final int options=0x7f080000;
     }
     public static final class string {
-        public static final int app_name=0x7f060000;
-        public static final int back_title=0x7f060003;
-        public static final int exit_title=0x7f060004;
-        public static final int general_settings=0x7f060001;
-        public static final int settings_title=0x7f060002;
+        public static final int app_name=0x7f070000;
+        public static final int back_title=0x7f070003;
+        public static final int exit_title=0x7f070004;
+        public static final int general_settings=0x7f070001;
+        public static final int settings_title=0x7f070002;
     }
     public static final class xml {
-        public static final int settings=0x7f040000;
+        public static final int line_point_formatter_with_plf1=0x7f040000;
+        public static final int line_point_formatter_with_plf2=0x7f040001;
+        public static final int settings=0x7f040002;
     }
 }

@@ -22,8 +22,13 @@ let range = range * 10 / 58 ' multiply by 10 then divide by 58
 hserout 0, ("Range:",#range,13,10)
 
 'debug range 'display range via debug command
+<<<<<<< .mine
 'sertxd("Range:",#range,13,10)
 
+=======
+' output for inverted picaxe serial
+sertxd("Range:",#range,13,10)
+>>>>>>> .r872
 
 ' output for standard serial
 serout serialpin, T4800_4, ("Range:",#range,13,10)
