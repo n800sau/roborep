@@ -13,3 +13,6 @@
 [submodule "submodules/ESPUI"]
 	path = submodules/ESPUI
 	url = https://github.com/s00500/ESPUI.git
+[submodule "ard_esp32/M5Stack-Camera"]
+	path = ard_esp32/M5Stack-Camera
+	url = https://github.com/n800sau/M5Stack-Camera
