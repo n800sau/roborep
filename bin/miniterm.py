@@ -440,7 +440,7 @@ class Miniterm(object):
                     self.stop()
                     break                                   # exit app
                 elif c == '\n':
-                    self.serial.write(self.newline)         # send newline character(s)
+                    self.serial.write(self.newline.encode())         # send newline character(s)
                     if self.echo:
                         sys.stdout.write(c)                 # local echo is a real newline in any case
                         sys.stdout.flush()
