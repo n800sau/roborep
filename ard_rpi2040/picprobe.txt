@@ -1,0 +1,9 @@
+picprobe
+pins
+2 - green SWCLC
+3 - blue SWDIO
+4 - yellow TX -> gp1 uart0 rx
+5 - black RX  -> gp0 uart0 tx
+
++5v - red
+GND - white
