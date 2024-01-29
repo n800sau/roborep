@@ -1,1 +1,1 @@
-ros2 topic echo /pico_publisher
+ros2 topic echo /pico_message
