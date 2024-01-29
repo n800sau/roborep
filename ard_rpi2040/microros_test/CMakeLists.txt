@@ -23,8 +23,8 @@ target_include_directories(pico_micro_ros_example PUBLIC
     micro_ros_raspberrypi_pico_sdk
 )
 
-SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections")
+SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections -Wno-unused-result")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections -Wno-unused-result")
 
 # Configure Pico
 pico_enable_stdio_usb(pico_micro_ros_example 1)
