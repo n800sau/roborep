@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include <math.h>
 
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 #include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/float64.h>
 #include <rmw_microros/rmw_microros.h>
 
 #include "pico/stdlib.h"
@@ -26,6 +28,15 @@
 // datasheet for information on which other pins can be used.
 #define UART_TX_PIN 0
 #define UART_RX_PIN 1
+
+#define STEP_PIN 8
+#define DIR_PIN 9
+#define MM 16
+#define STEPS_PER_REVOLUTION (200 * MM)
+// diam in m
+#define WDIAM 0.06
+#define WCIRCUMFERENCE (WDIAM * M_PI)
+#define STEPS_PER_METER (STEPS_PER_REVOLUTION / WCIRCUMFERENCE)
 
 static int chars_rxed = 0;
 
@@ -94,35 +105,56 @@ rcl_node_t node;
 rcl_timer_t timer;
 rclc_executor_t executor;
 rclc_executor_t executor_sub;
+rclc_executor_t executor_speed_sub;
 rcl_allocator_t allocator;
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg, omsg;
-rcl_subscription_t subscriber;
-//std_msgs__msg__Int32 omsg, imgs;
-//bool micro_ros_init_successful;
+std_msgs__msg__Float64 smsg;
+rcl_subscription_t subscriber, speed_subscriber;
 
 const uint LED_PIN = 25;
 
 static volatile long counter;
+
+int64_t vel2freq(double v)
+{
+	return (int64_t)(v / WCIRCUMFERENCE * STEPS_PER_REVOLUTION);
+}
+
+void set_speed(double v)
+{
+	float freq = vel2freq(v);
+	char buf[40];
+	snprintf(buf, sizeof(buf), "\nFreq: %g\n", freq);
+	uart_puts(UART_ID, buf);
+}
 
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 {
 	rcl_ret_t ret = rcl_publish(&publisher, &msg, NULL);
 	msg.data++;
 	gpio_put(LED_PIN, msg.data % 2);
-	char buf[40];
-	snprintf(buf, sizeof(buf), "\nUART interrupt, counter: %ld\n", counter);
-	uart_puts(UART_ID, buf);
+//	char buf[40];
+//	snprintf(buf, sizeof(buf), "\nUART interrupt, counter: %ld\n", counter);
+//	uart_puts(UART_ID, buf);
 }
 
 void subscription_callback(const void * msgin)
 {
-	const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
+	const std_msgs__msg__Int32 *msg = (const std_msgs__msg__Int32 *)msgin;
 	char buf[40];
 	snprintf(buf, sizeof(buf), "\nMessage received: %d\n", msg->data);
 	uart_puts(UART_ID, buf);
 }
 
+void speed_subscription_callback(const void * msgin)
+{
+	const std_msgs__msg__Float64 *msg = (const std_msgs__msg__Float64 *)msgin;
+	char buf[40];
+	snprintf(buf, sizeof(buf), "\nSet speed to: %g\n", msg->data);
+	uart_puts(UART_ID, buf);
+	set_speed(msg->data);
+}
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){return false;}}
 #define EXECUTE_EVERY_N_MS(MS, X)	do { \
@@ -142,7 +174,7 @@ bool create_entities()
 	RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
 
 	// create node
-	RCCHECK(rclc_node_init_default(&node, "pico_publisher", "", &support));
+	RCCHECK(rclc_node_init_default(&node, "pico_example", "", &support));
 
 	// create publisher
 	RCCHECK(rclc_publisher_init_best_effort(
@@ -158,6 +190,12 @@ bool create_entities()
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 		"pico_command"));
 
+	RCCHECK(rclc_subscription_init_default(
+		&speed_subscriber,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64),
+		"speed"));
+
 	// create timer,
 	const unsigned int timer_timeout = 1000;
 	RCCHECK(rclc_timer_init_default(
@@ -172,6 +210,8 @@ bool create_entities()
 	RCCHECK(rclc_executor_add_timer(&executor, &timer));
 	RCCHECK(rclc_executor_init(&executor_sub, &support.context, 1, &allocator));
 	RCCHECK(rclc_executor_add_subscription(&executor_sub, &subscriber, &omsg, &subscription_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_init(&executor_speed_sub, &support.context, 1, &allocator));
+	RCCHECK(rclc_executor_add_subscription(&executor_speed_sub, &speed_subscriber, &smsg, &speed_subscription_callback, ON_NEW_DATA));
 
 	msg.data = 0;
 
@@ -188,12 +228,15 @@ void destroy_entities()
 	rclc_executor_fini(&executor);
 	rcl_subscription_fini(&subscriber, &node);
 	rclc_executor_fini(&executor_sub);
+	rcl_subscription_fini(&speed_subscriber, &node);
+	rclc_executor_fini(&executor_speed_sub);
 	rcl_node_fini(&node);
 	rclc_support_fini(&support);
 }
 
 bool counter_timer_callback(repeating_timer_t *rt) {
 	counter++;
+	gpio_put(STEP_PIN, counter % 2);
 	return true; // keep repeating
 }
 
@@ -214,13 +257,17 @@ int main()
 
 	gpio_init(LED_PIN);
 	gpio_set_dir(LED_PIN, GPIO_OUT);
+	gpio_set_dir(STEP_PIN, GPIO_OUT);
+	gpio_set_dir(DIR_PIN, GPIO_OUT);
 
 	custom_uart_init();
 
+	gpio_put(LED_PIN, 1);
+
+	gpio_put(DIR_PIN, 0);
+
 	repeating_timer_t counter_timer;
 	add_repeating_timer_us(-1000, counter_timer_callback, NULL, &counter_timer);
-
-	gpio_put(LED_PIN, 1);
 
 	while (true)
 	{
@@ -239,6 +286,7 @@ int main()
 				if (state == AGENT_CONNECTED) {
 					rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
 					rclc_executor_spin_some(&executor_sub, RCL_MS_TO_NS(100));
+					rclc_executor_spin_some(&executor_speed_sub, RCL_MS_TO_NS(100));
 				}
 				break;
 			case AGENT_DISCONNECTED:
@@ -251,3 +299,4 @@ int main()
 	}
 	return 0;
 }
+
