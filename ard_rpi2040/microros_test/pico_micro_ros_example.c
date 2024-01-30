@@ -104,8 +104,8 @@ rclc_support_t support;
 rcl_node_t node;
 rcl_timer_t timer;
 rclc_executor_t executor;
-rclc_executor_t executor_sub;
-rclc_executor_t executor_speed_sub;
+//rclc_executor_t executor_sub;
+//rclc_executor_t executor_speed_sub;
 rcl_allocator_t allocator;
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg, omsg;
@@ -134,9 +134,9 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 	rcl_ret_t ret = rcl_publish(&publisher, &msg, NULL);
 	msg.data++;
 	gpio_put(LED_PIN, msg.data % 2);
-//	char buf[40];
-//	snprintf(buf, sizeof(buf), "\nUART interrupt, counter: %ld\n", counter);
-//	uart_puts(UART_ID, buf);
+	char buf[40];
+	snprintf(buf, sizeof(buf), "\nUART interrupt, counter: %ld\n", counter);
+	uart_puts(UART_ID, buf);
 }
 
 void subscription_callback(const void * msgin)
@@ -206,12 +206,10 @@ bool create_entities()
 
 	// create executor
 	executor = rclc_executor_get_zero_initialized_executor();
-	RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+	RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
 	RCCHECK(rclc_executor_add_timer(&executor, &timer));
-	RCCHECK(rclc_executor_init(&executor_sub, &support.context, 1, &allocator));
-	RCCHECK(rclc_executor_add_subscription(&executor_sub, &subscriber, &omsg, &subscription_callback, ON_NEW_DATA));
-	RCCHECK(rclc_executor_init(&executor_speed_sub, &support.context, 1, &allocator));
-	RCCHECK(rclc_executor_add_subscription(&executor_speed_sub, &speed_subscriber, &smsg, &speed_subscription_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &omsg, &subscription_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_add_subscription(&executor, &speed_subscriber, &smsg, &speed_subscription_callback, ON_NEW_DATA));
 
 	msg.data = 0;
 
@@ -227,9 +225,7 @@ void destroy_entities()
 	rcl_timer_fini(&timer);
 	rclc_executor_fini(&executor);
 	rcl_subscription_fini(&subscriber, &node);
-	rclc_executor_fini(&executor_sub);
 	rcl_subscription_fini(&speed_subscriber, &node);
-	rclc_executor_fini(&executor_speed_sub);
 	rcl_node_fini(&node);
 	rclc_support_fini(&support);
 }
@@ -285,8 +281,6 @@ int main()
 				EXECUTE_EVERY_N_MS(200, state = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_CONNECTED : AGENT_DISCONNECTED;);
 				if (state == AGENT_CONNECTED) {
 					rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-					rclc_executor_spin_some(&executor_sub, RCL_MS_TO_NS(100));
-					rclc_executor_spin_some(&executor_speed_sub, RCL_MS_TO_NS(100));
 				}
 				break;
 			case AGENT_DISCONNECTED:
