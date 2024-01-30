@@ -103,12 +103,16 @@ rcl_subscription_t subscriber;
 
 const uint LED_PIN = 25;
 
+static volatile long counter;
+
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 {
 	rcl_ret_t ret = rcl_publish(&publisher, &msg, NULL);
 	msg.data++;
 	gpio_put(LED_PIN, msg.data % 2);
-	uart_puts(UART_ID, "\nHello, uart interrupts\n");
+	char buf[40];
+	snprintf(buf, sizeof(buf), "\nUART interrupt, counter: %ld\n", counter);
+	uart_puts(UART_ID, buf);
 }
 
 void subscription_callback(const void * msgin)
@@ -130,6 +134,8 @@ void subscription_callback(const void * msgin)
 
 bool create_entities()
 {
+	counter = 0;
+
 	allocator = rcl_get_default_allocator();
 
 	// create init_options
@@ -186,6 +192,12 @@ void destroy_entities()
 	rclc_support_fini(&support);
 }
 
+bool counter_timer_callback(repeating_timer_t *rt) {
+	counter++;
+	return true; // keep repeating
+}
+
+
 
 int main()
 {
@@ -204,6 +216,9 @@ int main()
 	gpio_set_dir(LED_PIN, GPIO_OUT);
 
 	custom_uart_init();
+
+	repeating_timer_t counter_timer;
+	add_repeating_timer_us(-1000, counter_timer_callback, NULL, &counter_timer);
 
 	gpio_put(LED_PIN, 1);
 
