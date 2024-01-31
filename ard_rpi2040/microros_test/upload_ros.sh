@@ -5,4 +5,4 @@ else
 	BIN="$1"
 fi
 
-gdb-multiarch --command=upload.gdb --args "$BIN"
+gdb-multiarch -q --command=upload.gdb --args "$BIN"

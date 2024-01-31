@@ -6,8 +6,9 @@
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 #include <std_msgs/msg/int32.h>
-#include <std_msgs/msg/float64.h>
 #include <geometry_msgs/msg/twist_stamped.h>
+#include <rcutils/logging.h>
+#include <rcl_interfaces/msg/log.h>
 #include <rmw_microros/rmw_microros.h>
 
 #include "pico/stdlib.h"
@@ -107,10 +108,12 @@ rcl_timer_t timer;
 rclc_executor_t executor;
 rcl_allocator_t allocator;
 rcl_publisher_t publisher;
+rcl_publisher_t publisher_log;
 std_msgs__msg__Int32 msg, omsg;
-std_msgs__msg__Float64 lsmsg, rsmsg;
 geometry_msgs__msg__TwistStamped twmsg;
-rcl_subscription_t subscriber, left_speed_subscriber, right_speed_subscriber, twist_subscriber;
+rcl_interfaces__msg__Log lmsg;
+char lmsgbuf[80];
+rcl_subscription_t subscriber, twist_subscriber;
 
 const uint LED_PIN = 25;
 
@@ -150,28 +153,25 @@ void subscription_callback(const void * msgin)
 void twist_subscription_callback(const void * msgin)
 {
 	const geometry_msgs__msg__TwistStamped *msg = (const geometry_msgs__msg__TwistStamped *)msgin;
-	char buf[50];
-	snprintf(buf, sizeof(buf), "\nSet speed to: %g angular: %g\n", msg->twist.linear.x, msg->twist.angular.z);
-	uart_puts(UART_ID, buf);
-}
+	snprintf(lmsgbuf, sizeof(lmsgbuf), "\nSet speed to: %g angular: %g enabled:%d level:%d min_level:%d\n",
+		msg->twist.linear.x, msg->twist.angular.z, g_rcutils_logging_initialized, rcutils_logging_logger_is_enabled_for(NULL, RCUTILS_LOG_SEVERITY_DEBUG), RCUTILS_LOG_MIN_SEVERITY);
+	uart_puts(UART_ID, lmsgbuf);
+	set_speed(msg->twist.linear.x);
+//	RCUTILS_LOG_INFO_NAMED("example", "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
+//	rcutils_log(rcl_interfaces__msg__Log__INFO, "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
 
-void speed_subscription_callback(const std_msgs__msg__Float64 *msg, const char *type)
-{
-//	const std_msgs__msg__Float64 *msg = (const std_msgs__msg__Float64 *)msgin;
-	char buf[40];
-	snprintf(buf, sizeof(buf), "\nSet %s speed to: %g\n", type, msg->data);
-	uart_puts(UART_ID, buf);
-	set_speed(msg->data);
-}
-
-void left_speed_subscription_callback(const void * msgin)
-{
-	speed_subscription_callback(msgin, "left");
-}
-
-void right_speed_subscription_callback(const void * msgin)
-{
-	speed_subscription_callback(msgin, "right");
+	lmsg.level = rcl_interfaces__msg__Log__INFO;
+	lmsg.name.data = "Pico";
+	lmsg.name.size = strlen(lmsg.name.data);
+	lmsg.msg.data = lmsgbuf;
+	lmsg.msg.size = strlen(lmsgbuf);
+	lmsg.msg.capacity = sizeof(lmsgbuf);
+	lmsg.file.data = "";
+	lmsg.file.size = strlen(lmsg.file.data);
+	lmsg.function.data = "";
+	lmsg.function.size = strlen(lmsg.function.data);
+	lmsg.line = 0;
+	rcl_publish(&publisher_log, &lmsg, NULL);
 }
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){return false;}}
@@ -185,6 +185,8 @@ void right_speed_subscription_callback(const void * msgin)
 bool create_entities()
 {
 	counter = 0;
+
+	rcutils_logging_set_default_logger_level(RCUTILS_LOG_SEVERITY_DEBUG);
 
 	allocator = rcl_get_default_allocator();
 
@@ -201,24 +203,18 @@ bool create_entities()
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 		"pico_message"));
 
+	RCCHECK(rclc_publisher_init(
+		&publisher_log,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(rcl_interfaces, msg, Log),
+		"rosout", &rmw_qos_profile_unknown));
+
 // create subscriber
 	RCCHECK(rclc_subscription_init_default(
 		&subscriber,
 		&node,
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 		"pico_command"));
-
-	RCCHECK(rclc_subscription_init_default(
-		&left_speed_subscriber,
-		&node,
-		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64),
-		"left_speed"));
-
-	RCCHECK(rclc_subscription_init_default(
-		&right_speed_subscriber,
-		&node,
-		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64),
-		"right_speed"));
 
 	RCCHECK(rclc_subscription_init_default(
 		&twist_subscriber,
@@ -236,11 +232,9 @@ bool create_entities()
 
 	// create executor
 	executor = rclc_executor_get_zero_initialized_executor();
-	RCCHECK(rclc_executor_init(&executor, &support.context, 5, &allocator));
+	RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
 	RCCHECK(rclc_executor_add_timer(&executor, &timer));
 	RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &omsg, &subscription_callback, ON_NEW_DATA));
-	RCCHECK(rclc_executor_add_subscription(&executor, &left_speed_subscriber, &lsmsg, &left_speed_subscription_callback, ON_NEW_DATA));
-	RCCHECK(rclc_executor_add_subscription(&executor, &right_speed_subscriber, &rsmsg, &right_speed_subscription_callback, ON_NEW_DATA));
 	RCCHECK(rclc_executor_add_subscription(&executor, &twist_subscriber, &twmsg, &twist_subscription_callback, ON_NEW_DATA));
 
 	msg.data = 0;
@@ -254,11 +248,10 @@ void destroy_entities()
 	(void) rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
 
 	rcl_publisher_fini(&publisher, &node);
+//	rcl_publisher_fini(&publisher_log, &node);
 	rcl_timer_fini(&timer);
 	rclc_executor_fini(&executor);
 	rcl_subscription_fini(&subscriber, &node);
-	rcl_subscription_fini(&left_speed_subscriber, &node);
-	rcl_subscription_fini(&right_speed_subscriber, &node);
 	rcl_subscription_fini(&twist_subscriber, &node);
 	rcl_node_fini(&node);
 	rclc_support_fini(&support);
