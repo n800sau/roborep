@@ -7,6 +7,7 @@
 #include <rclc/executor.h>
 #include <std_msgs/msg/int32.h>
 #include <std_msgs/msg/float64.h>
+#include <geometry_msgs/msg/twist_stamped.h>
 #include <rmw_microros/rmw_microros.h>
 
 #include "pico/stdlib.h"
@@ -104,13 +105,12 @@ rclc_support_t support;
 rcl_node_t node;
 rcl_timer_t timer;
 rclc_executor_t executor;
-//rclc_executor_t executor_sub;
-//rclc_executor_t executor_speed_sub;
 rcl_allocator_t allocator;
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg, omsg;
-std_msgs__msg__Float64 smsg;
-rcl_subscription_t subscriber, speed_subscriber;
+std_msgs__msg__Float64 lsmsg, rsmsg;
+geometry_msgs__msg__TwistStamped twmsg;
+rcl_subscription_t subscriber, left_speed_subscriber, right_speed_subscriber, twist_subscriber;
 
 const uint LED_PIN = 25;
 
@@ -134,9 +134,9 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 	rcl_ret_t ret = rcl_publish(&publisher, &msg, NULL);
 	msg.data++;
 	gpio_put(LED_PIN, msg.data % 2);
-	char buf[40];
-	snprintf(buf, sizeof(buf), "\nUART interrupt, counter: %ld\n", counter);
-	uart_puts(UART_ID, buf);
+//	char buf[40];
+//	snprintf(buf, sizeof(buf), "\nUART interrupt, counter: %ld\n", counter);
+//	uart_puts(UART_ID, buf);
 }
 
 void subscription_callback(const void * msgin)
@@ -147,13 +147,31 @@ void subscription_callback(const void * msgin)
 	uart_puts(UART_ID, buf);
 }
 
-void speed_subscription_callback(const void * msgin)
+void twist_subscription_callback(const void * msgin)
 {
-	const std_msgs__msg__Float64 *msg = (const std_msgs__msg__Float64 *)msgin;
+	const geometry_msgs__msg__TwistStamped *msg = (const geometry_msgs__msg__TwistStamped *)msgin;
+	char buf[50];
+	snprintf(buf, sizeof(buf), "\nSet speed to: %g angular: %g\n", msg->twist.linear.x, msg->twist.angular.z);
+	uart_puts(UART_ID, buf);
+}
+
+void speed_subscription_callback(const std_msgs__msg__Float64 *msg, const char *type)
+{
+//	const std_msgs__msg__Float64 *msg = (const std_msgs__msg__Float64 *)msgin;
 	char buf[40];
-	snprintf(buf, sizeof(buf), "\nSet speed to: %g\n", msg->data);
+	snprintf(buf, sizeof(buf), "\nSet %s speed to: %g\n", type, msg->data);
 	uart_puts(UART_ID, buf);
 	set_speed(msg->data);
+}
+
+void left_speed_subscription_callback(const void * msgin)
+{
+	speed_subscription_callback(msgin, "left");
+}
+
+void right_speed_subscription_callback(const void * msgin)
+{
+	speed_subscription_callback(msgin, "right");
 }
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){return false;}}
@@ -191,10 +209,22 @@ bool create_entities()
 		"pico_command"));
 
 	RCCHECK(rclc_subscription_init_default(
-		&speed_subscriber,
+		&left_speed_subscriber,
 		&node,
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64),
-		"speed"));
+		"left_speed"));
+
+	RCCHECK(rclc_subscription_init_default(
+		&right_speed_subscriber,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64),
+		"right_speed"));
+
+	RCCHECK(rclc_subscription_init_default(
+		&twist_subscriber,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, TwistStamped),
+		"cmd_vel"));
 
 	// create timer,
 	const unsigned int timer_timeout = 1000;
@@ -206,10 +236,12 @@ bool create_entities()
 
 	// create executor
 	executor = rclc_executor_get_zero_initialized_executor();
-	RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
+	RCCHECK(rclc_executor_init(&executor, &support.context, 5, &allocator));
 	RCCHECK(rclc_executor_add_timer(&executor, &timer));
 	RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &omsg, &subscription_callback, ON_NEW_DATA));
-	RCCHECK(rclc_executor_add_subscription(&executor, &speed_subscriber, &smsg, &speed_subscription_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_add_subscription(&executor, &left_speed_subscriber, &lsmsg, &left_speed_subscription_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_add_subscription(&executor, &right_speed_subscriber, &rsmsg, &right_speed_subscription_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_add_subscription(&executor, &twist_subscriber, &twmsg, &twist_subscription_callback, ON_NEW_DATA));
 
 	msg.data = 0;
 
@@ -225,7 +257,9 @@ void destroy_entities()
 	rcl_timer_fini(&timer);
 	rclc_executor_fini(&executor);
 	rcl_subscription_fini(&subscriber, &node);
-	rcl_subscription_fini(&speed_subscriber, &node);
+	rcl_subscription_fini(&left_speed_subscriber, &node);
+	rcl_subscription_fini(&right_speed_subscriber, &node);
+	rcl_subscription_fini(&twist_subscriber, &node);
 	rcl_node_fini(&node);
 	rclc_support_fini(&support);
 }
