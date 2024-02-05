@@ -43,6 +43,8 @@
 #define WDIAM 0.06
 #define WCIRCUMFERENCE (WDIAM * M_PI)
 #define STEPS_PER_METER (STEPS_PER_REVOLUTION / WCIRCUMFERENCE)
+// distance between centers of wheels
+#define WHEEL_BASE 0.176
 
 static int chars_rxed = 0;
 
@@ -122,17 +124,33 @@ const uint LED_PIN = 25;
 
 static volatile long counter;
 
+double *quaternion_from_euler(double ai, double aj, double ak, double q[4])
+{
+	ai /= 2.0;
+	aj /= 2.0;
+	ak /= 2.0;
+	double ci = cos(ai);
+	double si = sin(ai);
+	double cj = cos(aj);
+	double sj = sin(aj);
+	double ck = cos(ak);
+	double sk = sin(ak);
+	double cc = ci * ck;
+	double cs = ci * sk;
+	double sc = si * ck;
+	double ss = si * sk;
+
+	q[0] = cj * sc - sj * cs;
+	q[1] = cj * ss + sj * cc;
+	q[2] = cj * cs - sj * sc;
+	q[3] = cj * cc + sj * ss;
+
+	return q;
+}
+
 int64_t vel2freq(double v)
 {
 	return (int64_t)(v / WCIRCUMFERENCE * STEPS_PER_REVOLUTION);
-}
-
-void set_speed(double v)
-{
-	float freq = vel2freq(v);
-	char buf[40];
-	snprintf(buf, sizeof(buf), "\nFreq: %g\n", freq);
-	uart_puts(UART_ID, buf);
 }
 
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
@@ -167,15 +185,13 @@ int uart_printf(const char *fmt, ...)
 	return rc;
 }
 
-
-
 int log_printf(const char *fmt, ...)
 {
 	static rcl_interfaces__msg__Log lmsg;
 	static char buffer[60];
 	va_list args;
 	va_start(args, fmt);
-	int rc = vsnprintf(buffer, sizeof(buffer), fmt, args);
+	int rc = vsnprintf(buffer, sizeof(buffer)-3, fmt, args);
 	va_end(args);
 
 	lmsg.level = rcl_interfaces__msg__Log__INFO;
@@ -191,23 +207,31 @@ int log_printf(const char *fmt, ...)
 	lmsg.line = 0;
 	rcl_publish(&publisher_log, &lmsg, NULL);
 
+	strcat(buffer, "\n");
+	uart_puts(UART_ID, buffer);
+
 	return rc;
+}
+
+void set_speed(double left, double right)
+{
+	double freq = vel2freq(left);
+	log_printf("Set speed left: %g right: %g", left, right);
 }
 
 void twist_subscription_callback(const void * msgin)
 {
 	const geometry_msgs__msg__TwistStamped *msg = (const geometry_msgs__msg__TwistStamped *)msgin;
 
-	uart_printf("\nSet speed to: %g angular: %g enabled:%d level:%d min_level:%d\n",
-		msg->twist.linear.x, msg->twist.angular.z, g_rcutils_logging_initialized, rcutils_logging_logger_is_enabled_for(NULL, RCUTILS_LOG_SEVERITY_DEBUG), RCUTILS_LOG_MIN_SEVERITY);
+	log_printf("I heard: lin %g, ang %g", msg->twist.linear.x, msg->twist.angular.z);
 
-	log_printf("\nSet speed to: %g angular: %g enabled:%d level:%d min_level:%d\n",
-		msg->twist.linear.x, msg->twist.angular.z, g_rcutils_logging_initialized, rcutils_logging_logger_is_enabled_for(NULL, RCUTILS_LOG_SEVERITY_DEBUG), RCUTILS_LOG_MIN_SEVERITY);
+	double lin_vel_x = msg->twist.linear.x;
+	double ang_vel = msg->twist.angular.z;
 
-	set_speed(msg->twist.linear.x);
-//	RCUTILS_LOG_INFO_NAMED("example", "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
-//	rcutils_log(rcl_interfaces__msg__Log__INFO, "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
-
+	double linear_right = lin_vel_x + ((ang_vel * WHEEL_BASE) / 2.0);
+	double linear_left = (2.0 * lin_vel_x) - linear_right;
+	log_printf("vel: l %g, r %g", linear_left, linear_right);
+	set_speed(linear_left, linear_right);
 }
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){return false;}}
