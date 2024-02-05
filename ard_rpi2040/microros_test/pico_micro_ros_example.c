@@ -153,6 +153,22 @@ void subscription_callback(const void * msgin)
 	uart_puts(UART_ID, buf);
 }
 
+int uart_printf(const char *fmt, ...)
+{
+	static rcl_interfaces__msg__Log lmsg;
+	static char buffer[60];
+	va_list args;
+	va_start(args, fmt);
+	int rc = vsnprintf(buffer, sizeof(buffer), fmt, args);
+	va_end(args);
+
+	uart_puts(UART_ID, buffer);
+
+	return rc;
+}
+
+
+
 int log_printf(const char *fmt, ...)
 {
 	static rcl_interfaces__msg__Log lmsg;
@@ -181,14 +197,17 @@ int log_printf(const char *fmt, ...)
 void twist_subscription_callback(const void * msgin)
 {
 	const geometry_msgs__msg__TwistStamped *msg = (const geometry_msgs__msg__TwistStamped *)msgin;
-	snprintf(lmsgbuf, sizeof(lmsgbuf), "\nSet speed to: %g angular: %g enabled:%d level:%d min_level:%d\n",
+
+	uart_printf("\nSet speed to: %g angular: %g enabled:%d level:%d min_level:%d\n",
 		msg->twist.linear.x, msg->twist.angular.z, g_rcutils_logging_initialized, rcutils_logging_logger_is_enabled_for(NULL, RCUTILS_LOG_SEVERITY_DEBUG), RCUTILS_LOG_MIN_SEVERITY);
-	uart_puts(UART_ID, lmsgbuf);
+
+	log_printf("\nSet speed to: %g angular: %g enabled:%d level:%d min_level:%d\n",
+		msg->twist.linear.x, msg->twist.angular.z, g_rcutils_logging_initialized, rcutils_logging_logger_is_enabled_for(NULL, RCUTILS_LOG_SEVERITY_DEBUG), RCUTILS_LOG_MIN_SEVERITY);
+
 	set_speed(msg->twist.linear.x);
 //	RCUTILS_LOG_INFO_NAMED("example", "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
 //	rcutils_log(rcl_interfaces__msg__Log__INFO, "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
 
-	log_printf("%s", lmsgbuf);
 }
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){return false;}}
