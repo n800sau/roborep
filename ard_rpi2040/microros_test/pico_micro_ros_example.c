@@ -31,8 +31,12 @@
 #define UART_TX_PIN 0
 #define UART_RX_PIN 1
 
-#define STEP_PIN 8
-#define DIR_PIN 9
+#define LEFT_STEP_PIN 19
+#define LEFT_DIR_PIN 18
+
+#define RIGHT_STEP_PIN 17
+#define RIGHT_DIR_PIN 16
+
 #define MM 16
 #define STEPS_PER_REVOLUTION (200 * MM)
 // diam in m
@@ -111,7 +115,6 @@ rcl_publisher_t publisher;
 rcl_publisher_t publisher_log;
 std_msgs__msg__Int32 msg, omsg;
 geometry_msgs__msg__TwistStamped twmsg;
-rcl_interfaces__msg__Log lmsg;
 char lmsgbuf[80];
 rcl_subscription_t subscriber, twist_subscriber;
 
@@ -150,6 +153,31 @@ void subscription_callback(const void * msgin)
 	uart_puts(UART_ID, buf);
 }
 
+int log_printf(const char *fmt, ...)
+{
+	static rcl_interfaces__msg__Log lmsg;
+	static char buffer[60];
+	va_list args;
+	va_start(args, fmt);
+	int rc = vsnprintf(buffer, sizeof(buffer), fmt, args);
+	va_end(args);
+
+	lmsg.level = rcl_interfaces__msg__Log__INFO;
+	lmsg.name.data = "Pico";
+	lmsg.name.size = strlen(lmsg.name.data);
+	lmsg.msg.data = buffer;
+	lmsg.msg.size = strlen(buffer);
+	lmsg.msg.capacity = sizeof(buffer);
+	lmsg.file.data = "";
+	lmsg.file.size = strlen(lmsg.file.data);
+	lmsg.function.data = "";
+	lmsg.function.size = strlen(lmsg.function.data);
+	lmsg.line = 0;
+	rcl_publish(&publisher_log, &lmsg, NULL);
+
+	return rc;
+}
+
 void twist_subscription_callback(const void * msgin)
 {
 	const geometry_msgs__msg__TwistStamped *msg = (const geometry_msgs__msg__TwistStamped *)msgin;
@@ -160,18 +188,7 @@ void twist_subscription_callback(const void * msgin)
 //	RCUTILS_LOG_INFO_NAMED("example", "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
 //	rcutils_log(rcl_interfaces__msg__Log__INFO, "Set speed to: %g angular: %g", msg->twist.linear.x, msg->twist.angular.z);
 
-	lmsg.level = rcl_interfaces__msg__Log__INFO;
-	lmsg.name.data = "Pico";
-	lmsg.name.size = strlen(lmsg.name.data);
-	lmsg.msg.data = lmsgbuf;
-	lmsg.msg.size = strlen(lmsgbuf);
-	lmsg.msg.capacity = sizeof(lmsgbuf);
-	lmsg.file.data = "";
-	lmsg.file.size = strlen(lmsg.file.data);
-	lmsg.function.data = "";
-	lmsg.function.size = strlen(lmsg.function.data);
-	lmsg.line = 0;
-	rcl_publish(&publisher_log, &lmsg, NULL);
+	log_printf("%s", lmsgbuf);
 }
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){return false;}}
@@ -203,6 +220,7 @@ bool create_entities()
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 		"pico_message"));
 
+	// for logging
 	RCCHECK(rclc_publisher_init(
 		&publisher_log,
 		&node,
@@ -259,7 +277,8 @@ void destroy_entities()
 
 bool counter_timer_callback(repeating_timer_t *rt) {
 	counter++;
-	gpio_put(STEP_PIN, counter % 2);
+	gpio_put(LEFT_STEP_PIN, counter % 2);
+	gpio_put(RIGHT_STEP_PIN, counter % 2);
 	return true; // keep repeating
 }
 
@@ -280,17 +299,20 @@ int main()
 
 	gpio_init(LED_PIN);
 	gpio_set_dir(LED_PIN, GPIO_OUT);
-	gpio_set_dir(STEP_PIN, GPIO_OUT);
-	gpio_set_dir(DIR_PIN, GPIO_OUT);
+	gpio_set_dir(LEFT_STEP_PIN, GPIO_OUT);
+	gpio_set_dir(LEFT_DIR_PIN, GPIO_OUT);
+	gpio_set_dir(RIGHT_STEP_PIN, GPIO_OUT);
+	gpio_set_dir(RIGHT_DIR_PIN, GPIO_OUT);
 
 	custom_uart_init();
 
 	gpio_put(LED_PIN, 1);
 
-	gpio_put(DIR_PIN, 0);
+	gpio_put(LEFT_DIR_PIN, 0);
+	gpio_put(RIGHT_DIR_PIN, 0);
 
 	repeating_timer_t counter_timer;
-	add_repeating_timer_us(-1000, counter_timer_callback, NULL, &counter_timer);
+	add_repeating_timer_us(-1000000, counter_timer_callback, NULL, &counter_timer);
 
 	while (true)
 	{
