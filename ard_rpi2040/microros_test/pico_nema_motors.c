@@ -213,9 +213,31 @@ int log_printf(const char *fmt, ...)
 	return rc;
 }
 
+volatile bool last_left = true;
+volatile bool last_right = true;
+
+void set_dir(bool left, bool right)
+{
+	last_left = left;
+	last_right = right;
+	gpio_put(LEFT_DIR_PIN, left ? 1 : 0);
+	gpio_put(RIGHT_DIR_PIN, right ? 0 : 1);
+}
+
+bool is_left()
+{
+	return gpio_get(LEFT_DIR_PIN);
+}
+
+bool is_right()
+{
+	return !gpio_get(RIGHT_DIR_PIN);
+}
+
 void set_speed(double left, double right)
 {
-	double freq = vel2freq(left);
+	left = vel2freq(left);
+	right = vel2freq(right);
 	log_printf("Set speed left: %g right: %g", left, right);
 }
 
