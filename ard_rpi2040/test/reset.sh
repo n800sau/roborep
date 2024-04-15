@@ -1,2 +1,2 @@
 source vars.sh
-../../bin/miniterm.py $DEV 1200
+miniterm.py $DEV 1200
