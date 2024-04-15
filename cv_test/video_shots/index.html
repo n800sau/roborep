@@ -17,7 +17,7 @@
 				<img ng-src="{{src.url}}"></img>{{src.label}}
 			</div>
 			<div ng-repeat="fl in flist track by $index">
-				<small ng-class="{'bold': flist[fpointer] == fl, 'selectable': flist[fpointer] != fl}" ng-click="select_file(fl)">{{fl.substr(0, 19)}}<small>
+				<small ng-class="{'bold': flist[fpointer] == fl, 'selectable': flist[fpointer] != fl}" ng-click="select_file(fl)" title="{{fl}}">{{fl.substr(0, 19)}}<small>
 			</div>
 			<div class="video">
 				<videogular vg-theme="controller.config.theme">
