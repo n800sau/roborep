@@ -1,0 +1,25 @@
+# /usr/share/doc/lighttpd/proxy.txt
+
+server.modules   += ( "mod_proxy" )
+
+# for kosel webcam
+# sudo htdigest -c /etc/lighttpd/.passwd <realm> n800s
+$HTTP["url"] =~ "^/<path>$" {
+	server.stream-request-body  = 2
+	server.stream-response-body = 2
+	server.protocol-http11 = "disable"
+	# to avoid error (header too long)
+	setenv.set-request-header = ( "Authorization" => "",)
+	proxy.server     = ( "" =>
+		(
+			( "host" => "<webcam host>",
+			 "port" => 80
+			)
+		)
+	),
+	proxy.header = (
+		"map-urlpath" => (
+			"/<path>" => "/" 
+		),
+	),
+}

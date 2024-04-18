@@ -1,0 +1,16 @@
+# /usr/share/doc/lighttpd/authentication.txt.gz
+
+server.modules                += ( "mod_auth" )
+
+
+server.modules		+= ( "mod_authn_file" )
+auth.backend                 = "htdigest"
+auth.backend.htdigest.userfile = "/etc/lighttpd/.passwd"
+
+auth.require = ( "/<path>" =>
+		(
+			"method"    => "digest",
+			"realm"     => "<realm>",
+			"require"   => "valid-user"
+		),
+)
