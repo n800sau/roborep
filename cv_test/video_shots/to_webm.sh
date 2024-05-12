@@ -33,9 +33,10 @@ do
 bname="`basename $rfname .${VEXT}`.webm"
 echo $bname >>file.lst
 #-codec:v h264_omx
-ffmpeg -y -i $rfname -deinterlace -an -r 10 data/fulls/$bname &>to_webm_full.log
+# -deinterlace => -filter:v yadif
+ffmpeg -y -i $rfname -filter:v yadif -crf 10 -an -r 10 -b:v 800k data/fulls/$bname &>to_webm_full.log
 echo $?
-ffmpeg -y -i $rfname -deinterlace -vf "scale=${SCALE}"':trunc(ow/a/2)*2' -an -r 10 data/input/$bname &>to_webm_input.log
+ffmpeg -y -i $rfname -filter:v yadif -crf 10 -vf "scale=${SCALE}"':trunc(ow/a/2)*2' -an -r 10  -b:v 300k data/input/$bname &>to_webm_input.log
 echo $?
 
 i="$(( i + 1 ))"
