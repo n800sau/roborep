@@ -12,7 +12,7 @@ from PIL import Image, UnidentifiedImageError
 from PIL.ExifTags import TAGS, GPSTAGS
 from geopy.geocoders import Nominatim
 
-ROOT_DIR = 'recover1'
+ROOT_DIR = 'recover'
 GOOD_DIR = ROOT_DIR + '_processed'
 BAD_DIR = ROOT_DIR + '_bad'
 
@@ -110,7 +110,7 @@ for (root,dirs,files) in os.walk(ROOT_DIR,topdown=True):
 #					print(json.dumps(loc_ext, indent=2, default=str))
 					loc_ext = loc_ext['address']
 					htags[tname]['named_location'] = loc_ext
-					for kl in (('village', 'town', 'hamlet', 'city', 'suburb'), ('province', ), ('ISO3166-2-lvl4',)):
+					for kl in (('locality', 'suburb', 'city', 'municipality', 'village', 'town', 'hamlet'), ('province', ), ('ISO3166-2-lvl4',)):
 						for k in kl:
 							if k in loc_ext:
 								if not subd_ext:
@@ -141,7 +141,7 @@ for (root,dirs,files) in os.walk(ROOT_DIR,topdown=True):
 			if dfname in used_fnames:
 				print('{} is already used'.format(dfname))
 				dfname = '{bn[0]}_{ndx}_{bn[1]}'.format(bn=os.path.splitext(dfname), ndx=used_fnames[dfname]+1)
-			dfname_exif = os.path.join(GOOD_DIR, 'exif', bname + '.exif')
+			dfname_exif = os.path.join(GOOD_DIR, 'exif', subdname, os.path.basename(dfname) + '.exif')
 			for dname in (dfname, dfname_exif):
 				dname = os.path.dirname(dname)
 				if not os.path.exists(dname):
@@ -152,9 +152,10 @@ for (root,dirs,files) in os.walk(ROOT_DIR,topdown=True):
 				os.unlink(dfname)
 			print('Saving {} ...'.format(dfname))
 			try:
-				img.save('{bn[0]}_exifed_{bn[1]}'.format(bn=os.path.splitext(dfname)), exif=piexif.dump(exif_dict))
+				img.save(dfname, exif=piexif.dump(exif_dict))
+#				img.save('{bn[0]}_exifed_{bn[1]}'.format(bn=os.path.splitext(dfname)), exif=piexif.dump(exif_dict))
 				used_fnames[dfname] = used_fnames.get(dfname, 0) + 1
-				os.symlink(os.path.relpath(fname, start=os.path.dirname(dfname)), dfname)
+#				os.symlink(os.path.relpath(fname, start=os.path.dirname(dfname)), dfname)
 			except Exception as e:
 				print(str(e), file=sys.stderr)
 				failed = True
