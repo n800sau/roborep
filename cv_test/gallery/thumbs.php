@@ -8,9 +8,13 @@
 	$flist = array();
 
 	$i = 0;
-	foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($SRCPATH)) as $dname)
+	$dnames = array_map(function($d) {
+		return $d->getPathname();
+	}, iterator_to_array(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($SRCPATH))));
+	asort($dnames, SORT_NATURAL);
+	foreach($dnames as $dname)
 	{
-		foreach(glob($dname->getPathname() . '/*') as $fpath) {
+		foreach(glob($dname . '/*') as $fpath) {
 			$it = mime_content_type($fpath);
 			if($it == 'image/jpeg' || $it == 'image/png') {
 				$itype = exif_imagetype($fpath);
