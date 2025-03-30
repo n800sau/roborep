@@ -79,8 +79,8 @@
 
 	<table>
 		<tr class="thumb" style="width: 100px;margin: 5px; border: none;" ng-repeat="el in data">
-			<td>
-				<img ng-src="{{el.thumb}}" title="{{el.bname}}" ng-click="thumb_click(el)"></img>{{el.bname}}
+			<td title="{{el.bname}}">
+				<img ng-src="{{el.thumb}}" ng-click="thumb_click(el)"></img>{{el.bname}}
 			</td>
 		</tr>
 	</table>
