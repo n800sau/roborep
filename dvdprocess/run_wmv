@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# read configuration
+. ./env
+
+cd in && flist=`find . -name "*.$SRCEXT" -follow | sort` && cd -
+
+IFS=$'\x0A'
+
+for fn in $flist
+do
+
+ofn="out/`dirname "$fn"`/`basename "$fn" ".$SRCEXT"`.mp4"
+fn="in/$fn"
+dirn=`dirname "$fn"`
+
+echo "PROCESSING $fn ..."
+
+mkdir -p "`dirname $ofn`"
+
+# make file if it does not exist
+if [ ! -e "$ofn" ]; then
+
+	aVF=()
+
+	# test bitrate
+	IFS=- read -r bt vw vh <<< `mediainfo --Output='Video;%BitRate%-%Width%-%Height%' "$fn"`
+	if [ `expr ${bt} / 1000` -gt ${BITRATE} ]
+	then
+		echo "file bitrate `expr $bt / 1000` is bigger than $BITRATE, processing..."
+		if [ -z "${YRES}" ]
+		then
+			yres="-2"
+		else
+			yres=${YRES}
+		fi
+		if [ "${FORCE_SCALING}" -gt 0 ] || [ "${yres}" -gt 0 ] || [ ${vw} -gt ${XRES} ]
+		then
+			if [ ! "$FORCE_SCALING" -gt 0 ] && [ ! "$yres" -gt 0 ]
+			then
+				echo video width is wide so scaling is added \($vw \> $XRES\)
+			fi
+			aVF+=("scale=${XRES}:${yres}")
+		else
+			echo video width is not wide so no resizing \($vw \<= $XRES\)
+		fi
+		if [ -n "${ASPECT}" ]
+		then
+			aVF+=("setdar=${ASPECT}")
+		fi
+		VF=$(IFS=, ; echo "${aVF[*]}")
+		if [ -n "${VF}" ]
+		then
+			VF="-vf ${VF}"
+		fi
+		ffmpeg -y -i "$fn" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 "$ofn"
+	else
+		echo "file bitrate `expr $bt / 1000` is smaller than $BITRATE, skipping"
+	fi
+
+
+fi
+
+done
