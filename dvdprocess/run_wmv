@@ -27,7 +27,7 @@ if [ ! -e "$ofn" ]; then
 	IFS=- read -r bt vw vh <<< `mediainfo --Output='Video;%BitRate%-%Width%-%Height%' "$fn"`
 	if [ `expr ${bt} / 1000` -gt ${BITRATE} ]
 	then
-		echo "file bitrate `expr $bt / 1000` is bigger than $BITRATE, processing..."
+		echo "bitrate `expr $bt / 1000` is bigger than $BITRATE, processing..."
 		if [ -z "${YRES}" ]
 		then
 			yres="-2"
@@ -55,10 +55,10 @@ if [ ! -e "$ofn" ]; then
 		fi
 		ffmpeg -y -i "$fn" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 "$ofn"
 	else
-		echo "file bitrate `expr $bt / 1000` is smaller than $BITRATE, skipping"
+		echo "bitrate `expr $bt / 1000` is smaller than $BITRATE, skipping"
 	fi
-
-
+else
+	echo exists, skipping
 fi
 
 done
