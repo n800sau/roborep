@@ -3,6 +3,11 @@
 # read configuration
 . ./env
 
+if [ -z $SRCEXTLIST ]
+then
+	SRCEXTLIST='mp4 mkv mov avi'
+fi
+
 extlist=$(sed -E 's/ +/\\|/g' <<<"$SRCEXTLIST")
 
 cd in && flist=`find . -type f -regex '.*\.\('${extlist}'\)$' -follow | sort` && cd -
@@ -14,7 +19,7 @@ do
 
 ext="${fn##*.}"
 odname="out/`dirname "$fn"`"
-ofn="${odname}/`basename ${fn} ${ext}`.mp4"
+ofn="${odname}/`basename ${fn} .${ext}`.mp4"
 fn="in/$fn"
 
 echo "PROCESSING $fn ..."
