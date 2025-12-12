@@ -12,7 +12,7 @@ IFS=$'\x0A'
 for fn in $flist
 do
 
-ofn="out/`dirname "$fn"`/`basename "$fn" ".$SRCEXT"`.mp4"
+ofn="out/`dirname "$fn"`/${fn%.*}.mp4"
 fn="in/$fn"
 dirn=`dirname "$fn"`
 
