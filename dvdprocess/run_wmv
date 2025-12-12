@@ -3,7 +3,9 @@
 # read configuration
 . ./env
 
-cd in && flist=`find . -name "*.$SRCEXT" -follow | sort` && cd -
+extlist=$(sed -E 's/ +/\\|/g' <<<"$SRCEXTLIST")
+
+cd in && flist=`find . -type f -regex '.*\.\('${extlist}'\)$' -follow | sort` && cd -
 
 IFS=$'\x0A'
 
@@ -53,7 +55,9 @@ if [ ! -e "$ofn" ]; then
 		then
 			VF="-vf ${VF}"
 		fi
-		ffmpeg -y -i "$fn" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 "$ofn"
+		cmd="ffmpeg -y -i \"$fn\" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 \"$ofn\""
+		echo Running $cmd
+		eval $cmd
 	else
 		echo "bitrate `expr $bt / 1000` is smaller than $BITRATE, skipping"
 	fi
