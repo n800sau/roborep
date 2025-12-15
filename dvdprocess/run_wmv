@@ -17,9 +17,8 @@ IFS=$'\x0A'
 for fn in $flist
 do
 
-ext="${fn##*.}"
 odname="out/`dirname "$fn"`"
-ofn="${odname}/`basename ${fn} .${ext}`.mp4"
+ofn="${odname}/`basename ${fn} .mp4`.mp4"
 fn="in/$fn"
 
 echo "PROCESSING $fn ..."
@@ -62,13 +61,16 @@ if [ ! -e "$ofn" ]; then
 			VF="-vf ${VF}"
 		fi
 		cmd="ffmpeg -y -i \"$fn\" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 \"$ofn\""
-		echo Running $cmd
-		eval $cmd
 	else
-		echo "bitrate `expr $bt / 1000` is smaller than $BITRATE, skipping"
+		echo "bitrate `expr $bt / 1000` is smaller than $BITRATE, symlinking"
+		cmd="ln -s \"`pwd`/$fn\" \"$ofn\""
 	fi
+	echo Running $cmd
+	eval $cmd
 else
 	echo exists, skipping
 fi
 
 done
+
+echo Finished
