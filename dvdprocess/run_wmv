@@ -63,7 +63,9 @@ if [ ! -e "$ofn" ]; then
 		cmd="ffmpeg -y -i \"$fn\" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 \"$ofn\""
 	else
 		echo "bitrate `expr $bt / 1000` is smaller than $BITRATE, symlinking"
-		cmd="ln -s \"`pwd`/$fn\" \"$ofn\""
+		odn=`dirname "$ofn"`
+		rfn=`realpath -m --relative-to="${odn}" .`
+		cmd="ln -s \"${rfn}/$fn\" \"$ofn\""
 	fi
 	echo Running $cmd
 	eval $cmd
