@@ -31,44 +31,53 @@ if [ ! -e "$ofn" ]; then
 	aVF=()
 
 	# test bitrate
-	IFS=- read -r bt vw vh <<< `mediainfo --Output='Video;%BitRate%-%Width%-%Height%' "$fn"`
-	if [ `expr ${bt} / 1000` -gt ${BITRATE} ]
+	IFS=- read -r maxbt bt vw vh <<< `mediainfo --Output='Video;%BitRate_Maximum%-%BitRate%-%Width%-%Height%' "$fn"`
+	if [ -z "${bt}" ]
 	then
-		echo "bitrate `expr $bt / 1000` is bigger than $BITRATE, processing..."
-		if [ -z "${YRES}" ]
-		then
-			yres="-2"
-		else
-			yres=${YRES}
-		fi
-		if [ "${FORCE_SCALING}" -gt 0 ] || [ "${yres}" -gt 0 ] || [ ${vw} -gt ${XRES} ]
-		then
-			if [ ! "$FORCE_SCALING" -gt 0 ] && [ ! "$yres" -gt 0 ]
-			then
-				echo video width is wide so scaling is added \($vw \> $XRES\)
-			fi
-			aVF+=("scale=${XRES}:${yres}")
-		else
-			echo video width is not wide so no resizing \($vw \<= $XRES\)
-		fi
-		if [ -n "${ASPECT}" ]
-		then
-			aVF+=("setdar=${ASPECT}")
-		fi
-		VF=$(IFS=, ; echo "${aVF[*]}")
-		if [ -n "${VF}" ]
-		then
-			VF="-vf ${VF}"
-		fi
-		cmd="ffmpeg -y -i \"$fn\" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 \"$ofn\""
-	else
-		echo "bitrate `expr $bt / 1000` is smaller than $BITRATE, symlinking"
-		odn=`dirname "$ofn"`
-		rfn=`realpath -m --relative-to="${odn}" .`
-		cmd="ln -s \"${rfn}/$fn\" \"$ofn\""
+		bt="${maxbt}"
 	fi
-	echo Running $cmd
-	eval $cmd
+	if [ -z "${bt}" ]
+	then
+		echo Can not find bitrate of "$fn"
+	else
+		if [ `expr ${bt} / 1000` -gt ${BITRATE} ]
+		then
+			echo "bitrate `expr $bt / 1000` is bigger than $BITRATE, processing..."
+			if [ -z "${YRES}" ]
+			then
+				yres="-2"
+			else
+				yres=${YRES}
+			fi
+			if [ "${FORCE_SCALING}" -gt 0 ] || [ "${yres}" -gt 0 ] || [ ${vw} -gt ${XRES} ]
+			then
+				if [ ! "$FORCE_SCALING" -gt 0 ] && [ ! "$yres" -gt 0 ]
+				then
+					echo video width is wide so scaling is added \($vw \> $XRES\)
+				fi
+				aVF+=("scale=${XRES}:${yres}")
+			else
+				echo video width is not wide so no resizing \($vw \<= $XRES\)
+			fi
+			if [ -n "${ASPECT}" ]
+			then
+				aVF+=("setdar=${ASPECT}")
+			fi
+			VF=$(IFS=, ; echo "${aVF[*]}")
+			if [ -n "${VF}" ]
+			then
+				VF="-vf ${VF}"
+			fi
+			cmd="ffmpeg -y -i \"$fn\" -b:a 56k -ar 44100 -b:v ${BITRATE}k $VF -f mp4 \"$ofn\""
+		else
+			echo "bitrate `expr $bt / 1000` is smaller than $BITRATE, symlinking"
+			odn=`dirname "$ofn"`
+			rfn=`realpath -m --relative-to="${odn}" .`
+			cmd="ln -s \"${rfn}/$fn\" \"$ofn\""
+		fi
+		echo Running $cmd
+		eval $cmd
+	fi
 else
 	echo exists, skipping
 fi
