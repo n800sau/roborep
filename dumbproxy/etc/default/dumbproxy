@@ -1,4 +1,5 @@
-
-OPTIONS=-verbosity 10 -bind-address 127.0.0.1:10123 -proxyproto -js-access-filter /etc/dumbproxy/access_filter.js
-
+OPTIONS=-bind-address 172.30.4.107:10123 -proxyproto -js-access-filter /etc/dumbproxy/access_filter.js
 #OPTIONS=-mode socks5 -verbosity 10 -bind-address 127.0.0.1:10123 -proxyproto -js-access-filter /etc/dumbproxy/access_filter.js
+
+#OPTIONS=-autocert -bind-address 127.0.0.1:10443 -proxyproto -js-access-filter /etc/dumbproxy/access_filter.js
+#OPTIONS=-auth cert:// -cafile /etc/dumbproxy/rootCA.pem -cert /etc/dumbproxy/172.30.4.107.pem -key /etc/dumbproxy/172.30.4.107-key.pem -bind-address 127.0.0.1:10443 -proxyproto -js-access-filter /etc/dumbproxy/access_filter.js
