@@ -1,0 +1,17 @@
+[Unit]
+Description=Dumb Proxy
+Documentation=https://github.com/SenseUnit/dumbproxy/
+After=network.target network-online.target
+Requires=network-online.target
+
+[Service]
+EnvironmentFile=/etc/default/dumbproxy
+DynamicUser=yes
+Environment=HOME=/var/lib/dumbproxy
+ExecStart=/usr/local/bin/dumbproxy $OPTIONS
+TimeoutStopSec=5s
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=default.target

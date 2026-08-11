@@ -1,0 +1,4 @@
+
+OPTIONS=-verbosity 10 -bind-address 127.0.0.1:10123 -proxyproto -js-access-filter /etc/dumbproxy/access_filter.js
+
+#OPTIONS=-mode socks5 -verbosity 10 -bind-address 127.0.0.1:10123 -proxyproto -js-access-filter /etc/dumbproxy/access_filter.js
