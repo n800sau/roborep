@@ -3,22 +3,25 @@
 # read configuration
 . ./env
 
-if [ -z $SRCEXTLIST ]
+if [ -z "$SRCEXTLIST" ]
 then
 	SRCEXTLIST='mp4 mkv mov avi'
 fi
 
 extlist=$(sed -E 's/ +/\\|/g' <<<"$SRCEXTLIST")
 
-cd in && flist=`find . -type f -regex '.*\.\('${extlist}'\)$' -follow | sort` && cd -
+cd in && flist=`find . -type f -iregex '.*\.\('${extlist}'\)$' -follow | sort` && cd -
 
 IFS=$'\x0A'
 
 for fn in $flist
 do
 
+filename=$(basename -- "$fn")
+extension="${fn##*.}"
+filename="${filename%.*}"
 odname="out/`dirname "$fn"`"
-ofn="${odname}/`basename ${fn} .mp4`.mp4"
+ofn="${odname}/${filename}${SUFFIX}.mp4"
 fn="in/$fn"
 
 echo "PROCESSING $fn ..."
@@ -49,15 +52,9 @@ if [ ! -e "$ofn" ]; then
 			else
 				yres=${YRES}
 			fi
-			if [ "${FORCE_SCALING}" -gt 0 ] || [ "${yres}" -gt 0 ] || [ ${vw} -gt ${XRES} ]
+			if [ -n "${CROP}" ]
 			then
-				if [ ! "$FORCE_SCALING" -gt 0 ] && [ ! "$yres" -gt 0 ]
-				then
-					echo video width is wide so scaling is added \($vw \> $XRES\)
-				fi
-				aVF+=("scale=${XRES}:${yres}")
-			else
-				echo video width is not wide so no resizing \($vw \<= $XRES\)
+				aVF+=("crop=${CROP}")
 			fi
 			if [ -n "${ASPECT}" ]
 			then
